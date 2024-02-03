@@ -91,7 +91,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "py360convert-modified"
-version = "0.1.0"
+version = "1.0.1"
 description = "A Python package to convert between 360 image formats"
 category = "main"
 optional = false
