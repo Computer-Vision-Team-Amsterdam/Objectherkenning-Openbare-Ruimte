@@ -97,6 +97,14 @@ category = "main"
 optional = false
 python-versions = ">=3.6"
 
+[[package]]
+name = "opencv-python"
+version = "4.7.0.68"
+description = "Wrapper package for OpenCV python bindings."
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
 [package.dependencies]
 distlib = ">=0.3.7,<1"
 filelock = ">=3.12.2,<4"
@@ -122,3 +130,4 @@ pre-commit = []
 pyyaml = []
 virtualenv = []
 py360convert-modified = []
+opencv-python = []

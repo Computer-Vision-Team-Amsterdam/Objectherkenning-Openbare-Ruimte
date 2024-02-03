@@ -12,6 +12,7 @@ authors = [
 python = "~3.8"
 pre-commit = {version = "^3.2.0", source = "PyPI"}
 py360convert-modified = {version = "^1.0.1", source = "PyPI"}
+opencv-python = {version = "^4.7.0.68", source = "PyPI"}
 
 [tool.poetry.dev-dependencies]
 
