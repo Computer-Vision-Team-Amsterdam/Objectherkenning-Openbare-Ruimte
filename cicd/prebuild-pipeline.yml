@@ -32,10 +32,6 @@ jobs:
           addToPath: true
           architecture: 'x64'
 
-      - template: templates/authenticate-azure-artifacts.yml
-        parameters:
-          artifactsFeed: 'Datateam-Sociaal/team-AA'
-
       - task: CmdLine@2
         displayName: Install poetry packages
         inputs:
