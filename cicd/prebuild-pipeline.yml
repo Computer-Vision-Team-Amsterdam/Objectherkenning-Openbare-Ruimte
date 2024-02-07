@@ -51,6 +51,7 @@ jobs:
         displayName: Run tests
         inputs:
           script: |
+            export PATH="/root/.local/bin:$PATH"
             poetry run pytest tests/ --junitxml=junit/test-results.xml --cov=. --cov-report=xml
 
       - task: PublishTestResults@2
