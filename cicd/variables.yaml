@@ -1,0 +1,15 @@
+parameters:
+  - name: environment
+    type: string
+
+variables:
+  dockerImageName: oor-model
+  dockerImageTag: latest
+
+  # Relating to connection to AML for downloading the model.
+  AMLSubscriptionID: 'b5d1b0e0-1ce4-40f9-87d5-cf3fde7a7b14'
+  AMLResourceGroup: 'cvp-aml-p-rg'
+  AMLWorkspaceName: 'cvp-weu-aml-p-xnjyjutinwfyu'
+  AMLModelName: 'dataoffice_model'
+  downloadedModelDirectory: 'model_artifacts'
+  publishedModelArtifactsName: 'downloadedArtifacts'

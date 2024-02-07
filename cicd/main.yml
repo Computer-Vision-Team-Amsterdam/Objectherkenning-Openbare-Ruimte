@@ -1,0 +1,42 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - refs/heads/master
+      - refs/heads/dev
+  paths:
+    exclude:
+    - README.md
+
+pool: Computer-Vision-Team-Amsterdam
+
+parameters:
+  - name: debug
+    type: boolean
+    default: true
+  - name: AMLModelVersion
+    displayName: Version of the OOR model in AML
+    type: string
+    default: 1
+
+resources:
+  repositories:
+    - repository: self
+
+variables:
+  - template: variables.yaml
+
+stages:
+  - stage: Prerequisites
+    displayName: "Collect all prerequisites"
+    jobs:
+      - template: "prerequisites-pipeline.yml"
+        parameters:
+          serviceConnectionName: "ARM-CCC-BLUR-prd-01"
+          AMLModelName: ${{ variables.AMLModelName }}
+          AMLModelVersion: ${{ parameters.AMLModelVersion }}
+          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
+          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
+          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
+          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
