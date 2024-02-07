@@ -26,16 +26,16 @@ parameters:
 
 
 jobs:
-  - template: templates/download-aml-model.yml
-    parameters:
-      serviceConnectionName: ${{ parameters.serviceConnectionName }}
-      AMLModelName: ${{ parameters.AMLModelName }}
-      AMLModelVersion: ${{ parameters.AMLModelVersion }}
-      AMLWorkspaceName: ${{ parameters.AMLWorkspaceName }}
-      AMLResourceGroup: ${{ parameters.AMLResourceGroup }}
-      AMLSubscriptionID: ${{ parameters.AMLSubscriptionID }}
-      downloadedModelDirectory: ${{ parameters.downloadedModelDirectory }}
-      publishedModelArtifactsName: ${{ parameters.publishedModelArtifactsName }}
+#  - template: templates/download-aml-model.yml
+#    parameters:
+#      serviceConnectionName: ${{ parameters.serviceConnectionName }}
+#      AMLModelName: ${{ parameters.AMLModelName }}
+#      AMLModelVersion: ${{ parameters.AMLModelVersion }}
+#      AMLWorkspaceName: ${{ parameters.AMLWorkspaceName }}
+#      AMLResourceGroup: ${{ parameters.AMLResourceGroup }}
+#      AMLSubscriptionID: ${{ parameters.AMLSubscriptionID }}
+#      downloadedModelDirectory: ${{ parameters.downloadedModelDirectory }}
+#      publishedModelArtifactsName: ${{ parameters.publishedModelArtifactsName }}
 
   - job: GetProjectVersion
     displayName: Get project version number
