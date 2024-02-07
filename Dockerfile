@@ -1,5 +1,7 @@
 FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS base-image
 
+WORKDIR /usr/src
+
 COPY Objectherkenning-Openbare-Ruimte/pyproject.toml .
 COPY Objectherkenning-Openbare-Ruimte/poetry.lock .
 
