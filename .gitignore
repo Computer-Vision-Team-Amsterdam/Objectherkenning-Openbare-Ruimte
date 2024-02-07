@@ -160,8 +160,8 @@ cython_debug/
 .idea/
 
 # Assets
-input_images/
-output_images/
+input/
+output/
 
 # Mac .DS_Store
 .DS_Store
