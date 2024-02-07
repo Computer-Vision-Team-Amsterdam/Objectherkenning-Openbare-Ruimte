@@ -13,6 +13,7 @@ python = "~3.8"
 pre-commit = {version = "^3.2.0", source = "PyPI"}
 
 [tool.poetry.dev-dependencies]
+pytest = {version = "^7.0.1", source = "PyPI" }
 
 [tool.isort]
 profile = "black"
