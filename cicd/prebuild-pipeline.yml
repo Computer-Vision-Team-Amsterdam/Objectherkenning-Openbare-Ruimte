@@ -19,12 +19,12 @@ jobs:
     steps:
       - checkout: self
 
-      - task: DownloadPipelineArtifact@2
-        displayName: Download model artifact
-        inputs:
-          source: current
-          artifact: $(publishedModelArtifactsName)
-          path: $(Build.SourcesDirectory)/$(downloadedModelDirectory)
+#      - task: DownloadPipelineArtifact@2
+#        displayName: Download model artifact
+#        inputs:
+#          source: current
+#          artifact: $(publishedModelArtifactsName)
+#          path: $(Build.SourcesDirectory)/$(downloadedModelDirectory)
 
       - task: UsePythonVersion@0
         inputs:
@@ -36,13 +36,11 @@ jobs:
         displayName: Install poetry packages
         inputs:
           script: |
-            curl -sSL https://install.python-poetry.org | python3 - --version 1.1.15
+            curl -sSL https://install.python-poetry.org | python3 -
             poetry config virtualenvs.create false
 
-            export POETRY_HTTP_BASIC_GEMEENTE_USER=build
-            export POETRY_HTTP_BASIC_GEMEENTE_PASSWORD=$(PIPPASSWORD)
-
-            poetry install --no-ansi --no-root
+            poetry update --no-ansi --no-interaction
+            poetry install --no-ansi --no-interaction --no-root
             poetry build
 
       - task: CmdLine@2
