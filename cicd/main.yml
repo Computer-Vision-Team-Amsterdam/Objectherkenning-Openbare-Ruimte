@@ -32,7 +32,7 @@ stages:
     jobs:
       - template: "prerequisites-pipeline.yml"
         parameters:
-          serviceConnectionName: "ARM-CCC-BLUR-prd-01"
+          serviceConnectionName: "ARM-CCC-CVT-ont-01"
           AMLModelName: ${{ variables.AMLModelName }}
           AMLModelVersion: ${{ parameters.AMLModelVersion }}
           AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
@@ -40,3 +40,12 @@ stages:
           AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
           downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
           publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+
+#  - stage: Prebuild
+#    displayName: "Checks and tests prior to build"
+#    dependsOn: Prerequisites
+#    jobs:
+#      - template: "prebuild-pipeline.yml"
+#        parameters:
+#          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+#          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
