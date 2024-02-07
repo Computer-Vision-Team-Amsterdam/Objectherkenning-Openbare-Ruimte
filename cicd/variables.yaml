@@ -1,6 +1,6 @@
-parameters:
-  - name: environment
-    type: string
+#parameters:
+#  - name: environment
+#    type: string
 
 variables:
   dockerImageName: oor-model
