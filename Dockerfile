@@ -27,3 +27,8 @@ RUN /opt/miniconda/bin/conda init bash && \
     conda activate env && \
     poetry update --no-ansi --no-interaction && \
     poetry install --no-ansi --no-interaction --no-root
+
+ARG AML_MODEL_ID_arg
+ENV AML_MODEL_ID=$AML_MODEL_ID_arg
+ARG PROJECT_VERSION_arg
+ENV PROJECT_VERSION=$PROJECT_VERSION_arg
