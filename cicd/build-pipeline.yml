@@ -56,10 +56,11 @@ jobs:
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           inlineScript: |
+            az upgrade
             az acr login -n $(containerRegistryName)
             docker pull $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
-#            docker build . -f Dockerfile --cache-from $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) --tag $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) --build-arg AML_MODEL_ID_arg=${{ parameters.AMLModelName }}:${{ parameters.AMLModelVersion }} --build-arg PROJECT_VERSION_arg=$(projectVersion)
-#            docker push $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
+            docker build . -f Dockerfile --cache-from $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) --tag $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) --build-arg AML_MODEL_ID_arg=${{ parameters.AMLModelName }}:${{ parameters.AMLModelVersion }} --build-arg PROJECT_VERSION_arg=$(projectVersion)
+            docker push $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
 
 #      # Whitelist agent IP on Azure Container Registry so pipeline can push to it
 #      - task: AzureCLI@2
