@@ -66,6 +66,7 @@ stages:
     jobs:
       - template: "build-pipeline.yml"
         parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
           AMLModelVersion: ${{ parameters.AMLModelVersion }}
           downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
