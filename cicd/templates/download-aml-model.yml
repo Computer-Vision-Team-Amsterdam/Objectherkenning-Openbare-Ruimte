@@ -66,13 +66,7 @@ jobs:
          set -e  # Quit script & fail the task upon error
 
          echo "az ml model download --name ${{ parameters.AMLModelName }} --version ${{ parameters.AMLModelVersion }} --workspace-name ${{ parameters.AMLWorkspaceName }} --resource-group ${{ parameters.AMLResourceGroup }} --subscription ${{ parameters.AMLSubscriptionID }}"
-         az ml model download \
-            --name ${{ parameters.AMLModelName }} \
-            --version ${{ parameters.AMLModelVersion }} \            
-            --workspace-name ${{ parameters.AMLWorkspaceName }} \
-            --resource-group ${{ parameters.AMLResourceGroup }} \
-            --subscription ${{ parameters.AMLSubscriptionID }} \
-            --verbose
+         az ml model download --name ${{ parameters.AMLModelName }} --version ${{ parameters.AMLModelVersion }} --workspace-name ${{ parameters.AMLWorkspaceName }} --resource-group ${{ parameters.AMLResourceGroup }} --subscription ${{ parameters.AMLSubscriptionID }} --verbose
 
    - publish: '$(System.DefaultWorkingDirectory)/${{ parameters.downloadedModelDirectory }}'
      displayName: 'Publish downloaded model artifacts for later use in the pipeline'
