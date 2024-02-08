@@ -52,7 +52,7 @@ jobs:
         displayName: Build and Push Docker image
         name: DockerBuildAndPush
         inputs:
-          azureSubscription: $(serviceConnection)
+          azureSubscription: ${{ variables.serviceConnection }}
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           inlineScript: |
