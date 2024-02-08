@@ -52,7 +52,7 @@ stages:
 
   - stage: Build_test
     displayName: "[o] Build and publish container to ont"
-    dependsOn: Prerequisites
+    dependsOn: Prebuild
 #    condition: |
 #      and
 #      (
