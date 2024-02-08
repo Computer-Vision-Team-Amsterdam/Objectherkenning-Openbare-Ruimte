@@ -1,0 +1,94 @@
+parameters:
+- name: serviceConnectionName
+  displayName: Name of service connection to connect to AML
+  type: string
+- name: AMLModelName
+  displayName: Name of the AML model whose artifacts will be containerized
+  type: string
+- name: AMLModelVersion
+  displayName: Version of the AML model whose artifacts will be containerized
+  type: string
+- name: downloadedModelDirectory
+  displayName: Directory to temporarily download model artifacts to
+  type: string
+- name: publishedModelArtifactsName
+  displayName: Name under which model artifacts were published
+  type: string
+- name: containerRegistryResourceGroupName
+  displayName: Name of the container registry to push to
+  type: string
+- name: containerRegistry
+  displayName: Name of the container registry to push to
+  type: string
+- name: dockerImageName
+  displayName: Name under which to publish Docker image
+  type: string
+- name: dockerImageTag
+  displayName: Tag under which to publish Docker image
+  type: string
+
+
+jobs:
+  - job: BuildPublishModelContainer
+    displayName: "Build and publish model container"
+    pool:
+      vmImage: ubuntu-22.04
+    variables:
+      serviceConnection: ${{ parameters.serviceConnectionName }}
+      # The following variables are used inside BuildAndPush.ps1 file
+      dockerRegistryResourceGroupName: ${{ parameters.containerRegistryResourceGroupName }}
+      containerRegistryName: ${{ parameters.containerRegistry }}
+
+    steps:
+      - checkout: self
+
+#      - task: DownloadPipelineArtifact@2
+#        inputs:
+#          source: current
+#          artifact: ${{ parameters.publishedModelArtifactsName }}
+#          path: $(Build.SourcesDirectory)/${{ parameters.downloadedModelDirectory }}
+
+      - task: AzureCLI@2
+        displayName: Build and Push Docker image
+        name: DockerBuildAndPush
+        inputs:
+          azureSubscription: $(serviceConnection)
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            az acr login -n $(containerRegistryName)
+            docker pull $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
+#            docker build . -f Dockerfile --cache-from $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) --tag $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) --build-arg AML_MODEL_ID_arg=${{ parameters.AMLModelName }}:${{ parameters.AMLModelVersion }} --build-arg PROJECT_VERSION_arg=$(projectVersion)
+#            docker push $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
+
+#      # Whitelist agent IP on Azure Container Registry so pipeline can push to it
+#      - task: AzureCLI@2
+#        displayName: Set agent IP firewall rule on ACR
+#        inputs:
+#          azureSubscription: ${{ variables.serviceConnection }}
+#          scriptType: 'bash'
+#          scriptLocation: 'inlineScript'
+#          inlineScript: |
+#            agentIp=`curl -kLs "http://api.ipify.org"`
+#            az acr network-rule add --resource-group $(dockerRegistryResourceGroupName) --name $(dockerRegistryName) --ip-address $agentIp
+#            echo "##vso[task.setvariable variable=agentIp]$agentIp"
+#
+#      - task: AzurePowerShell@5
+#        displayName: "Push Docker image to registry"
+#        name: DockerPush
+#        inputs:
+#          azureSubscription: ${{ variables.serviceConnection }}
+#          ScriptType: 'Filepath'
+#          ScriptPath: "$(Build.SourcesDirectory)/wpi-onderzoekswaardigheid-aanvraag/ci-cd/scripts/PushImageToRegistry.ps1"
+#          azurePowerShellVersion: 'LatestVersion'
+#
+#      # Remove agent IP whitelist on Azure Container Registry
+#      - task: AzureCLI@2
+#        displayName: Set agent IP firewall rule on ACR
+#        condition: always()  # Remove firewall rule even if pipeline fails
+#        inputs:
+#          azureSubscription: ${{ variables.serviceConnection }}
+#          scriptType: 'bash'
+#          scriptLocation: 'inlineScript'
+#          inlineScript: |
+#            az acr network-rule remove --resource-group $(dockerRegistryResourceGroupName) --name $(dockerRegistryName) --ip-address $(agentIp)

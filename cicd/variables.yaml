@@ -14,3 +14,5 @@ variables:
   AMLModelName: 'dataoffice_model'
   downloadedModelDirectory: 'model_artifacts'
   publishedModelArtifactsName: 'downloadedArtifacts'
+  containerRegistryResourceGroupName: 'rg-dpcv-ont-weu-01'
+  containerRegistry: 'acroorontweuitr01'

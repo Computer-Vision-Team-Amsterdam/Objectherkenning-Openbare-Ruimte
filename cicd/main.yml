@@ -49,3 +49,28 @@ stages:
         parameters:
           downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
           publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+
+  - stage: Build_test
+    displayName: "[o] Build and publish container to ont"
+    dependsOn: Prerequisites
+#    condition: |
+#      and
+#      (
+#        succeeded(),
+#        eq( variables.dtapLetter, 't' ),
+#        ne( variables['Build.Reason'], 'PullRequest' )
+#      )
+    variables:
+      - name: projectVersion
+        value: $[ stageDependencies.Prerequisites.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
+    jobs:
+      - template: "build-pipeline.yml"
+        parameters:
+          AMLModelName: ${{ variables.AMLModelName }}
+          AMLModelVersion: ${{ parameters.AMLModelVersion }}
+          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+          containerRegistryResourceGroupName: ${{ variables.containerRegistryResourceGroupName }}
+          containerRegistry: ${{ variables.containerRegistry }}
+          dockerImageName: ${{ variables.dockerImageName }}
+          dockerImageTag: ${{ variables.dockerImageTag }}
