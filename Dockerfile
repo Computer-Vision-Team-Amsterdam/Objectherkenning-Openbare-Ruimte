@@ -18,8 +18,8 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:$PATH"
 RUN poetry config virtualenvs.create false
 
-COPY Objectherkenning-Openbare-Ruimte/pyproject.toml .
-COPY Objectherkenning-Openbare-Ruimte/poetry.lock .
+COPY pyproject.toml .
+COPY poetry.lock .
 
 # Initialize Conda, activate environment and install poetry packages
 RUN /opt/miniconda/bin/conda init bash && \
