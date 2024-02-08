@@ -7,7 +7,7 @@ variables:
   dockerImageTag: latest
 
   # Relating to connection to AML for downloading the model.
-  serviceConnectionName: 'ARM-CCC-DPCV-prd-01'
+  serviceConnectionName: 'ARM-CCC-DPCV-ont-01'
   AMLSubscriptionID: 'b5d1b0e0-1ce4-40f9-87d5-cf3fde7a7b14'
   AMLResourceGroup: 'cvp-aml-p-rg'
   AMLWorkspaceName: 'cvp-weu-aml-p-xnjyjutinwfyu'
