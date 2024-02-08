@@ -7,12 +7,22 @@ variables:
   dockerImageTag: latest
 
   # Relating to connection to AML for downloading the model.
-  serviceConnectionName: 'ARM-CCC-DPCV-ont-01'
   AMLSubscriptionID: 'b5d1b0e0-1ce4-40f9-87d5-cf3fde7a7b14'
-  AMLResourceGroup: 'cvo-aml-p-rg'
-  AMLWorkspaceName: 'cvo-weu-aml-p-xnjyjutinwfyu'
   AMLModelName: 'dataoffice_model'
   downloadedModelDirectory: 'model_artifacts'
   publishedModelArtifactsName: 'downloadedArtifacts'
-  containerRegistryResourceGroupName: 'rg-dpcv-ont-weu-01'
-  containerRegistry: 'acroorontweuitr01'
+
+  ${{ if eq( variables['Build.SourceBranch'], 'refs/heads/master' ) }}:
+    dtapName: prd
+    serviceConnectionName: 'ARM-CCC-DPCV-prd-01'
+    AMLResourceGroup: 'cvp-aml-p-rg'
+    AMLWorkspaceName: 'cvp-weu-aml-p-xnjyjutinwfyu'
+    containerRegistryResourceGroupName: 'rg-dpcv-prd-weu-01'
+    containerRegistry: ''
+  ${{ else }}:
+    dtapName: ont
+    serviceConnectionName: 'ARM-CCC-DPCV-ont-01'
+    AMLResourceGroup: 'cvo-aml-p-rg'
+    AMLWorkspaceName: 'cvo-weu-aml-p-xnjyjutinwfyu'
+    containerRegistryResourceGroupName: 'rg-dpcv-ont-weu-01'
+    containerRegistry: 'acroorontweuitr01'
