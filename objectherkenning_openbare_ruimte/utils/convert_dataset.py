@@ -55,7 +55,7 @@ def corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
     return face_name, x_center_norm, y_center_norm, width_norm, height_norm
 
 
-def reproject_point(x, y, pano_height, pano_width, face_w=256):
+def reproject_point(x, y, pano_width, pano_height, face_w=256):
     # Step 1: Convert (y, x) to UV coordinates
     coor = np.array([x, y])
     # uv = p3c.utils.coor2uv(coor, pano_height, pano_width)
@@ -90,24 +90,22 @@ def reproject_point(x, y, pano_height, pano_width, face_w=256):
     return face_idx, (x_proj, y_proj)
 
 
-def convert_xy_to_cubemap_coordinates(point, pano_height, pano_width, face_w=256):
+def convert_xy_to_cubemap_coordinates(point, pano_width, pano_height, face_w=256):
     # Unpack the point
-    x_center_abs, y_center_abs = point
+    x, y = point
 
-    print(f"Converting point ({x_center_abs}, {y_center_abs}) to cubemap coordinates")
+    print(f"Converting center point ({x}, {y}) to cubemap coordinates")
 
     # Reproject the chosen point (e.g., center or top-left corner)
     # You might need to adjust the reproject_point function or ensure it can accept these values directly
-    face_idx, (x_proj, y_proj) = reproject_point(
-        x_center_abs, y_center_abs, pano_width, face_w
-    )
+    face_idx, (x_proj, y_proj) = reproject_point(x, y, pano_width, pano_height, face_w)
 
     return face_idx, (x_proj, y_proj)
 
 
 def convert_image_to_cubic(input_path, img_path, output_path, face_width):
 
-    print("Processing image...")
+    print(f"Processing image {img_path}.")
     img = os.path.join(input_path, img_path)
 
     # Open and transform to a numpy array with shape [H, W, 3] using cv2 (convert to RGB)
@@ -135,6 +133,8 @@ def convert_image_to_cubic(input_path, img_path, output_path, face_width):
     cv2.imwrite(f"{directory}/left.png", left)
     # cv2.imwrite(f'{directory}/top.png', top)
     # cv2.imwrite(f'{directory}/bottom.png', bottom)
+
+    print("=======================================")
 
 
 def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width):
@@ -170,12 +170,14 @@ def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width)
                     )
 
                 # Convert the face index to a face name
-                face_name = convert_face_idx_to_name(face_idx_tl)
-                print(f"Face name: {face_name}")
+                face_name_tl = convert_face_idx_to_name(face_idx_tl)
+                face_name_br = convert_face_idx_to_name(face_idx_br)
+                print(f"Face name top-left corner: {face_name_tl}")
+                print(f"Face name bottom-right corner: {face_name_br}")
 
                 # Convert to YOLO format
                 converted_yolo_annotation = corners_to_yolo(
-                    face_name,
+                    face_name_tl,  # Change this
                     converted_top_left,
                     converted_bottom_right,
                     face_width,
@@ -190,7 +192,9 @@ def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width)
 
                 # Before writing to the face annotation file, check if it needs to be cleared
                 face_annotation_file = os.path.join(
-                    output_path, img_path.split(".")[0], f"{face_name}.txt"
+                    output_path,
+                    img_path.split(".")[0],
+                    f"{face_name_tl}.txt",  # CHANGE THIS
                 )
 
                 # This is where we check if the file exists and clear it if necessary
@@ -217,6 +221,8 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_
     - img_path: Path to the specific original image file.
     - P_w, P_h: Width and height of the original equirectangular image.
     """
+    print(f"Visualizing annotations for equirectangular image: {img_path}...")
+    print(f"Size of equirectangular image: {P_w} x {P_h} pixels.")
     # Construct the path to the image and its annotation file
     image_file_path = os.path.join(input_path, img_path)
     annotation_file_path = os.path.join(input_path, img_path.split(".")[0] + ".txt")
@@ -236,7 +242,9 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_
     with open(annotation_file_path, "r") as file:
         for line in file:
             _, x_center_norm, y_center_norm, w_norm, h_norm = map(float, line.split())
-            print(f"Annotation: {x_center_norm}, {y_center_norm}, {w_norm}, {h_norm}")
+            print(
+                f"Normalized Annotation: \n X Center: {x_center_norm}, Y Center: {y_center_norm}, Width: {w_norm}, Height: {h_norm}"
+            )
 
             # Convert normalized coordinates to absolute pixel values
             x_center_abs = int(x_center_norm * P_w)
@@ -245,7 +253,7 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_
             height_abs = int(h_norm * P_h)
 
             print(
-                f"Absolute coordinates: {x_center_abs}, {y_center_abs}, {width_abs}, {height_abs}"
+                f"Absolute coordinates: \n X Center: {x_center_abs}, Y Center: {y_center_abs}, Width: {width_abs}, Height: {height_abs}"
             )
 
             # Calculate corners of the bounding box
@@ -270,6 +278,7 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_
     )
     cv2.imwrite(visualized_img_path, image)
     print(f"Annotated equirectangular image saved to {visualized_img_path}")
+    print("=======================================")
 
 
 def visualize_annotations_with_corners(output_path, img_folder, face_name):
@@ -356,12 +365,14 @@ def main():
 
     # Step 2: convert the images (ignore .DS_Store files)
     for img_path in os.listdir(input_path):
-        if img_path != ".DS_Store":
+        if img_path != ".DS_Store" and not img_path.endswith("_annotated.png"):
             if img_path.endswith(".jpg") or img_path.endswith(".png"):
                 convert_image_to_cubic(input_path, img_path, output_path, face_width)
 
                 # Step 2.1: visualize annotations on the equirectangular image
-                # visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_h)
+                visualize_annotations_on_equirectangular_image(
+                    input_path, img_path, P_w, P_h
+                )
 
                 # Step 3: convert the annotations from yolo to xy coordinates
                 process_annotations(
@@ -374,7 +385,7 @@ def main():
                 img_folder = img_path.split(".")[
                     0
                 ]  # Extract the folder name from the image path
-                visualize_annotations_with_corners(output_path, img_folder, "back")
+                visualize_annotations_with_corners(output_path, img_folder, "right")
 
 
 if __name__ == "__main__":
