@@ -1,12 +1,3 @@
-parameters:
-- name: downloadedModelDirectory
-  displayName: Directory to download model to
-  type: string
-- name: publishedModelArtifactsName
-  displayName: Name under which to publish the model artifacts for use within the pipeline
-  type: string
-
-
 jobs:
   - template: templates/code-quality-security-checks.yml
     parameters:
@@ -18,13 +9,6 @@ jobs:
 
     steps:
       - checkout: self
-
-#      - task: DownloadPipelineArtifact@2
-#        displayName: Download model artifact
-#        inputs:
-#          source: current
-#          artifact: $(publishedModelArtifactsName)
-#          path: $(Build.SourcesDirectory)/$(downloadedModelDirectory)
 
       - task: UsePythonVersion@0
         inputs:
