@@ -29,6 +29,7 @@ jobs:
         displayName: Deploy Docker image
         name: DockerDeploy
         inputs:
+          azureSubscription: ${{ variables.serviceConnection }}
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           inlineScript: |
