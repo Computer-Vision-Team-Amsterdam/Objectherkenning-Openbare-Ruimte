@@ -1,0 +1,32 @@
+parameters:
+- name: containerRegistry
+  displayName: Name of the container registry to push to
+  type: string
+- name: dockerImageName
+  displayName: Name under which to publish Docker image
+  type: string
+- name: dockerImageTag
+  displayName: Tag under which to publish Docker image
+  type: string
+
+
+jobs:
+  - job: DeployModelContainer
+    displayName: "Deploy model container on the device"
+    pool:
+      vmImage: ubuntu-22.04
+    variables:
+      containerRegistryName: ${{ parameters.containerRegistry }}
+
+    steps:
+      - checkout: self
+
+      - task: AzureCLI@2
+        displayName: Build and Push Docker image
+        name: DockerBuildAndPush
+        inputs:
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            docker login -u LunaDevice -p $(containerRegistryPassword) $(containerRegistryName).azurecr.io
+            docker pull $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
