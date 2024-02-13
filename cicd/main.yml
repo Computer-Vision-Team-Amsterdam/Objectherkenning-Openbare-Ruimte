@@ -112,6 +112,7 @@ stages:
     jobs:
       - template: "deploy-pipeline.yml"
         parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionName }}
           containerRegistry: ${{ variables.containerRegistry }}
           dockerImageName: ${{ variables.dockerImageName }}
           dockerImageTag: ${{ variables.dockerImageTag }}

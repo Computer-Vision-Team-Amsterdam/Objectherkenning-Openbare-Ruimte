@@ -1,4 +1,7 @@
 parameters:
+- name: serviceConnectionName
+  displayName: Name of service connection to connect to AML
+  type: string
 - name: containerRegistry
   displayName: Name of the container registry to push to
   type: string
@@ -16,14 +19,15 @@ jobs:
     pool:
       vmImage: ubuntu-22.04
     variables:
+      serviceConnection: ${{ parameters.serviceConnectionName }}
       containerRegistryName: ${{ parameters.containerRegistry }}
 
     steps:
       - checkout: self
 
       - task: AzureCLI@2
-        displayName: Build and Push Docker image
-        name: DockerBuildAndPush
+        displayName: Deploy Docker image
+        name: DockerDeploy
         inputs:
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
