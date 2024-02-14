@@ -33,5 +33,6 @@ jobs:
           scriptType: 'pscore'
           scriptLocation: 'inlineScript'
           inlineScript: |
+            # SSH into the device and run the following, change to SSH@0 task
             docker login -u LunaDevice -p $(containerRegistryPassword) $(containerRegistryName).azurecr.io
             docker pull $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
