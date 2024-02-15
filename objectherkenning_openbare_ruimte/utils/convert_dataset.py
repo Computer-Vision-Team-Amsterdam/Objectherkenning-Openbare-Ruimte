@@ -202,7 +202,7 @@ def compute_new_coordinates_for_single_corner(
         raise ValueError("Invalid corner type")
 
 
-def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width):
+def process_annotations(input_path, output_path, img_path, face_width):
     annotation_file = img_path.split(".")[0] + ".txt"
     print("=======================================")
     print(f"===== Processing annotations for {img_path} =====")
@@ -218,6 +218,10 @@ def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width)
         print(f"File {annotations_path} not found")
         return
 
+    image_file_path = os.path.join(input_path, img_path)
+    image = cv2.imread(image_file_path)
+    P_h, P_w, _ = image.shape
+
     for line in lines:
         print(f"===== Processing annotation: {line} =====")
 
@@ -225,6 +229,7 @@ def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width)
         face_corners = {}
 
         yolo_annotation = line.strip()  # Remove any extra whitespace
+        yolo_annotation_class = yolo_annotation.split()[0]
         top_left, top_right, bottom_left, bottom_right = convert_yolo_to_corners(
             yolo_annotation, P_w, P_h
         )
@@ -361,7 +366,7 @@ def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width)
 
             # Convert to YOLO format
             converted_yolo_annotation = corners_to_yolo(
-                face_idx_tl,  # Change this
+                yolo_annotation_class,  # Change this
                 tl_star,
                 br_star,
                 face_width,
@@ -391,7 +396,7 @@ def process_annotations(input_path, output_path, img_path, P_w, P_h, face_width)
             print(f"== Wrote to {face_annotation_file} ==")
 
 
-def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_h):
+def visualize_annotations_on_equirectangular_image(input_path, img_path):
     """
     Visualize YOLO annotations on the original equirectangular image.
 
@@ -401,7 +406,6 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_
     - P_w, P_h: Width and height of the original equirectangular image.
     """
     print(f"Visualizing annotations for equirectangular image: {img_path}...")
-    print(f"Size of equirectangular image: {P_w} x {P_h} pixels.")
     # Construct the path to the image and its annotation file
     image_file_path = os.path.join(input_path, img_path)
     annotation_file_path = os.path.join(input_path, img_path.split(".")[0] + ".txt")
@@ -416,6 +420,11 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_
     if not os.path.exists(annotation_file_path):
         print(f"Annotation file {annotation_file_path} not found.")
         return
+
+    P_w = image.shape[1]
+    P_h = image.shape[0]
+
+    print(f"Size of equirectangular image: {P_w} x {P_h} pixels.")
 
     # Read the annotations and plot each bounding box on the image
     with open(annotation_file_path, "r") as file:
@@ -444,7 +453,7 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path, P_w, P_
             print(f"Bounding box corners: ({x_min}, {y_min}), ({x_max}, {y_max})")
 
             # Draw bounding box on the image
-            cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 8)
+            cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 3)
 
     # Display the image with annotations
     # cv2.imshow(f"Annotated Equirectangular Image: {img_path}", image)
@@ -517,7 +526,7 @@ def visualize_annotations_with_corners(output_path, img_folder, face_name):
             )
 
             # Draw bounding box on the image
-            cv2.rectangle(img_copy, (x_min, y_min), (x_max, y_max), (0, 0, 255), 8)
+            cv2.rectangle(img_copy, (x_min, y_min), (x_max, y_max), (0, 0, 255), 3)
 
     # Display the image with annotations
     # cv2.imshow(f"Annotated {face_name}", img)
@@ -539,24 +548,24 @@ def main():
     output_path = "../../output"
 
     # TODO: Remember to not hardcode the dimensions of the equirectangular image
-    P_w, P_h = 7040, 3520  # Example dimensions of the equirectangular image
     face_width = 1024  # Example dimensions of the cubemap faces
 
     # Step 2: convert the images (ignore .DS_Store files)
     for img_path in os.listdir(input_path):
         if img_path != ".DS_Store" and not img_path.endswith("_annotated.png"):
             if img_path.endswith(".jpg") or img_path.endswith(".png"):
+                # Check if the image is empty or corrupted
+                img = cv2.imread(os.path.join(input_path, img_path))
+                if img is None:
+                    print(f"Skipping {img_path} as it is empty or corrupted")
+                    continue
                 convert_image_to_cubic(input_path, img_path, output_path, face_width)
 
                 # Step 2.1: visualize annotations on the equirectangular image
-                visualize_annotations_on_equirectangular_image(
-                    input_path, img_path, P_w, P_h
-                )
+                visualize_annotations_on_equirectangular_image(input_path, img_path)
 
                 # Step 3: convert the annotations from yolo to xy coordinates
-                process_annotations(
-                    input_path, output_path, img_path, P_w, P_h, face_width
-                )
+                process_annotations(input_path, output_path, img_path, face_width)
 
                 # Step 4: visualize processed annotations
                 # Example call to visualize annotations for the 'back' face
@@ -565,6 +574,8 @@ def main():
                     0
                 ]  # Extract the folder name from the image path
                 visualize_annotations_with_corners(output_path, img_folder, "right")
+                visualize_annotations_with_corners(output_path, img_folder, "left")
+                visualize_annotations_with_corners(output_path, img_folder, "front")
                 visualize_annotations_with_corners(output_path, img_folder, "back")
                 visualize_annotations_with_corners(output_path, img_folder, "bottom")
                 visualize_annotations_with_corners(output_path, img_folder, "top")
