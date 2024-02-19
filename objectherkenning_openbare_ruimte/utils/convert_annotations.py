@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 import cv2
 
 # Input paths
-input_folder = "../../output"
-output_json = "../../output.json"
+input_folder = "../../fake_output"
+output_json = "../../fake_output.json"
 dataset_split_folder = "test"  # Change to 'train', 'val' or 'test' as needed
 
 # Predefined categories mapping from YOLO to Azure COCO

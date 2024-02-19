@@ -109,7 +109,6 @@ def convert_xy_to_cubemap_coordinates(point, pano_width, pano_height, face_w=256
 
 def convert_image_to_cubic(input_path, img_path, output_path, face_width):
 
-    print(f"Processing image {img_path}.")
     img = os.path.join(input_path, img_path)
 
     # Open and transform to a numpy array with shape [H, W, 3] using cv2 (convert to RGB)
@@ -138,7 +137,7 @@ def convert_image_to_cubic(input_path, img_path, output_path, face_width):
     cv2.imwrite(f"{directory}/top.png", top)
     cv2.imwrite(f"{directory}/bottom.png", bottom)
 
-    print("=======================================")
+    print(f"Processed image: {img_path}.")
 
 
 def adjust_coordinates_based_on_corner(
@@ -223,14 +222,14 @@ def process_annotations(input_path, output_path, img_path, face_width):
     P_h, P_w, _ = image.shape
 
     for line in lines:
-        print(f"===== Processing annotation: {line} =====")
+        # print(f"===== Processing annotation: {line} =====")
 
         # Aggregate corners by face
         face_corners = {}
 
         yolo_annotation = line.strip()  # Remove any extra whitespace
         yolo_annotation_class = yolo_annotation.split()[0]
-        print(f"Class: {yolo_annotation_class}")
+        # print(f"Class: {yolo_annotation_class}")
         top_left, top_right, bottom_left, bottom_right = convert_yolo_to_corners(
             yolo_annotation, P_w, P_h
         )
@@ -245,13 +244,11 @@ def process_annotations(input_path, output_path, img_path, face_width):
             face_corners[face_idx][tag] = converted_corner
             # print(f'Face {face_idx} corner {tag}: {converted_corner}')
 
-        print(f"Original annotation: {yolo_annotation}")
-        print(
-            f"Original corners: {top_left}, {top_right}, {bottom_left}, {bottom_right}"
-        )
-        for face_idx, corners in face_corners.items():
-            for tag, corner in corners.items():
-                print(f"Converted corner {tag}: {corner}")
+        # print(f"Original annotation: {yolo_annotation}")
+        # print(f"Original corners: {top_left}, {top_right}, {bottom_left}, {bottom_right}")
+        # for face_idx, corners in face_corners.items():
+        # for tag, corner in corners.items():
+        # print(f"Converted corner {tag}: {corner}")
 
         # Case 1: the bounding box spans multiple faces
 
@@ -271,20 +268,20 @@ def process_annotations(input_path, output_path, img_path, face_width):
 
         if face_idx_tl != face_idx_br:
             print("=======! Bounding box spans multiple faces !=======")
-            face_name_tl = convert_face_idx_to_name(face_idx_tl)
-            face_name_tr = convert_face_idx_to_name(face_idx_tr)
-            face_name_bl = convert_face_idx_to_name(face_idx_bl)
-            face_name_br = convert_face_idx_to_name(face_idx_br)
-            print(
-                f"Top-left corner: {face_name_tl}. Top-right corner: {face_name_tr}. \n"
-                f"Bottom-left corner: {face_name_bl}. Bottom-right corner: {face_name_br}."
-            )
+            # face_name_tl = convert_face_idx_to_name(face_idx_tl)
+            # face_name_tr = convert_face_idx_to_name(face_idx_tr)
+            # face_name_bl = convert_face_idx_to_name(face_idx_bl)
+            # face_name_br = convert_face_idx_to_name(face_idx_br)
+            # print(
+            #    f"Top-left corner: {face_name_tl}. Top-right corner: {face_name_tr}. \n"
+            #    f"Bottom-left corner: {face_name_bl}. Bottom-right corner: {face_name_br}."
+            # )
 
             # Process each face
             for face_idx, corners in face_corners.items():
-                print(
-                    f"====== Processing face {convert_face_idx_to_name(face_idx)} ======"
-                )
+                # print(
+                #    f"====== Processing face {convert_face_idx_to_name(face_idx)} ======"
+                # )
                 processed_corners = {}  # Initialize dictionary for adjusted coordinates
 
                 for tag, corner in corners.items():
@@ -293,7 +290,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
                         tag, corner, processed_corners, face_width, face_width
                     )
 
-                print(f"Processed corners: {processed_corners}")
+                # print(f"Processed corners: {processed_corners}")
 
                 # Finalize and convert adjusted bounding box to YOLO format
                 tl_x = 0  # Default to 0, assuming no TL or BL gives a better x position
@@ -333,7 +330,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
                 tl_star = (tl_x, tl_y)
                 br_star = (br_x, br_y)
 
-                print(f"Adjusted bounding box corners: {tl_star}, {br_star}")
+                # print(f"Adjusted bounding box corners: {tl_star}, {br_star}")
 
                 converted_yolo_annotation = corners_to_yolo(
                     face_idx, tl_star, br_star, face_width, face_width
@@ -345,7 +342,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
                     *converted_yolo_annotation[1:],
                 )
 
-                print(f"Converted YOLO annotation: {converted_yolo_annotation}")
+                # print(f"Converted YOLO annotation: {converted_yolo_annotation}")
 
                 # Before writing to the face annotation file, check if it needs to be cleared
                 face_annotation_file = os.path.join(
@@ -365,9 +362,9 @@ def process_annotations(input_path, output_path, img_path, face_width):
                 print("=======================================")
 
         else:
-            print(
-                f"Bounding box is contained within a single face: {convert_face_idx_to_name(face_idx_tl)}"
-            )
+            # print(
+            #    f"Bounding box is contained within a single face: {convert_face_idx_to_name(face_idx_tl)}"
+            # )
             tl_star = face_corners[face_idx_tl]["TL"]
             br_star = face_corners[face_idx_tl]["BR"]
 
@@ -557,6 +554,31 @@ def main():
     # TODO: Remember to not hardcode the dimensions of the equirectangular image
     face_width = 1024  # Example dimensions of the cubemap faces
 
+    # Initialize counters
+    total_images = 0
+    processed_folders = 0
+    valid_extensions = {
+        ".jpg",
+        ".png",
+    }  # Consider only these file extensions as valid images
+
+    # Count total images in input directory
+    for img_path in os.listdir(input_path):
+        if img_path.endswith(tuple(valid_extensions)):
+            total_images += 1
+
+    # Count folders in output directory
+    if os.path.exists(output_path):
+        for item in os.listdir(output_path):
+            if os.path.isdir(os.path.join(output_path, item)):
+                processed_folders += 1
+
+    remaining_to_process = total_images - processed_folders
+
+    print(f"Total images in input: {total_images}")
+    print(f"Processed images in output: {processed_folders}")
+    print(f"Remaining to process: {remaining_to_process}")
+
     # Step 2: convert the images (ignore .DS_Store files)
     for img_path in os.listdir(input_path):
         if img_path != ".DS_Store" and not img_path.endswith("_annotated.png"):
@@ -566,6 +588,15 @@ def main():
                 if img is None:
                     print(f"Skipping {img_path} as it is empty or corrupted")
                     continue
+
+                # Check if output folder for this image already exists
+                folder_name = img_path.split(".")[
+                    0
+                ]  # Assuming the folder name is derived from the image name
+                output_folder = os.path.join(output_path, folder_name)
+                if os.path.exists(output_folder):
+                    continue  # Skip this image and go to the next one
+
                 convert_image_to_cubic(input_path, img_path, output_path, face_width)
 
                 # Step 2.1: visualize annotations on the equirectangular image
@@ -586,6 +617,9 @@ def main():
                 # visualize_annotations_with_corners(output_path, img_folder, "back")
                 # visualize_annotations_with_corners(output_path, img_folder, "bottom")
                 # visualize_annotations_with_corners(output_path, img_folder, "top")
+
+                remaining_to_process -= 1
+                print(f"Remaining to process: {remaining_to_process}")
 
 
 if __name__ == "__main__":
