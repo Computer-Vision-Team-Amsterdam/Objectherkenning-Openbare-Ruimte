@@ -230,6 +230,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
 
         yolo_annotation = line.strip()  # Remove any extra whitespace
         yolo_annotation_class = yolo_annotation.split()[0]
+        print(f"Class: {yolo_annotation_class}")
         top_left, top_right, bottom_left, bottom_right = convert_yolo_to_corners(
             yolo_annotation, P_w, P_h
         )
@@ -338,6 +339,12 @@ def process_annotations(input_path, output_path, img_path, face_width):
                     face_idx, tl_star, br_star, face_width, face_width
                 )
 
+                # Swap the face name in converted_yolo_annotation with yolo_annotation_class
+                converted_yolo_annotation = (
+                    yolo_annotation_class,
+                    *converted_yolo_annotation[1:],
+                )
+
                 print(f"Converted YOLO annotation: {converted_yolo_annotation}")
 
                 # Before writing to the face annotation file, check if it needs to be cleared
@@ -366,7 +373,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
 
             # Convert to YOLO format
             converted_yolo_annotation = corners_to_yolo(
-                yolo_annotation_class,  # Change this
+                yolo_annotation_class,
                 tl_star,
                 br_star,
                 face_width,
@@ -374,10 +381,10 @@ def process_annotations(input_path, output_path, img_path, face_width):
             )
 
             # Swap the face name in converted_yolo_annotation with the first element of the original yolo_annotation (the class)
-            converted_yolo_annotation = (
-                yolo_annotation.split()[0],
-                *converted_yolo_annotation[1:],
-            )
+            # converted_yolo_annotation = (
+            #    yolo_annotation.split()[0],
+            #    *converted_yolo_annotation[1:],
+            # )
 
             # Before writing to the face annotation file, check if it needs to be cleared
             face_annotation_file = os.path.join(
@@ -562,7 +569,7 @@ def main():
                 convert_image_to_cubic(input_path, img_path, output_path, face_width)
 
                 # Step 2.1: visualize annotations on the equirectangular image
-                visualize_annotations_on_equirectangular_image(input_path, img_path)
+                # visualize_annotations_on_equirectangular_image(input_path, img_path)
 
                 # Step 3: convert the annotations from yolo to xy coordinates
                 process_annotations(input_path, output_path, img_path, face_width)
@@ -570,15 +577,15 @@ def main():
                 # Step 4: visualize processed annotations
                 # Example call to visualize annotations for the 'back' face
                 # Assuming 'img_path' is available and corresponds to the processed image
-                img_folder = img_path.split(".")[
-                    0
-                ]  # Extract the folder name from the image path
-                visualize_annotations_with_corners(output_path, img_folder, "right")
-                visualize_annotations_with_corners(output_path, img_folder, "left")
-                visualize_annotations_with_corners(output_path, img_folder, "front")
-                visualize_annotations_with_corners(output_path, img_folder, "back")
-                visualize_annotations_with_corners(output_path, img_folder, "bottom")
-                visualize_annotations_with_corners(output_path, img_folder, "top")
+                # img_folder = img_path.split(".")[
+                #    0
+                # ]  # Extract the folder name from the image path
+                # visualize_annotations_with_corners(output_path, img_folder, "right")
+                # visualize_annotations_with_corners(output_path, img_folder, "left")
+                # visualize_annotations_with_corners(output_path, img_folder, "front")
+                # visualize_annotations_with_corners(output_path, img_folder, "back")
+                # visualize_annotations_with_corners(output_path, img_folder, "bottom")
+                # visualize_annotations_with_corners(output_path, img_folder, "top")
 
 
 if __name__ == "__main__":
