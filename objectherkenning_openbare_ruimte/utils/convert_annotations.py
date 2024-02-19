@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 import cv2
 
 # Input paths
-input_folder = "../../fake_output"
-output_json = "../../fake_output.json"
+input_folder = "../../output"
+output_json = "../../output.json"
 dataset_split_folder = "test"  # Change to 'train', 'val' or 'test' as needed
 
 # Predefined categories mapping from YOLO to Azure COCO
@@ -61,10 +61,6 @@ for folder_name in os.listdir(input_folder):
             if file_name.endswith(".png"):
                 img_path = os.path.join(folder_path, file_name)
                 annotation_file = os.path.splitext(img_path)[0] + ".txt"
-                if not os.path.exists(annotation_file):
-                    os.remove(img_path)
-                    print(f"Deleted {img_path} due to missing annotation file.")
-                    continue
 
                 image_id: int = len(coco_json["images"]) + 1
                 img = cv2.imread(img_path)
