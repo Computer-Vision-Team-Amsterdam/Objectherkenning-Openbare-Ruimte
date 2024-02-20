@@ -7,31 +7,59 @@ import py360convert as p3c
 
 def convert_face_idx_to_name(face_idx):
     """
-    0F 1R 2B 3L 4U 5D
+    Convert face index to face name.
+
+    The mapping is:
+    0 -> front, 1 -> right, 2 -> back,
+    3 -> left, 4 -> top, 5 -> bottom.
+
+    Parameters
+    ----------
+    face_idx : int
+        Index of the face.
+
+    Returns
+    -------
+    str
+        Name of the face.
     """
     face_names = ["front", "right", "back", "left", "top", "bottom"]
     return face_names[face_idx]
 
 
 def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
-    # Parse YOLO annotation
+    """
+    Convert YOLO annotation with normalized values to absolute corner coordinates.
+
+    Parameters
+    ----------
+    yolo_annotation : str
+        YOLO annotation string in the format: "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+    P_w : float
+        Width of the image.
+    P_h : float
+        Height of the image.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the top-left, top-right, bottom-left, and bottom-right corner coordinates.
+    """
+
     _, x_center_norm, y_center_norm, w_norm, h_norm = map(
         float, yolo_annotation.split()
     )
 
-    # Convert normalized values to absolute coordinates
     x_center_abs = x_center_norm * P_w
     y_center_abs = y_center_norm * P_h
     w_abs = w_norm * P_w
     h_abs = h_norm * P_h
 
-    # Calculate top-left and bottom-right corners
     x_min = x_center_abs - (w_abs / 2)
     y_min = y_center_abs - (h_abs / 2)
     x_max = x_center_abs + (w_abs / 2)
     y_max = y_center_abs + (h_abs / 2)
 
-    # Calculate top-right and bottom-left corners
     top_left = (x_min, y_min)
     top_right = (x_max, y_min)
     bottom_left = (x_min, y_max)
@@ -41,38 +69,114 @@ def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
 
 
 def corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
-    # Calculate the absolute coordinates and size of the bounding box
+    """
+    Convert absolute corner coordinates to YOLO annotation with normalized values.
+
+    Parameters
+    ----------
+    face_name : str
+        Name of the face.
+    top_left : float
+        Top-left absolute corner coordinates.
+    bottom_right : float
+        Bottom-right absolute corner coordinates.
+    face_w : float
+        Width of the face.
+    face_h : float
+        Height of the face.
+
+    Returns
+    tuple
+        A tuple containing the YOLO annotation in the format: "<face_name> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+    -------
+
+    """
+
     x_min, y_min = top_left
     x_max, y_max = bottom_right
 
-    # Calculate center coordinates and size in absolute terms
     x_center_abs = (x_min + x_max) / 2
     y_center_abs = (y_min + y_max) / 2
     width_abs = x_max - x_min
     height_abs = y_max - y_min
 
-    # Normalize these values with respect to the face dimensions
     x_center_norm = x_center_abs / face_w
     y_center_norm = y_center_abs / face_h
     width_norm = width_abs / face_w
     height_norm = height_abs / face_h
 
-    # Return the YOLO format annotation
     return face_name, x_center_norm, y_center_norm, width_norm, height_norm
 
 
-def reproject_point(x, y, pano_width, pano_height, face_w=256):
-    # Step 1: Convert (y, x) to UV coordinates
+def reproject_point_to_face(coor_xy_face, coor, face_w):
+    """
+    The function computes a pair of coordinates (y_proj, x_proj) that indicate
+    the position on the cube face closest to the original equirectangular point.
+
+    To do that, we first compute the difference between each point's UV coordinates
+    on the cube face (coor_xy_face) and the original point's equirectangular coordinates (coor).
+    The difference is a 2D vector for each point on the cube face that indicates how far
+    and in which direction each cube face point is from the original equirectangular point.
+
+    np.linalg.norm(coor_xy_face - coor, axis=-1) calculates the Euclidean distance (norm)
+    between the original point and each point on the cube face.
+
+    np.argmin(euclidean_distance) finds the index of the minimum value in the array of distances
+    calculated in the previous step. This index corresponds to the location on the cube face
+    that is closest to the original point in equirectangular space.
+
+    np.unravel_index(min_distance_index, (face_w, face_w)) converts the flattened index back into
+    2D coordinates within the context of the cube face's dimensions.
+    """
+
+    vector_distance = coor_xy_face - coor
+    euclidean_distance = np.linalg.norm(vector_distance, axis=-1)
+    min_distance_index = np.argmin(euclidean_distance)
+
+    y_proj, x_proj = np.unravel_index(min_distance_index, (face_w, face_w))
+
+    return y_proj, x_proj
+
+
+def reproject_point(x, y, pano_width, pano_height, face_w):
+    """
+    Reprojects a point from (x, y) equirectangular coordinates to a set of coordinates
+    in a specific face (face_idx) of a cube.
+
+    p3c.utils.equirect_facetype(pano_height, pano_width) determines which face
+    of a cube (in a cubemap representation) each pixel in an equirectangular
+    projection image corresponds to.
+
+    p3c.utils.xyzcube(face_w) generates the XYZ coordinates (3D) of the six faces of a unit cube.
+
+    p3c.utils.xyz2uv(face_xyz) converts the XYZ coordinates (3D) to UV coordinates (spherical).
+
+    p3c.utils.uv2coor(uv_face, pano_height, pano_width) converts UV coordinates (spherical)
+    into pixel coordinates (2D plane).
+
+    Parameters
+    ----------
+    x : float
+        X-coordinate of the point.
+    y : float
+        Y-coordinate of the point.
+    pano_width : int
+        Width of the panorama image.
+    pano_height : int
+        Height of the panorama image.
+    face_w : int
+        Width of each face in the cube map.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the face index and the new coordinates within the face.
+
+    """
+
     coor = np.array([x, y])
-    # uv = p3c.utils.coor2uv(coor, pano_height, pano_width)
+    mapping = p3c.utils.equirect_facetype(pano_height, pano_width)
 
-    # Step 2: Convert UV coordinates to XYZ coordinates
-    # xyz = p3c.utils.uv2unitxyz(uv)
-
-    # Step 3: Determine the face and coordinates within the face
-    face_type = p3c.utils.equirect_facetype(pano_height, pano_width)
-
-    # Convert x and y to integers before using them as indices
     x_int = int(x)
     y_int = int(y)
 
@@ -80,7 +184,7 @@ def reproject_point(x, y, pano_width, pano_height, face_w=256):
     x_int = max(0, min(x_int, pano_width - 1))
     y_int = max(0, min(y_int, pano_height - 1))
 
-    face_idx = face_type[y_int, x_int]
+    face_idx = mapping[y_int, x_int]
 
     cube_faces_xyz = p3c.utils.xyzcube(face_w)
     face_xyz = cube_faces_xyz[:, face_idx * face_w : (face_idx + 1) * face_w, :]
@@ -88,20 +192,16 @@ def reproject_point(x, y, pano_width, pano_height, face_w=256):
     uv_face = p3c.utils.xyz2uv(face_xyz)
     coor_xy_face = p3c.utils.uv2coor(uv_face, pano_height, pano_width)
 
-    y_proj, x_proj = np.unravel_index(
-        np.argmin(np.linalg.norm(coor_xy_face - coor, axis=-1)), (face_w, face_w)
-    )
+    y_proj, x_proj = reproject_point_to_face(coor_xy_face, coor, face_w)
 
-    # Step 4: Return the face index and the new coordinates
     return face_idx, (x_proj, y_proj)
 
 
 def convert_xy_to_cubemap_coordinates(point, pano_width, pano_height, face_w=256):
-    # Unpack the point
+
     x, y = point
 
-    # Reproject the chosen point (e.g., center or top-left corner)
-    # You might need to adjust the reproject_point function or ensure it can accept these values directly
+    # Reproject the chosen point (e.g., center or top-left corner) to the cubemap
     face_idx, (x_proj, y_proj) = reproject_point(x, y, pano_width, pano_height, face_w)
 
     return face_idx, (x_proj, y_proj)
@@ -568,10 +668,10 @@ def main():
             total_images += 1
 
     # Count folders in output directory
-    if os.path.exists(output_path):
-        for item in os.listdir(output_path):
-            if os.path.isdir(os.path.join(output_path, item)):
-                processed_folders += 1
+    # if os.path.exists(output_path):
+    #    for item in os.listdir(output_path):
+    #        if os.path.isdir(os.path.join(output_path, item)):
+    #            processed_folders += 1
 
     remaining_to_process = total_images - processed_folders
 
@@ -590,12 +690,12 @@ def main():
                     continue
 
                 # Check if output folder for this image already exists
-                folder_name = img_path.split(".")[
-                    0
-                ]  # Assuming the folder name is derived from the image name
-                output_folder = os.path.join(output_path, folder_name)
-                if os.path.exists(output_folder):
-                    continue  # Skip this image and go to the next one
+                # folder_name = img_path.split(".")[
+                #    0
+                # ]  # Assuming the folder name is derived from the image name
+                # output_folder = os.path.join(output_path, folder_name)
+                # if os.path.exists(output_folder):
+                #    continue  # Skip this image and go to the next one
 
                 convert_image_to_cubic(input_path, img_path, output_path, face_width)
 
@@ -603,7 +703,7 @@ def main():
                 # visualize_annotations_on_equirectangular_image(input_path, img_path)
 
                 # Step 3: convert the annotations from yolo to xy coordinates
-                process_annotations(input_path, output_path, img_path, face_width)
+                # process_annotations(input_path, output_path, img_path, face_width)
 
                 # Step 4: visualize processed annotations
                 # Example call to visualize annotations for the 'back' face
