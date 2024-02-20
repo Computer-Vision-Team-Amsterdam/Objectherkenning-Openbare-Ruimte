@@ -88,19 +88,21 @@ for folder_name in os.listdir(input_folder):
                     }
                 )
 
-                with open(annotation_file, "r") as f:
-                    for line in f:
-                        coco_annotation = yolo_to_coco(line, width, height)
-                        # Construct annotation dict with the specified key order and formatted values
-                        formatted_annotation = {
-                            "id": annotation_id,
-                            "category_id": coco_annotation["category_id"],
-                            "image_id": image_id,
-                            "area": coco_annotation["area"],
-                            "bbox": coco_annotation["bbox"],
-                        }
-                        coco_json["annotations"].append(formatted_annotation)
-                        annotation_id += 1
+                # Check if the annotation file exists
+                if os.path.exists(annotation_file):
+                    with open(annotation_file, "r") as f:
+                        for line in f:
+                            coco_annotation = yolo_to_coco(line, width, height)
+                            # Construct annotation dict with the specified key order and formatted values
+                            formatted_annotation = {
+                                "id": annotation_id,
+                                "category_id": coco_annotation["category_id"],
+                                "image_id": image_id,
+                                "area": coco_annotation["area"],
+                                "bbox": coco_annotation["bbox"],
+                            }
+                            coco_json["annotations"].append(formatted_annotation)
+                            annotation_id += 1
 
 # Save to JSON file
 with open(output_json, "w") as f:
