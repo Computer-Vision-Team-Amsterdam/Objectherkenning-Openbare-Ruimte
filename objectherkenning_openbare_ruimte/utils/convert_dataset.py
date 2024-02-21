@@ -1,8 +1,14 @@
+import argparse
+import logging
 import os
 
 import cv2
 import numpy as np
 import py360convert as p3c
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def convert_face_idx_to_name(face_idx):
@@ -242,7 +248,7 @@ def convert_equirectangular_image_to_cubic(
     try:
         img = cv2.imread(img)
     except FileNotFoundError:
-        print(f"File {img} not found")
+        logging.error(f"File {img} not found")
         return
 
     front, right, back, left, top, bottom = p3c.e2c(
@@ -261,7 +267,7 @@ def convert_equirectangular_image_to_cubic(
     cv2.imwrite(f"{directory}/top.png", top)
     cv2.imwrite(f"{directory}/bottom.png", bottom)
 
-    print(f"Processed image: {img_path}.")
+    logging.info(f"Processed image: {img_path}.")
 
 
 def adjust_coordinates_based_on_corner(tag, corner, processed_corners):
@@ -379,19 +385,19 @@ def adjust_bounding_box_corners(processed_corners, face_width):
     br_x = face_width
     br_y = face_width
 
+    # Apply adjustments from processed_corners for top-left coordinates
     if "TL" in processed_corners:
         tl_x, tl_y = processed_corners["TL"]
     elif "BL" in processed_corners:
-        # BL present but not TL, implies adjustment for x position of TL*
         tl_x, _ = processed_corners["BL"]
 
     if "TR" in processed_corners:
         # TR's y position might adjust TL*'s y if TL is not explicitly processed
         tl_y = max(tl_y, processed_corners["TR"][1])
 
+    # Apply adjustments from processed_corners for bottom-right coordinates
     if "BR" in processed_corners:
-        br_x = processed_corners["BR"][0]
-        br_y = processed_corners["BR"][1]
+        br_x, br_y = processed_corners["BR"]
     else:
         if "x_max" in processed_corners:
             br_x = processed_corners["x_max"]
@@ -410,10 +416,69 @@ def adjust_bounding_box_corners(processed_corners, face_width):
     return tl_star, br_star
 
 
+def write_annotation_to_file(output_path, img_name, face_idx, annotation):
+    """
+    Write the converted YOLO annotation to the specified annotation file after clearing any existing content.
+
+    Parameters
+    ----------
+    output_path : str
+        The base directory where the annotation files are stored.
+    img_name : str
+        The name of the image file, used to derive the folder name for storing annotations.
+    face_idx : str
+        The index of the face, used to derive the annotation file name.
+    annotation : str
+        The converted YOLO annotation to write to the file.
+
+    Returns
+    -------
+    None
+    """
+    folder_name = img_name.split(".")[0]
+    face_name = convert_face_idx_to_name(face_idx)
+    annotation_file = os.path.join(output_path, folder_name, f"{face_name}.txt")
+    converted_yolo_annotation_str = " ".join(map(str, annotation))
+
+    os.makedirs(os.path.dirname(annotation_file), exist_ok=True)
+
+    with open(annotation_file, "a") as file:
+        file.write(converted_yolo_annotation_str + "\n")
+
+    logging.info(f"Annotation written to {annotation_file}")
+
+
 def process_annotations(input_path, output_path, img_path, face_width):
-    print("=======================================")
-    print(f"===== Processing annotations for {img_path} =====")
-    print("=======================================")
+    """
+    Process YOLO format annotations for a given equirectangular image, reprojecting them onto
+    the corresponding faces of a cubemap and converting them back into YOLO format annotations
+    for each face. This function handles both cases where a bounding box is contained within a
+    single face and spans across multiple faces.
+
+    For each annotation, it determines the cubemap face(s) onto which the annotation's bounding
+    box projects, adjusts the bounding box coordinates as necessary for each face, and saves
+    the new annotations in YOLO format in the respective annotation files for each face.
+
+    Parameters
+    ----------
+    input_path : str
+        Path to the directory containing the input equirectangular images and their YOLO format
+        annotations.
+    output_path : str
+        Path to the directory where the cubemap faces and their corresponding YOLO format
+        annotations will be saved.
+    img_path : str
+        The filename of the equirectangular image being processed. This name is also used to
+        derive the names of the annotation files.
+    face_width : int
+        The width (and assumed height) of each face in the cubemap representation. This dimension
+        is used in the reprojection process and in converting coordinates.
+
+    Returns
+    -------
+    None
+    """
+    logging.info(f"===== Processing annotations for {img_path} =====")
 
     annotation_file = img_path.split(".")[0] + ".txt"
     annotations_path = os.path.join(input_path, annotation_file)
@@ -422,7 +487,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
         with open(annotations_path, "r") as file:
             lines = file.readlines()
     except FileNotFoundError:
-        print(f"File {annotations_path} not found")
+        logging.error(f"File {annotations_path} not found")
         return
 
     image_file_path = os.path.join(input_path, img_path)
@@ -457,7 +522,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
                     face_idx_br = face_idx
 
         if face_idx_tl != face_idx_br:
-            print("=======! Bounding box spans multiple faces !=======")
+            logging.info("Bounding box spans multiple faces!")
 
             for face_idx, corners in face_corners.items():
                 processed_corners = {}
@@ -480,21 +545,9 @@ def process_annotations(input_path, output_path, img_path, face_width):
                     *converted_yolo_annotation[1:],
                 )
 
-                face_annotation_file = os.path.join(
-                    output_path,
-                    img_path.split(".")[0],
-                    f"{convert_face_idx_to_name(face_idx)}.txt",
+                write_annotation_to_file(
+                    output_path, img_path, face_idx, converted_yolo_annotation
                 )
-
-                if not os.path.exists(face_annotation_file):
-                    os.makedirs(os.path.dirname(face_annotation_file), exist_ok=True)
-                    open(face_annotation_file, "w").close()
-
-                with open(face_annotation_file, "a") as f:
-                    f.write(" ".join(map(str, converted_yolo_annotation)) + "\n")
-
-                print(f"==== Wrote to {face_annotation_file} ====")
-                print("=======================================")
 
         else:
 
@@ -509,246 +562,216 @@ def process_annotations(input_path, output_path, img_path, face_width):
                 face_width,
             )
 
-            # Before writing to the face annotation file, check if it needs to be cleared
-            face_annotation_file = os.path.join(
-                output_path,
-                img_path.split(".")[0],
-                f"{convert_face_idx_to_name(face_idx_tl)}.txt",
+            write_annotation_to_file(
+                output_path, img_path, face_idx, converted_yolo_annotation
             )
 
-            # This is where we check if the file exists and clear it if necessary
-            if not os.path.exists(face_annotation_file):
-                os.makedirs(os.path.dirname(face_annotation_file), exist_ok=True)
-                open(face_annotation_file, "w").close()  # This clears the file
 
-            with open(face_annotation_file, "a") as f:
-                f.write(" ".join(map(str, converted_yolo_annotation)) + "\n")
-            print(f"== Wrote to {face_annotation_file} ==")
+def draw_annotations_from_file(annotation_path, image, draw_thickness=2):
+    """
+    Draw YOLO annotations on the specified image.
+
+    Parameters
+    ----------
+    annotation_path : str
+        The path to the annotation file.
+    image : numpy.ndarray
+        The image to draw the annotations on.
+    draw_thickness : int, optional
+        The thickness of the lines to draw.
+
+    Returns
+    -------
+    None
+    """
+
+    if not os.path.exists(annotation_path):
+        logging.error(f"Annotation file {annotation_path} not found.")
+        return
+
+    P_w, P_h = image.shape[1], image.shape[0]
+
+    with open(annotation_path, "r") as file:
+        for line in file:
+            _, x_center_norm, y_center_norm, w_norm, h_norm = map(float, line.split())
+
+            x_center_abs = int(x_center_norm * P_w)
+            y_center_abs = int(y_center_norm * P_h)
+            width_abs = int(w_norm * P_w)
+            height_abs = int(h_norm * P_h)
+
+            x_min = int(x_center_abs - width_abs / 2)
+            y_min = int(y_center_abs - height_abs / 2)
+            x_max = int(x_center_abs + width_abs / 2)
+            y_max = int(y_center_abs + height_abs / 2)
+
+            cv2.rectangle(
+                image, (x_min, y_min), (x_max, y_max), (0, 0, 255), draw_thickness
+            )
 
 
 def visualize_annotations_on_equirectangular_image(input_path, img_path):
     """
     Visualize YOLO annotations on the original equirectangular image.
 
-    Parameters:
-    - input_path: Base input directory where the original images are stored.
-    - img_path: Path to the specific original image file.
-    - P_w, P_h: Width and height of the original equirectangular image.
+    Parameters
+    ----------
+    input_path : str
+        The base directory where the images and annotations are stored.
+    img_path : str
+        The name of the image file to visualize annotations for.
+
+    Returns
+    -------
+    None
     """
-    print(f"Visualizing annotations for equirectangular image: {img_path}...")
-    # Construct the path to the image and its annotation file
+
     image_file_path = os.path.join(input_path, img_path)
     annotation_file_path = os.path.join(input_path, img_path.split(".")[0] + ".txt")
 
-    # Load the image
     image = cv2.imread(image_file_path)
     if image is None:
-        print(f"Image file {image_file_path} not found.")
+        logging.error(f"Image file {image_file_path} not found.")
         return
 
-    # Check if the annotation file exists
-    if not os.path.exists(annotation_file_path):
-        print(f"Annotation file {annotation_file_path} not found.")
-        return
+    draw_annotations_from_file(annotation_file_path, image, draw_thickness=2)
 
-    P_w = image.shape[1]
-    P_h = image.shape[0]
+    annotated_folder = os.path.join(input_path, "input_annotated")
+    if not os.path.exists(annotated_folder):
+        os.makedirs(annotated_folder)
 
-    print(f"Size of equirectangular image: {P_w} x {P_h} pixels.")
-
-    # Read the annotations and plot each bounding box on the image
-    with open(annotation_file_path, "r") as file:
-        for line in file:
-            _, x_center_norm, y_center_norm, w_norm, h_norm = map(float, line.split())
-            print(
-                f"Normalized Annotation: \n X Center: {x_center_norm}, Y Center: {y_center_norm}, Width: {w_norm}, Height: {h_norm}"
-            )
-
-            # Convert normalized coordinates to absolute pixel values
-            x_center_abs = int(x_center_norm * P_w)
-            y_center_abs = int(y_center_norm * P_h)
-            width_abs = int(w_norm * P_w)
-            height_abs = int(h_norm * P_h)
-
-            print(
-                f"Absolute coordinates: \n X Center: {x_center_abs}, Y Center: {y_center_abs}, Width: {width_abs}, Height: {height_abs}"
-            )
-
-            # Calculate corners of the bounding box
-            x_min = int(x_center_abs - width_abs / 2)
-            y_min = int(y_center_abs - height_abs / 2)
-            x_max = int(x_center_abs + width_abs / 2)
-            y_max = int(y_center_abs + height_abs / 2)
-
-            print(f"Bounding box corners: ({x_min}, {y_min}), ({x_max}, {y_max})")
-
-            # Draw bounding box on the image
-            cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 3)
-
-    # Display the image with annotations
-    # cv2.imshow(f"Annotated Equirectangular Image: {img_path}", image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    # Optionally, save the visualized image to disk
     visualized_img_path = os.path.join(
-        input_path, img_path.split(".")[0] + "_annotated.png"
+        annotated_folder, img_path.split(".")[0] + "_annotated.png"
     )
     cv2.imwrite(visualized_img_path, image)
-    print(f"Annotated equirectangular image saved to {visualized_img_path}")
-    print("=======================================")
+
+    logging.info(f"Annotated equirectangular image saved to {visualized_img_path}")
 
 
 def visualize_annotations_with_corners(output_path, img_folder, face_name):
     """
-    Visualize annotations on the specified face image with a red dot for each corner of the bounding boxes.
+    Visualize annotations on the specified cubic face image.
 
     Parameters:
-    - output_path: The base output directory where the images and annotations are stored.
-    - img_folder: The folder name derived from the original image name, used to locate the specific image and its annotations.
-    - face_name: The name of the face (e.g., 'back') to visualize annotations for.
+    output_path : str
+        The base directory where the images and annotations are stored.
+    img_folder : str
+        The name of the folder containing the images and annotations.
+    face_name : str
+        The name of the face to visualize annotations for.
+
+    Returns:
+    None
     """
-    # Construct the paths to the image and its annotation file
     img_path = os.path.join(output_path, img_folder, f"{face_name}.png")
     annotation_path = os.path.join(output_path, img_folder, f"{face_name}.txt")
 
-    # Load the image
     img = cv2.imread(img_path)
     if img is None:
-        print(f"Image file {img_path} not found.")
+        logging.error(f"Image file {img_path} not found.")
         return
 
-    # Check if the annotation file exists
     if not os.path.exists(annotation_path):
-        print(f"Annotation file {annotation_path} not found.")
+        logging.error(f"Annotation file {annotation_path} not found.")
         return
 
     img_copy = img.copy()
 
-    # Read the annotations and plot each bounding box on the image
-    with open(annotation_path, "r") as file:
-        for line in file:
-            # Parse the YOLO formatted annotation
-            _, x_center_norm, y_center_norm, w_norm, h_norm = map(float, line.split())
+    draw_annotations_from_file(annotation_path, img_copy, draw_thickness=2)
 
-            print(
-                f"{face_name} annotation: {x_center_norm}, {y_center_norm}, {w_norm}, {h_norm}"
-            )
-
-            # Convert normalized coordinates to absolute pixel values
-            x_center_abs = x_center_norm * img.shape[1]
-            y_center_abs = y_center_norm * img.shape[0]
-            width_abs = w_norm * img.shape[1]
-            height_abs = h_norm * img.shape[0]
-
-            print(
-                f"{face_name} annotation absolute coordinates of the center: {x_center_abs}, {y_center_abs}, {width_abs}, {height_abs}"
-            )
-
-            # Calculate the corners of the bounding box
-            x_min = int(x_center_abs - (width_abs / 2))
-            y_min = int(y_center_abs - (height_abs / 2))
-            x_max = int(x_center_abs + (width_abs / 2))
-            y_max = int(y_center_abs + (height_abs / 2))
-
-            print(
-                f"{face_name} bounding box corners: ({x_min}, {y_min}), ({x_max}, {y_max})"
-            )
-
-            # Draw bounding box on the image
-            cv2.rectangle(img_copy, (x_min, y_min), (x_max, y_max), (0, 0, 255), 3)
-
-    # Display the image with annotations
-    # cv2.imshow(f"Annotated {face_name}", img)
-    # cv2.waitKey(0)  # Wait for a key press to close the image window
-    # cv2.destroyAllWindows()
-
-    # Optionally, save the visualized image to disk
     visualized_img_path = os.path.join(
         output_path, img_folder, f"{face_name}_annotated_corners.png"
     )
     cv2.imwrite(visualized_img_path, img_copy)
-    print(f"Annotated image with corners saved to {visualized_img_path}")
 
 
-def main():
-    # Step 1: set the paths (for now, hardcode)
-    # Set the path to the images
-    input_path = "../../input"
-    output_path = "../../output"
+def main(args):
+    input_path = args.input_path
+    output_path = args.output_path
+    face_width = args.face_width
 
-    # TODO: Remember to not hardcode the dimensions of the equirectangular image
-    face_width = 1024  # Example dimensions of the cubemap faces
-
-    # Initialize counters
     total_images = 0
-    processed_folders = 0
+    processed_images = 0
     valid_extensions = {
         ".jpg",
         ".png",
-    }  # Consider only these file extensions as valid images
+    }
 
-    # Count total images in input directory
     for img_path in os.listdir(input_path):
         if img_path.endswith(tuple(valid_extensions)):
             total_images += 1
 
-    # Count folders in output directory
-    # if os.path.exists(output_path):
-    #    for item in os.listdir(output_path):
-    #        if os.path.isdir(os.path.join(output_path, item)):
-    #            processed_folders += 1
+    if os.path.exists(output_path):
+        for item in os.listdir(output_path):
+            if os.path.isdir(os.path.join(output_path, item)):
+                processed_images += 1
 
-    remaining_to_process = total_images - processed_folders
+    remaining_to_process = total_images - processed_images
 
-    print(f"Total images in input: {total_images}")
-    print(f"Processed images in output: {processed_folders}")
-    print(f"Remaining to process: {remaining_to_process}")
+    logging.info(f"Total images in input: {total_images}")
+    logging.info(f"Processed images in output: {processed_images}")
+    logging.info(f"Remaining to process: {remaining_to_process}")
 
-    # Step 2: convert the images (ignore .DS_Store files)
     for img_path in os.listdir(input_path):
-        if img_path != ".DS_Store" and not img_path.endswith("_annotated.png"):
+        if not img_path.startswith("."):
             if img_path.endswith(".jpg") or img_path.endswith(".png"):
-                # Check if the image is empty or corrupted
+
                 img = cv2.imread(os.path.join(input_path, img_path))
                 if img is None:
-                    print(f"Skipping {img_path} as it is empty or corrupted")
+                    logging.warning(f"Skipping {img_path} as it is empty or corrupted")
                     continue
-
-                # Check if output folder for this image already exists
-                # folder_name = img_path.split(".")[
-                #    0
-                # ]  # Assuming the folder name is derived from the image name
-                # output_folder = os.path.join(output_path, folder_name)
-                # if os.path.exists(output_folder):
-                #    continue  # Skip this image and go to the next one
 
                 convert_equirectangular_image_to_cubic(
                     input_path, img_path, output_path, face_width
                 )
 
-                # Step 2.1: visualize annotations on the equirectangular image
-                # visualize_annotations_on_equirectangular_image(input_path, img_path)
-
                 # Step 3: convert the annotations from yolo to xy coordinates
                 process_annotations(input_path, output_path, img_path, face_width)
 
-                # Step 4: visualize processed annotations
-                # Example call to visualize annotations for the 'back' face
-                # Assuming 'img_path' is available and corresponds to the processed image
-                # img_folder = img_path.split(".")[
-                #    0
-                # ]  # Extract the folder name from the image path
-                # visualize_annotations_with_corners(output_path, img_folder, "right")
-                # visualize_annotations_with_corners(output_path, img_folder, "left")
-                # visualize_annotations_with_corners(output_path, img_folder, "front")
-                # visualize_annotations_with_corners(output_path, img_folder, "back")
-                # visualize_annotations_with_corners(output_path, img_folder, "bottom")
-                # visualize_annotations_with_corners(output_path, img_folder, "top")
+                if args.visualize_eqr:
+                    visualize_annotations_on_equirectangular_image(input_path, img_path)
+
+                if args.visualize_cubemap:
+                    img_folder = img_path.split(".")[0]
+                    faces = ["top", "bottom", "front", "back", "left", "right"]
+                    for face in faces:
+                        visualize_annotations_with_corners(
+                            output_path, img_folder, face
+                        )
 
                 remaining_to_process -= 1
-                print(f"Remaining to process: {remaining_to_process}")
+                logging.info(f"Remaining to process: {remaining_to_process}")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--input_path",
+        type=str,
+        required=True,
+        help="Path to the input image directory.",
+    )
+    parser.add_argument(
+        "--output_path", type=str, required=True, help="Path to the output directory."
+    )
+    parser.add_argument(
+        "--face_width",
+        type=int,
+        default=1024,
+        help="Width of each face in the cubemap. Default is 1024.",
+    )
+    parser.add_argument(
+        "--visualize_eqr",
+        action="store_true",
+        help="Visualize annotations on equirectangular images.",
+    )
+    parser.add_argument(
+        "--visualize_cubemap",
+        action="store_true",
+        help="Visualize processed annotations on cubic faces.",
+    )
+
+    args = parser.parse_args()
+
+    main(args)
