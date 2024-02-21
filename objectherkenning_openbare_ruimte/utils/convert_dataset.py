@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+from typing import Any, Dict, Tuple
 
 import cv2
 import numpy as np
@@ -11,7 +12,7 @@ logging.basicConfig(
 )
 
 
-def convert_face_idx_to_name(face_idx):
+def convert_face_idx_to_name(face_idx: int) -> str:
     """
     Convert face index to face name.
 
@@ -33,7 +34,11 @@ def convert_face_idx_to_name(face_idx):
     return face_names[face_idx]
 
 
-def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
+def convert_yolo_to_corners(
+    yolo_annotation: str, P_w: int, P_h: int
+) -> Tuple[
+    Tuple[float, float], Tuple[float, float], Tuple[float, float], Tuple[float, float]
+]:
     """
     Convert YOLO annotation with normalized values to absolute corner coordinates.
 
@@ -42,9 +47,9 @@ def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
     yolo_annotation : str
         YOLO annotation string in the format:
         "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
-    P_w : float
+    P_w : int
         Width of the image.
-    P_h : float
+    P_h : int
         Height of the image.
 
     Returns
@@ -76,27 +81,33 @@ def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
     return top_left, top_right, bottom_left, bottom_right
 
 
-def convert_corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
+def convert_corners_to_yolo(
+    yolo_class: str,
+    top_left: Tuple[float, float],
+    bottom_right: Tuple[float, float],
+    face_w: int,
+    face_h: int,
+) -> Tuple[str, float, float, float, float]:
     """
     Convert absolute corner coordinates to YOLO annotation with normalized values.
 
     Parameters
     ----------
-    face_name : str
-        Name of the face.
+    yolo_class: str
+        The class of the object.
     top_left : float
         Top-left absolute corner coordinates.
     bottom_right : float
         Bottom-right absolute corner coordinates.
-    face_w : float
+    face_w : int
         Width of the face.
-    face_h : float
+    face_h : int
         Height of the face.
 
     Returns
     tuple
         A tuple containing the YOLO annotation in the format:
-        "<face_name> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+        "<yolo_class> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
     -------
 
     """
@@ -114,10 +125,12 @@ def convert_corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
     width_norm = width_abs / face_w
     height_norm = height_abs / face_h
 
-    return face_name, x_center_norm, y_center_norm, width_norm, height_norm
+    return yolo_class, x_center_norm, y_center_norm, width_norm, height_norm
 
 
-def reproject_xy_coor_to_face(coor_xy_face, coor, face_w):
+def reproject_xy_coor_to_face(
+    coor_xy_face: np.ndarray, coor: np.ndarray, face_w: int
+) -> Tuple[int, int]:
     """
     Compute a pair of coordinates (y_proj, x_proj) that indicate the position
     on the cube face closest to the original equirectangular point.
@@ -158,10 +171,12 @@ def reproject_xy_coor_to_face(coor_xy_face, coor, face_w):
 
     y_proj, x_proj = np.unravel_index(min_distance_index, (face_w, face_w))
 
-    return y_proj, x_proj
+    return int(y_proj), int(x_proj)
 
 
-def reproject_point(point, pano_width, pano_height, face_w):
+def reproject_point(
+    point: Tuple[float, float], pano_width: int, pano_height: int, face_w: int
+) -> Tuple[int, Tuple[int, int]]:
     """
     Reproject a point from (x, y) equirectangular coordinates to a set of coordinates
     in a specific face (face_idx) of a cube.
@@ -216,13 +231,14 @@ def reproject_point(point, pano_width, pano_height, face_w):
     coor_xy_face = p3c.utils.uv2coor(uv_face, pano_height, pano_width)
 
     y_proj, x_proj = reproject_xy_coor_to_face(coor_xy_face, coor, face_w)
+    y_proj, x_proj = int(y_proj), int(x_proj)
 
     return face_idx, (x_proj, y_proj)
 
 
 def convert_equirectangular_image_to_cubic(
-    input_path, img_path, output_path, face_width
-):
+    input_path: str, img_path: str, output_path: str, face_width: int
+) -> None:
     """
     Convert an equirectangular image to a set of six cubic faces using py360convert.e2c.
 
@@ -270,7 +286,11 @@ def convert_equirectangular_image_to_cubic(
     logging.info(f"Processed image: {img_path}.")
 
 
-def adjust_coordinates_based_on_corner(tag, corner, processed_corners):
+def adjust_coordinates_based_on_corner(
+    tag: str,
+    corner: Tuple[float, float],
+    processed_corners: Dict[str, Any],
+) -> Dict[str, Any]:
     """
     Adjust the coordinates of a bounding box based on the processed corners within a face.
 
@@ -311,6 +331,8 @@ def adjust_coordinates_based_on_corner(tag, corner, processed_corners):
     ensuring the bounding box correctly encapsulates the object within the face's boundaries.
     """
 
+    print(f"Processed_corners: {processed_corners}")
+
     if "TL" in processed_corners:
         if tag == "TR":
             processed_corners["x_max"] = corner[0]  # Adjust BR x to TR x
@@ -347,7 +369,9 @@ def adjust_coordinates_based_on_corner(tag, corner, processed_corners):
     return processed_corners
 
 
-def adjust_bounding_box_corners(processed_corners, face_width):
+def adjust_bounding_box_corners(
+    processed_corners: Dict[str, Any], face_width: int
+) -> Tuple[Tuple[float, float], Tuple[float, float]]:
     """
     Adjust the bounding box corners coordinates based on already processed corners within a face.
 
@@ -416,7 +440,12 @@ def adjust_bounding_box_corners(processed_corners, face_width):
     return tl_star, br_star
 
 
-def write_annotation_to_file(output_path, img_name, face_idx, annotation):
+def write_annotation_to_file(
+    output_path: str,
+    img_name: str,
+    face_idx: int,
+    annotation: Tuple[str, float, float, float, float],
+) -> None:
     """
     Write the converted YOLO annotation to the specified annotation file after clearing any existing content.
 
@@ -448,7 +477,9 @@ def write_annotation_to_file(output_path, img_name, face_idx, annotation):
     logging.info(f"Annotation written to {annotation_file}")
 
 
-def process_annotations(input_path, output_path, img_path, face_width):
+def process_annotations(
+    input_path: str, output_path: str, img_path: str, face_width: int
+) -> None:
     """
     Process YOLO format annotations for a given equirectangular image, reprojecting them onto
     the corresponding faces of a cubemap and converting them back into YOLO format annotations
@@ -495,7 +526,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
     P_h, P_w, _ = image.shape
 
     for line in lines:
-        face_corners = {}
+        face_corners: Dict[int, Dict[str, Tuple[int, int]]] = {}
 
         yolo_annotation = line.strip()
         yolo_annotation_class = yolo_annotation.split()[0]
@@ -507,6 +538,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
 
         for i, corner in enumerate(corners):
             face_idx, converted_corner = reproject_point(corner, P_w, P_h, face_width)
+            face_idx = int(face_idx)
             tag = ["TL", "TR", "BL", "BR"][i]
             if face_idx not in face_corners:
                 face_corners[face_idx] = {}
@@ -514,8 +546,8 @@ def process_annotations(input_path, output_path, img_path, face_width):
 
         face_idx_tl = face_idx_br = None
 
-        for face_idx, corners in face_corners.items():
-            for tag in corners:
+        for face_idx, face_corners_dict in face_corners.items():
+            for tag in face_corners_dict:
                 if tag == "TL":
                     face_idx_tl = face_idx
                 elif tag == "BR":
@@ -524,10 +556,10 @@ def process_annotations(input_path, output_path, img_path, face_width):
         if face_idx_tl != face_idx_br:
             logging.info("Bounding box spans multiple faces!")
 
-            for face_idx, corners in face_corners.items():
-                processed_corners = {}
+            for face_idx, face_corners_dict in face_corners.items():
+                processed_corners: Dict[str, Tuple[int, int]] = {}
 
-                for tag, corner in corners.items():
+                for tag, corner in face_corners_dict.items():
                     processed_corners = adjust_coordinates_based_on_corner(
                         tag, corner, processed_corners
                     )
@@ -537,12 +569,7 @@ def process_annotations(input_path, output_path, img_path, face_width):
                 )
 
                 converted_yolo_annotation = convert_corners_to_yolo(
-                    face_idx, tl_star, br_star, face_width, face_width
-                )
-
-                converted_yolo_annotation = (
-                    yolo_annotation_class,
-                    *converted_yolo_annotation[1:],
+                    yolo_annotation_class, tl_star, br_star, face_width, face_width
                 )
 
                 write_annotation_to_file(
@@ -567,7 +594,9 @@ def process_annotations(input_path, output_path, img_path, face_width):
             )
 
 
-def draw_annotations_from_file(annotation_path, image, draw_thickness=2):
+def draw_annotations_from_file(
+    annotation_path: str, image: np.ndarray, draw_thickness: int = 2
+) -> None:
     """
     Draw YOLO annotations on the specified image.
 
@@ -610,7 +639,9 @@ def draw_annotations_from_file(annotation_path, image, draw_thickness=2):
             )
 
 
-def visualize_annotations_on_equirectangular_image(input_path, img_path):
+def visualize_annotations_on_equirectangular_image(
+    input_path: str, img_path: str
+) -> None:
     """
     Visualize YOLO annotations on the original equirectangular image.
 
@@ -648,7 +679,9 @@ def visualize_annotations_on_equirectangular_image(input_path, img_path):
     logging.info(f"Annotated equirectangular image saved to {visualized_img_path}")
 
 
-def visualize_annotations_with_corners(output_path, img_folder, face_name):
+def visualize_annotations_with_corners(
+    output_path: str, img_folder: str, face_name: str
+) -> None:
     """
     Visualize annotations on the specified cubic face image.
 
@@ -685,7 +718,7 @@ def visualize_annotations_with_corners(output_path, img_folder, face_name):
     cv2.imwrite(visualized_img_path, img_copy)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     input_path = args.input_path
     output_path = args.output_path
     face_width = args.face_width
