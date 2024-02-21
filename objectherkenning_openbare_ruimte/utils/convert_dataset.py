@@ -34,7 +34,8 @@ def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
     Parameters
     ----------
     yolo_annotation : str
-        YOLO annotation string in the format: "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+        YOLO annotation string in the format:
+        "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
     P_w : float
         Width of the image.
     P_h : float
@@ -43,7 +44,8 @@ def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
     Returns
     -------
     tuple
-        A tuple containing the top-left, top-right, bottom-left, and bottom-right corner coordinates.
+        A tuple containing the top-left, top-right, bottom-left,
+        and bottom-right corner coordinates.
     """
 
     _, x_center_norm, y_center_norm, w_norm, h_norm = map(
@@ -68,7 +70,7 @@ def convert_yolo_to_corners(yolo_annotation, P_w, P_h):
     return top_left, top_right, bottom_left, bottom_right
 
 
-def corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
+def convert_corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
     """
     Convert absolute corner coordinates to YOLO annotation with normalized values.
 
@@ -87,7 +89,8 @@ def corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
 
     Returns
     tuple
-        A tuple containing the YOLO annotation in the format: "<face_name> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+        A tuple containing the YOLO annotation in the format:
+        "<face_name> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
     -------
 
     """
@@ -108,10 +111,10 @@ def corners_to_yolo(face_name, top_left, bottom_right, face_w, face_h):
     return face_name, x_center_norm, y_center_norm, width_norm, height_norm
 
 
-def reproject_point_to_face(coor_xy_face, coor, face_w):
+def reproject_xy_coor_to_face(coor_xy_face, coor, face_w):
     """
-    The function computes a pair of coordinates (y_proj, x_proj) that indicate
-    the position on the cube face closest to the original equirectangular point.
+    Compute a pair of coordinates (y_proj, x_proj) that indicate the position
+    on the cube face closest to the original equirectangular point.
 
     To do that, we first compute the difference between each point's UV coordinates
     on the cube face (coor_xy_face) and the original point's equirectangular coordinates (coor).
@@ -127,6 +130,20 @@ def reproject_point_to_face(coor_xy_face, coor, face_w):
 
     np.unravel_index(min_distance_index, (face_w, face_w)) converts the flattened index back into
     2D coordinates within the context of the cube face's dimensions.
+
+    Parameters
+    ----------
+    coor_xy_face : numpy.ndarray
+        UV coordinates of the cube face.
+    coor : numpy.ndarray
+        Equirectangular coordinates of the original point.
+    face_w : int
+        Width of the cube face.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the new coordinates within the face.
     """
 
     vector_distance = coor_xy_face - coor
@@ -138,9 +155,9 @@ def reproject_point_to_face(coor_xy_face, coor, face_w):
     return y_proj, x_proj
 
 
-def reproject_point(x, y, pano_width, pano_height, face_w):
+def reproject_point(point, pano_width, pano_height, face_w):
     """
-    Reprojects a point from (x, y) equirectangular coordinates to a set of coordinates
+    Reproject a point from (x, y) equirectangular coordinates to a set of coordinates
     in a specific face (face_idx) of a cube.
 
     p3c.utils.equirect_facetype(pano_height, pano_width) determines which face
@@ -156,10 +173,8 @@ def reproject_point(x, y, pano_width, pano_height, face_w):
 
     Parameters
     ----------
-    x : float
-        X-coordinate of the point.
-    y : float
-        Y-coordinate of the point.
+    point : tuple
+        (x, y) coordinates of the point.
     pano_width : int
         Width of the panorama image.
     pano_height : int
@@ -173,6 +188,8 @@ def reproject_point(x, y, pano_width, pano_height, face_w):
         A tuple containing the face index and the new coordinates within the face.
 
     """
+
+    x, y = point
 
     coor = np.array([x, y])
     mapping = p3c.utils.equirect_facetype(pano_height, pano_width)
@@ -192,44 +209,51 @@ def reproject_point(x, y, pano_width, pano_height, face_w):
     uv_face = p3c.utils.xyz2uv(face_xyz)
     coor_xy_face = p3c.utils.uv2coor(uv_face, pano_height, pano_width)
 
-    y_proj, x_proj = reproject_point_to_face(coor_xy_face, coor, face_w)
+    y_proj, x_proj = reproject_xy_coor_to_face(coor_xy_face, coor, face_w)
 
     return face_idx, (x_proj, y_proj)
 
 
-def convert_xy_to_cubemap_coordinates(point, pano_width, pano_height, face_w=256):
+def convert_equirectangular_image_to_cubic(
+    input_path, img_path, output_path, face_width
+):
+    """
+    Convert an equirectangular image to a set of six cubic faces using py360convert.e2c.
 
-    x, y = point
+    Parameters
+    ----------
+    input_path : str
+        Path to the input image directory.
+    img_path : str
+        Path to the input image file.
+    output_path : str
+        Path to the output directory.
+    face_width : int
+        Width of each face in the cubic format.
 
-    # Reproject the chosen point (e.g., center or top-left corner) to the cubemap
-    face_idx, (x_proj, y_proj) = reproject_point(x, y, pano_width, pano_height, face_w)
+    Returns
+    -------
+    None
 
-    return face_idx, (x_proj, y_proj)
-
-
-def convert_image_to_cubic(input_path, img_path, output_path, face_width):
+    """
 
     img = os.path.join(input_path, img_path)
 
-    # Open and transform to a numpy array with shape [H, W, 3] using cv2 (convert to RGB)
     try:
         img = cv2.imread(img)
     except FileNotFoundError:
         print(f"File {img} not found")
         return
 
-    # Project from equirectangular to cubic
     front, right, back, left, top, bottom = p3c.e2c(
         img, face_w=face_width, mode="bilinear", cube_format="list"
     )
 
-    # make directory, with panoid as name, to save them in
     folder = img_path.split(".")[0]
     directory = os.path.join(output_path, folder)
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    # Save cubemap faces
     cv2.imwrite(f"{directory}/front.png", front)
     cv2.imwrite(f"{directory}/right.png", right)
     cv2.imwrite(f"{directory}/back.png", back)
@@ -240,10 +264,47 @@ def convert_image_to_cubic(input_path, img_path, output_path, face_width):
     print(f"Processed image: {img_path}.")
 
 
-def adjust_coordinates_based_on_corner(
-    tag, corner, processed_corners, face_width, face_height
-):
-    # Check if other corners have been processed and adjust coordinates accordingly
+def adjust_coordinates_based_on_corner(tag, corner, processed_corners):
+    """
+    Adjust the coordinates of a bounding box based on the processed corners within a face.
+
+    This function updates the coordinates of a bounding box in a cubemap face by considering
+    the positions of already processed corners. Depending on the corner being processed (tag),
+    it may adjust the x and y maximums or minimums of the bounding box to ensure the box
+    accurately represents the object within the constraints of the face. The function is
+    typically used in a scenario where bounding boxes may span across multiple faces of a
+    cubemap, requiring adjustments to fit within a single face properly.
+
+    Parameters
+    ----------
+    tag : str
+        The tag indicating which corner of the bounding box is being processed.
+        Expected values are 'TL' (top-left), 'TR' (top-right), 'BL' (bottom-left), and 'BR' (bottom-right).
+
+    corner : tuple
+        A tuple of (x, y) coordinates representing the position of the corner on the face.
+
+    processed_corners : dict
+        A dictionary maintaining the state of already processed corners. Keys are corner tags
+        ('TL', 'TR', 'BL', 'BR'), and values are tuples of (x, y) coordinates. This dictionary
+        is updated in-place to reflect the adjusted coordinates based on the current corner's
+        processing.
+
+    Returns
+    -------
+    dict
+        The updated dictionary of processed corners after adjusting the coordinates based on
+        the current corner. This dictionary provides a comprehensive mapping of all corners
+        that have been adjusted, ready for further processing or final bounding box calculation.
+
+    Notes
+    -----
+    The adjustment logic is dependent on the spatial relationship between the current corner
+    being processed and previously processed corners. For example, processing the 'TR' (top-right)
+    corner may adjust the 'x_max' value if the 'TL' (top-left) corner has already been processed,
+    ensuring the bounding box correctly encapsulates the object within the face's boundaries.
+    """
+
     if "TL" in processed_corners:
         if tag == "TR":
             processed_corners["x_max"] = corner[0]  # Adjust BR x to TR x
@@ -275,40 +336,87 @@ def adjust_coordinates_based_on_corner(
         elif tag == "BL":
             processed_corners["y_max"] = br[1]  # Adjust BR y to BR y
 
-    # After considering other corners, update the current corner's coordinates
     processed_corners[tag] = corner
 
     return processed_corners
 
 
-def compute_new_coordinates_for_single_corner(
-    corner, corner_type, face_width, face_height
-):
+def adjust_bounding_box_corners(processed_corners, face_width):
     """
-    Computes new bounding box coordinates based on the position of a single corner within a face.
-    """
-    x, y = corner
+    Adjust the bounding box corners coordinates based on already processed corners within a face.
 
-    if corner_type == "TL":
-        return corner, (face_width, face_height)
-    elif corner_type == "TR":
-        return (0, y), (x, face_height)
-    elif corner_type == "BL":
-        return (x, 0), (0, y)
-    elif corner_type == "BR":
-        return (0, 0), corner
+    This function finalizes the coordinates of a bounding box by considering the adjustments
+    needed based on the corners that have already been processed.
+
+    Parameters
+    ----------
+    processed_corners : dict
+        A dictionary containing the corners that have been processed. Keys are corner tags
+        ('TL', 'TR', 'BL', 'BR'), and values are tuples of (x, y) coordinates.
+
+    face_width : int
+        The width (and height, assuming square faces) of each face in the cubemap. This is
+        used to set default values for bounding box coordinates that are not explicitly
+        adjusted based on processed corners.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the adjusted top-left (tl_star) and bottom-right (br_star) coordinates
+        of the bounding box, ensuring the box accurately represents the object within the face's
+        boundaries.
+
+    Notes
+    -----
+    The function dynamically adjusts the coordinates of the bounding box depending on which
+    corners have been processed. For example, if the 'TL' (top-left) corner has been processed,
+    it may adjust the 'x_min' and 'y_min' values of the bounding box. Similarly, if the 'BR'
+    (bottom-right) corner has been processed, it may adjust the 'x_max' and 'y_max' values.
+    """
+
+    tl_x = 0
+    tl_y = 0
+    br_x = face_width
+    br_y = face_width
+
+    if "TL" in processed_corners:
+        tl_x, tl_y = processed_corners["TL"]
+    elif "BL" in processed_corners:
+        # BL present but not TL, implies adjustment for x position of TL*
+        tl_x, _ = processed_corners["BL"]
+
+    if "TR" in processed_corners:
+        # TR's y position might adjust TL*'s y if TL is not explicitly processed
+        tl_y = max(tl_y, processed_corners["TR"][1])
+
+    if "BR" in processed_corners:
+        br_x = processed_corners["BR"][0]
+        br_y = processed_corners["BR"][1]
     else:
-        raise ValueError("Invalid corner type")
+        if "x_max" in processed_corners:
+            br_x = processed_corners["x_max"]
+        if "y_max" in processed_corners:
+            br_y = processed_corners["y_max"]
+        if "TR" in processed_corners and "x_max" not in processed_corners:
+            # If BR is not processed but TR is, adjust BR*'s x to TR's x
+            br_x = processed_corners["TR"][0]
+        if "BL" in processed_corners and "y_max" not in processed_corners:
+            # If BR is not processed but BL is, adjust BR*'s y to BL's y
+            br_y = processed_corners["BL"][1]
+
+    tl_star = (tl_x, tl_y)
+    br_star = (br_x, br_y)
+
+    return tl_star, br_star
 
 
 def process_annotations(input_path, output_path, img_path, face_width):
-    annotation_file = img_path.split(".")[0] + ".txt"
     print("=======================================")
     print(f"===== Processing annotations for {img_path} =====")
     print("=======================================")
-    # print(f'Input path: {input_path}')
+
+    annotation_file = img_path.split(".")[0] + ".txt"
     annotations_path = os.path.join(input_path, annotation_file)
-    # print(f'Annotations path: {annotations_path}')
 
     try:
         with open(annotations_path, "r") as file:
@@ -322,154 +430,78 @@ def process_annotations(input_path, output_path, img_path, face_width):
     P_h, P_w, _ = image.shape
 
     for line in lines:
-        # print(f"===== Processing annotation: {line} =====")
-
-        # Aggregate corners by face
         face_corners = {}
 
-        yolo_annotation = line.strip()  # Remove any extra whitespace
+        yolo_annotation = line.strip()
         yolo_annotation_class = yolo_annotation.split()[0]
-        # print(f"Class: {yolo_annotation_class}")
+
         top_left, top_right, bottom_left, bottom_right = convert_yolo_to_corners(
             yolo_annotation, P_w, P_h
         )
         corners = [top_left, top_right, bottom_left, bottom_right]
+
         for i, corner in enumerate(corners):
-            face_idx, converted_corner = convert_xy_to_cubemap_coordinates(
-                corner, P_w, P_h, face_width
-            )
+            face_idx, converted_corner = reproject_point(corner, P_w, P_h, face_width)
             tag = ["TL", "TR", "BL", "BR"][i]
             if face_idx not in face_corners:
                 face_corners[face_idx] = {}
             face_corners[face_idx][tag] = converted_corner
-            # print(f'Face {face_idx} corner {tag}: {converted_corner}')
 
-        # print(f"Original annotation: {yolo_annotation}")
-        # print(f"Original corners: {top_left}, {top_right}, {bottom_left}, {bottom_right}")
-        # for face_idx, corners in face_corners.items():
-        # for tag, corner in corners.items():
-        # print(f"Converted corner {tag}: {corner}")
+        face_idx_tl = face_idx_br = None
 
-        # Case 1: the bounding box spans multiple faces
-
-        # Find the index of the TL corner using face_corners dictionary
-        face_idx_tl, _ = convert_xy_to_cubemap_coordinates(
-            top_left, P_w, P_h, face_width
-        )
-        face_idx_br, _ = convert_xy_to_cubemap_coordinates(
-            bottom_right, P_w, P_h, face_width
-        )
-        face_idx_tr, _ = convert_xy_to_cubemap_coordinates(
-            top_right, P_w, P_h, face_width
-        )
-        face_idx_bl, _ = convert_xy_to_cubemap_coordinates(
-            bottom_left, P_w, P_h, face_width
-        )
+        for face_idx, corners in face_corners.items():
+            for tag in corners:
+                if tag == "TL":
+                    face_idx_tl = face_idx
+                elif tag == "BR":
+                    face_idx_br = face_idx
 
         if face_idx_tl != face_idx_br:
             print("=======! Bounding box spans multiple faces !=======")
-            # face_name_tl = convert_face_idx_to_name(face_idx_tl)
-            # face_name_tr = convert_face_idx_to_name(face_idx_tr)
-            # face_name_bl = convert_face_idx_to_name(face_idx_bl)
-            # face_name_br = convert_face_idx_to_name(face_idx_br)
-            # print(
-            #    f"Top-left corner: {face_name_tl}. Top-right corner: {face_name_tr}. \n"
-            #    f"Bottom-left corner: {face_name_bl}. Bottom-right corner: {face_name_br}."
-            # )
 
-            # Process each face
             for face_idx, corners in face_corners.items():
-                # print(
-                #    f"====== Processing face {convert_face_idx_to_name(face_idx)} ======"
-                # )
-                processed_corners = {}  # Initialize dictionary for adjusted coordinates
+                processed_corners = {}
 
                 for tag, corner in corners.items():
-                    # Adjust coordinates based on already processed corners for the face
                     processed_corners = adjust_coordinates_based_on_corner(
-                        tag, corner, processed_corners, face_width, face_width
+                        tag, corner, processed_corners
                     )
 
-                # print(f"Processed corners: {processed_corners}")
+                tl_star, br_star = adjust_bounding_box_corners(
+                    processed_corners, face_width
+                )
 
-                # Finalize and convert adjusted bounding box to YOLO format
-                tl_x = 0  # Default to 0, assuming no TL or BL gives a better x position
-                tl_y = 0  # Default to 0, assuming no TL or TR gives a better y position
-                br_x = face_width  # Default value in case BR or TR is not specifically adjusted
-                br_y = face_width  # Default value in case BR or BL is not specifically adjusted
-
-                # Apply adjustments from processed_corners for top-left coordinates
-                if "TL" in processed_corners:
-                    tl_x = processed_corners["TL"][0]
-                    tl_y = processed_corners["TL"][1]
-                elif "BL" in processed_corners:
-                    # BL present but not TL, implies adjustment for x position of TL*
-                    tl_x = processed_corners["BL"][0]
-
-                if "TR" in processed_corners:
-                    # TR's y position might adjust TL*'s y if TL is not explicitly processed
-                    tl_y = max(tl_y, processed_corners["TR"][1])
-
-                # Apply adjustments from processed_corners for bottom-right coordinates
-                if "BR" in processed_corners:
-                    br_x = processed_corners["BR"][0]
-                    br_y = processed_corners["BR"][1]
-                else:
-                    if "x_max" in processed_corners:
-                        br_x = processed_corners["x_max"]
-                    if "y_max" in processed_corners:
-                        br_y = processed_corners["y_max"]
-                    if "TR" in processed_corners and "x_max" not in processed_corners:
-                        # If BR is not processed but TR is, adjust BR*'s x to TR's x
-                        br_x = processed_corners["TR"][0]
-                    if "BL" in processed_corners and "y_max" not in processed_corners:
-                        # If BR is not processed but BL is, adjust BR*'s y to BL's y
-                        br_y = processed_corners["BL"][1]
-
-                # Now we have tl_star and br_star considering adjustments
-                tl_star = (tl_x, tl_y)
-                br_star = (br_x, br_y)
-
-                # print(f"Adjusted bounding box corners: {tl_star}, {br_star}")
-
-                converted_yolo_annotation = corners_to_yolo(
+                converted_yolo_annotation = convert_corners_to_yolo(
                     face_idx, tl_star, br_star, face_width, face_width
                 )
 
-                # Swap the face name in converted_yolo_annotation with yolo_annotation_class
                 converted_yolo_annotation = (
                     yolo_annotation_class,
                     *converted_yolo_annotation[1:],
                 )
 
-                # print(f"Converted YOLO annotation: {converted_yolo_annotation}")
-
-                # Before writing to the face annotation file, check if it needs to be cleared
                 face_annotation_file = os.path.join(
                     output_path,
                     img_path.split(".")[0],
                     f"{convert_face_idx_to_name(face_idx)}.txt",
                 )
 
-                # This is where we check if the file exists and clear it if necessary
                 if not os.path.exists(face_annotation_file):
                     os.makedirs(os.path.dirname(face_annotation_file), exist_ok=True)
-                    open(face_annotation_file, "w").close()  # This clears the file
+                    open(face_annotation_file, "w").close()
 
                 with open(face_annotation_file, "a") as f:
                     f.write(" ".join(map(str, converted_yolo_annotation)) + "\n")
+
                 print(f"==== Wrote to {face_annotation_file} ====")
                 print("=======================================")
 
         else:
-            # print(
-            #    f"Bounding box is contained within a single face: {convert_face_idx_to_name(face_idx_tl)}"
-            # )
+
             tl_star = face_corners[face_idx_tl]["TL"]
             br_star = face_corners[face_idx_tl]["BR"]
 
-            # Convert to YOLO format
-            converted_yolo_annotation = corners_to_yolo(
+            converted_yolo_annotation = convert_corners_to_yolo(
                 yolo_annotation_class,
                 tl_star,
                 br_star,
@@ -477,17 +509,11 @@ def process_annotations(input_path, output_path, img_path, face_width):
                 face_width,
             )
 
-            # Swap the face name in converted_yolo_annotation with the first element of the original yolo_annotation (the class)
-            # converted_yolo_annotation = (
-            #    yolo_annotation.split()[0],
-            #    *converted_yolo_annotation[1:],
-            # )
-
             # Before writing to the face annotation file, check if it needs to be cleared
             face_annotation_file = os.path.join(
                 output_path,
                 img_path.split(".")[0],
-                f"{convert_face_idx_to_name(face_idx_tl)}.txt",  # CHANGE THIS
+                f"{convert_face_idx_to_name(face_idx_tl)}.txt",
             )
 
             # This is where we check if the file exists and clear it if necessary
@@ -697,13 +723,15 @@ def main():
                 # if os.path.exists(output_folder):
                 #    continue  # Skip this image and go to the next one
 
-                convert_image_to_cubic(input_path, img_path, output_path, face_width)
+                convert_equirectangular_image_to_cubic(
+                    input_path, img_path, output_path, face_width
+                )
 
                 # Step 2.1: visualize annotations on the equirectangular image
                 # visualize_annotations_on_equirectangular_image(input_path, img_path)
 
                 # Step 3: convert the annotations from yolo to xy coordinates
-                # process_annotations(input_path, output_path, img_path, face_width)
+                process_annotations(input_path, output_path, img_path, face_width)
 
                 # Step 4: visualize processed annotations
                 # Example call to visualize annotations for the 'back' face
