@@ -1,0 +1,14 @@
+azure_iot:
+  hostname: ""
+  device_id: ""
+  shared_access_key: ""
+
+
+logging:
+  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte"]
+  basic_config:
+    # log config as arguments to `logging.basicConfig`
+    level: INFO
+    format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
