@@ -11,6 +11,7 @@ authors = [
 [tool.poetry.dependencies]
 python = "~3.8"
 pre-commit = {version = "^3.2.0", source = "PyPI"}
+aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.0.0" }
 cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v1.0.2" }
 pydantic = {version = "^1.8.2", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
