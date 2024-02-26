@@ -98,21 +98,21 @@ stages:
           dockerImageName: ${{ variables.dockerImageName }}
           dockerImageTag: ${{ variables.dockerImageTag }}
 
-  - stage: Deploy_test
-    displayName: "[ont] Deploy container to ont device"
-    dependsOn:
-      - Build_test
-    condition: |
-      and
-      (
-        succeeded(),
-        eq( variables.dtapName, 'ont' ),
-        ne( variables['Build.Reason'], 'PullRequest' )
-      )
-    jobs:
-      - template: "deploy-pipeline.yml"
-        parameters:
-          serviceConnectionName: ${{ variables.serviceConnectionName }}
-          containerRegistry: ${{ variables.containerRegistry }}
-          dockerImageName: ${{ variables.dockerImageName }}
-          dockerImageTag: ${{ variables.dockerImageTag }}
+#  - stage: Deploy_test
+#    displayName: "[ont] Deploy container to ont device"
+#    dependsOn:
+#      - Build_test
+#    condition: |
+#      and
+#      (
+#        succeeded(),
+#        eq( variables.dtapName, 'ont' ),
+#        ne( variables['Build.Reason'], 'PullRequest' )
+#      )
+#    jobs:
+#      - template: "deploy-pipeline.yml"
+#        parameters:
+#          serviceConnectionName: ${{ variables.serviceConnectionName }}
+#          containerRegistry: ${{ variables.containerRegistry }}
+#          dockerImageName: ${{ variables.dockerImageName }}
+#          dockerImageTag: ${{ variables.dockerImageTag }}
