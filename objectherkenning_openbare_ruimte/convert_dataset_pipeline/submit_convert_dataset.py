@@ -31,5 +31,5 @@ if __name__ == "__main__":
     default_compute = settings["aml_experiment_details"]["compute_name"]
     aml_interface = AMLInterface()
     aml_interface.submit_pipeline_experiment(
-        convert_dataset_pipeline, "cleaning_pipeline", default_compute
+        convert_dataset_pipeline, "convert_dataset", default_compute
     )

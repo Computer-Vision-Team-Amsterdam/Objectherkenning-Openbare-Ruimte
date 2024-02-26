@@ -38,6 +38,7 @@ class LoggingSpec(SettingsSpecModel):
         "format": "%(asctime)s|%(levelname)-8s|%(name)s|%(message)s",
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
+    ai_instrumentation_key: str = ""
 
 
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
