@@ -23,20 +23,20 @@ variables:
   - template: variables.yaml
 
 stages:
-#  - stage: Prerequisites
-#    displayName: "Collect all prerequisites"
-#    jobs:
-#      - template: "prerequisites-pipeline.yml"
-#        parameters:
-#          serviceConnectionName: ${{ variables.serviceConnectionName }}
-#          AMLModelName: ${{ variables.AMLModelName }}
-#          AMLModelVersion: ${{ parameters.AMLModelVersion }}
-#          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
-#          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
-#          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
-#          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
-#          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
-#
+  - stage: Prerequisites
+    displayName: "Collect all prerequisites"
+    jobs:
+      - template: "prerequisites-pipeline.yml"
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionName }}
+          AMLModelName: ${{ variables.AMLModelName }}
+          AMLModelVersion: ${{ parameters.AMLModelVersion }}
+          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
+          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
+          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
+          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+
 #  - stage: Prebuild
 #    displayName: "Checks and tests prior to build"
 #    dependsOn: Prerequisites
