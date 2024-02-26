@@ -8,6 +8,14 @@ class SettingsSpecModel(BaseModel):
         extra = "forbid"
 
 
+class AMLExperimentDetailsSpec(SettingsSpecModel):
+    compute_name: str = None
+    env_name: str = None
+    env_version: int = None
+    src_dir: str = None
+    ai_instrumentation_key: str = None
+
+
 class AzureIoTSpec(SettingsSpecModel):
     hostname: str
     device_id: str
@@ -37,6 +45,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
         extra = "forbid"
 
     customer: str
-    azure_iot: AzureIoTSpec
-    convert_dataset: ConvertDataset
+    aml_experiment_details: AMLExperimentDetailsSpec
+    azure_iot: AzureIoTSpec = None
+    convert_dataset: ConvertDataset = None
     logging: LoggingSpec = LoggingSpec()
