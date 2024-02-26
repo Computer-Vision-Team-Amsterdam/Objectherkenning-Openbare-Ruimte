@@ -19,4 +19,4 @@ if __name__ == "__main__":
             data_delivery_pipeline.run_pipeline()
         except Exception as e:
             print(f"Exception occurred in data delivery: {e}")
-        time.sleep(5)
+        time.sleep(30)
