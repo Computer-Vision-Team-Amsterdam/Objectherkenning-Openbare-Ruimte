@@ -5,6 +5,7 @@ import sys
 sys.path.append("../../..")
 
 from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
+from azure.ai.ml.constants import AssetTypes  # noqa: E402
 from cvtoolkit.helpers.file_helpers import find_image_paths  # noqa: E402
 from mldesigner import Input, Output, command_component  # noqa: E402
 
@@ -36,8 +37,8 @@ from objectherkenning_openbare_ruimte.convert_dataset_pipeline.source.equirectan
     is_deterministic=False,
 )
 def convert_dataset(
-    input_folder: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
-    output_folder: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
+    input_old_folder: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
+    output_new_folder: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
     face_width: int,
 ):
     """
@@ -47,14 +48,14 @@ def convert_dataset(
     Parameters
     """
 
-    image_paths = find_image_paths(input_folder)
-    logger.info(f"Input folder: {input_folder}")
-    logger.info(f"Output folder: {output_folder}")
+    image_paths = find_image_paths(input_old_folder)
+    logger.info(f"Input folder: {input_old_folder}")
+    logger.info(f"Output folder: {output_new_folder}")
     logger.info(f"Face width: {face_width}")
     logger.info(f"Number of images: {len(image_paths)}")
 
     equirectangular_to_cubemap_converter = EquirectangularToCubemapConverter(
-        input_folder, output_folder, face_width
+        input_old_folder, output_new_folder, face_width
     )
 
     for img_path in image_paths:
