@@ -3,6 +3,10 @@ azure_iot:
   device_id: ""
   shared_access_key: ""
 
+data_delivery_pipeline:
+  images_path: ""
+  detections_path: ""
+  metadata_path: ""
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 VIDEOS_FOLDER="../raw_data/"
-OUTPUT_FOLDER="."
+OUTPUT_FOLDER="../raw_frames/"
 
 while true; do
     for video_file in "$VIDEOS_FOLDER"/*.mp4; do

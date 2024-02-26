@@ -14,6 +14,12 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
+class DataDeliveryPipelineSpec(SettingsSpecModel):
+    images_path: str
+    detections_path: str
+    metadata_path: str
+
+
 class LoggingSpec(SettingsSpecModel):
     loglevel_own: str = "INFO"
     own_packages: List[str] = [
@@ -34,4 +40,5 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
 
     customer: str
     azure_iot: AzureIoTSpec
+    data_delivery_pipeline: DataDeliveryPipelineSpec
     logging: LoggingSpec = LoggingSpec()

@@ -1,0 +1,6 @@
+**/.pytest_cache
+.tox
+raw_data
+.idea
+.git
+**/__pycache__
