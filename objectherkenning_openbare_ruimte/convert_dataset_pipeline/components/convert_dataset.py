@@ -5,6 +5,8 @@ import sys
 sys.path.append("../../..")
 
 from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
+from cvtoolkit.helpers.file_helpers import find_image_paths  # noqa: E402
+from mldesigner import Input, Output, command_component  # noqa: E402
 
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
@@ -14,21 +16,51 @@ config_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "config.yml")
 )
 settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
-aml_experiment_settings = settings["aml_experiment_details"]
-
-# Configure logging
-# DO NOT import relative paths before setting up the logger.
-# Exception, of course, is settings to set up the logger.
 log_settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)[
     "logging"
 ]
 setup_azure_logging(log_settings, __name__)
-
-# from objectherkenning_openbare_ruimte.convert_old_dataset.source.equirectangular_to_cubemap_converter import (  # noqa: E402
-#    ConvertEquirectangularImageToCubic,
-# )
-
+aml_experiment_settings = settings["aml_experiment_details"]
 logger = logging.getLogger("convert_old_dataset")
+
+from objectherkenning_openbare_ruimte.convert_dataset_pipeline.source.equirectangular_to_cubemap_converter import (  # noqa: E402
+    EquirectangularToCubemapConverter,
+)
+
+
+@command_component(
+    name="convert_dataset",
+    display_name="Converts a dataset with equirectangular images to a dataset with cubemaps.",
+    environment=f"azureml:{aml_experiment_settings['env_name']}:{aml_experiment_settings['env_version']}",
+    code="../../../",
+    is_deterministic=False,
+)
+def convert_dataset(
+    input_folder: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
+    output_folder: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
+    face_width: int,
+):
+    """
+    Pipeline step to convert a dataset with equirectangular images to
+    a dataset with cubemaps. This includes images and annotations.
+
+    Parameters
+    """
+
+    image_paths = find_image_paths(input_folder)
+    logger.info(f"Input folder: {input_folder}")
+    logger.info(f"Output folder: {output_folder}")
+    logger.info(f"Face width: {face_width}")
+    logger.info(f"Number of images: {len(image_paths)}")
+
+    equirectangular_to_cubemap_converter = EquirectangularToCubemapConverter(
+        input_folder, output_folder, face_width
+    )
+
+    for img_path in image_paths:
+        equirectangular_to_cubemap_converter.convert_image(img_path)
+        equirectangular_to_cubemap_converter.process_annotations(img_path)
+        logging.info(f"Processed {img_path}")
 
 
 """def main(args: argparse.Namespace) -> None:
