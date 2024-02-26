@@ -17,6 +17,8 @@ azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-storage-blob = "^12.19.0"
 
 [tool.poetry.dev-dependencies]
+pytest = {version = "^7.0.1", source = "PyPI" }
+pytest-cov = {version = "^4.0.0", source = "PyPI" }
 
 [tool.isort]
 profile = "black"
