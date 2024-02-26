@@ -1,8 +1,9 @@
+customer: ""
+
 azure_iot:
   hostname: ""
   device_id: ""
   shared_access_key: ""
-
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
