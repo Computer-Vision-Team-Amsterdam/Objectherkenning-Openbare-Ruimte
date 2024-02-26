@@ -23,31 +23,31 @@ variables:
   - template: variables.yaml
 
 stages:
-  - stage: Prerequisites
-    displayName: "Collect all prerequisites"
-    jobs:
-      - template: "prerequisites-pipeline.yml"
-        parameters:
-          serviceConnectionName: ${{ variables.serviceConnectionName }}
-          AMLModelName: ${{ variables.AMLModelName }}
-          AMLModelVersion: ${{ parameters.AMLModelVersion }}
-          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
-          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
-          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
-          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
-          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
-
-  - stage: Prebuild
-    displayName: "Checks and tests prior to build"
-    dependsOn: Prerequisites
-    jobs:
-      - template: "prebuild-pipeline.yml"
+#  - stage: Prerequisites
+#    displayName: "Collect all prerequisites"
+#    jobs:
+#      - template: "prerequisites-pipeline.yml"
+#        parameters:
+#          serviceConnectionName: ${{ variables.serviceConnectionName }}
+#          AMLModelName: ${{ variables.AMLModelName }}
+#          AMLModelVersion: ${{ parameters.AMLModelVersion }}
+#          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
+#          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
+#          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
+#          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+#          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+#
+#  - stage: Prebuild
+#    displayName: "Checks and tests prior to build"
+#    dependsOn: Prerequisites
+#    jobs:
+#      - template: "prebuild-pipeline.yml"
 
   - stage: Build_test
     displayName: "[ont] Build and publish container to ont"
-    dependsOn:
-      - Prerequisites
-      - Prebuild
+#    dependsOn:
+#      - Prerequisites
+#      - Prebuild
     condition: |
       and
       (
@@ -73,9 +73,9 @@ stages:
 
   - stage: Build_prd
     displayName: "[prd] Build and publish container to prd"
-    dependsOn:
-      - Prerequisites
-      - Prebuild
+#    dependsOn:
+#      - Prerequisites
+#      - Prebuild
     condition: |
       and
       (
