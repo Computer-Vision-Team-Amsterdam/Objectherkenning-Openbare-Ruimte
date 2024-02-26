@@ -7,9 +7,10 @@ azure_iot:
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_dataset"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: INFO
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
+  ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"
