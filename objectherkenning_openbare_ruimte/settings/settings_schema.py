@@ -14,6 +14,10 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
+class ConvertDataset(SettingsSpecModel):
+    face_width: int = 1024
+
+
 class LoggingSpec(SettingsSpecModel):
     loglevel_own: str = "INFO"
     own_packages: List[str] = [
@@ -34,4 +38,5 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
 
     customer: str
     azure_iot: AzureIoTSpec
+    convert_dataset: ConvertDataset
     logging: LoggingSpec = LoggingSpec()

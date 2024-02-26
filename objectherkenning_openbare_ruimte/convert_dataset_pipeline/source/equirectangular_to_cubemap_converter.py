@@ -21,7 +21,7 @@ class EquirectangularToCubemapConverter:
     Finally, it can visualize the annotations on both the equirectangular and cubic images.
     """
 
-    def __init__(self, input_path: str, output_path: str):
+    def __init__(self, input_path: str, output_path: str, face_width: int):
         """
         Parameters
         ----------
@@ -32,6 +32,7 @@ class EquirectangularToCubemapConverter:
         """
         self.input_path = input_path
         self.output_path = output_path
+        self.face_width = face_width
 
     @staticmethod
     def _convert_face_idx_to_name(face_idx: int) -> str:
@@ -577,9 +578,7 @@ class EquirectangularToCubemapConverter:
 
         logging.info(f"Annotated equirectangular image saved to {visualized_img_path}")
 
-    def convert_equirectangular_image_to_cubic(
-        self, img_path: str, face_width: int
-    ) -> None:
+    def convert_image(self, img_path: str) -> None:
         """
         Convert an equirectangular image to a set of six cubic faces using py360convert.e2c.
 
@@ -587,8 +586,6 @@ class EquirectangularToCubemapConverter:
         ----------
         img_path : str
             Path to the input image file.
-        face_width : int
-            Width of each face in the cubic format.
 
         Returns
         -------
@@ -599,13 +596,15 @@ class EquirectangularToCubemapConverter:
         img = os.path.join(self.input_path, img_path)
 
         try:
+            if img is None:
+                raise FileNotFoundError(f"File {img} is empty or corrupted")
             img = cv2.imread(img)
-        except FileNotFoundError:
-            logging.error(f"File {img} not found")
+        except FileNotFoundError as e:
+            logging.error(str(e))
             return
 
         front, right, back, left, top, bottom = p3c.e2c(
-            img, face_w=face_width, mode="bilinear", cube_format="list"
+            img, face_w=self.face_width, mode="bilinear", cube_format="list"
         )
 
         folder = img_path.split(".")[0]
@@ -622,7 +621,7 @@ class EquirectangularToCubemapConverter:
 
         logging.info(f"Processed image: {img_path}.")
 
-    def process_annotations(self, img_path: str, face_width: int) -> None:
+    def process_annotations(self, img_path: str) -> None:
         """
         Process YOLO format annotations for a given equirectangular image, reprojecting them onto
         the corresponding faces of a cubemap and converting them back into YOLO format annotations
@@ -638,9 +637,6 @@ class EquirectangularToCubemapConverter:
         img_path : str
             The filename of the equirectangular image being processed. This name is also used to
             derive the names of the annotation files.
-        face_width : int
-            The width (and assumed height) of each face in the cubemap representation. This dimension
-            is used in the reprojection process and in converting coordinates.
 
         Returns
         -------
@@ -678,7 +674,7 @@ class EquirectangularToCubemapConverter:
             for i, corner in enumerate(corners):
                 face_idx, converted_corner = (
                     EquirectangularToCubemapConverter._reproject_point(
-                        corner, P_w, P_h, face_width
+                        corner, P_w, P_h, self.face_width
                     )
                 )
                 face_idx = int(face_idx)
@@ -709,7 +705,7 @@ class EquirectangularToCubemapConverter:
 
                     tl_star, br_star = (
                         EquirectangularToCubemapConverter._adjust_bounding_box_corners(
-                            processed_corners, face_width
+                            processed_corners, self.face_width
                         )
                     )
 
@@ -718,8 +714,8 @@ class EquirectangularToCubemapConverter:
                             yolo_annotation_class,
                             tl_star,
                             br_star,
-                            face_width,
-                            face_width,
+                            self.face_width,
+                            self.face_width,
                         )
                     )
 
@@ -737,8 +733,8 @@ class EquirectangularToCubemapConverter:
                         yolo_annotation_class,
                         tl_star,
                         br_star,
-                        face_width,
-                        face_width,
+                        self.face_width,
+                        self.face_width,
                     )
                 )
 
