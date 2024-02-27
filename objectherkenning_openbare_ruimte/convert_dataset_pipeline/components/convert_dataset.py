@@ -2,12 +2,13 @@ import logging
 import os
 import sys
 
+from azure.ai.ml.constants import AssetTypes
+from mldesigner import Input, Output, command_component
+
 sys.path.append("../../..")
 
 from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
-from azure.ai.ml.constants import AssetTypes  # noqa: E402
 from cvtoolkit.helpers.file_helpers import find_image_paths  # noqa: E402
-from mldesigner import Input, Output, command_component  # noqa: E402
 
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
