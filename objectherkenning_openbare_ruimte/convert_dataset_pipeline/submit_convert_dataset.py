@@ -10,11 +10,6 @@ from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
 
-# from objectherkenning_openbare_ruimte.convert_dataset_pipeline.components.convert_dataset import (
-#    convert_dataset,
-# )
-
-
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 print(settings)
@@ -62,7 +57,6 @@ if __name__ == "__main__":
     settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
     default_compute = settings["aml_experiment_details"]["compute_name"]
-    print(default_compute)
     aml_interface = AMLInterface()
     aml_interface.submit_pipeline_experiment(
         convert_dataset_pipeline, "convert_dataset", default_compute

@@ -176,11 +176,12 @@ class EquirectangularToCubemapConverter:
         -------
         None
         """
-        folder_name = img_name.split(".")[0]
         face_name = EquirectangularToCubemapConverter._convert_face_idx_to_name(
             face_idx
         )
-        annotation_file = os.path.join(output_path, folder_name, f"{face_name}.txt")
+        # We use the plus operator because of AML issues with os.path.join
+        annotation_file = output_path + "/" + img_name + "/" + face_name + ".txt"
+        # annotation_file = os.path.join(output_path, img_name, f"{face_name}.txt")
         converted_yolo_annotation_str = " ".join(map(str, annotation))
 
         os.makedirs(os.path.dirname(annotation_file), exist_ok=True)
@@ -352,8 +353,6 @@ class EquirectangularToCubemapConverter:
         corner may adjust the 'x_max' value if the 'TL' (top-left) corner has already been processed,
         ensuring the bounding box correctly encapsulates the object within the face's boundaries.
         """
-
-        print(f"Processed_corners: {processed_corners}")
 
         if "TL" in processed_corners:
             if tag == "TR":
@@ -594,32 +593,38 @@ class EquirectangularToCubemapConverter:
         """
 
         img = os.path.join(self.input_path, img_path)
+        img = cv2.imread(img)
 
         try:
             if img is None:
                 raise FileNotFoundError(f"File {img} is empty or corrupted")
-            img = cv2.imread(img)
         except FileNotFoundError as e:
             logging.error(str(e))
             return
 
-        front, right, back, left, top, bottom = p3c.e2c(
-            img, face_w=self.face_width, mode="bilinear", cube_format="list"
-        )
+        try:
+            front, right, back, left, top, bottom = p3c.e2c(
+                img, face_w=self.face_width, mode="bilinear", cube_format="list"
+            )
 
-        folder = img_path.split(".")[0]
-        directory = os.path.join(self.output_path, folder)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+            base_name = os.path.basename(img_path)
+            folder = os.path.splitext(base_name)[0]
+            # We use the plus operator because of AML issues with os.path.join
+            directory = self.output_path + "/" + folder
+            # directory = os.path.join(self.output_path, folder)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
-        cv2.imwrite(f"{directory}/front.png", front)
-        cv2.imwrite(f"{directory}/right.png", right)
-        cv2.imwrite(f"{directory}/back.png", back)
-        cv2.imwrite(f"{directory}/left.png", left)
-        cv2.imwrite(f"{directory}/top.png", top)
-        cv2.imwrite(f"{directory}/bottom.png", bottom)
+            cv2.imwrite(f"{directory}/front.png", front)
+            cv2.imwrite(f"{directory}/right.png", right)
+            cv2.imwrite(f"{directory}/back.png", back)
+            cv2.imwrite(f"{directory}/left.png", left)
+            cv2.imwrite(f"{directory}/top.png", top)
+            cv2.imwrite(f"{directory}/bottom.png", bottom)
 
-        logging.info(f"Processed image: {img_path}.")
+            logging.info(f"Processed image: {img_path}.")
+        except Exception as e:
+            logging.error(f"Error processing image {img_path}: {e}")
 
     def process_annotations(self, img_path: str) -> None:
         """
@@ -644,8 +649,12 @@ class EquirectangularToCubemapConverter:
         """
         logging.info(f"===== Processing annotations for {img_path} =====")
 
-        annotation_file = img_path.split(".")[0] + ".txt"
-        annotations_path = os.path.join(self.input_path, annotation_file)
+        base_name = os.path.basename(img_path)
+        img_name = os.path.splitext(base_name)[0]
+        annotation_file = img_name + ".txt"
+        # We use the plus operator because of AML issues with os.path.join
+        annotations_path = self.input_path + "/" + annotation_file
+        # annotations_path = os.path.join(self.input_path, annotation_file)
 
         try:
             with open(annotations_path, "r") as file:
@@ -656,6 +665,14 @@ class EquirectangularToCubemapConverter:
 
         image_file_path = os.path.join(self.input_path, img_path)
         image = cv2.imread(image_file_path)
+
+        try:
+            if image is None:
+                raise FileNotFoundError(f"File {image} is empty or corrupted")
+        except FileNotFoundError as e:
+            logging.error(str(e))
+            return
+
         P_h, P_w, _ = image.shape
 
         for line in lines:
@@ -720,7 +737,7 @@ class EquirectangularToCubemapConverter:
                     )
 
                     EquirectangularToCubemapConverter._write_annotation_to_file(
-                        self.output_path, img_path, face_idx, converted_yolo_annotation
+                        self.output_path, img_name, face_idx, converted_yolo_annotation
                     )
 
             else:
@@ -739,5 +756,5 @@ class EquirectangularToCubemapConverter:
                 )
 
                 EquirectangularToCubemapConverter._write_annotation_to_file(
-                    self.output_path, img_path, face_idx, converted_yolo_annotation
+                    self.output_path, img_name, face_idx, converted_yolo_annotation
                 )
