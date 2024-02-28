@@ -14,11 +14,10 @@ logger = logging.getLogger(__name__)
 
 class EquirectangularToCubemapConverter:
     """
-    Convert an equirectangular image to a set of six cubic faces using py360convert library
-    (https://github.com/imandrealombardo/py360convert), with the option of also converting
-    YOLO format annotations to the corresponding cubic faces.
-
-    Finally, it can visualize the annotations on both the equirectangular and cubic images.
+    - Convert an equirectangular image to a set of six cubic faces using py360convert library
+    (https://github.com/imandrealombardo/py360convert)
+    - Convert YOLO format annotations to the corresponding cubic faces.
+    - Visualize the annotations on both the equirectangular and cubic images.
     """
 
     def __init__(self, input_path: str, output_path: str, face_width: int):
