@@ -26,6 +26,10 @@ class ConvertDataset(SettingsSpecModel):
     face_width: int = 1024
 
 
+class ConvertAnnotations(SettingsSpecModel):
+    datastore_name: str = "converted-dataset-oor"
+
+
 class LoggingSpec(SettingsSpecModel):
     loglevel_own: str = "INFO"
     own_packages: List[str] = [
@@ -49,4 +53,5 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     aml_experiment_details: AMLExperimentDetailsSpec
     azure_iot: AzureIoTSpec = None
     convert_dataset: ConvertDataset = None
+    convert_annotations: ConvertAnnotations = None
     logging: LoggingSpec = LoggingSpec()

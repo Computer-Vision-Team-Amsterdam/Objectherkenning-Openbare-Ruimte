@@ -28,8 +28,10 @@ def convert_annotations_pipeline():
         description="Path to the folder containing the annotations to convert",
     )
 
+    datastore_name = settings["convert_annotations"]["datastore_name"]
+
     convert_annotations_step = convert_annotations(
-        input_old_folder=input_old_input,
+        input_old_folder=input_old_input, datastore_name=datastore_name
     )
 
     output_new_path = aml_interface.get_datastore_full_path(
