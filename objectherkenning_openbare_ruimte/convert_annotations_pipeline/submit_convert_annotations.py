@@ -29,9 +29,12 @@ def convert_annotations_pipeline():
     )
 
     datastore_name = settings["convert_annotations"]["datastore_name"]
+    categories_file = settings["convert_annotations"]["categories_file"]
 
     convert_annotations_step = convert_annotations(
-        input_old_folder=input_old_input, datastore_name=datastore_name
+        input_old_folder=input_old_input,
+        datastore_name=datastore_name,
+        categories_file=categories_file,
     )
 
     output_new_path = aml_interface.get_datastore_full_path(

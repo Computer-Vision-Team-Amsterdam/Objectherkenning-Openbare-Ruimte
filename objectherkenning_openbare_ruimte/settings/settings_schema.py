@@ -28,6 +28,7 @@ class ConvertDataset(SettingsSpecModel):
 
 class ConvertAnnotations(SettingsSpecModel):
     datastore_name: str = "converted-dataset-oor"
+    categories_file: str = "categories.json"
 
 
 class LoggingSpec(SettingsSpecModel):
