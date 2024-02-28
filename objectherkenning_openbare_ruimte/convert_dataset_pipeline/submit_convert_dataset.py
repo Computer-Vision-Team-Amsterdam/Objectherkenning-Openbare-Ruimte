@@ -12,7 +12,6 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
-print(settings)
 setup_azure_logging(settings["logging"], __name__)
 
 from aml_interface.aml_interface import AMLInterface  # noqa: E402
