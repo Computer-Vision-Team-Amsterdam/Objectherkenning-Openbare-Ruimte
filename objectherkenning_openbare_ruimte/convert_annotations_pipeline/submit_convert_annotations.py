@@ -1,6 +1,12 @@
 from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
+
+# from azure.ai.ml import Input, Output
+# from azure.ai.ml.constants import AssetTypes
 from azure.ai.ml.dsl import pipeline
 
+"""from objectherkenning_openbare_ruimte.convert_annotations_pipeline.components.convert_annotations import (
+    convert_annotations,
+)"""
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -14,6 +20,27 @@ from aml_interface.aml_interface import AMLInterface  # noqa: E402
 
 @pipeline()
 def convert_annotations_pipeline():
+    """input_old_path = aml_interface.get_datastore_full_path("annotations_conversion_old")
+
+    input_old_input = Input(
+        type=AssetTypes.URI_FOLDER,
+        path=input_old_path,
+        description="Path to the folder containing the annotations to convert",
+    )
+
+    convert_annotations_step = convert_annotations(
+        input_old_folder=input_old_input,
+    )
+
+    output_new_path = aml_interface.get_datastore_full_path(
+        "annotations_conversion_new"
+    )
+
+    convert_annotations_step.outputs.output_new_folder = Output(
+        type=AssetTypes.URI_FOLDER,
+        path=output_new_path,
+        description="Path to the folder containing the converted annotations",
+    )"""
 
     return {}
 
