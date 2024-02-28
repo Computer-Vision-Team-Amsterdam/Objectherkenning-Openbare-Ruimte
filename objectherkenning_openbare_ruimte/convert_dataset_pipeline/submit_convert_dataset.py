@@ -43,10 +43,6 @@ def convert_dataset_pipeline():
         description="Path to the folder containing the converted dataset",
     )
 
-    print(input_old_input)
-    print(output_new_path)
-    print(face_width)
-
     return {}
 
 
