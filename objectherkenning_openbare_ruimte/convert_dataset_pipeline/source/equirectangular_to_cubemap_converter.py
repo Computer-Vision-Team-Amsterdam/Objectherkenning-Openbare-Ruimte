@@ -178,9 +178,8 @@ class EquirectangularToCubemapConverter:
         face_name = EquirectangularToCubemapConverter._convert_face_idx_to_name(
             face_idx
         )
-        # We use the plus operator because of AML issues with os.path.join
-        annotation_file = output_path + "/" + img_name + "/" + face_name + ".txt"
-        # annotation_file = os.path.join(output_path, img_name, f"{face_name}.txt")
+
+        annotation_file = os.path.join(output_path, img_name, f"{face_name}.txt")
         converted_yolo_annotation_str = " ".join(map(str, annotation))
 
         os.makedirs(os.path.dirname(annotation_file), exist_ok=True)
@@ -608,9 +607,7 @@ class EquirectangularToCubemapConverter:
 
             base_name = os.path.basename(img_path)
             folder = os.path.splitext(base_name)[0]
-            # We use the plus operator because of AML issues with os.path.join
-            directory = self.output_path + "/" + folder
-            # directory = os.path.join(self.output_path, folder)
+            directory = os.path.join(self.output_path, folder)
             if not os.path.exists(directory):
                 os.makedirs(directory)
 
@@ -651,9 +648,7 @@ class EquirectangularToCubemapConverter:
         base_name = os.path.basename(img_path)
         img_name = os.path.splitext(base_name)[0]
         annotation_file = img_name + ".txt"
-        # We use the plus operator because of AML issues with os.path.join
-        annotations_path = self.input_path + "/" + annotation_file
-        # annotations_path = os.path.join(self.input_path, annotation_file)
+        annotations_path = os.path.join(self.input_path, annotation_file)
 
         try:
             with open(annotations_path, "r") as file:
