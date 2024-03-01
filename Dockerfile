@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS base-image
+FROM python:3.8.12-slim AS base-image
 
 # Upgrade and install system libraries
 RUN apt-get -y update \
@@ -6,30 +6,35 @@ RUN apt-get -y update \
     && apt-get -y install \
         build-essential \
         curl \
+        git \
+        yasm \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src
+RUN git clone https://git.ffmpeg.org/ffmpeg.git
+RUN cd ffmpeg \
+    && ./configure \
+    && make \
+    && make install
 
-RUN conda create -n env python=3.8
-RUN echo "source activate env" > ~/.bashrc
-ENV PATH="/opt/miniconda/envs/env/bin:$PATH"
+RUN pip install pipx \
+    && pipx ensurepath
+RUN pipx install poetry
+ENV PATH=/root/.local/bin:$PATH
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="/root/.local/bin:$PATH"
 RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml .
 COPY poetry.lock .
 
 # Initialize Conda, activate environment and install poetry packages
-RUN /opt/miniconda/bin/conda init bash && \
-    . /opt/miniconda/etc/profile.d/conda.sh && \
-    conda activate env && \
-    poetry update --no-ansi --no-interaction && \
+RUN poetry update --no-ansi --no-interaction && \
     poetry install --no-ansi --no-interaction --no-root
 
 #COPY model_artifacts/dataoffice_model/last-purple_boot_3l6p24vb.pt model_artifacts/last-purple_boot_3l6p24vb.pt
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
+COPY config.yml config.yml
 
 ARG AML_MODEL_ID_arg
 ENV AML_MODEL_ID=$AML_MODEL_ID_arg

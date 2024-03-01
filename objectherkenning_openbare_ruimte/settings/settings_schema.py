@@ -38,7 +38,6 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     class Config:
         extra = "forbid"
 
-    customer: str
     azure_iot: AzureIoTSpec
     data_delivery_pipeline: DataDeliveryPipelineSpec
     logging: LoggingSpec = LoggingSpec()
