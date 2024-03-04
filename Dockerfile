@@ -12,15 +12,18 @@ RUN apt-get -y update \
 WORKDIR /usr/src
 
 RUN conda create -n env python=3.8
-RUN echo "source activate env" > ~/.bashrc
-ENV PATH="/opt/miniconda/envs/env/bin:$PATH"
 RUN conda install -c conda-forge conda-pack
+#RUN echo "source activate env" > ~/.bashrc
+ENV PATH="/opt/miniconda/envs/env/bin:$PATH"
 
 RUN pip install pipx \
     && pipx ensurepath
 RUN pipx install poetry
 ENV PATH=/root/.local/bin:$PATH
 RUN poetry config virtualenvs.create false
+
+ENV CURLOPT_SSL_VERIFYHOST=0
+ENV CURLOPT_SSL_VERIFYPEER=0
 
 COPY pyproject.toml .
 COPY poetry.lock .
@@ -32,10 +35,10 @@ RUN /opt/miniconda/bin/conda init bash \
     && poetry update --no-ansi --no-interaction \
     && poetry install --no-ansi --no-interaction --no-root
 
+WORKDIR /venv
+
 # Use conda-pack to create a standalone env in /venv
-RUN conda-pack -n env -o /tmp/env.tar && \
-    mkdir /venv && cd /venv && tar xf /tmp/env.tar && \
-    rm /tmp/env.tar
+RUN conda-pack -n env -o /venv/env.tar.gz --ignore-missing-files
 
 FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS runtime
 
@@ -58,7 +61,9 @@ RUN git clone https://git.ffmpeg.org/ffmpeg.git \
     && make install
 
 # Copy /venv from build stage
-COPY --from=builder /venv /venv
+WORKDIR /venv
+COPY --from=builder /venv .
+RUN tar -xzf env.tar.gz
 
 #COPY model_artifacts/dataoffice_model/last-purple_boot_3l6p24vb.pt model_artifacts/last-purple_boot_3l6p24vb.pt
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
