@@ -65,13 +65,14 @@ WORKDIR /venv
 COPY --from=builder /venv .
 RUN tar -xzf env.tar.gz
 
+WORKDIR /usr/src
 #COPY model_artifacts/dataoffice_model/last-purple_boot_3l6p24vb.pt model_artifacts/last-purple_boot_3l6p24vb.pt
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
 COPY config.yml config.yml
 
-ARG AML_MODEL_ID_arg
+ARG AML_MODEL_ID_arg=1
 ENV AML_MODEL_ID=$AML_MODEL_ID_arg
-ARG PROJECT_VERSION_arg
+ARG PROJECT_VERSION_arg=1
 ENV PROJECT_VERSION=$PROJECT_VERSION_arg
 
 COPY entrypoint.sh .

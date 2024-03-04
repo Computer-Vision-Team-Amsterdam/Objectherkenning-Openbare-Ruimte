@@ -12,9 +12,9 @@ if __name__ == "__main__":
     while True:
         try:
             data_delivery_pipeline = DataDelivery(
-                images_path="objectherkenning_openbare_ruimte/processed_images",
-                detections_path="objectherkenning_openbare_ruimte/processed_images",
-                metadata_path="objectherkenning_openbare_ruimte/processed_images",
+                images_path=settings["data_delivery_pipeline"]["images_path"],
+                detections_path=settings["data_delivery_pipeline"]["detections_path"],
+                metadata_path=settings["data_delivery_pipeline"]["metadata_path"],
             )
             data_delivery_pipeline.run_pipeline()
         except Exception as e:
