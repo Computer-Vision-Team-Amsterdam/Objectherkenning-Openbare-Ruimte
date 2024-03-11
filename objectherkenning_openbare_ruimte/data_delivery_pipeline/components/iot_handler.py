@@ -34,7 +34,9 @@ class IoTHandler:
             device_client.shutdown()
 
     def deliver_message(self, message_content: str):
-        message = Message(message_content)
+        message = Message(
+            message_content, content_encoding="utf-8", content_type="application/json"
+        )
         with self._connect() as device_client:
             device_client.send_message(message)
 

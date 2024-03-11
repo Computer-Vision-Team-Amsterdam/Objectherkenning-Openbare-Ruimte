@@ -12,9 +12,9 @@ if __name__ == "__main__":
     while True:
         try:
             data_delivery_pipeline = DataDelivery(
-                images_path=settings["data_delivery_pipeline"]["images_path"],
-                detections_path=settings["data_delivery_pipeline"]["detections_path"],
-                metadata_path=settings["data_delivery_pipeline"]["metadata_path"],
+                images_folder=settings["data_delivery_pipeline"]["images_path"],
+                detections_folder=settings["data_delivery_pipeline"]["detections_path"],
+                metadata_folder=settings["data_delivery_pipeline"]["metadata_path"],
             )
             data_delivery_pipeline.run_pipeline()
         except Exception as e:

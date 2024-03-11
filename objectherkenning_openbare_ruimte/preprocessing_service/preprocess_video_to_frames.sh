@@ -10,7 +10,7 @@ while true; do
     if [ -f "$video_file" ]; then
         file_name=$(basename "$video_file")
         mkdir -p "$OUTPUT_FOLDER/$file_name"
-        ffmpeg -xerror -i "$video_file" -c:v copy -bsf:v mjpeg2jpeg "$OUTPUT_FOLDER/$file_name/$file_name%04d.jpg"
+        ffmpeg -xerror -i "$video_file" -c:v copy -bsf:v mjpeg2jpeg "$OUTPUT_FOLDER/$file_name/$file_name"_frame_%04d.jpg
         RESULT=$?
         if [ $RESULT -eq 0 ]; then
           rm "$video_file"
