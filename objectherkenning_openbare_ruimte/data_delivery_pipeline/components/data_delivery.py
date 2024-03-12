@@ -1,7 +1,7 @@
 import csv
 import os
 
-from cvtoolkit.helpers.file_helpers import delete_folder, find_image_paths
+from cvtoolkit.helpers.file_helpers import delete_file, find_image_paths
 
 from objectherkenning_openbare_ruimte.data_delivery_pipeline.components.iot_handler import (
     IoTHandler,
@@ -19,7 +19,7 @@ class DataDelivery:
     def run_pipeline(self):
         print(f"Running data delivery pipeline on {self.images_folder}..")
         images_and_frames = self._match_metadata_to_images()
-        self._deliver_data(images_and_frames=images_and_frames)
+        # self._deliver_data(images_and_frames=images_and_frames)
         self._delete_data(images_and_frames=images_and_frames)
 
     def _match_metadata_to_images(self):
@@ -54,7 +54,6 @@ class DataDelivery:
         for path in images_paths:
             video_name, frame_info = os.path.basename(path).rsplit("_frame_", 1)
             frame_number, _ = frame_info.rsplit(".", 1)
-            frame_number = int(frame_number)
             if video_name not in images_and_frames:
                 images_and_frames[video_name] = [frame_number]
             else:
@@ -63,18 +62,17 @@ class DataDelivery:
 
     def _deliver_data(self, images_and_frames):
         iot_handler = IoTHandler()
-        for image_name, _ in images_and_frames.items():
-            image_folder = f"{self.images_folder}/{image_name}/"
-            print(f"Delivering data from {image_folder}..")
-            files = [
-                f
-                for f in os.listdir(image_folder)
-                if os.path.isfile(os.path.join(image_folder, f))
-            ]
-            for file in files:
-                iot_handler.upload_file(os.path.join(image_folder, file))
+        for image_name, frame_numbers in images_and_frames.items():
+            image_folder = f"{self.images_folder}/{image_name}"
+            iot_handler.upload_file(f"{image_folder}/{image_name}.csv")
+            for frame_number in frame_numbers:
+                iot_handler.upload_file(
+                    f"{image_folder}/{image_name}_frame_{frame_number}.jpg"
+                )
 
     def _delete_data(self, images_and_frames):
-        for image_name, _ in images_and_frames.items():
-            image_folder = f"{self.images_folder}/{image_name}/"
-            delete_folder(image_folder)
+        for image_name, frame_numbers in images_and_frames.items():
+            image_folder = f"{self.images_folder}/{image_name}"
+            delete_file(f"{image_folder}/{image_name}.csv")
+            for frame_number in frame_numbers:
+                delete_file(f"{image_folder}/{image_name}_frame_{frame_number}.jpg")
