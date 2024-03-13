@@ -17,10 +17,10 @@ from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
 config_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "config.yml")
 )
-settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
-log_settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)[
-    "logging"
-]
+
+ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
+settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
+log_settings = settings["logging"]
 setup_azure_logging(log_settings, __name__)
 aml_experiment_settings = settings["aml_experiment_details"]
 logger = logging.getLogger("convert_old_dataset")
