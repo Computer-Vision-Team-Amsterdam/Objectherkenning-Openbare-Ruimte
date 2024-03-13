@@ -733,9 +733,7 @@ class EquirectangularToCubemapConverter:
                     EquirectangularToCubemapConverter._write_annotation_to_file(
                         self.output_path, img_name, face_idx, converted_yolo_annotation
                     )
-
             else:
-
                 tl_star = face_corners[face_idx_tl]["TL"]
                 br_star = face_corners[face_idx_tl]["BR"]
 
