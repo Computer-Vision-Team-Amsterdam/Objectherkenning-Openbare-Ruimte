@@ -1,5 +1,3 @@
-customer: ""
-
 aml_experiment_details:
   compute_name: cpu-blurring-model2
   env_name: oor-environment
