@@ -19,7 +19,6 @@ from aml_interface.aml_interface import AMLInterface  # noqa: E402
 
 @pipeline()
 def convert_dataset_pipeline():
-
     input_old_path = aml_interface.get_datastore_full_path("dataset_conversion_old")
 
     input_old_input = Input(
