@@ -1,10 +1,13 @@
 import json
+import logging
 import os
 from datetime import datetime
 from typing import Any, Dict
 
 import cv2
 from cvtoolkit.helpers.file_helpers import find_image_paths  # noqa: E402
+
+logger = logging.getLogger(__name__)
 
 
 class YoloToAzureCocoConverter:
@@ -191,6 +194,6 @@ class YoloToAzureCocoConverter:
                         self.annotation_id += 1
 
         output_file = os.path.join(self.output_folder, "annotations.json")
-        print(self.categories)
+        logger.info(f"Categories: {self.categories}")
         with open(output_file, "w") as f:
             json.dump(self.coco_json, f, indent=4)
