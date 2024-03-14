@@ -23,10 +23,10 @@ variables:
   - template: variables.yaml
 
 stages:
-  - stage: Prerequisites
-    displayName: "Collect all prerequisites"
+  - stage: Prebuild
+    displayName: "Collect all prerequisite and run tests prior to build"
     jobs:
-      - template: "steps/prerequisites-pipeline.yml"
+      - template: "steps/prebuild-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
@@ -37,16 +37,9 @@ stages:
           downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
           publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
 
-  - stage: Prebuild
-    displayName: "Checks and tests prior to build"
-    dependsOn: Prerequisites
-    jobs:
-      - template: "steps/prebuild-pipeline.yml"
-
   - stage: Build_ont
     displayName: "[ont] Build and publish container to ont"
     dependsOn:
-      - Prerequisites
       - Prebuild
     condition: |
       and
@@ -74,7 +67,6 @@ stages:
   - stage: Build_prd
     displayName: "[prd] Build and publish container to prd"
     dependsOn:
-      - Prerequisites
       - Prebuild
     condition: |
       and
