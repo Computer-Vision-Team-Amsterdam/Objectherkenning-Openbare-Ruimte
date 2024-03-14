@@ -1,5 +1,5 @@
 jobs:
-  - template: templates/code-quality-security-checks.yml
+  - template: ../templates/code-quality-security-checks.yml
     parameters:
       repoName: self
       pipAuditArgs: ""
