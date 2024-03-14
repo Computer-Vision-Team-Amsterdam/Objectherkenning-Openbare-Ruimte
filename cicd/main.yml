@@ -26,7 +26,7 @@ stages:
   - stage: Prebuild
     displayName: "Collect all prerequisite and run tests prior to build"
     jobs:
-      - template: "steps/prebuild-pipeline.yml"
+      - template: "prebuild-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
@@ -52,7 +52,7 @@ stages:
       - name: projectVersion
         value: $[ stageDependencies.Prerequisites.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
     jobs:
-      - template: "steps/build-pipeline.yml"
+      - template: "build-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
@@ -78,7 +78,7 @@ stages:
     - name: projectVersion
       value: $[ stageDependencies.Prerequisites.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
     jobs:
-      - template: "steps/build-pipeline.yml"
+      - template: "build-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
@@ -102,7 +102,7 @@ stages:
         ne( variables['Build.Reason'], 'PullRequest' )
       )
     jobs:
-      - template: "steps/deploy-pipeline.yml"
+      - template: "deploy-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           containerRegistry: ${{ variables.containerRegistry }}
