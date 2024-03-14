@@ -6,24 +6,37 @@ from azure.core.exceptions import AzureError
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobClient
 
-from objectherkenning_openbare_ruimte.settings.settings import (
-    ObjectherkenningOpenbareRuimteSettings,
-)
-
 
 class IoTHandler:
-    def __init__(self):
-        iot_settings = ObjectherkenningOpenbareRuimteSettings.get_settings()[
-            "azure_iot"
-        ]
+    def __init__(self, hostname: str, device_id: str, shared_access_key: str):
+        """
+        Object that handles the connection with IoT and the delivery of messages and files.
+
+        Parameters
+        ----------
+        hostname
+            Azure IoT hostname
+        device_id
+            Device id of the device connecting
+        shared_access_key
+            Access key to authenticate
+        """
         self.connection_string = (
-            f"HostName={iot_settings['hostname']};"
-            f"DeviceId={iot_settings['device_id']};"
-            f"SharedAccessKey={iot_settings['shared_access_key']}"
+            f"HostName={hostname};"
+            f"DeviceId={device_id};"
+            f"SharedAccessKey={shared_access_key}"
         )
 
     @contextmanager
     def _connect(self):
+        """
+        Connects to Azure IoT.
+
+        Example
+        -------
+        with self._connect() as device_client:
+            device_client.send_message(message)
+        """
         device_client = IoTHubDeviceClient.create_from_connection_string(
             self.connection_string
         )
@@ -34,6 +47,14 @@ class IoTHandler:
             device_client.shutdown()
 
     def deliver_message(self, message_content: str):
+        """
+        Delivers a message to Azure IoT.
+
+        Parameters
+        ----------
+        message_content
+            Content of the message.
+        """
         message = Message(
             message_content, content_encoding="utf-8", content_type="application/json"
         )
@@ -41,27 +62,26 @@ class IoTHandler:
             device_client.send_message(message)
 
     def upload_file(self, file_path: str):
+        """
+        Uploads a file to Azure IoT.
+
+        Parameters
+        ----------
+        file_path
+            Path of the file to upload.
+        """
         with self._connect() as device_client:
             blob_name = os.path.basename(file_path)
             storage_info = device_client.get_storage_info_for_blob(blob_name)
 
-            # Upload to blob
             success, result = self._store_blob(storage_info, file_path)
-
             if success:
-                print("Upload succeeded. Result is: \n")
-                print(result)
-                print()
-
+                print(f"Upload succeeded. Result is: {result}")
                 device_client.notify_blob_upload_status(
                     storage_info["correlationId"], True, 200, "OK: {}".format(file_path)
                 )
             else:
-                # If the upload was not successful, the result is the exception object
-                print("Upload failed. Exception is: \n")
-                print(result)
-                print()
-
+                print(f"Upload failed. Exception is: {result}")
                 device_client.notify_blob_upload_status(
                     storage_info["correlationId"],
                     False,
@@ -70,7 +90,17 @@ class IoTHandler:
                 )
 
     @staticmethod
-    def _store_blob(blob_info: Dict[str, str], file_name):
+    def _store_blob(blob_info: Dict[str, str], file_name: str):
+        """
+        Stores file on a blob container.
+
+        Parameters
+        ----------
+        blob_info
+            Dictionary containing: hostname, containername, blobname, and sastoken.
+        file_name
+            Path of the file to store
+        """
         try:
             sas_url = "https://{}/{}/{}{}".format(
                 blob_info["hostName"],
