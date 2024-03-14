@@ -86,10 +86,9 @@ jobs:
             poetry config virtualenvs.create false
 
             poetry update --no-ansi --no-interaction
-            poetry install --no-ansi --no-interaction
-            poetry build
             
             poetry run pip freeze
+            poetry run which pip
 
       - task: CmdLine@2
         displayName: Run tests
