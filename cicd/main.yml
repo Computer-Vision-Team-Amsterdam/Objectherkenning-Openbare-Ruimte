@@ -26,7 +26,7 @@ stages:
   - stage: Prerequisites
     displayName: "Collect all prerequisites"
     jobs:
-      - template: "prerequisites-pipeline.yml"
+      - template: "steps/prerequisites-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
@@ -41,9 +41,9 @@ stages:
     displayName: "Checks and tests prior to build"
     dependsOn: Prerequisites
     jobs:
-      - template: "prebuild-pipeline.yml"
+      - template: "steps/prebuild-pipeline.yml"
 
-  - stage: Build_test
+  - stage: Build_ont
     displayName: "[ont] Build and publish container to ont"
     dependsOn:
       - Prerequisites
@@ -59,7 +59,7 @@ stages:
       - name: projectVersion
         value: $[ stageDependencies.Prerequisites.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
     jobs:
-      - template: "build-pipeline.yml"
+      - template: "steps/build-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
@@ -86,7 +86,7 @@ stages:
     - name: projectVersion
       value: $[ stageDependencies.Prerequisites.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
     jobs:
-      - template: "build-pipeline.yml"
+      - template: "steps/build-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           AMLModelName: ${{ variables.AMLModelName }}
@@ -98,10 +98,10 @@ stages:
           dockerImageName: ${{ variables.dockerImageName }}
           dockerImageTag: ${{ variables.dockerImageTag }}
 
-  - stage: Deploy_test
+  - stage: Deploy_ont
     displayName: "[ont] Deploy container to ont device"
     dependsOn:
-      - Build_test
+      - Build_ont
     condition: |
       and
       (
@@ -110,7 +110,7 @@ stages:
         ne( variables['Build.Reason'], 'PullRequest' )
       )
     jobs:
-      - template: "deploy-pipeline.yml"
+      - template: "steps/deploy-pipeline.yml"
         parameters:
           serviceConnectionName: ${{ variables.serviceConnectionName }}
           containerRegistry: ${{ variables.containerRegistry }}
