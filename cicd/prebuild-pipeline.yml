@@ -25,7 +25,7 @@ parameters:
   type: string
 
 jobs:
-  - template: ../templates/download-aml-model.yml
+  - template: templates/download-aml-model.yml
     parameters:
       serviceConnectionName: ${{ parameters.serviceConnectionName }}
       AMLModelName: ${{ parameters.AMLModelName }}
@@ -57,7 +57,7 @@ jobs:
 
             echo "##vso[task.setvariable variable=PROJECT_VERSION;isOutput=true]$PROJECT_VERSION"
 
-  - template: ../templates/code-quality-security-checks.yml
+  - template: templates/code-quality-security-checks.yml
     parameters:
       repoName: self
       pipAuditArgs: ""
