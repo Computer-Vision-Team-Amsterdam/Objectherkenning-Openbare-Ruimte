@@ -86,7 +86,7 @@ jobs:
             poetry config virtualenvs.create false
 
             poetry update --no-ansi --no-interaction
-            poetry install --no-ansi --no-interaction --no-root
+            poetry install --no-ansi --no-interaction
             poetry build
             
             poetry run pip freeze
