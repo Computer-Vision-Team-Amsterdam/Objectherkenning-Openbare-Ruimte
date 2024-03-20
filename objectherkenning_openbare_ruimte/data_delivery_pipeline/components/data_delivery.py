@@ -43,7 +43,7 @@ class DataDelivery:
         """
         print(f"Running data delivery pipeline on {self.images_folder}..")
         images_and_frames = self._match_metadata_to_images()
-        # self._deliver_data(images_and_frames=images_and_frames)
+        self._deliver_data(images_and_frames=images_and_frames)
         self._delete_data(images_and_frames=images_and_frames)
 
     def _match_metadata_to_images(self) -> Dict[str, List[str]]:
