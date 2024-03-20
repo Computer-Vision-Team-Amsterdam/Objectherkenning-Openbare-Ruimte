@@ -11,7 +11,7 @@ authors = [
 [tool.poetry.dependencies]
 python = "~3.8"
 pre-commit = {version = "^3.2.0", source = "PyPI"}
-cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  branch = "feature/Parse_curly_brackets_in_config" }
+cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v1.0.3" }
 pydantic = {version = "^1.8.2", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-storage-blob = "^12.19.0"

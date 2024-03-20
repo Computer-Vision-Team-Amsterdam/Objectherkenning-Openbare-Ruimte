@@ -1,6 +1,6 @@
 [[package]]
 name = "azure-core"
-version = "1.30.0"
+version = "1.30.1"
 description = "Microsoft Azure Core Library for Python"
 category = "main"
 optional = false
@@ -48,7 +48,7 @@ urllib3 = ">=1.26.5,<1.27"
 
 [[package]]
 name = "azure-storage-blob"
-version = "12.19.0"
+version = "12.19.1"
 description = "Microsoft Azure Blob Storage Client Library for Python"
 category = "main"
 optional = false
@@ -65,7 +65,7 @@ aio = ["azure-core[aio] (>=1.28.0,<2.0.0)"]
 
 [[package]]
 name = "cachetools"
-version = "5.3.2"
+version = "5.3.3"
 description = "Extensible memoizing collections and decorators"
 category = "main"
 optional = false
@@ -116,7 +116,7 @@ python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7
 
 [[package]]
 name = "coverage"
-version = "7.4.3"
+version = "7.4.4"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -151,7 +151,7 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "cvtoolkit"
-version = "1.0.2"
+version = "1.0.3"
 description = "CVToolkit is a collection of essential utilities for computer vision team projects, enhancing reusability and boosting productivity across multiple projects."
 category = "main"
 optional = false
@@ -169,8 +169,8 @@ torch = ">=1.7.0"
 [package.source]
 type = "git"
 url = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git"
-reference = "v1.0.2"
-resolved_reference = "9478f171de4cf9766357d824cf1396aa69081413"
+reference = "v1.0.3"
+resolved_reference = "b1a1a5718a796cc6f05c76c17ec632c36935f70e"
 
 [[package]]
 name = "deprecation"
@@ -217,7 +217,7 @@ typing = ["typing-extensions (>=4.8)"]
 
 [[package]]
 name = "fsspec"
-version = "2024.2.0"
+version = "2024.3.1"
 description = "File-system specification"
 category = "main"
 optional = false
@@ -268,7 +268,7 @@ grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0.dev0)"]
 
 [[package]]
 name = "google-auth"
-version = "2.28.1"
+version = "2.28.2"
 description = "Google Authentication Library"
 category = "main"
 optional = false
@@ -288,7 +288,7 @@ requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.62.0"
+version = "1.63.0"
 description = "Common protobufs used in Google APIs"
 category = "main"
 optional = false
@@ -399,11 +399,11 @@ tests = ["pytest (>=4.6)"]
 
 [[package]]
 name = "msal"
-version = "1.27.0"
+version = "1.28.0"
 description = "The Microsoft Authentication Library (MSAL) for Python library enables your app to access the Microsoft Cloud by supporting authentication of users with Microsoft Azure Active Directory accounts (AAD) and Microsoft Accounts (MSA) using industry standard OAuth2 and OpenID Connect."
 category = "main"
 optional = false
-python-versions = ">=2.7"
+python-versions = ">=3.7"
 
 [package.dependencies]
 cryptography = ">=0.6,<45"
@@ -553,7 +553,7 @@ python-versions = ">=3"
 
 [[package]]
 name = "nvidia-nvjitlink-cu12"
-version = "12.3.101"
+version = "12.4.99"
 description = "Nvidia JIT LTO Library"
 category = "main"
 optional = false
@@ -605,7 +605,7 @@ requests = ">=2.19.0"
 
 [[package]]
 name = "packaging"
-version = "23.2"
+version = "24.0"
 description = "Core utilities for Python packages"
 category = "main"
 optional = false
@@ -1001,7 +1001,7 @@ test = ["covdefaults (>=2.3)", "coverage-enable-subprocess (>=1)", "coverage (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "6aa6e336b7da370e9412f1ae990630c6d77b196c89e2735c64effedc7569fc28"
+content-hash = "bdf0488ec383a119cca7227f9528846e6fe86d4817c989abe72870658ae7463d"
 
 [metadata.files]
 azure-core = []
