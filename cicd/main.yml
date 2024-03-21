@@ -41,7 +41,6 @@ stages:
     displayName: "[ont] Build and publish container to ont"
     dependsOn:
       - Prebuild
-
     condition: |
       and
       (
@@ -69,7 +68,6 @@ stages:
     displayName: "[prd] Build and publish container to prd"
     dependsOn:
       - Prebuild
-
     condition: |
       and
       (
