@@ -66,7 +66,8 @@ COPY --from=builder /venv .
 RUN tar -xzf env.tar.gz
 
 WORKDIR /usr/src
-#COPY model_artifacts/dataoffice_model/last-purple_boot_3l6p24vb.pt model_artifacts/last-purple_boot_3l6p24vb.pt
+# This needs to be replaced to a generic model name when it's actually deployed
+COPY model_artifacts/dataoffice_model/last-purple_boot_3l6p24vb.pt model_artifacts/last-purple_boot_3l6p24vb.pt
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
 COPY config.yml config.yml
 
