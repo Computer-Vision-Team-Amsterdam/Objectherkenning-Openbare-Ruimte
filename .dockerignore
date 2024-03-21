@@ -1,0 +1,6 @@
+**/.pytest_cache
+.tox
+.idea
+.git
+**/__pycache__
+/objectherkenning_openbare_ruimte/raw_data/
