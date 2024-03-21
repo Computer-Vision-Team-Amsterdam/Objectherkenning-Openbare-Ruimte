@@ -268,7 +268,7 @@ grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0.dev0)"]
 
 [[package]]
 name = "google-auth"
-version = "2.28.2"
+version = "2.29.0"
 description = "Google Authentication Library"
 category = "main"
 optional = false
@@ -281,7 +281,7 @@ rsa = ">=3.1.4,<5"
 
 [package.extras]
 aiohttp = ["aiohttp (>=3.6.2,<4.0.0.dev0)", "requests (>=2.20.0,<3.0.0.dev0)"]
-enterprise_cert = ["cryptography (==36.0.2)", "pyopenssl (==22.0.0)"]
+enterprise-cert = ["cryptography (==36.0.2)", "pyopenssl (==22.0.0)"]
 pyopenssl = ["pyopenssl (>=20.0.0)", "cryptography (>=38.0.3)"]
 reauth = ["pyu2f (>=0.1.5)"]
 requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
@@ -1001,7 +1001,7 @@ test = ["covdefaults (>=2.3)", "coverage-enable-subprocess (>=1)", "coverage (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "bdf0488ec383a119cca7227f9528846e6fe86d4817c989abe72870658ae7463d"
+content-hash = "0ad804a09653e7bac174530955b65a17dab2dfaa5eaae043c1dc513941052ff6"
 
 [metadata.files]
 azure-core = []
