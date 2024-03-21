@@ -13,7 +13,6 @@ WORKDIR /usr/src
 
 RUN conda create -n env python=3.8
 RUN conda install -c conda-forge conda-pack
-#RUN echo "source activate env" > ~/.bashrc
 ENV PATH="/opt/miniconda/envs/env/bin:$PATH"
 
 RUN pip install pipx \
