@@ -31,7 +31,7 @@ parameters:
 jobs:
   - job: BuildPublishModelContainer
     displayName: "Build and publish model container"
-    pool: Computer-Vision-Team-Amsterdam
+    pool: ContainerBuilder
     variables:
       serviceConnection: ${{ parameters.serviceConnectionName }}
       dockerRegistryResourceGroupName: ${{ parameters.containerRegistryResourceGroupName }}
