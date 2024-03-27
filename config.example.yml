@@ -1,14 +1,31 @@
+aml_experiment_details:
+  compute_name: cpu-blurring-model2
+  env_name: oor-environment
+  env_version: 2
+  src_dir: "."
+
 azure_iot:
   hostname: ""
   device_id: ""
   shared_access_key: ""
 
+training_pipeline:
+  model_parameters:
+    img_size: 2048
+    batch_size: 8
+    epochs: 2
+  inputs:
+    training_data: "FOLDER_PATH_TO_TRAINING_DATA"
+    model_weights: "FOLDER_PATH_TO_MODEL_WEIGHTS_FILE"
+    model_name: "yolov8m.pt"
+  outputs:
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "train_pipeline"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: INFO
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
+  ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"
