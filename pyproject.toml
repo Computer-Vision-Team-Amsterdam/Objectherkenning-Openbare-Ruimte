@@ -15,7 +15,7 @@ cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit
 pydantic = {version = "^1.8.2", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-storage-blob = "^12.19.0"
-ultralytics = "^8.1.34"
+ultralytics = "^8.1.35"
 
 [tool.poetry.dev-dependencies]
 

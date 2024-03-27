@@ -22,13 +22,19 @@ def training_pipeline():
 
     project_path_name = settings["training_pipeline"]["outputs"]["project_path"]
 
+    training_data_path = aml_interface.get_datastore_full_path(
+        settings["training_pipeline"]["inputs"]["training_data"]
+    )
     training_data = Input(
         type=AssetTypes.URI_FOLDER,
-        path=settings["training_pipeline"]["inputs"]["training_data"],
+        path=training_data_path,
+    )
+    model_weights_path = aml_interface.get_datastore_full_path(
+        settings["training_pipeline"]["inputs"]["model_weights"]
     )
     model_weights = Input(
         type=AssetTypes.URI_FOLDER,
-        path=settings["training_pipeline"]["inputs"]["model_weights"],
+        path=model_weights_path,
     )
     train_model_step = train_model(
         mounted_dataset=training_data, model_weights=model_weights
