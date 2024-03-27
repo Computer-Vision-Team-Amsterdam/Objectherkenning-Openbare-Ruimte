@@ -8,10 +8,12 @@ class SettingsSpecModel(BaseModel):
         extra = "forbid"
 
 
-class AzureIoTSpec(SettingsSpecModel):
-    hostname: str
-    device_id: str
-    shared_access_key: str
+class AMLExperimentDetailsSpec(SettingsSpecModel):
+    compute_name: str = None
+    env_name: str = None
+    env_version: int = None
+    src_dir: str = None
+    ai_instrumentation_key: str = None
 
 
 class LoggingSpec(SettingsSpecModel):
@@ -26,6 +28,19 @@ class LoggingSpec(SettingsSpecModel):
         "format": "%(asctime)s|%(levelname)-8s|%(name)s|%(message)s",
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
+    ai_instrumentation_key: str = ""
+
+
+class TrainingModelParameters(SettingsSpecModel):
+    img_size: int = 1024
+    batch_size: int = -1
+    epochs: int = 100
+
+
+class TrainingPipelineSpec(SettingsSpecModel):
+    model_parameters: TrainingModelParameters
+    inputs: Dict[str, str] = None
+    outputs: Dict[str, str] = None
 
 
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
@@ -33,5 +48,6 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
         extra = "forbid"
 
     customer: str
-    azure_iot: AzureIoTSpec
+    aml_experiment_details: AMLExperimentDetailsSpec
     logging: LoggingSpec = LoggingSpec()
+    training_pipeline: TrainingPipelineSpec = None

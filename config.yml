@@ -1,0 +1,29 @@
+customer: ""
+
+aml_experiment_details:
+  compute_name: cpu-blurring-model2
+  env_name: oor-environment
+  env_version: 2
+  src_dir: "."
+
+training_pipeline:
+  model_parameters:
+    img_size: 1024
+    batch_size: -1
+    epochs: 1
+  inputs:
+    training_data: "first_training_dataset_oor"
+    model_weights: "first_training_dataset_oor_model"
+    model_name: "yolov8m.pt"
+  outputs:
+    project_path: "first_training_dataset_oor_model"
+
+logging:
+  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "train_model"]
+  basic_config:
+    # log config as arguments to `logging.basicConfig`
+    level: INFO
+    format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  ai_instrumentation_key: "InstrumentationKey=179725b3-3e51-4191-9070-d7449d34420b;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/"
