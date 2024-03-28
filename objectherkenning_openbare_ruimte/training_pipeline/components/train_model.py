@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 import yaml
@@ -14,12 +15,16 @@ from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
 )
 
-ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
+config_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "config.yml")
+)
+
+ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 log_settings = settings["logging"]
 setup_azure_logging(log_settings, __name__)
 aml_experiment_settings = settings["aml_experiment_details"]
-logger = logging.getLogger("convert_old_dataset")
+logger = logging.getLogger("train_model")
 
 
 @command_component(
@@ -58,18 +63,23 @@ def train_model(
         nc=3,
         names=["person", "licence plate", "container"],
     )
-    with open(f"{yolo_yaml_path}/yolov8_cfg.yaml", "w") as outfile:
+    yaml_path = f"{yolo_yaml_path}/yolov8_cfg.yaml"
+    with open(f"{yaml_path}", "w") as outfile:
         yaml.dump(data, outfile, default_flow_style=False)
 
-    model_name = settings["training_pipeline"]["model_name"]
+    model_name = settings["training_pipeline"]["inputs"]["model_name"]
     pretrained_model_path = f"{model_weights}/{model_name}"
     model_parameters = settings["training_pipeline"]["model_parameters"]
+    print(f"Pretrained_model_path: {pretrained_model_path}")
+    print(f"Model_parameters: {model_parameters}")
+    print(f"Project_path: {project_path}")
+    print(f"yaml_path: {yaml_path}")
+    print(f"Data: {data}")
 
-    model = YOLO(pretrained_model_path)
+    model = YOLO(yaml_path).load(pretrained_model_path)
 
     # Prepare dynamic parameters for training
     train_params = {
-        "data": data,  # This can also be made dynamic if needed
         "epochs": model_parameters.get("epochs", 10),  # Default value if not specified
         "imgsz": model_parameters.get(
             "img_size", 640

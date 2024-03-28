@@ -11,11 +11,16 @@ authors = [
 [tool.poetry.dependencies]
 python = "~3.8"
 pre-commit = {version = "^3.2.0", source = "PyPI"}
+aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.0.0" }
+azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v1.0.2" }
 pydantic = {version = "^1.8.2", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-storage-blob = "^12.19.0"
+mldesigner = "^0.1.0b18"
+numpy = {version = "^1.24.2", source = "PyPI"}
 ultralytics = "^8.1.35"
+opencv-python = "<4.8.0.76"
 
 [tool.poetry.dev-dependencies]
 
