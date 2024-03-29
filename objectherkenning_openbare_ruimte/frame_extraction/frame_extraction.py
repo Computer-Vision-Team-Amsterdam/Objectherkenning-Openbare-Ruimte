@@ -8,12 +8,17 @@ log_dir = "logs"
 
 
 def main(args):
-    log_path = os.path.join(args.output_folder, log_dir)
+    start = datetime.now()
+    output_path = os.path.join(args.output_folder, start.strftime("%Y%m%d-%H%M%S"))
+    log_path = os.path.join(
+        args.output_folder, log_dir, start.strftime("%Y%m%d-%H%M%S")
+    )
+    pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
     pathlib.Path(log_path).mkdir(parents=True, exist_ok=True)
     log_file = os.path.join(log_path, "process_log.txt")
     with open(log_file, "w") as myfile:
-        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        myfile.write(f"\n----------\nSTART RUN - {now}\n----------\n")
+        start_str = start.strftime("%d/%m/%Y %H:%M:%S")
+        myfile.write(f"\n----------\nSTART RUN - {start_str}\n----------\n")
 
     for dirpath, dirnames, filenames in os.walk(args.input_folder):
         if dirpath.split(sep="/")[-1] in exclude_dirs:
@@ -22,17 +27,17 @@ def main(args):
             if file.endswith(".mp4"):
                 file_path = os.path.join(dirpath, file)
                 filename = file.rstrip(".mp4")
-                out_path = os.path.join(args.output_folder, filename)
-                log_path = os.path.join(log_path, f"{filename}.ffmpeg_log.txt")
-                ffmpeg_cmd = f"ffmpeg -i '{file_path}' -vf 'fps=1,lenscorrection=cx=0.509:cy=0.488:k1=-0.241:k2=0.106:i=bilinear' -q:v 1 '{out_path}_%04d.jpg' 2> '{log_path}'"
+                ffmpeg_out_path = os.path.join(output_path, filename)
+                ffmpeg_log_file = os.path.join(log_path, f"{filename}.ffmpeg_log.txt")
+                ffmpeg_cmd = f"ffmpeg -i '{file_path}' -vf 'fps=1,lenscorrection=cx=0.509:cy=0.488:k1=-0.241:k2=0.106:i=bilinear' -q:v 1 '{ffmpeg_out_path}_%04d.jpg' 2> '{ffmpeg_log_file}'"
 
                 with open(log_file, "a") as myfile:
                     myfile.write(f"{ffmpeg_cmd}\n")
                 os.system(ffmpeg_cmd)  # nosec B605
 
     with open(log_file, "a") as myfile:
-        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        myfile.write(f"\n----------\nEND RUN - {now}\n----------\n")
+        end = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        myfile.write(f"\n----------\nEND RUN - {end}\n----------\n")
 
 
 def parse_args():
