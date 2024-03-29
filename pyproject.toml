@@ -5,7 +5,8 @@ description = "Objectherkenning Openbare Ruimte is a project about recognising o
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
     "Diana Epureanu <d.epureanu@amsterdam.nl>",
-    "Andrea Lombardo <a.lombardo@amsterdam.nl>"
+    "Andrea Lombardo <a.lombardo@amsterdam.nl>",
+    "Daan Bloembergen <d.bloembergen@amsterdam.nl>"
 ]
 
 [tool.poetry.dependencies]
@@ -15,6 +16,7 @@ cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit
 pydantic = {version = "^1.8.2", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-storage-blob = "^12.19.0"
+opencv-python = ">=4.9,<5.0"
 
 [tool.poetry.dev-dependencies]
 
