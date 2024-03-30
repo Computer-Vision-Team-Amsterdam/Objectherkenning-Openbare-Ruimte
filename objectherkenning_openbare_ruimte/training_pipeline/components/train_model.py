@@ -69,6 +69,7 @@ def train_model(
 
     model_name = settings["training_pipeline"]["inputs"]["model_name"]
     pretrained_model_path = f"{model_weights}/{model_name}"
+    new_pretrained_model_path = "azureml://subscriptions/b5d1b0e0-1ce4-40f9-87d5-cf3fde7a7b14/resourcegroups/cvo-aml-p-rg/workspaces/cvo-weu-aml-p-xnjyjutinwfyu/datastores/first_training_dataset_oor_model/paths/model/yolov8m-coco.pt"
     model_parameters = settings["training_pipeline"]["model_parameters"]
     print(f"Pretrained_model_path: {pretrained_model_path}")
     print(f"Model_parameters: {model_parameters}")
@@ -76,10 +77,11 @@ def train_model(
     print(f"yaml_path: {yaml_path}")
     print(f"Data: {data}")
 
-    model = YOLO(yaml_path).load(pretrained_model_path)
+    model = YOLO(model=new_pretrained_model_path, task="detect")
 
     # Prepare dynamic parameters for training
     train_params = {
+        "data": yaml_path,
         "epochs": model_parameters.get("epochs", 10),  # Default value if not specified
         "imgsz": model_parameters.get(
             "img_size", 640
