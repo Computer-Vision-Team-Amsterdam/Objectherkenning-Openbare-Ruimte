@@ -22,7 +22,7 @@ training_pipeline:
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "train_pipeline"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "train_pipeline", "cuda_test"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: INFO

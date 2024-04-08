@@ -21,8 +21,14 @@ mldesigner = "^0.1.0b18"
 numpy = {version = "^1.24.2", source = "PyPI"}
 ultralytics = "^8.1.35"
 opencv-python = "<4.8.0.76"
+torch = { version = "^2.2.1", source="torch"}
+torchaudio = { version = "^2.2.1", source="torch"}
+torchvision = { version = "^0.17.1", source="torch"}
 
-[tool.poetry.dev-dependencies]
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "supplemental"
 
 [tool.isort]
 profile = "black"

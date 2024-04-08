@@ -21,11 +21,24 @@ RUN poetry config virtualenvs.create false
 COPY pyproject.toml .
 COPY poetry.lock .
 
-# Initialize Conda, activate environment and install poetry packages
+# Initialize Conda, activate environment
 RUN /opt/miniconda/bin/conda init bash && \
     . /opt/miniconda/etc/profile.d/conda.sh && \
     conda activate env && \
     apt-get update && \
-    apt install -y libgl1-mesa-glx && \
-    poetry update --no-ansi --no-interaction && \
-    poetry install --no-ansi --no-interaction --no-root
+    apt install -y libgl1-mesa-glx
+
+# Install PyTorch, torchvision, and torchaudio with CUDA support
+RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
+
+# Install other dependencies with Poetry
+RUN poetry install --no-ansi --no-interaction --no-root
+
+# Initialize Conda, activate environment and install poetry packages
+# RUN /opt/miniconda/bin/conda init bash && \
+#    . /opt/miniconda/etc/profile.d/conda.sh && \
+#    conda activate env && \
+#    apt-get update && \
+#    apt install -y libgl1-mesa-glx && \
+#    poetry update --no-ansi --no-interaction && \
+#    poetry install --no-ansi --no-interaction --no-root

@@ -63,13 +63,12 @@ def train_model(
         nc=3,
         names=["person", "licence plate", "container"],
     )
-    yaml_path = f"{yolo_yaml_path}/yolov8_cfg.yaml"
+    yaml_path = os.path.join(yolo_yaml_path, "yolov8_cfg.yaml")
     with open(f"{yaml_path}", "w") as outfile:
         yaml.dump(data, outfile, default_flow_style=False)
 
     model_name = settings["training_pipeline"]["inputs"]["model_name"]
-    pretrained_model_path = f"{model_weights}/{model_name}"
-    new_pretrained_model_path = "azureml://subscriptions/b5d1b0e0-1ce4-40f9-87d5-cf3fde7a7b14/resourcegroups/cvo-aml-p-rg/workspaces/cvo-weu-aml-p-xnjyjutinwfyu/datastores/first_training_dataset_oor_model/paths/model/yolov8m-coco.pt"
+    pretrained_model_path = os.path.join(model_weights, model_name)
     model_parameters = settings["training_pipeline"]["model_parameters"]
     print(f"Pretrained_model_path: {pretrained_model_path}")
     print(f"Model_parameters: {model_parameters}")
@@ -77,7 +76,7 @@ def train_model(
     print(f"yaml_path: {yaml_path}")
     print(f"Data: {data}")
 
-    model = YOLO(model=new_pretrained_model_path, task="detect")
+    model = YOLO(model=pretrained_model_path, task="detect")
 
     # Prepare dynamic parameters for training
     train_params = {
@@ -89,8 +88,8 @@ def train_model(
         "project": project_path,
     }
 
-    if "batch_size" in model_parameters:
-        train_params["batch_size"] = model_parameters["batch_size"]
+    if "batch" in model_parameters:
+        train_params["batch"] = model_parameters["batch"]
 
     if "patience" in model_parameters:
         train_params["patience"] = model_parameters["patience"]

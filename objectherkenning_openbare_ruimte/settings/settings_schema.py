@@ -33,7 +33,7 @@ class LoggingSpec(SettingsSpecModel):
 
 class TrainingModelParameters(SettingsSpecModel):
     img_size: int = 1024
-    batch_size: int = -1
+    batch: int = -1
     epochs: int = 100
 
 
