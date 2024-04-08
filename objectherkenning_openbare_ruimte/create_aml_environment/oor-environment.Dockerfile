@@ -28,9 +28,6 @@ RUN /opt/miniconda/bin/conda init bash && \
     apt-get update && \
     apt install -y libgl1-mesa-glx
 
-# Install PyTorch, torchvision, and torchaudio with CUDA support
-RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu118
-
 # Install other dependencies with Poetry
 RUN poetry install --no-ansi --no-interaction --no-root
 
