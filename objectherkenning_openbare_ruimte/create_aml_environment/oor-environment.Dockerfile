@@ -6,11 +6,8 @@ RUN apt-get -y update \
     && apt-get -y install \
         build-essential \
         curl \
+        ffmpeg \
     && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update
-RUN apt-get install ffmpeg -y
-
 
 WORKDIR /opt/app
 
