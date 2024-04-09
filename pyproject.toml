@@ -8,6 +8,10 @@ authors = [
     "Andrea Lombardo <a.lombardo@amsterdam.nl>"
 ]
 
+[tool.poetry.dev-dependencies]
+pytest = {version = "^7.0.1", source = "PyPI" }
+pytest-cov = {version = "^4.0.0", source = "PyPI" }
+
 [tool.poetry.dependencies]
 python = "~3.8"
 pre-commit = {version = "^3.2.0", source = "PyPI"}
@@ -25,10 +29,6 @@ torchaudio = { version = "^2.2.1", source="torch"}
 torchvision = { version = "^0.17.1", source="torch"}
 # Important to put ultralytics as last to not get conflicts with other dependencies (e.g. torch)
 ultralytics = "^8.1.35"
-
-[tool.poetry.dev-dependencies]
-pytest = {version = "^7.0.1", source = "PyPI" }
-pytest-cov = {version = "^4.0.0", source = "PyPI" }
 
 [[tool.poetry.source]]
 name = "torch"
