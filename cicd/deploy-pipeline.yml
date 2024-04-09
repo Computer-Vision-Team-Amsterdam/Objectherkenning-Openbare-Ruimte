@@ -1,0 +1,38 @@
+parameters:
+- name: serviceConnectionName
+  displayName: Name of service connection to connect to AML
+  type: string
+- name: containerRegistry
+  displayName: Name of the container registry to push to
+  type: string
+- name: dockerImageName
+  displayName: Name under which to publish Docker image
+  type: string
+- name: dockerImageTag
+  displayName: Tag under which to publish Docker image
+  type: string
+
+
+jobs:
+  - job: DeployModelContainer
+    displayName: "Deploy model container on the device"
+    pool:
+      vmImage: ubuntu-22.04
+    variables:
+      serviceConnection: ${{ parameters.serviceConnectionName }}
+      containerRegistryName: ${{ parameters.containerRegistry }}
+
+    steps:
+      - checkout: self
+
+      - task: AzureCLI@2
+        displayName: Deploy Docker image
+        name: DockerDeploy
+        inputs:
+          azureSubscription: ${{ variables.serviceConnection }}
+          scriptType: 'pscore'
+          scriptLocation: 'inlineScript'
+          inlineScript: |
+            # SSH into the device and run the following, change to SSH@0 task
+            docker login -u LunaDevice -p $(containerRegistryPassword) $(containerRegistryName).azurecr.io
+            docker pull $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
