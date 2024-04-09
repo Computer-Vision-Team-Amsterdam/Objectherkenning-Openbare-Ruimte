@@ -26,12 +26,14 @@ torchvision = { version = "^0.17.1", source="torch"}
 # Important to put ultralytics as last to not get conflicts with other dependencies (e.g. torch)
 ultralytics = "^8.1.35"
 
+[tool.poetry.dev-dependencies]
+pytest = {version = "^7.0.1", source = "PyPI" }
+pytest-cov = {version = "^4.0.0", source = "PyPI" }
+
 [[tool.poetry.source]]
 name = "torch"
 url = "https://download.pytorch.org/whl/cu118"
 priority = "explicit"
-pytest = {version = "^7.0.1", source = "PyPI" }
-pytest-cov = {version = "^4.0.0", source = "PyPI" }
 
 [tool.isort]
 profile = "black"
