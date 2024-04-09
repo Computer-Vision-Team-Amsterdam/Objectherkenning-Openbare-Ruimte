@@ -35,11 +35,6 @@ name = "torch-primary-source"
 url = "https://download.pytorch.org/whl/cu118"
 priority = "explicit"
 
-[[tool.poetry.source]]
-name = "torch-secondary-source"
-url = "https://download.pytorch.org/whl/cu118"
-priority = "supplemental"
-
 [tool.isort]
 profile = "black"
 multi_line_output = 3
