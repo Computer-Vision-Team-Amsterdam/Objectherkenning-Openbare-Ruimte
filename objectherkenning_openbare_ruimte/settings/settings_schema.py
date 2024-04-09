@@ -8,10 +8,31 @@ class SettingsSpecModel(BaseModel):
         extra = "forbid"
 
 
+class AMLExperimentDetailsSpec(SettingsSpecModel):
+    compute_name: str = None
+    env_name: str = None
+    env_version: int = None
+
+
 class AzureIoTSpec(SettingsSpecModel):
     hostname: str
     device_id: str
     shared_access_key: str
+
+
+class DistortionCorrectionSpec(SettingsSpecModel):
+    cx: float
+    cy: float
+    k1: float
+    k2: float
+
+
+class FrameExtractionSpec(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    log_dir: str = "logs"
+    exclude_dirs: List[str] = []
+    fps: float
 
 
 class LoggingSpec(SettingsSpecModel):
@@ -33,5 +54,8 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
         extra = "forbid"
 
     customer: str
+    aml_experiment_details: AMLExperimentDetailsSpec
     azure_iot: AzureIoTSpec
+    distortion_correction: DistortionCorrectionSpec
+    frame_extraction: FrameExtractionSpec
     logging: LoggingSpec = LoggingSpec()

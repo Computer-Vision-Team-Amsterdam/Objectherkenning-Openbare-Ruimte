@@ -1,7 +1,34 @@
+customer: ""
+
+aml_experiment_details:
+  compute_name: cpu-daan
+  env_name: oor-environment
+  env_version: 2
+
+
 azure_iot:
   hostname: ""
   device_id: ""
   shared_access_key: ""
+
+
+distortion_correction:
+  cx: 0.509
+  cy: 0.488
+  k1: -0.241
+  k2: 0.106
+
+
+frame_extraction:
+  inputs:
+    datastore: "oor_velotech"
+    rel_path: ""
+  outputs:
+    datastore: "oor_velotech"
+    rel_path: "frames"
+  log_dir: "logs"
+  exclude_dirs: ["checkboard", "frames"]
+  fps: 1
 
 
 logging:

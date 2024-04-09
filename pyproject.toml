@@ -5,7 +5,7 @@ description = "Objectherkenning Openbare Ruimte is a project about recognising o
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
     "Diana Epureanu <d.epureanu@amsterdam.nl>",
-    "Andrea Lombardo <a.lombardo@amsterdam.nl>"
+    "Andrea Lombardo <a.lombardo@amsterdam.nl>",
     "Daan Bloembergen <d.bloembergen@amsterdam.nl>"
 ]
 
