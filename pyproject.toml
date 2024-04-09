@@ -31,9 +31,14 @@ torchvision = { version = "^0.17.1", source="torch"}
 ultralytics = "^8.1.35"
 
 [[tool.poetry.source]]
-name = "torch"
+name = "torch-primary-source"
 url = "https://download.pytorch.org/whl/cu118"
 priority = "explicit"
+
+[[tool.poetry.source]]
+name = "torch-secondary-source"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "supplemental"
 
 [tool.isort]
 profile = "black"
