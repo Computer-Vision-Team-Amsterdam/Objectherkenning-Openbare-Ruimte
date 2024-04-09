@@ -29,7 +29,7 @@ logger = logging.getLogger("train_model")
 
 @command_component(
     name="train_model",
-    display_name="Train a YOLOv8 model using a defined dataset.",
+    display_name="Train a YOLOv8 model.",
     environment=f"azureml:{aml_experiment_settings['env_name']}:{aml_experiment_settings['env_version']}",
     code="../../../",
     is_deterministic=False,
@@ -41,7 +41,7 @@ def train_model(
     project_path: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
 ):
     """
-    Pipeline step to train the model.
+    Pipeline step to train a YOLOv8 model.
 
     Parameters
     ----------
@@ -50,6 +50,8 @@ def train_model(
             - /images/train/
             - /images/val/
             - /images/test/
+    model_weights:
+        Path to the pretrained model weights.
     yolo_yaml_path:
         Location where to store the yaml file for yolo training.
     project_path:
@@ -70,6 +72,7 @@ def train_model(
     model_name = settings["training_pipeline"]["inputs"]["model_name"]
     pretrained_model_path = os.path.join(model_weights, model_name)
     model_parameters = settings["training_pipeline"]["model_parameters"]
+
     logger.info(f"Pretrained_model_path: {pretrained_model_path}")
     logger.info(f"Model_parameters: {model_parameters}")
     logger.info(f"Project_path: {project_path}")
@@ -81,10 +84,8 @@ def train_model(
     # Prepare dynamic parameters for training
     train_params = {
         "data": yaml_path,
-        "epochs": model_parameters.get("epochs", 10),  # Default value if not specified
-        "imgsz": model_parameters.get(
-            "img_size", 640
-        ),  # Default value if not specified
+        "epochs": model_parameters.get("epochs", 10),
+        "imgsz": model_parameters.get("img_size", 640),
         "project": project_path,
     }
 

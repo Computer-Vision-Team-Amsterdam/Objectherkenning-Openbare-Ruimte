@@ -11,14 +11,17 @@ azure_iot:
 
 training_pipeline:
   model_parameters:
-    img_size: 2048
-    batch_size: 8
-    epochs: 2
+    img_size: 1024
+    batch: -1
+    epochs: 300
+    patience: 25
   inputs:
-    training_data: "FOLDER_TO_TRAINING_DATA"
-    model_weights: "FOLDER_TO_MODEL_WEIGHTS_FILE"
-    model_name: "yolov8m.pt"
+    datastore_path: "first_training_dataset_oor"
+    training_data_rel_path: "first-training-dataset-oor"
+    model_weights_rel_path: "model"
+    model_name: "yolov8l.pt"
   outputs:
+    project_rel_path: "model"
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
