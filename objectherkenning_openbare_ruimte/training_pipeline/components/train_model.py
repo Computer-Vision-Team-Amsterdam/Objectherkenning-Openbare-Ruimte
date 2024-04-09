@@ -70,11 +70,11 @@ def train_model(
     model_name = settings["training_pipeline"]["inputs"]["model_name"]
     pretrained_model_path = os.path.join(model_weights, model_name)
     model_parameters = settings["training_pipeline"]["model_parameters"]
-    print(f"Pretrained_model_path: {pretrained_model_path}")
-    print(f"Model_parameters: {model_parameters}")
-    print(f"Project_path: {project_path}")
-    print(f"yaml_path: {yaml_path}")
-    print(f"Data: {data}")
+    logger.info(f"Pretrained_model_path: {pretrained_model_path}")
+    logger.info(f"Model_parameters: {model_parameters}")
+    logger.info(f"Project_path: {project_path}")
+    logger.info(f"yaml_path: {yaml_path}")
+    logger.info(f"Data: {data}")
 
     model = YOLO(model=pretrained_model_path, task="detect")
 

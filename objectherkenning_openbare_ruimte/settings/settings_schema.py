@@ -35,6 +35,7 @@ class TrainingModelParameters(SettingsSpecModel):
     img_size: int = 1024
     batch: int = -1
     epochs: int = 100
+    patience: int = 10
 
 
 class TrainingPipelineSpec(SettingsSpecModel):

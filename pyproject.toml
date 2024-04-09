@@ -23,6 +23,7 @@ opencv-python = "<4.8.0.76"
 torch = { version = "^2.2.1", source="torch"}
 torchaudio = { version = "^2.2.1", source="torch"}
 torchvision = { version = "^0.17.1", source="torch"}
+# Important to put ultralytics as last to not get conflicts with other dependencies (e.g. torch)
 ultralytics = "^8.1.35"
 
 [[tool.poetry.source]]

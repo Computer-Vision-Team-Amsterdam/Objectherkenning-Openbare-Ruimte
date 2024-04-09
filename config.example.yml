@@ -15,14 +15,14 @@ training_pipeline:
     batch_size: 8
     epochs: 2
   inputs:
-    training_data: "FOLDER_PATH_TO_TRAINING_DATA"
-    model_weights: "FOLDER_PATH_TO_MODEL_WEIGHTS_FILE"
+    training_data: "FOLDER_TO_TRAINING_DATA"
+    model_weights: "FOLDER_TO_MODEL_WEIGHTS_FILE"
     model_name: "yolov8m.pt"
   outputs:
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "train_pipeline", "cuda_test"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "train_pipeline"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: INFO
