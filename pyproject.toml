@@ -10,6 +10,7 @@ authors = [
 
 [tool.poetry.dependencies]
 python = "~3.8"
+aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git", branch = "feature/device-logs" }
 pre-commit = {version = "^3.2.0", source = "PyPI"}
 cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v1.0.2" }
 pydantic = {version = "^1.8.2", source = "PyPI"}
