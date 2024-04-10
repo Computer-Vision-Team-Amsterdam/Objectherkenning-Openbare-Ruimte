@@ -35,7 +35,7 @@ class DataDelivery:
         ]
 
     def run_pipeline(self):
-        """ "
+        """
         Runs the data delivery pipeline:
             - matches metadata to images;
             - delivers the data to Azure;
@@ -43,10 +43,11 @@ class DataDelivery:
         """
         print(f"Running data delivery pipeline on {self.images_folder}..")
         images_and_frames = self._match_metadata_to_images()
+        print(f"Images and frames: {images_and_frames}")
         self._deliver_data(images_and_frames=images_and_frames)
         self._delete_data(images_and_frames=images_and_frames)
 
-    def _match_metadata_to_images(self) -> Dict[str, List[str]]:
+    def _match_metadata_to_images(self) -> Dict[str, List[int]]:
         """
         Creates a csv file containing only the metadata of images with containers.
         Returns video names and which frames contains containers.
@@ -63,7 +64,7 @@ class DataDelivery:
         return videos_and_frames
 
     def _create_filtered_metadata_files(
-        self, videos_and_frames: Dict[str, List[str]]
+        self, videos_and_frames: Dict[str, List[int]]
     ) -> None:
         """
         Creates a metadata file containing only metadata information of frames with containers.
@@ -75,23 +76,48 @@ class DataDelivery:
         """
         for video_name, frame_numbers in videos_and_frames.items():
             filtered_rows = []
-            with open(f"{self.metadata_folder}/{video_name}.csv") as fd:
-                reader = csv.reader(fd)
+            file_path_only_filtered_rows = (
+                f"{self.images_folder}/{video_name}/{video_name}.csv"
+            )
+            already_existing_frames = []
+            with open(f"{self.metadata_folder}/{video_name}.csv") as metadata_file:
+                reader = csv.reader(metadata_file)
                 header = next(reader)
                 header.append("frame_number")
-                filtered_rows.append(header)
+                if not os.path.isfile(file_path_only_filtered_rows):
+                    filtered_rows.append(header)
+                else:
+                    already_existing_frames = self._get_frame_numbers_in_metadata_file(
+                        file_path_only_filtered_rows
+                    )
                 for idx, row in enumerate(reader):
-                    if idx + 1 in frame_numbers:
+                    if (
+                        idx + 1 in frame_numbers
+                        and idx + 1 not in already_existing_frames
+                    ):
                         row.append(str(idx + 1))
                         filtered_rows.append(row)
-            with open(
-                f"{self.images_folder}/{video_name}/{video_name}.csv", "w", newline=""
-            ) as output_file:
-                csv_writer = csv.writer(output_file)
-                csv_writer.writerows(filtered_rows)
+            if filtered_rows:
+                with open(file_path_only_filtered_rows, "a", newline="") as output_file:
+                    csv_writer = csv.writer(output_file)
+                    csv_writer.writerows(filtered_rows)
 
     @staticmethod
-    def _get_videos_and_frame_numbers(images_paths: List[str]) -> Dict[str, List[str]]:
+    def _get_frame_numbers_in_metadata_file(file_path):
+        frame_numbers = []
+        with open(file_path) as metadata_file:
+            reader = csv.reader(metadata_file)
+            for row in reader:
+                if row:
+                    try:
+                        last_column_value = int(row[-1])
+                        frame_numbers.append(last_column_value)
+                    except ValueError:
+                        pass
+        return frame_numbers
+
+    @staticmethod
+    def _get_videos_and_frame_numbers(images_paths: List[str]) -> Dict[str, List[int]]:
         """
         Starting from a list of paths, groups all the frame numbers under the same video name.
 
@@ -109,9 +135,9 @@ class DataDelivery:
             video_name, frame_info = os.path.basename(path).rsplit("_frame_", 1)
             frame_number, _ = frame_info.rsplit(".", 1)
             if video_name not in videos_and_frames:
-                videos_and_frames[video_name] = [frame_number]
+                videos_and_frames[video_name] = [int(frame_number)]
             else:
-                videos_and_frames[video_name].append(frame_number)
+                videos_and_frames[video_name].append(int(frame_number))
         return videos_and_frames
 
     def _deliver_data(self, images_and_frames: Dict[str, List[str]]):

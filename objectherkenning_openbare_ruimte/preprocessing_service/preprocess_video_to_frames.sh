@@ -12,6 +12,7 @@ while true; do
     printf "%s\n" "$video_file"
     if [ -f "$video_file" ]; then
         file_name=$(basename "$video_file")
+        file_name=${file_name%.*}
         mkdir -p "$OUTPUT_FOLDER/$file_name"
         ffmpeg -i "$video_file" -vf "settb=AVTB,setpts=N/TB,lenscorrection=cx=0.509:cy=0.488:k1=-0.241:k2=0.106:i=bilinear" -vsync passthrough -q:v 1 "$OUTPUT_FOLDER/$file_name/$file_name"_frame_%04d.jpg
         RESULT=$?

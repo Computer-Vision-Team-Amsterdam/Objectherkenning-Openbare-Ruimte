@@ -38,7 +38,8 @@ class IoTHandler:
             device_client.send_message(message)
         """
         device_client = IoTHubDeviceClient.create_from_connection_string(
-            self.connection_string
+            self.connection_string,
+            websockets=True,
         )
         try:
             device_client.connect()

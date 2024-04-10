@@ -54,4 +54,5 @@ docker save -o {PATH}/oor-docker-image.tar {IMAGE_NAME}
 On the device:
 ```bash
 sudo docker load -i {TAR_IMAGE_PAHT}
+sudo docker run -d --mount type=bind,source={source_path},target=/raw_videos --mount type=bind,source={source_path},target=/raw_frames -e SHARED_ACCESS_KEY_IOT='{shared_access_key_value}' acroorontweuitr01.azurecr.io/oor-model-arm64-v8 
 ```

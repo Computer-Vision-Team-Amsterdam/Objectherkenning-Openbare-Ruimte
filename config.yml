@@ -6,7 +6,7 @@ azure_iot:
 data_delivery_pipeline:
   images_path: "/raw_frames"
   detections_path: ""
-  metadata_path: ""
+  metadata_path: "/raw_videos"
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`

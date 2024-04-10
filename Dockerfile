@@ -108,3 +108,6 @@ ARG PROJECT_VERSION_arg=1
 ENV PROJECT_VERSION=$PROJECT_VERSION_arg
 
 COPY entrypoint.sh .
+
+ENTRYPOINT ["/bin/bash", "/usr/src/entrypoint.sh"]
+
