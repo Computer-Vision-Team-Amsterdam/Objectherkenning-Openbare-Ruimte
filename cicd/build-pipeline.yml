@@ -31,8 +31,7 @@ parameters:
 jobs:
   - job: BuildPublishModelContainer
     displayName: "Build and publish model container"
-    pool:
-      vmImage: ubuntu-22.04
+    pool: ContainerBuilder
     variables:
       serviceConnection: ${{ parameters.serviceConnectionName }}
       dockerRegistryResourceGroupName: ${{ parameters.containerRegistryResourceGroupName }}
