@@ -5,20 +5,36 @@ description = "Objectherkenning Openbare Ruimte is a project about recognising o
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
     "Diana Epureanu <d.epureanu@amsterdam.nl>",
-    "Andrea Lombardo <a.lombardo@amsterdam.nl>"
+    "Andrea Lombardo <a.lombardo@amsterdam.nl>",
+    "Daan Bloembergen <d.bloembergen@amsterdam.nl>"
 ]
-
-[tool.poetry.dependencies]
-python = "~3.8"
-pre-commit = {version = "^3.2.0", source = "PyPI"}
-cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v1.0.2" }
-pydantic = {version = "^1.8.2", source = "PyPI"}
-azure-iot-device = {version = "^2.13.0", source = "PyPI"}
-azure-storage-blob = {version = "^12.19.0", source = "PyPI"}
 
 [tool.poetry.dev-dependencies]
 pytest = {version = "^7.0.1", source = "PyPI" }
 pytest-cov = {version = "^4.0.0", source = "PyPI" }
+
+[tool.poetry.dependencies]
+python = "~3.8"
+pre-commit = {version = "^3.2.0", source = "PyPI"}
+aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.0.0" }
+azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
+cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v1.0.2" }
+pydantic = {version = "^1.8.2", source = "PyPI"}
+azure-iot-device = {version = "^2.13.0", source = "PyPI"}
+azure-storage-blob = {version = "^12.19.0", source = "PyPI"}
+mldesigner = "^0.1.0b18"
+numpy = {version = "^1.24.2", source = "PyPI"}
+opencv-python = "<4.8.0.76"
+torch = { version = "^2.2.1", source="torch"}
+torchaudio = { version = "^2.2.1", source="torch"}
+torchvision = { version = "^0.17.1", source="torch"}
+# Important to put ultralytics as last to not get conflicts with other dependencies (e.g. torch)
+ultralytics = "^8.1.35"
+
+[[tool.poetry.source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "explicit"
 
 [tool.isort]
 profile = "black"

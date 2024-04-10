@@ -14,6 +14,19 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
+class InferenceModelParameters(SettingsSpecModel):
+    img_size: int = 640
+    conf: float = 0.5
+    save_img_flag: bool = False
+    save_txt_flag: bool = False
+
+
+class InferencePipelineSpec(SettingsSpecModel):
+    model_parameters: InferenceModelParameters
+    inputs: Dict[str, str] = None
+    outputs: Dict[str, str] = None
+
+
 class LoggingSpec(SettingsSpecModel):
     loglevel_own: str = "INFO"
     own_packages: List[str] = [
@@ -35,3 +48,4 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     customer: str
     azure_iot: AzureIoTSpec
     logging: LoggingSpec = LoggingSpec()
+    inference_pipeline: InferencePipelineSpec = None
