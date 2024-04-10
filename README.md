@@ -33,3 +33,25 @@ The pre-commit hooks help to ensure that all committed code is valid and consist
 ```bash
 poetry run pre-commit install
 ```
+
+### Manually upload docker image to device
+
+#### On the laptop:
+Install builder:
+
+```bash
+docker buildx install
+docker buildx create --name arm64-builder --platform linux/arm64
+docker buildx use arm64-builder
+docker pull multiarch/qemu-user-static
+docker run --rm --privileged multiarch/qemu-user-static:register --reset
+```
+```bash
+docker buildx build --platform linux/arm64 --pull --load -t {IMAGE_NAME} .
+docker save -o {PATH}/oor-docker-image.tar {IMAGE_NAME}
+```
+
+On the device:
+```bash
+sudo docker load -i {TAR_IMAGE_PAHT}
+```

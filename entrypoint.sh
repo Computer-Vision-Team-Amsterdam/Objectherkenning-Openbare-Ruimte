@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 bash objectherkenning_openbare_ruimte/preprocessing_service/preprocess_video_to_frames.sh &
 
