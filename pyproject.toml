@@ -18,10 +18,14 @@ pydantic = {version = "^1.8.2", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-ai-ml = {version = "^1.15.0", source = "PyPI"}
 azure-storage-blob = {version = "^12.19.0", source = "PyPI"}
+geopandas = "~0.13.2"
 
 [tool.poetry.dev-dependencies]
 pytest = {version = "^7.0.1", source = "PyPI" }
 pytest-cov = {version = "^4.0.0", source = "PyPI" }
+ipykernel = "^6.29.4"
+ipympl = "^0.9.3"
+matplotlib = "~3.7.0"
 
 [tool.isort]
 profile = "black"

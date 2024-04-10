@@ -18,7 +18,7 @@ ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
 
-def main(input_folder: str, output_folder: str):
+def extract_frames(input_folder: str, output_folder: str):
     """
     Recursively iterates through all MP4 files in the input_folder and its subfolders, extracts frames at a given framerate, and applies distortion correction.
 
@@ -98,4 +98,4 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.input_folder, args.output_folder)
+    extract_frames(args.input_folder, args.output_folder)
