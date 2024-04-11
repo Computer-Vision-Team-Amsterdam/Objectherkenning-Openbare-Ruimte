@@ -1,0 +1,2 @@
+# Hadolint (docker file scan) will stop pipeline if there are issues with level 'error' or higher
+failure-threshold: error
