@@ -1,25 +1,22 @@
 customer: ""
 
+azure_iot:
+  hostname: ""
+  device_id: ""
+  shared_access_key: ""
+
 aml_experiment_details:
   compute_name: cpu-blurring-model2
   env_name: oor-environment
   env_version: 2
   src_dir: "."
 
-azure_iot:
-  hostname: ""
-  device_id: ""
-  shared_access_key: ""
-
-convert_dataset:
-  face_width: 1024
-
 convert_annotations:
   datastore_name: converted-dataset-oor
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_dataset", "convert_annotations"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: INFO

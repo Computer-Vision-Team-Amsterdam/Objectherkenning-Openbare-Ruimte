@@ -22,10 +22,6 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
-class ConvertDataset(SettingsSpecModel):
-    face_width: int = 1024
-
-
 class ConvertAnnotations(SettingsSpecModel):
     datastore_name: str = "converted-dataset-oor"
     categories_file: str = "categories.json"
@@ -53,6 +49,5 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     customer: str
     aml_experiment_details: AMLExperimentDetailsSpec
     azure_iot: AzureIoTSpec = None
-    convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
     logging: LoggingSpec = LoggingSpec()
