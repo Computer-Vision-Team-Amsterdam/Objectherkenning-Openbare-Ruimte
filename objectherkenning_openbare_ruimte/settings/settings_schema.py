@@ -32,6 +32,7 @@ class FrameExtractionSpec(SettingsSpecModel):
     outputs: Dict[str, str]
     log_dir: str = "logs"
     exclude_dirs: List[str] = []
+    exclude_files: List[str] = []
     fps: float
 
 

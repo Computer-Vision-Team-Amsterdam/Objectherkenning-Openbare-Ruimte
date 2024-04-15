@@ -18,6 +18,7 @@ pydantic = {version = "^1.8.2", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-ai-ml = {version = "^1.15.0", source = "PyPI"}
 azure-storage-blob = {version = "^12.19.0", source = "PyPI"}
+pandas = "2.0.3"
 
 [tool.poetry.dev-dependencies]
 pytest = {version = "^7.0.1", source = "PyPI" }

@@ -41,6 +41,8 @@ def main(input_folder: str, output_folder: str):
     dc_settings = settings["distortion_correction"]
 
     exclude_dirs = set(fe_settings["exclude_dirs"])
+    exclude_files = fe_settings["exclude_files"]
+
     ffmpeg_filter_str = f'fps={fe_settings["fps"]},lenscorrection=cx={dc_settings["cx"]}:cy={dc_settings["cy"]}:k1={dc_settings["k1"]}:k2={dc_settings["k2"]}:i=bilinear'
     ffmpeg_args_str = (
         f"-vf '{ffmpeg_filter_str}' -q:v 1"  # -q:v 1 sets the jpeg quality
@@ -63,9 +65,11 @@ def main(input_folder: str, output_folder: str):
         if dirpath.split(sep="/")[-1] in exclude_dirs:
             continue
         for file in filenames:
+            if any(excl_file in file for excl_file in exclude_files):
+                continue
             if file.endswith(".mp4"):
                 file_path = os.path.join(dirpath, file)
-                filename = file.rstrip(".mp4")
+                filename = file.replace(".mp4", "")
                 ffmpeg_out_path = os.path.join(output_path, filename)
                 ffmpeg_log_file = os.path.join(log_path, f"{filename}.ffmpeg_log.txt")
                 ffmpeg_cmd = f"ffmpeg -i '{file_path}' {ffmpeg_args_str} '{ffmpeg_out_path}_%04d.jpg' 2> '{ffmpeg_log_file}'"

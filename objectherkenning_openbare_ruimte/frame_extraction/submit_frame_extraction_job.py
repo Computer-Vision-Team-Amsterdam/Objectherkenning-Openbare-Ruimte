@@ -33,10 +33,17 @@ if __name__ == "__main__":
     )
     output_rel_path = settings["frame_extraction"]["outputs"]["rel_path"]
     output_data_path = os.path.join(output_datastore_path, output_rel_path)
+    metadata_rel_path = settings["frame_extraction"]["outputs"]["metadata_rel_path"]
+    output_metadata_path = os.path.join(output_datastore_path, metadata_rel_path)
+
+    frame_extraction_cmd = 'poetry run python objectherkenning_openbare_ruimte/frame_extraction/frame_extraction.py --input_folder "${{inputs.input_folder}}" --output_folder "${{outputs.output_folder}}"'
+    metadata_cmd = 'poetry run python objectherkenning_openbare_ruimte/frame_extraction/metadata_helper.py --input_folder "${{inputs.input_folder}}" --output_folder "${{outputs.metadata_folder}}"'
+
+    job_cmd = f"{frame_extraction_cmd} && {metadata_cmd}"
 
     job = command(
         code=".",
-        command='poetry run python objectherkenning_openbare_ruimte/frame_extraction/frame_extraction.py --input_folder "${{inputs.input_folder}}" --output_folder "${{outputs.output_folder}}"',
+        command=job_cmd,
         inputs={
             "input_folder": Input(
                 path=input_data_path,
@@ -49,7 +56,12 @@ if __name__ == "__main__":
                 path=output_data_path,
                 type=AssetTypes.URI_FOLDER,
                 mode=InputOutputModes.RW_MOUNT,
-            )
+            ),
+            "metadata_folder": Output(
+                path=output_metadata_path,
+                type=AssetTypes.URI_FOLDER,
+                mode=InputOutputModes.RW_MOUNT,
+            ),
         },
         compute=compute,
         environment=f"{env_name}:{env_version}",

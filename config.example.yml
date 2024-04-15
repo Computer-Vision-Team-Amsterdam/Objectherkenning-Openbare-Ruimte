@@ -1,9 +1,9 @@
 customer: ""
 
 aml_experiment_details:
-  compute_name: cpu-daan
-  env_name: oor-environment
-  env_version: 2
+  compute_name: cpu-daan-D13v2
+  env_name: oor-test-environment
+  env_version: 3
 
 
 azure_iot:
@@ -26,8 +26,10 @@ frame_extraction:
   outputs:
     datastore: "oor_velotech"
     rel_path: "frames"
+    metadata_rel_path: "frames/metadata"
   log_dir: "logs"
-  exclude_dirs: ["checkboard", "frames"]
+  exclude_dirs: ["checkboard", "frames", "decos"]
+  exclude_files: ["D17M02Y2024-H20M50S55"]
   fps: 1
 
 
