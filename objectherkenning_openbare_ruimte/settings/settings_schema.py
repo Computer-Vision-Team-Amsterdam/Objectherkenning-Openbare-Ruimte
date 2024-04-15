@@ -20,6 +20,14 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
+class DataSampling(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    n_frames: int
+    sampling_weight: float
+    decos_buffer: float
+
+
 class DistortionCorrectionSpec(SettingsSpecModel):
     cx: float
     cy: float
@@ -56,6 +64,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     customer: str
     aml_experiment_details: AMLExperimentDetailsSpec
     azure_iot: AzureIoTSpec
+    data_sampling: DataSampling
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec
     logging: LoggingSpec = LoggingSpec()
