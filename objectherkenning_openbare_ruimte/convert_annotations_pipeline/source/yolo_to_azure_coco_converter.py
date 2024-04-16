@@ -122,7 +122,7 @@ class YoloToAzureCocoConverter:
         class_id, x_center, y_center, width, height = map(
             float, yolo_annotation.split()
         )
-        class_id += 1  # Adjust class ID based on predefined mapping
+        class_id += 1  # Azure COCO expects classes to start from 1
         x_center, y_center, width, height = (
             x_center * img_width,
             y_center * img_height,
@@ -134,6 +134,8 @@ class YoloToAzureCocoConverter:
         y_min = (y_center - height / 2) / img_height
         norm_width = width / img_width
         norm_height = height / img_height
+        # Azure COCO expects bbox to be rounded to 17 decimal places
+        # and area to be rounded to 10 decimal places
         bbox = [
             round(x_min, 17),
             round(y_min, 17),
