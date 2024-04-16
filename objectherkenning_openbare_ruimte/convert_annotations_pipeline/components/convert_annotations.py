@@ -71,23 +71,20 @@ def convert_annotations(
     logger.info(f"Separate labels: {separate_labels}")
 
     categories_file = os.path.join(input_old_folder, categories_file)
+    label_folder_path = None
 
     if separate_labels:
         label_folder_path = os.path.join(input_old_folder, label_folder)
         logger.info(f"Label folder path: {label_folder_path}")
-        converter = YoloToAzureCocoConverter(
-            input_old_folder,
-            output_new_folder,
-            datastore_name,
-            categories_file,
-            separate_labels,
-            label_folder_path,
-        )
-    else:
-        converter = YoloToAzureCocoConverter(
-            input_old_folder, output_new_folder, datastore_name, categories_file
-        )
 
+    converter = YoloToAzureCocoConverter(
+        input_old_folder,
+        output_new_folder,
+        datastore_name,
+        categories_file,
+        separate_labels,
+        label_folder_path,
+    )
     converter.convert()
 
     logger.info(f"JSON file created in: {output_new_folder}")
