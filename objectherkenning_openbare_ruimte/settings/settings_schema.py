@@ -8,10 +8,27 @@ class SettingsSpecModel(BaseModel):
         extra = "forbid"
 
 
+class AMLExperimentDetailsSpec(SettingsSpecModel):
+    compute_name: str = None
+    env_name: str = None
+    env_version: int = None
+    src_dir: str = None
+    ai_instrumentation_key: str = None
+
+
 class AzureIoTSpec(SettingsSpecModel):
     hostname: str
     device_id: str
     shared_access_key: str
+
+
+class ConvertAnnotations(SettingsSpecModel):
+    input_datastore_name: str = "annotations_conversion_old"
+    output_datastore_name: str = "annotations_conversion_new"
+    final_datastore_name: str = "converted-dataset-oor"
+    categories_file: str = "categories.json"
+    separate_labels: bool = False
+    label_folder: str = None
 
 
 class LoggingSpec(SettingsSpecModel):
@@ -26,6 +43,7 @@ class LoggingSpec(SettingsSpecModel):
         "format": "%(asctime)s|%(levelname)-8s|%(name)s|%(message)s",
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
+    ai_instrumentation_key: str = ""
 
 
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
@@ -33,5 +51,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
         extra = "forbid"
 
     customer: str
-    azure_iot: AzureIoTSpec
+    aml_experiment_details: AMLExperimentDetailsSpec
+    azure_iot: AzureIoTSpec = None
+    convert_annotations: ConvertAnnotations = None
     logging: LoggingSpec = LoggingSpec()
