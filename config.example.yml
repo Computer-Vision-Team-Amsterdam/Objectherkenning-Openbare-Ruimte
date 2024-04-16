@@ -13,7 +13,11 @@ aml_experiment_details:
 
 convert_annotations:
   input_datastore_name: annotations_conversion_old
-  output_datastore_name: converted-dataset-oor
+  output_datastore_name: annotations_conversion_new
+  final_datastore_name: converted_new_dataset_oor
+  categories_file: categories.json
+  separate_labels: True
+  label_folder: prelabeling_new_dataset_oor/labels
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`

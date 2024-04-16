@@ -29,18 +29,21 @@ def convert_annotations_pipeline():
         description="Path to the folder containing the annotations to convert",
     )
 
-    datastore_name = settings["convert_annotations"]["output_datastore_name"]
+    final_datastore_name = settings["convert_annotations"]["final_datastore_name"]
     categories_file = settings["convert_annotations"]["categories_file"]
+    separate_labels = settings["convert_annotations"]["separate_labels"]
+    label_folder = settings["convert_annotations"]["label_folder"]
 
     convert_annotations_step = convert_annotations(
         input_old_folder=input_old_input,
-        datastore_name=datastore_name,
+        datastore_name=final_datastore_name,
         categories_file=categories_file,
+        separate_labels=separate_labels,
+        label_folder=label_folder,
     )
 
-    output_new_path = aml_interface.get_datastore_full_path(
-        "annotations_conversion_new"
-    )
+    output_datastore_name = settings["convert_annotations"]["output_datastore_name"]
+    output_new_path = aml_interface.get_datastore_full_path(output_datastore_name)
 
     convert_annotations_step.outputs.output_new_folder = Output(
         type=AssetTypes.URI_FOLDER,

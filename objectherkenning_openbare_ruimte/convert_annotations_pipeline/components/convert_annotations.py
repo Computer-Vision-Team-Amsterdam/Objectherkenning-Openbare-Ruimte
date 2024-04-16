@@ -41,6 +41,8 @@ def convert_annotations(
     output_new_folder: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
     datastore_name: str,
     categories_file: str,
+    separate_labels: bool = False,
+    label_folder: str = None,
 ):
     """
     Pipeline step to convert annotations from YOLO to Azure COCO format.
@@ -55,18 +57,36 @@ def convert_annotations(
         Name of the datastore of the dataset.
     categories_file: str
         Path to the JSON file containing the categories.
+    separate_labels: bool, optional
+        Whether the labels are stored in a separate folder.
+    label_folder: str, optional
+        Path to the folder containing the label files if separate.
     """
 
     # image_paths = find_image_paths(input_old_folder)
     logger.info(f"Input folder: {input_old_folder}")
     logger.info(f"Output folder: {output_new_folder}")
     logger.info(f"Datastore name: {datastore_name}")
+    logger.info(f"Categories file: {categories_file}")
+    logger.info(f"Separate labels: {separate_labels}")
 
     categories_file = os.path.join(input_old_folder, categories_file)
 
-    converter = YoloToAzureCocoConverter(
-        input_old_folder, output_new_folder, datastore_name, categories_file
-    )
+    if separate_labels:
+        label_folder_path = os.path.join(input_old_folder, label_folder)
+        logger.info(f"Label folder path: {label_folder_path}")
+        converter = YoloToAzureCocoConverter(
+            input_old_folder,
+            output_new_folder,
+            datastore_name,
+            categories_file,
+            separate_labels,
+            label_folder_path,
+        )
+    else:
+        converter = YoloToAzureCocoConverter(
+            input_old_folder, output_new_folder, datastore_name, categories_file
+        )
 
     converter.convert()
 

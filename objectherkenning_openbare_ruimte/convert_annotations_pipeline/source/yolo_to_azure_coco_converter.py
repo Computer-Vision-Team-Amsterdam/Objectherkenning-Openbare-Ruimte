@@ -21,6 +21,8 @@ class YoloToAzureCocoConverter:
         output_folder: str,
         datastore_name: str,
         categories_file: str,
+        separate_labels: bool = False,
+        label_folder: str = None,
     ):
         """
         Parameters
@@ -37,6 +39,8 @@ class YoloToAzureCocoConverter:
         self.input_folder = input_folder
         self.output_folder = output_folder
         self.datastore_name = datastore_name
+        self.separate_labels = separate_labels
+        self.label_folder = label_folder if separate_labels else input_folder
         self._load_categories(categories_file)
         self.coco_json = {
             "images": [],
@@ -176,7 +180,13 @@ class YoloToAzureCocoConverter:
                 }
             )
 
-            annotation_file = os.path.splitext(img_path)[0] + ".txt"
+            if self.separate_labels:
+                annotation_file = os.path.join(
+                    self.label_folder,
+                    os.path.splitext(os.path.basename(img_path))[0] + ".txt",
+                )
+            else:
+                annotation_file = os.path.splitext(img_path)[0] + ".txt"
 
             if os.path.exists(annotation_file):
                 with open(annotation_file, "r") as f:
@@ -195,7 +205,7 @@ class YoloToAzureCocoConverter:
                         self.coco_json["annotations"].append(formatted_annotation)
                         self.annotation_id += 1
 
-        output_file = os.path.join(self.output_folder, "annotations.json")
+        output_file = os.path.join(self.output_folder, "annotations_new.json")
         logger.info(f"Categories: {self.categories}")
         with open(output_file, "w") as f:
             json.dump(self.coco_json, f, indent=4)

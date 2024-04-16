@@ -23,8 +23,12 @@ class AzureIoTSpec(SettingsSpecModel):
 
 
 class ConvertAnnotations(SettingsSpecModel):
-    datastore_name: str = "converted-dataset-oor"
+    input_datastore_name: str = "annotations_conversion_old"
+    output_datastore_name: str = "annotations_conversion_new"
+    final_datastore_name: str = "converted-dataset-oor"
     categories_file: str = "categories.json"
+    separate_labels: bool = False
+    label_folder: str = None
 
 
 class LoggingSpec(SettingsSpecModel):
