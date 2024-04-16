@@ -20,7 +20,8 @@ from aml_interface.aml_interface import AMLInterface  # noqa: E402
 @pipeline()
 def convert_annotations_pipeline():
 
-    input_old_path = aml_interface.get_datastore_full_path("annotations_conversion_old")
+    input_datastore_name = settings["convert_annotations"]["input_datastore_name"]
+    input_old_path = aml_interface.get_datastore_full_path(input_datastore_name)
 
     input_old_input = Input(
         type=AssetTypes.URI_FOLDER,
@@ -28,7 +29,7 @@ def convert_annotations_pipeline():
         description="Path to the folder containing the annotations to convert",
     )
 
-    datastore_name = settings["convert_annotations"]["datastore_name"]
+    datastore_name = settings["convert_annotations"]["output_datastore_name"]
     categories_file = settings["convert_annotations"]["categories_file"]
 
     convert_annotations_step = convert_annotations(

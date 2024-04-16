@@ -18,8 +18,6 @@ aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-I
 azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v1.0.2" }
 mldesigner = {version = "^0.1.0-beta.9", source = "PyPI"}
-numpy = {version = "^1.24.2", source = "PyPI"}
-py360convert-modified = {version = "^1.0.1", source = "PyPI"}
 opencv-python = {version = "^4.8.0.74", source = "PyPI"}
 
 [tool.poetry.dev-dependencies]

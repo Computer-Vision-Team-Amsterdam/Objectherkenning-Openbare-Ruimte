@@ -12,7 +12,8 @@ aml_experiment_details:
   src_dir: "."
 
 convert_annotations:
-  datastore_name: converted-dataset-oor
+  input_datastore_name: annotations_conversion_old
+  output_datastore_name: converted-dataset-oor
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
