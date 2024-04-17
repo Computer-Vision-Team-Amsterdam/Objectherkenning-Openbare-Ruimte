@@ -43,7 +43,7 @@ logging:
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
-    level: INFO
+    level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
   ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"
