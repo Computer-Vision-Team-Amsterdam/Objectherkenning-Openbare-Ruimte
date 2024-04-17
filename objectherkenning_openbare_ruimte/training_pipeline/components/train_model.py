@@ -62,10 +62,10 @@ def train_model(
         train="images/train/",
         val="images/val/",
         test="images/test/",
-        nc=3,
-        names=["person", "licence plate", "container"],
+        nc=5,
+        names=["person", "licence plate", "container", "mobile toilet", "scaffolding"],
     )
-    yaml_path = os.path.join(yolo_yaml_path, "yolov8_cfg.yaml")
+    yaml_path = os.path.join(yolo_yaml_path, "yolov8_cfg_nc_5.yaml")
     with open(f"{yaml_path}", "w") as outfile:
         yaml.dump(data, outfile, default_flow_style=False)
 
