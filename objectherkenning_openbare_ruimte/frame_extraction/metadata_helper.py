@@ -46,6 +46,21 @@ def extract_velotech_metadata_fps(metadata_file: str, fps: float) -> pd.DataFram
 
 
 def process_metadata(input_folder: str, output_folder: str):
+    """
+    Recursively iterate through all metadata CSV files in the input_folder and
+    its subfolders and extract rows at a given framerate. All resulting metadata
+    files are extracted to the same folder, duplicating the names the source files.
+
+    Usage:
+    python metadata_helper.py --input_folder <INPUT> --output_folder <OUTPUT>
+
+    Parameters
+    ----------
+    input_folder: str
+        Folder containing CSV files to be processed.
+    output_folder: str
+        Folder to which extracted metadata files will be written.
+    """
     fe_settings = settings["frame_extraction"]
     exclude_dirs = set(fe_settings["exclude_dirs"])
     exclude_files = fe_settings["exclude_files"]
