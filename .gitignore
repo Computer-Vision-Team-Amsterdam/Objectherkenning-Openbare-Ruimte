@@ -166,5 +166,5 @@ output/
 # Mac .DS_Store
 *.DS_Store
 
-config.json
 config.yml
+config.json

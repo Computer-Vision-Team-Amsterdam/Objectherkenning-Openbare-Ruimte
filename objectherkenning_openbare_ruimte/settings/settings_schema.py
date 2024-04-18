@@ -24,6 +24,17 @@ class AzureIoTSpec(SettingsSpecModel):
 
 class ConvertDataset(SettingsSpecModel):
     face_width: int = 1024
+    input_old_datastore: str = "annotations_conversion_old"
+    output_new_datastore: str = "annotations_conversion_new"
+
+
+class ConvertAnnotations(SettingsSpecModel):
+    input_datastore_name: str = "annotations_conversion_old"
+    output_datastore_name: str = "annotations_conversion_new"
+    final_datastore_name: str = "converted-dataset-oor"
+    categories_file: str = "categories.json"
+    separate_labels: bool = False
+    label_folder: str = None
 
 
 class LoggingSpec(SettingsSpecModel):
@@ -49,4 +60,5 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     aml_experiment_details: AMLExperimentDetailsSpec
     azure_iot: AzureIoTSpec = None
     convert_dataset: ConvertDataset = None
+    convert_annotations: ConvertAnnotations = None
     logging: LoggingSpec = LoggingSpec()
