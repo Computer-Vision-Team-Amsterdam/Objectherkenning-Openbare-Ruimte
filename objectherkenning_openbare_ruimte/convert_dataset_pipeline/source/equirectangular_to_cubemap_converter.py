@@ -28,6 +28,8 @@ class EquirectangularToCubemapConverter:
             Path to the equirectangular image folder.
         output_path : str
             Path to the folder where to store the folders with the six cubic faces for each image.
+        face_width : int
+            Width of each face in the cubemap.
         """
         self.input_path = input_path
         self.output_path = output_path
@@ -116,8 +118,6 @@ class EquirectangularToCubemapConverter:
 
         Parameters
         ----------
-        yolo_class: str
-            The class of the object.
         top_left : float
             Top-left absolute corner coordinates.
         bottom_right : float
@@ -129,8 +129,8 @@ class EquirectangularToCubemapConverter:
 
         Returns
         tuple
-            A tuple containing the YOLO annotation in the format:
-            "<yolo_class> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+            A tuple containing the normalized center coordinates and size:
+            "<x_center_norm> <y_center_norm> <w_norm> <h_norm>".
         -------
 
         """
@@ -158,7 +158,7 @@ class EquirectangularToCubemapConverter:
         annotation: Tuple[str, float, float, float, float],
     ) -> None:
         """
-        Write the converted YOLO annotation to the specified annotation file after clearing any existing content.
+        Write the converted YOLO annotation to the specified annotation file.
 
         Parameters
         ----------
@@ -722,7 +722,6 @@ class EquirectangularToCubemapConverter:
 
                     converted_yolo_annotation = (
                         EquirectangularToCubemapConverter._convert_corners_to_yolo(
-                            yolo_annotation_class,
                             tl_star,
                             br_star,
                             self.face_width,
@@ -730,8 +729,10 @@ class EquirectangularToCubemapConverter:
                         )
                     )
 
+                    final_annotation = (yolo_annotation_class,) + converted_yolo_annotation
+
                     EquirectangularToCubemapConverter._write_annotation_to_file(
-                        self.output_path, img_name, face_idx, converted_yolo_annotation
+                        self.output_path, img_name, face_idx, final_annotation
                     )
             else:
                 tl_star = face_corners[face_idx_tl]["TL"]
@@ -739,7 +740,6 @@ class EquirectangularToCubemapConverter:
 
                 converted_yolo_annotation = (
                     EquirectangularToCubemapConverter._convert_corners_to_yolo(
-                        yolo_annotation_class,
                         tl_star,
                         br_star,
                         self.face_width,
@@ -747,6 +747,8 @@ class EquirectangularToCubemapConverter:
                     )
                 )
 
+                final_annotation = (yolo_annotation_class,) + converted_yolo_annotation
+
                 EquirectangularToCubemapConverter._write_annotation_to_file(
-                    self.output_path, img_name, face_idx, converted_yolo_annotation
+                    self.output_path, img_name, face_idx, final_annotation
                 )
