@@ -19,7 +19,8 @@ from aml_interface.aml_interface import AMLInterface  # noqa: E402
 
 @pipeline()
 def convert_dataset_pipeline():
-    input_old_path = aml_interface.get_datastore_full_path("dataset_conversion_old")
+    input_old_datastore = settings["convert_dataset"]["input_old_datastore"]
+    input_old_path = aml_interface.get_datastore_full_path(input_old_datastore)
 
     input_old_input = Input(
         type=AssetTypes.URI_FOLDER,
@@ -34,7 +35,8 @@ def convert_dataset_pipeline():
         face_width=face_width,
     )
 
-    output_new_path = aml_interface.get_datastore_full_path("dataset_conversion_new")
+    output_new_datastore = settings["convert_dataset"]["output_new_datastore"]
+    output_new_path = aml_interface.get_datastore_full_path(output_new_datastore)
 
     convert_dataset_step.outputs.output_new_folder = Output(
         type=AssetTypes.URI_FOLDER,

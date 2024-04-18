@@ -677,6 +677,7 @@ class EquirectangularToCubemapConverter:
 
         P_h, P_w, _ = image.shape
 
+        # Process each annotation line by line
         for line in lines:
             face_corners: Dict[int, Dict[str, Tuple[int, int]]] = {}
 
@@ -690,6 +691,8 @@ class EquirectangularToCubemapConverter:
             )
             corners = [top_left, top_right, bottom_left, bottom_right]
 
+            # Reproject each corner to the corresponding face and
+            # pair it with a face index. The corner has a tag associated with it.
             for i, corner in enumerate(corners):
                 face_idx, converted_corner = (
                     EquirectangularToCubemapConverter._reproject_point(
@@ -704,6 +707,7 @@ class EquirectangularToCubemapConverter:
 
             face_idx_tl = face_idx_br = None
 
+            # Determine the face indices for the top-left and bottom-right corners
             for face_idx, face_corners_dict in face_corners.items():
                 for tag in face_corners_dict:
                     if tag == "TL":
@@ -711,12 +715,16 @@ class EquirectangularToCubemapConverter:
                     elif tag == "BR":
                         face_idx_br = face_idx
 
+            # If the bounding box spans multiple faces, process each face separately
             if face_idx_tl != face_idx_br:
                 logging.info("Bounding box spans multiple faces!")
 
+                # For each face, we start with a default bounding box with coordinates top-left = (0,0)
+                # and bottom-right = (face_width, face_width).
                 for face_idx, face_corners_dict in face_corners.items():
                     processed_corners: Dict[str, Tuple[int, int]] = {}
 
+                    # Adjust the bounding box coordinates based on the corners previously reprojected on the face
                     for tag, corner in face_corners_dict.items():
                         processed_corners = EquirectangularToCubemapConverter._adjust_coordinates_based_on_corner(
                             tag, corner, processed_corners
@@ -742,6 +750,7 @@ class EquirectangularToCubemapConverter:
                     EquirectangularToCubemapConverter._write_annotation_to_file(
                         self.output_path, img_name, face_idx, final_annotation
                     )
+            # If the bounding box is contained within a single face, the final corners are already determined
             else:
                 tl_star = face_corners[face_idx_tl]["TL"]
                 br_star = face_corners[face_idx_tl]["BR"]
