@@ -107,7 +107,6 @@ class EquirectangularToCubemapConverter:
 
     @staticmethod
     def _convert_corners_to_yolo(
-        yolo_class: str,
         top_left: Tuple[float, float],
         bottom_right: Tuple[float, float],
         face_w: int,
@@ -134,7 +133,6 @@ class EquirectangularToCubemapConverter:
         -------
 
         """
-
         x_min, y_min = top_left
         x_max, y_max = bottom_right
 
@@ -148,7 +146,7 @@ class EquirectangularToCubemapConverter:
         width_norm = width_abs / face_w
         height_norm = height_abs / face_h
 
-        return yolo_class, x_center_norm, y_center_norm, width_norm, height_norm
+        return x_center_norm, y_center_norm, width_norm, height_norm
 
     @staticmethod
     def _write_annotation_to_file(
