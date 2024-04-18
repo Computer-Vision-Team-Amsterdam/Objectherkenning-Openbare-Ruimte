@@ -194,35 +194,39 @@ class EquirectangularToCubemapConverter:
         processed_corners: Dict[str, Any], face_width: int
     ) -> Tuple[Tuple[float, float], Tuple[float, float]]:
         """
-        Adjust the bounding box corners coordinates based on already processed corners within a face.
-
-        This function finalizes the coordinates of a bounding box by considering the adjustments
-        needed based on the corners that have already been processed.
+        Adjust the bounding box corners based on already processed corners within a face.
 
         Parameters
         ----------
+
         processed_corners : dict
-            A dictionary containing the corners that have been processed. Keys are corner tags
-            ('TL', 'TR', 'BL', 'BR'), and values are tuples of (x, y) coordinates.
+            A dictionary containing the corners and other boundary points that have been processed. 
+            Keys include corner tags ('TL', 'TR', 'BL', 'BR') for each corner and may also include 
+            'x_max' and 'y_max' which represent the maximum allowable x and y coordinates 
+            for the bounding box on that face, ensuring the bounding box fits within the face boundaries.
+            The values are tuples of (x, y) coordinates that represent the adjusted positions 
+            of these corners on a specific cubemap face. These adjustments ensure that the bounding box 
+            accurately represents the object within the constraints of that face, 
+            considering any geometrical shifts needed during the conversion from equirectangular to cubemap projection.
 
         face_width : int
             The width (and height, assuming square faces) of each face in the cubemap. This is
-            used to set default values for bounding box coordinates that are not explicitly
-            adjusted based on processed corners.
+            used to ensure bounding box coordinates stay within the face boundaries.
 
         Returns
         -------
         tuple
             A tuple containing the adjusted top-left (tl_star) and bottom-right (br_star) coordinates
-            of the bounding box, ensuring the box accurately represents the object within the face's
-            boundaries.
+            of the bounding box, ensuring the box fits properly within the cube face.
 
         Notes
         -----
-        The function dynamically adjusts the coordinates of the bounding box depending on which
-        corners have been processed. For example, if the 'TL' (top-left) corner has been processed,
-        it may adjust the 'x_min' and 'y_min' values of the bounding box. Similarly, if the 'BR'
-        (bottom-right) corner has been processed, it may adjust the 'x_max' and 'y_max' values.
+        This function dynamically adjusts the bounding box coordinates based on the processed corners 
+        and explicit boundary settings. For example, 'x_max' and 'y_max' provide upper limits on the 
+        bounding box size when corners like 'TR' or 'BR' have been processed, adjusting their values to 
+        ensure the object is encapsulated within the cube face boundaries.
+
+        An explanation with pictures is available in the Wiki documentation.
         """
 
         tl_x = 0
@@ -313,7 +317,8 @@ class EquirectangularToCubemapConverter:
         processed_corners: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
-        Adjust the coordinates of a bounding box based on the processed corners within a face.
+        Adjust the coordinates of a bounding box based on the processed corners within a face,
+        and possibly based on explicit 'x_max' and 'y_max' settings if they are defined.
 
         This function updates the coordinates of a bounding box in a cubemap face by considering
         the positions of already processed corners. Depending on the corner being processed (tag),
@@ -332,9 +337,10 @@ class EquirectangularToCubemapConverter:
             A tuple of (x, y) coordinates representing the position of the corner on the face.
 
         processed_corners : dict
-            A dictionary maintaining the state of already processed corners. Keys are corner tags
-            ('TL', 'TR', 'BL', 'BR'), and values are tuples of (x, y) coordinates. This dictionary
-            is updated in-place to reflect the adjusted coordinates based on the current corner's
+            A dictionary maintaining the state of already processed corners and explicit boundary limits.
+            Keys are corner tags ('TL', 'TR', 'BL', 'BR') and may also include 'x_max' and 'y_max' which represent 
+            the maximum values that the bounding box coordinates can take on the x and y axes, respectively.
+            This dictionary is updated in-place to reflect the adjusted coordinates based on the current corner's
             processing.
 
         Returns
@@ -350,6 +356,8 @@ class EquirectangularToCubemapConverter:
         being processed and previously processed corners. For example, processing the 'TR' (top-right)
         corner may adjust the 'x_max' value if the 'TL' (top-left) corner has already been processed,
         ensuring the bounding box correctly encapsulates the object within the face's boundaries.
+
+        An explanation with pictures is available in the Wiki documentation.
         """
 
         if "TL" in processed_corners:
