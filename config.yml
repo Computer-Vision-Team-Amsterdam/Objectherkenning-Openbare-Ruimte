@@ -1,7 +1,10 @@
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
-  device_id: "test-diana"
+  device_id: "Luna"
   shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
+  cert_file_path: "/cert/Luna.crt"
+  key_file_path: "/cert/private/Luna.key"
+  passphrase: "{PASSPHRASE}"
 
 data_delivery_pipeline:
   images_path: "/raw_frames"

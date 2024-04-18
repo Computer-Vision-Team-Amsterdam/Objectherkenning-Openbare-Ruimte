@@ -12,6 +12,9 @@ class AzureIoTSpec(SettingsSpecModel):
     hostname: str
     device_id: str
     shared_access_key: str
+    cert_file_path: str
+    key_file_path: str
+    passphrase: str
 
 
 class DataDeliveryPipelineSpec(SettingsSpecModel):

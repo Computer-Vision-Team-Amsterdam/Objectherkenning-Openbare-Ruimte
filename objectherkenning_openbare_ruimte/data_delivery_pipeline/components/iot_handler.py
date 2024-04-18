@@ -4,11 +4,20 @@ from typing import Dict
 
 from azure.core.exceptions import AzureError
 from azure.iot.device import IoTHubDeviceClient, Message
+from azure.iot.device.common.models import X509
 from azure.storage.blob import BlobClient
 
 
 class IoTHandler:
-    def __init__(self, hostname: str, device_id: str, shared_access_key: str):
+    def __init__(
+        self,
+        hostname: str,
+        device_id: str,
+        shared_access_key: str = None,
+        cert_file_path: str = None,
+        key_file_path: str = None,
+        passphrase: str = None,
+    ):
         """
         Object that handles the connection with IoT and the delivery of messages and files.
 
@@ -21,11 +30,18 @@ class IoTHandler:
         shared_access_key
             Access key to authenticate
         """
-        self.connection_string = (
-            f"HostName={hostname};"
-            f"DeviceId={device_id};"
-            f"SharedAccessKey={shared_access_key}"
-        )
+        if shared_access_key:
+            self.connection_string = (
+                f"HostName={hostname};"
+                f"DeviceId={device_id};"
+                f"SharedAccessKey={shared_access_key}"
+            )
+        else:
+            self.cert_file_path = cert_file_path
+            self.key_file_path = key_file_path
+            self.passphrase = passphrase
+            self.hostname = hostname
+            self.device_id = device_id
 
     @contextmanager
     def _connect(self):
@@ -37,10 +53,22 @@ class IoTHandler:
         with self._connect() as device_client:
             device_client.send_message(message)
         """
-        device_client = IoTHubDeviceClient.create_from_connection_string(
-            self.connection_string,
+        x509 = X509(
+            cert_file=self.cert_file_path,
+            key_file=self.key_file_path,
+            pass_phrase=self.passphrase,
+        )
+
+        device_client = IoTHubDeviceClient.create_from_x509_certificate(
+            x509=x509,
+            hostname=self.hostname,
+            device_id=self.device_id,
             websockets=True,
         )
+        # device_client = IoTHubDeviceClient.create_from_connection_string(
+        #     self.connection_string,
+        #     websockets=True,
+        # )
         try:
             device_client.connect()
             yield device_client
