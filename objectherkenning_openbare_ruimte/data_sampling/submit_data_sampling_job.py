@@ -38,11 +38,11 @@ if __name__ == "__main__":
     output_rel_path = settings["data_sampling"]["outputs"]["rel_path"]
     output_data_path = os.path.join(output_datastore_path, output_rel_path)
 
-    job_cmd = 'poetry run python objectherkenning_openbare_ruimte/data_sampling/data_sampling.py --input_folder "${{inputs.input_folder}}" --metadata_folder "${{inputs.metadata_folder}}" --decos_folder "${{inputs.decos_folder}}" --output_folder "${{outputs.output_folder}}"'
+    decos_cmd = 'poetry run python objectherkenning_openbare_ruimte/data_sampling/decos_sampling.py --input_folder "${{inputs.input_folder}}" --metadata_folder "${{inputs.metadata_folder}}" --decos_folder "${{inputs.decos_folder}}" --output_folder "${{outputs.output_folder}}"'
 
     job = command(
         code=".",
-        command=job_cmd,
+        command=decos_cmd,
         inputs={
             "input_folder": Input(
                 path=input_data_path,
