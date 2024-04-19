@@ -34,8 +34,8 @@ frame_extraction:
     rel_path: "frames"
     metadata_rel_path: "frames/metadata"
   log_dir: "logs"
-  exclude_dirs: ["checkboard", "frames", "decos"]
-  exclude_files: ["D17M02Y2024-H20M50S55"]
+  exclude_dirs: ["checkboard", "frames", "decos"]  # Do not check for MP4 in these dirs
+  exclude_files: ["D17M02Y2024-H20M50S55"]  # Metadata for this file is invalid
   fps: 1
 
 logging:
