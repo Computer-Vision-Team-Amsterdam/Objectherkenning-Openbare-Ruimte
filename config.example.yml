@@ -1,16 +1,23 @@
 customer: ""
 
 aml_experiment_details:
-  compute_name: cpu-daan-D13v2
-  env_name: oor-test-environment
-  env_version: 3
-
+  compute_name: cpu-blurring-model2
+  env_name: oor-environment
+  env_version: 2
+  src_dir: "."
 
 azure_iot:
   hostname: ""
   device_id: ""
   shared_access_key: ""
 
+convert_annotations:
+  input_datastore_name: annotations_conversion_old
+  output_datastore_name: annotations_conversion_new
+  final_datastore_name: converted_new_dataset_oor
+  categories_file: categories.json
+  separate_labels: True
+  label_folder: prelabeling_new_dataset_oor/labels
 
 data_sampling:
   inputs:
@@ -25,31 +32,12 @@ data_sampling:
   sampling_weight: 1.0
   decos_buffer: 30
 
-
-distortion_correction:
-  cx: 0.509
-  cy: 0.488
-  k1: -0.241
-  k2: 0.106
-
-
-frame_extraction:
-  inputs:
-    datastore: "oor_velotech"
-    rel_path: ""
-  outputs:
-    datastore: "oor_velotech"
-    rel_path: "frames"
-  log_dir: "logs"
-  exclude_dirs: ["checkboard", "frames"]
-  fps: 1
-
-
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
+  ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"
