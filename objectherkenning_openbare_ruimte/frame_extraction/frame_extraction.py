@@ -41,21 +41,8 @@ class FFMPEG_frame_extractor:
         k1 = distortion_settings["k1"]
         k2 = distortion_settings["k2"]
 
-        if not isinstance(fps, float):
-            print(f"Invalid type for fps: {type(fps)}")
-            return
-        if not isinstance(cx, float):
-            print(f"Invalid type for fps: {type(fps)}")
-            return
-        if not isinstance(cy, float):
-            print(f"Invalid type for fps: {type(fps)}")
-            return
-        if not isinstance(k1, float):
-            print(f"Invalid type for fps: {type(fps)}")
-            return
-        if not isinstance(k2, float):
-            print(f"Invalid type for fps: {type(fps)}")
-            return
+        if not all(isinstance(value, float) for value in [fps, cx, cy, k1, k2]):
+            raise TypeError("All parameters must be floats.")
 
         # Prepare FFMPEG command for distortion correction and output quality
         self.filter_str = (
@@ -64,20 +51,19 @@ class FFMPEG_frame_extractor:
 
     def create_command(self, input_file: str, output_path: str, log_file: str) -> str:
         if not os.path.isfile(input_file):
-            print(f"Input file not found: {input_file}")
-            return None
+            raise FileNotFoundError(f"Input file not found: {input_file}")
         if not os.path.isdir(os.path.dirname(output_path)):
-            print(f"Output folder not found: {os.path.dirname(output_path)}")
-            return None
+            raise FileNotFoundError(
+                f"Output folder does not exist: {os.path.dirname(output_path)}"
+            )
         if not is_valid_filepath(output_path):
-            print(f"Output file path not valid: {output_path}")
-            return None
+            raise ValueError(f"Output file path not valid: {output_path}")
         if not os.path.isdir(os.path.dirname(log_file)):
-            print(f"Log folder not found: {os.path.dirname(log_file)}")
-            return None
+            raise FileNotFoundError(
+                f"Log folder does not exist: {os.path.dirname(log_file)}"
+            )
         if not is_valid_filepath(log_file):
-            print(f"Log file path not valid: {log_file}")
-            return None
+            raise ValueError(f"Log file path not valid: {log_file}")
 
         self.cmd = [
             "ffmpeg",

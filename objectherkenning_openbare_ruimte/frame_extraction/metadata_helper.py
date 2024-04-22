@@ -65,7 +65,7 @@ def process_metadata(input_folder: str, output_folder: str):
     """
     Recursively iterate through all metadata CSV files in the input_folder and its subfolders,
     and filter metadata to match given framerate. Results will be written to the output_folder,
-    duplicating the names the source files.
+    duplicating the names of the source files.
 
     Usage:
     python metadata_helper.py --input_folder <INPUT> --output_folder <OUTPUT>
