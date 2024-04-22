@@ -24,8 +24,8 @@ class AzureIoTSpec(SettingsSpecModel):
 
 class ConvertDataset(SettingsSpecModel):
     face_width: int = 1024
-    input_old_datastore: str = "annotations_conversion_old"
-    output_new_datastore: str = "annotations_conversion_new"
+    input_old_datastore: str
+    output_new_datastore: str
 
 
 class ConvertAnnotations(SettingsSpecModel):
