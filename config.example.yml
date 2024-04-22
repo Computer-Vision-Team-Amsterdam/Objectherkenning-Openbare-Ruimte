@@ -1,15 +1,20 @@
 customer: ""
 
-azure_iot:
-  hostname: ""
-  device_id: ""
-  shared_access_key: ""
-
 aml_experiment_details:
   compute_name: cpu-blurring-model2
   env_name: oor-environment
   env_version: 2
   src_dir: "."
+
+azure_iot:
+  hostname: ""
+  device_id: ""
+  shared_access_key: ""
+
+convert_dataset:
+  input_old_datastore: "old_datastore"
+  output_new_datastore: "new_datastore"
+  face_width: 1024
 
 convert_annotations:
   input_datastore_name: annotations_conversion_old

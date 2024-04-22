@@ -7,6 +7,9 @@ RUN apt-get -y update \
         build-essential \
         curl \
         ffmpeg \
+        libsm6 \
+        libxext6 \
+        libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/app
