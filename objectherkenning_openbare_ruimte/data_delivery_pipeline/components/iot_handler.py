@@ -6,6 +6,15 @@ from azure.core.exceptions import AzureError
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.iot.device.common.models import X509
 from azure.storage.blob import BlobClient
+from azure.core.credentials import AccessToken
+
+
+class AccessTokenCredential:
+    def __init__(self, access_token):
+        self._access_token = access_token
+
+    def get_token(self, *scopes, **kwargs):
+        return AccessToken(token=self._access_token, expires_on=None)
 
 
 class IoTHandler:
@@ -53,22 +62,22 @@ class IoTHandler:
         with self._connect() as device_client:
             device_client.send_message(message)
         """
-        x509 = X509(
-            cert_file=self.cert_file_path,
-            key_file=self.key_file_path,
-            pass_phrase=self.passphrase,
-        )
-
-        device_client = IoTHubDeviceClient.create_from_x509_certificate(
-            x509=x509,
-            hostname=self.hostname,
-            device_id=self.device_id,
-            websockets=True,
-        )
-        # device_client = IoTHubDeviceClient.create_from_connection_string(
-        #     self.connection_string,
+        # x509 = X509(
+        #     cert_file=self.cert_file_path,
+        #     key_file=self.key_file_path,
+        #     pass_phrase=self.passphrase,
+        # )
+        #
+        # device_client = IoTHubDeviceClient.create_from_x509_certificate(
+        #     x509=x509,
+        #     hostname=self.hostname,
+        #     device_id=self.device_id,
         #     websockets=True,
         # )
+        device_client = IoTHubDeviceClient.create_from_connection_string(
+            self.connection_string,
+            websockets=True,
+        )
         try:
             device_client.connect()
             yield device_client
@@ -144,11 +153,21 @@ class IoTHandler:
                 )
             )
 
+            cred = AccessTokenCredential(blob_info["sasToken"].replace("?access_token=", ""))
+
+            blob_client = BlobClient(blob_info["hostName"], credential=cred, container_name=blob_info["containerName"],
+                                     blob_name=blob_info["blobName"])
+            # with BlobClient.from_blob_url(sas_url) as blob_client:
+            with open(file_name, "rb") as f:
+                print(f)
+                result = blob_client.upload_blob(f, overwrite=True)
+                return True, result
+
             # Upload the specified file
-            with BlobClient.from_blob_url(sas_url) as blob_client:
-                with open(file_name, "rb") as f:
-                    result = blob_client.upload_blob(f, overwrite=True)
-                    return True, result
+            # with BlobClient.from_blob_url(sas_url) as blob_client:
+            #     with open(file_name, "rb") as f:
+            #         result = blob_client.upload_blob(f, overwrite=True)
+            #         return True, result
 
         except FileNotFoundError as ex:
             return False, ex
