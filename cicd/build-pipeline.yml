@@ -56,6 +56,5 @@ jobs:
           inlineScript: |
             az upgrade
             az acr login -n $(containerRegistryName)
-            docker pull $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
             docker build . -f Dockerfile --cache-from $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) --tag $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag) 
             docker push $(containerRegistryName).azurecr.io/$(dockerImageName):$(dockerImageTag)
