@@ -1,4 +1,5 @@
-FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
+#FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
+FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS builder
 
 # Upgrade and install system libraries
 RUN apt-get -y update \
@@ -82,7 +83,8 @@ WORKDIR /venv
 # Use conda-pack to create a standalone env in /venv
 RUN conda-pack -n env -o /venv/env.tar.gz --ignore-missing-files
 
-FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS runtime
+#FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS runtime
+FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS builder
 
 RUN apt-get -y update \
   && apt-get upgrade -y --fix-missing \
