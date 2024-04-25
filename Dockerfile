@@ -117,6 +117,7 @@ RUN cd ffmpeg \
 # Copy /venv from build stage
 WORKDIR /venv
 COPY --from=builder /venv .
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 RUN tar -xzf env.tar.gz
 
 # Downloads to user config dir
