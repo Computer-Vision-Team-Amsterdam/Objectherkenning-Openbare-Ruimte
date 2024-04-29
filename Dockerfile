@@ -1,5 +1,5 @@
-#FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS builder
+FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
+#FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS builder
 
 # Upgrade and install system libraries
 RUN apt-get -y update \
@@ -10,13 +10,6 @@ RUN apt-get -y update \
         curl \
         gcc \
         zip \
-        htop \
-        libgl1 \
-        libglib2.0-0 \
-        libpython3-dev \
-        gnupg \
-        g++ \
-        libusb-1.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -83,8 +76,8 @@ WORKDIR /venv
 # Use conda-pack to create a standalone env in /venv
 RUN conda-pack -n env -o /venv/env.tar.gz --ignore-missing-files
 
-#FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS runtime
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS runtime
+FROM --platform=linux/arm64/v8 nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS runtime
+#FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS runtime
 
 RUN apt-get -y update \
   && apt-get upgrade -y --fix-missing \
@@ -117,7 +110,7 @@ RUN cd ffmpeg \
 # Copy /venv from build stage
 WORKDIR /venv
 COPY --from=builder /venv .
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY cert.pem /certs/
 RUN tar -xzf env.tar.gz
 
 # Downloads to user config dir
