@@ -31,6 +31,22 @@ class FFMPEG_frame_extractor:
     input_file must be an existing file
     output_folder must be an existing folder
     log_file must point to a valid filename in an existing folder
+
+    Parameters
+    ----------
+    fps: float
+        Frames per second to extract
+    distortion_settings: dict
+        Parameters for distortion correction
+        cx: float
+        cy: float
+        k1: float
+        k2: float
+
+    Raises
+    ------
+    TypeError
+        When any of the input parameters is not of type float
     """
 
     def __init__(self, fps, distortion_settings):
@@ -50,6 +66,29 @@ class FFMPEG_frame_extractor:
         )
 
     def create_command(self, input_file: str, output_path: str, log_file: str) -> str:
+        """
+        Create the FFMPEG command based on provided input and output folders.
+
+        Parameters
+        ----------
+        input_file: str
+            The input video file
+        output_path: str
+            The folder where the extracted frames will be saved
+        log_file: str
+            Where to write the FFMPEG output log
+
+        Raises
+        ------
+        FileNotFoundError
+            When any of the input or output paths does not exist
+        ValueError
+            When any of the output paths is invalid
+
+        Returns
+        -------
+        The FFMPEG command string
+        """
         if not os.path.isfile(input_file):
             raise FileNotFoundError(f"Input file not found: {input_file}")
         if not os.path.isdir(os.path.dirname(output_path)):
@@ -80,6 +119,14 @@ class FFMPEG_frame_extractor:
         return " ".join(self.cmd)
 
     def run(self):
+        """
+        Run the FFMPEG command.
+
+        Raises
+        ------
+        CalledProcessError
+            When the command cannot be executed
+        """
         if self.cmd is None:
             print("Command not set, run 'create_cmd() first.")
         try:
