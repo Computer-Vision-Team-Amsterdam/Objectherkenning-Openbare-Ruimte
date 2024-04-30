@@ -545,7 +545,7 @@ test-randomorder = ["pytest-randomly"]
 
 [[package]]
 name = "cvtoolkit"
-version = "1.0.2"
+version = "1.0.3"
 description = "CVToolkit is a collection of essential utilities for computer vision team projects, enhancing reusability and boosting productivity across multiple projects."
 optional = false
 python-versions = "~3.8"
@@ -563,8 +563,8 @@ torch = ">=1.7.0"
 [package.source]
 type = "git"
 url = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git"
-reference = "v1.0.2"
-resolved_reference = "9478f171de4cf9766357d824cf1396aa69081413"
+reference = "v1.0.3"
+resolved_reference = "b1a1a5718a796cc6f05c76c17ec632c36935f70e"
 
 [[package]]
 name = "deprecation"
@@ -2513,4 +2513,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "2dbd4a4c4e664ab089a7d8caa396fb16fd684e86ee286da4e1e875f6ac655ea0"
+content-hash = "93332c5865cd4a30dcc7f9ff393a7cfbcef128bc10c8f94e6570f09ced41c60e"
