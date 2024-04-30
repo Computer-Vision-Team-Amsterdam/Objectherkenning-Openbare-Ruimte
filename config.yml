@@ -7,9 +7,14 @@ aml_experiment_details:
   src_dir: "."
 
 azure_iot:
-  hostname: ""
-  device_id: ""
-  shared_access_key: ""
+  hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
+  device_id: "test-diana"
+  shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
+
+data_delivery_pipeline:
+  images_path: "/raw_frames"
+  detections_path: ""
+  metadata_path: ""
 
 convert_dataset:
   input_old_datastore: "old_datastore"
