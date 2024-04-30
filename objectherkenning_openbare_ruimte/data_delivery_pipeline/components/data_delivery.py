@@ -152,10 +152,10 @@ class DataDelivery:
         iot_handler = IoTHandler(
             hostname=self.iot_settings["hostname"],
             device_id=self.iot_settings["device_id"],
-            # shared_access_key=self.iot_settings["shared_access_key"],
-            cert_file_path=self.iot_settings["cert_file_path"],
-            key_file_path=self.iot_settings["key_file_path"],
-            passphrase=self.iot_settings["passphrase"],
+            shared_access_key=self.iot_settings["shared_access_key"],
+            #cert_file_path=self.iot_settings["cert_file_path"],
+            #key_file_path=self.iot_settings["key_file_path"],
+            #passphrase=self.iot_settings["passphrase"],
         )
         for image_name, frame_numbers in images_and_frames.items():
             image_folder = f"{self.images_folder}/{image_name}"

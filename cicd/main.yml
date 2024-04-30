@@ -23,31 +23,31 @@ variables:
   - template: variables.yaml
 
 stages:
-  - stage: Prebuild
-    displayName: "Collect all prerequisite and run tests prior to build"
-    jobs:
-      - template: "prebuild-pipeline.yml"
-        parameters:
-          serviceConnectionName: ${{ variables.serviceConnectionName }}
-          AMLModelName: ${{ variables.AMLModelName }}
-          AMLModelVersion: ${{ parameters.AMLModelVersion }}
-          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
-          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
-          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
-          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
-          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
-
+#  - stage: Prebuild
+#    displayName: "Collect all prerequisite and run tests prior to build"
+#    jobs:
+#      - template: "prebuild-pipeline.yml"
+#        parameters:
+#          serviceConnectionName: ${{ variables.serviceConnectionName }}
+#          AMLModelName: ${{ variables.AMLModelName }}
+#          AMLModelVersion: ${{ parameters.AMLModelVersion }}
+#          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
+#          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
+#          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
+#          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+#          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+#
   - stage: Build_ont
     displayName: "[ont] Build and publish container to ont"
-    dependsOn:
-      - Prebuild
-    condition: |
-      and
-      (
-        succeeded(),
-        eq( variables.dtapName, 'ont' ),
-        ne( variables['Build.Reason'], 'PullRequest' )
-      )
+#    dependsOn:
+#      - Prebuild
+#    condition: |
+#      and
+#      (
+#        succeeded(),
+#        eq( variables.dtapName, 'ont' ),
+#        ne( variables['Build.Reason'], 'PullRequest' )
+#      )
     variables:
       - name: projectVersion
         value: $[ stageDependencies.Prebuild.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
@@ -63,48 +63,48 @@ stages:
           containerRegistry: ${{ variables.containerRegistry }}
           dockerImageName: ${{ variables.dockerImageName }}
           dockerImageTag: ${{ variables.dockerImageTag }}
-
-  - stage: Build_prd
-    displayName: "[prd] Build and publish container to prd"
-    dependsOn:
-      - Prebuild
-    condition: |
-      and
-      (
-        succeeded(),
-        eq( variables.dtapName, 'prd' )
-      )
-    variables:
-    - name: projectVersion
-      value: $[ stageDependencies.Prebuild.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
-    jobs:
-      - template: "build-pipeline.yml"
-        parameters:
-          serviceConnectionName: ${{ variables.serviceConnectionName }}
-          AMLModelName: ${{ variables.AMLModelName }}
-          AMLModelVersion: ${{ parameters.AMLModelVersion }}
-          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
-          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
-          containerRegistryResourceGroupName: ${{ variables.containerRegistryResourceGroupName }}
-          containerRegistry: ${{ variables.containerRegistry }}
-          dockerImageName: ${{ variables.dockerImageName }}
-          dockerImageTag: ${{ variables.dockerImageTag }}
-
-  - stage: Deploy_ont
-    displayName: "[ont] Deploy container to ont device"
-    dependsOn:
-      - Build_ont
-    condition: |
-      and
-      (
-        succeeded(),
-        eq( variables.dtapName, 'ont' ),
-        ne( variables['Build.Reason'], 'PullRequest' )
-      )
-    jobs:
-      - template: "deploy-pipeline.yml"
-        parameters:
-          serviceConnectionName: ${{ variables.serviceConnectionName }}
-          containerRegistry: ${{ variables.containerRegistry }}
-          dockerImageName: ${{ variables.dockerImageName }}
-          dockerImageTag: ${{ variables.dockerImageTag }}
+#
+#  - stage: Build_prd
+#    displayName: "[prd] Build and publish container to prd"
+#    dependsOn:
+#      - Prebuild
+#    condition: |
+#      and
+#      (
+#        succeeded(),
+#        eq( variables.dtapName, 'prd' )
+#      )
+#    variables:
+#    - name: projectVersion
+#      value: $[ stageDependencies.Prebuild.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]
+#    jobs:
+#      - template: "build-pipeline.yml"
+#        parameters:
+#          serviceConnectionName: ${{ variables.serviceConnectionName }}
+#          AMLModelName: ${{ variables.AMLModelName }}
+#          AMLModelVersion: ${{ parameters.AMLModelVersion }}
+#          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+#          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+#          containerRegistryResourceGroupName: ${{ variables.containerRegistryResourceGroupName }}
+#          containerRegistry: ${{ variables.containerRegistry }}
+#          dockerImageName: ${{ variables.dockerImageName }}
+#          dockerImageTag: ${{ variables.dockerImageTag }}
+#
+#  - stage: Deploy_ont
+#    displayName: "[ont] Deploy container to ont device"
+#    dependsOn:
+#      - Build_ont
+#    condition: |
+#      and
+#      (
+#        succeeded(),
+#        eq( variables.dtapName, 'ont' ),
+#        ne( variables['Build.Reason'], 'PullRequest' )
+#      )
+#    jobs:
+#      - template: "deploy-pipeline.yml"
+#        parameters:
+#          serviceConnectionName: ${{ variables.serviceConnectionName }}
+#          containerRegistry: ${{ variables.containerRegistry }}
+#          dockerImageName: ${{ variables.dockerImageName }}
+#          dockerImageTag: ${{ variables.dockerImageTag }}

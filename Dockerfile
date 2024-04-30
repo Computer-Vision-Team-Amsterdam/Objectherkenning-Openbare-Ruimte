@@ -9,6 +9,8 @@ RUN apt-get -y install \
         wget \
         build-essential \
         curl \
+        gcc \
+        zip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -80,11 +82,20 @@ RUN apt-get -y update \
   && apt-get upgrade -y --fix-missing \
   && echo "Europe/Amsterdam" > /etc/timezone \
   && DEBIAN_FRONTEND=noninteractive \
-  && apt-get -y install \
+  && apt-get install -y --no-install-recommends \
         build-essential \
         curl \
         git \
         yasm \
+        gcc \
+        zip \
+        htop \
+        libgl1 \
+        libglib2.0-0 \
+        libpython3-dev \
+        gnupg \
+        g++ \
+        libusb-1.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -112,6 +123,11 @@ RUN if [ "$BUILD_NUMBER" != "None" ] && [ "$IMAGE_NAME" != "None" ]; then echo "
 WORKDIR /venv
 COPY --from=builder /venv .
 RUN tar -xzf env.tar.gz
+
+# Downloads to user config dir
+ADD https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf \
+    https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.Unicode.ttf \
+    /root/.config/Ultralytics/
 
 WORKDIR /usr/src
 # This needs to be replaced to a generic model name when it's actually deployed
