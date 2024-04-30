@@ -4,12 +4,12 @@ import pathlib
 import geopandas as gpd
 import pandas as pd
 
-RD_CRS = "EPSG:28992"
+RD_CRS = "EPSG:28992"  # CRS code for the Dutch Rijksdriehoek coordinate system
 
 
 def _decos_df2gdf(decos_df: pd.DataFrame) -> gpd.GeoDataFrame:
     """
-    Convert Decos DataFrame to GeoDatFrame. Geometry will be parsed from WKT string. The columns
+    Convert Decos DataFrame to GeoDataFrame. Geometry will be parsed from WKT string. The columns
     datum_object_van and datum_object_tm will be converted to datetime object for later use.
 
     Parameters
@@ -85,7 +85,7 @@ def filter_decos_by_date(
     decos_gdf: GeoDataFrame
         Decos data
     date: datetime
-        Target date to filer by
+        Target date to filter by
 
     Returns
     -------

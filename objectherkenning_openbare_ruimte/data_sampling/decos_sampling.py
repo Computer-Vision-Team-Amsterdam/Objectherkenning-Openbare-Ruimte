@@ -23,8 +23,8 @@ config_path = os.path.abspath(
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
-RD_CRS = "EPSG:28992"
-LAT_LON_CRS = "EPSG:4326"
+RD_CRS = "EPSG:28992"  # CRS code for the Dutch Rijksdriehoek coordinate system
+LAT_LON_CRS = "EPSG:4326"  # CRS code for WGS84 latitude/longitude coordinate system
 
 
 class DecosSampling:
@@ -137,12 +137,14 @@ class DecosSampling:
             print(f"Adding metadata for {src_name}")
             idx = np.where(frame_gdf["frame_src"] == src_name)[0]
 
-            # get the identifying part of the file name and construct the metadata file path
+            # Get the identifying part of the file name and construct the metadata file path
+            # src_name is expected to look like "1-0-D14M03Y2024-H12M56S12",
+            # and the corresponding metadata file would be "1-D14M03Y2024-H12M56S12.csv"
             meta_key_split = src_name.split(sep="-", maxsplit=2)
             meta_file = f"{meta_key_split[0]}-{meta_key_split[2]}.csv"
             meta_path = os.path.join(metadata_folder, meta_file)
 
-            # TODO do we want to use gps_time instead?
+            # NOTE: we now use the system timestamp, using gps_time instead would prevent dependency on accurate system time
             meta_gdf = DecosSampling.load_metadata_gdf(meta_path).set_index(
                 "new_frame_id"
             )[["timestamp", "geometry"]]
@@ -150,6 +152,8 @@ class DecosSampling:
             meta_data = meta_gdf.to_numpy()
 
             # In case of a difference in number of rows, we clip or append None
+            # This difference can arise due to inaccurate extraction of metadata
+            # rows based on FPS rate, typically there might be a one-frame difference
             diff = len(idx) - len(meta_data)
             if diff > 0:
                 meta_data = np.vstack([meta_data, [[None, None]] * diff])
@@ -158,7 +162,7 @@ class DecosSampling:
 
             frame_gdf.loc[idx, ["timestamp", "geometry"]] = meta_data
 
-            # match frame locations with decos data
+            # Match frame locations with decos data
             decos_bb = sg.box(*frame_gdf.loc[idx, :].total_bounds)
             date = frame_gdf.loc[idx[0], "timestamp"]
             decos_gdf_filtered = decos_helper.filter_decos_by_date(decos_gdf, date)
@@ -216,7 +220,14 @@ class DecosSampling:
 
     def _sample_frames(self):
         """
-        Sample frames based on sampling weight and permit data.
+        Sample frames based on sampling weight and permit data. The weight in [0,1]
+        determines how much emphasis is placed on sampling frames inside a permit
+        zone as opposed to those outside.
+
+        Fewer frames may be sampled than requested in case the number of frames with
+        non-zero sampling weight is less than the requested number. For example,
+        when there are only 30 frames with a permit and sampling weight is set to 1,
+        no more than those 30 frames will be sampled.
         """
         weights = np.array(
             [
@@ -240,6 +251,7 @@ class DecosSampling:
         self.frame_gdf["sample"] = sample
 
     def _copy_sample_to_output_folder(self):
+        """Copy the sampled frames to the output_folder."""
         print(f"Copying sample to {self.output_folder}")
         pathlib.Path(self.output_folder).mkdir(exist_ok=True, parents=True)
 
