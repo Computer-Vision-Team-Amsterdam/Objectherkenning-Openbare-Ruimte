@@ -22,6 +22,12 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
+class ConvertDataset(SettingsSpecModel):
+    face_width: int = 1024
+    input_old_datastore: str
+    output_new_datastore: str
+
+
 class ConvertAnnotations(SettingsSpecModel):
     input_datastore_name: str = "annotations_conversion_old"
     output_datastore_name: str = "annotations_conversion_new"
@@ -61,6 +67,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     customer: str
     aml_experiment_details: AMLExperimentDetailsSpec
     azure_iot: AzureIoTSpec = None
+    convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
     data_sampling: DataSampling
     logging: LoggingSpec = LoggingSpec()

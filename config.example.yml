@@ -11,6 +11,11 @@ azure_iot:
   device_id: ""
   shared_access_key: ""
 
+convert_dataset:
+  input_old_datastore: "old_datastore"
+  output_new_datastore: "new_datastore"
+  face_width: 1024
+
 convert_annotations:
   input_datastore_name: annotations_conversion_old
   output_datastore_name: annotations_conversion_new
