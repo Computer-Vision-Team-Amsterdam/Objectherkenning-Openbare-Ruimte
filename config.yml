@@ -1,3 +1,11 @@
+customer: ""
+
+aml_experiment_details:
+  compute_name: cpu-blurring-model2
+  env_name: oor-environment
+  env_version: 2
+  src_dir: "."
+
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
   device_id: "test-diana"
@@ -8,11 +16,25 @@ data_delivery_pipeline:
   detections_path: ""
   metadata_path: ""
 
+convert_dataset:
+  input_old_datastore: "old_datastore"
+  output_new_datastore: "new_datastore"
+  face_width: 1024
+
+convert_annotations:
+  input_datastore_name: annotations_conversion_old
+  output_datastore_name: annotations_conversion_new
+  final_datastore_name: converted_new_dataset_oor
+  categories_file: categories.json
+  separate_labels: True
+  label_folder: prelabeling_new_dataset_oor/labels
+
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
-    level: INFO
+    level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
+  ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"

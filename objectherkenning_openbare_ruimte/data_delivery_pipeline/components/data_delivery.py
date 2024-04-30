@@ -75,20 +75,31 @@ class DataDelivery:
         """
         for video_name, frame_numbers in videos_and_frames.items():
             filtered_rows = []
-            with open(f"{self.metadata_folder}/{video_name}.csv") as fd:
-                reader = csv.reader(fd)
-                header = next(reader)
-                header.append("frame_number")
-                filtered_rows.append(header)
-                for idx, row in enumerate(reader):
-                    if idx + 1 in frame_numbers:
-                        row.append(str(idx + 1))
-                        filtered_rows.append(row)
-            with open(
-                f"{self.images_folder}/{video_name}/{video_name}.csv", "w", newline=""
-            ) as output_file:
-                csv_writer = csv.writer(output_file)
-                csv_writer.writerows(filtered_rows)
+            try:
+                with open(f"{self.metadata_folder}/{video_name}.csv") as fd:
+                    reader = csv.reader(fd)
+                    header = next(reader)
+                    header.append("frame_number")
+                    filtered_rows.append(header)
+                    for idx, row in enumerate(reader):
+                        if idx + 1 in frame_numbers:
+                            row.append(str(idx + 1))
+                            filtered_rows.append(row)
+                with open(
+                    f"{self.images_folder}/{video_name}/{video_name}.csv",
+                    "w",
+                    newline="",
+                ) as output_file:
+                    csv_writer = csv.writer(output_file)
+                    csv_writer.writerows(filtered_rows)
+            except FileNotFoundError as e:
+                print(
+                    f"FileNotFoundError during the creation of metadata file for: {video_name}: {e}"
+                )
+            except Exception as e:
+                print(
+                    f"Exception during the creation of metadata file for: {video_name}: {e}"
+                )
 
     @staticmethod
     def _get_videos_and_frame_numbers(images_paths: List[str]) -> Dict[str, List[str]]:
