@@ -1,17 +1,36 @@
-FROM ubuntu:22.04
+FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ="Europe/Amsterdam"
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update  \
+    && apt-get upgrade -y --fix-missing \
+    && apt-get install -y --no-install-recommends \
     tzdata \
     python3.10 \
     python3-pip \
     python3.10-venv \
     nano \
+    gcc \
+    python3-dev \
+    git \
+    build-essential \
+    htop \
+    libgl1 \
+    libglib2.0-0 \
+    libpython3-dev \
+    gnupg \
+    g++ \
+    libusb-1.0-0 \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://git.ffmpeg.org/ffmpeg.git
+RUN cd ffmpeg \
+    && ./configure \
+    && make \
+    && make install
 
 RUN pip3 install pipx \
     && pipx ensurepath
@@ -19,8 +38,8 @@ RUN pipx install poetry
 ENV PATH=/root/.local/bin:$PATH
 RUN poetry config virtualenvs.create false
 
-ENV CURLOPT_SSL_VERIFYHOST=0
-ENV CURLOPT_SSL_VERIFYPEER=0
+#ENV CURLOPT_SSL_VERIFYHOST=0
+#ENV CURLOPT_SSL_VERIFYPEER=0
 
 COPY pyproject.toml .
 COPY poetry.lock .
@@ -28,6 +47,11 @@ COPY poetry.lock .
 # Initialize Conda, activate environment and install poetry packages
 RUN poetry update --no-ansi --no-interaction \
     && poetry install --no-ansi --no-interaction --no-root
+
+# Downloads to user config dir
+ADD https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf \
+    https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.Unicode.ttf \
+    /root/.config/Ultralytics/
 
 WORKDIR /usr/src
 # This needs to be replaced to a generic model name when it's actually deployed
