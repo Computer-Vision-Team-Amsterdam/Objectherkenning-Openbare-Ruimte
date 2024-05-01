@@ -48,7 +48,7 @@ class DataSampling(SettingsSpecModel):
     outputs: Dict[str, str]
     n_frames: int
     sampling_weight: float
-    decos_buffer: float
+    decos_radius: float
 
 
 class LoggingSpec(SettingsSpecModel):

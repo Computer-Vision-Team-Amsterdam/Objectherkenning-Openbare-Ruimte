@@ -7,7 +7,7 @@ import pandas as pd
 RD_CRS = "EPSG:28992"  # CRS code for the Dutch Rijksdriehoek coordinate system
 
 
-def _decos_df2gdf(decos_df: pd.DataFrame) -> gpd.GeoDataFrame:
+def _decos_df_to_gdf(decos_df: pd.DataFrame) -> gpd.GeoDataFrame:
     """
     Convert Decos DataFrame to GeoDataFrame. Geometry will be parsed from WKT string. The columns
     datum_object_van and datum_object_tm will be converted to datetime object for later use.
@@ -23,7 +23,7 @@ def _decos_df2gdf(decos_df: pd.DataFrame) -> gpd.GeoDataFrame:
     """
     decos_gdf = gpd.GeoDataFrame(
         decos_df,
-        geometry=gpd.GeoSeries.from_wkb(decos_df.geometrie_locatie),
+        geometry=gpd.GeoSeries.from_wkb(decos_df["geometrie_locatie"]),
         crs=RD_CRS,
     )
     decos_gdf["datum_object_van"] = pd.to_datetime(
@@ -33,23 +33,6 @@ def _decos_df2gdf(decos_df: pd.DataFrame) -> gpd.GeoDataFrame:
         decos_gdf["datum_object_tm"], format="%Y-%m-%d"
     )
     return decos_gdf
-
-
-def load_decos_gdf(path: str) -> gpd.GeoDataFrame:
-    """
-    Load Decos data as GeoDataFrame. Geometry will be parsed from WKT string. The columns
-    datum_object_van and datum_object_tm will be converted to datetime object for later use.
-
-    Parameters
-    ----------
-    path: str
-        Path to the Decos data file
-
-    Returns
-    -------
-    GeoDataFrame with Decos data
-    """
-    return _decos_df2gdf(pd.read_csv(path))
 
 
 def load_and_combine_decos(decos_data_folder: str) -> gpd.GeoDataFrame:
@@ -70,7 +53,7 @@ def load_and_combine_decos(decos_data_folder: str) -> gpd.GeoDataFrame:
     decos_df = pd.concat(
         [pd.read_csv(decos_file) for decos_file in decos_files], ignore_index=True
     )
-    return _decos_df2gdf(decos_df)
+    return _decos_df_to_gdf(decos_df)
 
 
 def filter_decos_by_date(

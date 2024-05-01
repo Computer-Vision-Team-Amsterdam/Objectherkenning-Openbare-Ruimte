@@ -40,7 +40,7 @@ data_sampling:
     rel_path: "frames/sample"
   n_frames: 1500
   sampling_weight: 1.0
-  decos_buffer: 30
+  decos_radius: 30
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`

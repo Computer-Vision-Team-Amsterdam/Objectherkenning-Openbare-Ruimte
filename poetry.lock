@@ -2,7 +2,7 @@
 
 [[package]]
 name = "aml-interface"
-version = "1.0.0"
+version = "1.1.0"
 description = "AML-Interface is developed with the purpose of simplifying the use of AzureML, adding an abstraction layer over repetitive AzureML functions."
 optional = false
 python-versions = "~3.8"
@@ -15,8 +15,8 @@ azure-ai-ml = "^1.2.0"
 [package.source]
 type = "git"
 url = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git"
-reference = "v1.0.0"
-resolved_reference = "ab1a89e53e7f4592c4785dcd99e97f665b32b277"
+reference = "v1.1.0"
+resolved_reference = "0a5a8de9528ca963e75f674d3ec025adba425d9b"
 
 [[package]]
 name = "appnope"
@@ -1036,13 +1036,13 @@ shapely = ">=1.7.1"
 
 [[package]]
 name = "google-api-core"
-version = "2.18.0"
+version = "2.19.0"
 description = "Google API client core library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-api-core-2.18.0.tar.gz", hash = "sha256:62d97417bfc674d6cef251e5c4d639a9655e00c45528c4364fbfebb478ce72a9"},
-    {file = "google_api_core-2.18.0-py3-none-any.whl", hash = "sha256:5a63aa102e0049abe85b5b88cb9409234c1f70afcda21ce1e40b285b9629c1d6"},
+    {file = "google-api-core-2.19.0.tar.gz", hash = "sha256:cf1b7c2694047886d2af1128a03ae99e391108a08804f87cfd35970e49c9cd10"},
+    {file = "google_api_core-2.19.0-py3-none-any.whl", hash = "sha256:8661eec4078c35428fd3f69a2c7ee29e342896b70f01d1a1cbcb334372dd6251"},
 ]
 
 [package.dependencies]
@@ -1434,13 +1434,13 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jsonschema"
-version = "4.21.1"
+version = "4.22.0"
 description = "An implementation of JSON Schema validation for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jsonschema-4.21.1-py3-none-any.whl", hash = "sha256:7996507afae316306f9e2290407761157c6f78002dcf7419acb99822143d1c6f"},
-    {file = "jsonschema-4.21.1.tar.gz", hash = "sha256:85727c00279f5fa6bedbe6238d2aa6403bedd8b4864ab11207d07df3cc1b2ee5"},
+    {file = "jsonschema-4.22.0-py3-none-any.whl", hash = "sha256:ff4cfd6b1367a40e7bc6411caec72effadd3db0bbe5017de188f2d6108335802"},
+    {file = "jsonschema-4.22.0.tar.gz", hash = "sha256:5b22d434a45935119af990552c862e5d6d564e8f6601206b305a61fdf661a2b7"},
 ]
 
 [package.dependencies]
@@ -3776,4 +3776,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.8"
-content-hash = "36e83ff881971a754392b2343491af7a21e2e2e34134dee9af8d3ed78cc0b1fe"
+content-hash = "fa7dfe04bd5b5fc8ff3683114ad1def418b56fb9d7413ed64d2c173324b83773"
