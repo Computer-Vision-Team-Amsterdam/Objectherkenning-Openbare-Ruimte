@@ -6,8 +6,8 @@ RUN apt-get -y update \
     && apt-get -y install \
         build-essential \
         curl \
-    && rm -rf /var/lib/apt/lists/*
-    && apt-get update
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get update \
     && apt-get install ffmpeg libsm6 libxext6 libpq-dev -y
 
 WORKDIR /opt/app
