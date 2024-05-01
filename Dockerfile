@@ -1,11 +1,11 @@
-FROM mcr.microsoft.com/azureml/o16n-base/python-assets:latest AS inferencing-assets
-
 FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ="Europe/Amsterdam"
 
 RUN apt-get -y update
 RUN apt-get -y install \
+        tzdata \
         wget \
         build-essential \
         curl \
@@ -78,11 +78,13 @@ RUN conda-pack -n env -o /venv/env.tar.gz --ignore-missing-files
 
 FROM nvidia/cuda:12.3.2-cudnn9-devel-ubuntu22.04 AS runtime
 
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ="Europe/Amsterdam"
+
 RUN apt-get -y update \
   && apt-get upgrade -y --fix-missing \
-  && echo "Europe/Amsterdam" > /etc/timezone \
-  && DEBIAN_FRONTEND=noninteractive \
   && apt-get install -y --no-install-recommends \
+        tzdata \
         build-essential \
         curl \
         git \
@@ -104,20 +106,6 @@ RUN cd ffmpeg \
     && ./configure \
     && make \
     && make install
-
-# Copy logging utilities, nginx and rsyslog configuration files, IOT server binary, etc.
-COPY --from=inferencing-assets /artifacts /var/
-RUN sed -i '/liblttng-ust0/d' /var/requirements/system_requirements.txt
-RUN /var/requirements/install_system_requirements.sh && \
-    cp /var/configuration/rsyslog.conf /etc/rsyslog.conf && \
-    cp /var/configuration/nginx.conf /etc/nginx/sites-available/app && \
-    ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app && \
-    rm -f /etc/nginx/sites-enabled/default
-ENV SVDIR=/var/runit
-ENV WORKER_TIMEOUT=300
-EXPOSE 5001 8883 8888
-# Stores image version information and log it while running inferencing server for better Debuggability
-RUN if [ "$BUILD_NUMBER" != "None" ] && [ "$IMAGE_NAME" != "None" ]; then echo "${IMAGE_NAME}, Materializaton Build:${BUILD_NUMBER}" > /IMAGE_INFORMATION ; fi
 
 # Copy /venv from build stage
 WORKDIR /venv
