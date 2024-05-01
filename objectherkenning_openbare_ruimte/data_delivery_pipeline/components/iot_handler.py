@@ -2,11 +2,10 @@ import os
 from contextlib import contextmanager
 from typing import Dict
 
+from azure.core.credentials import AccessToken
 from azure.core.exceptions import AzureError
 from azure.iot.device import IoTHubDeviceClient, Message
-from azure.iot.device.common.models import X509
 from azure.storage.blob import BlobClient
-from azure.core.credentials import AccessToken
 
 
 class AccessTokenCredential:
@@ -153,15 +152,15 @@ class IoTHandler:
                 )
             )
 
-            cred = AccessTokenCredential(blob_info["sasToken"].replace("?access_token=", ""))
-
-            blob_client = BlobClient(blob_info["hostName"], credential=cred, container_name=blob_info["containerName"],
-                                     blob_name=blob_info["blobName"])
-            # with BlobClient.from_blob_url(sas_url) as blob_client:
-            with open(file_name, "rb") as f:
-                print(f)
-                result = blob_client.upload_blob(f, overwrite=True)
-                return True, result
+            # cred = AccessTokenCredential(blob_info["sasToken"].replace("?access_token=", ""))
+            #
+            # blob_client = BlobClient(blob_info["hostName"], credential=cred, container_name=blob_info["containerName"],
+            #                          blob_name=blob_info["blobName"])
+            with BlobClient.from_blob_url(sas_url) as blob_client:
+                with open(file_name, "rb") as f:
+                    print(f)
+                    result = blob_client.upload_blob(f, overwrite=True)
+                    return True, result
 
             # Upload the specified file
             # with BlobClient.from_blob_url(sas_url) as blob_client:
