@@ -216,7 +216,7 @@ class DecosSampling:
         decos_bb = sg.box(*frame_gdf.total_bounds)
         # Get the timestamp and filter the decos data
         # NOTE: this assumes all frames are from the same date
-        date = frame_gdf["timestamp"][0]
+        date = frame_gdf["timestamp"].iloc[0]
         decos_gdf_filtered = decos_helper.filter_decos_by_date(self.decos_gdf, date)
         decos_clipped = decos_gdf_filtered.clip(decos_bb.buffer(self.decos_radius))
 
@@ -333,7 +333,7 @@ class DecosSampling:
             f"Sampled {n_sampled} frames, of which {n_with_permit} in permit zone ({ratio}%)"
         )
 
-        # self._copy_sample_to_output_folder()
+        self._copy_sample_to_output_folder()
         self._store_metadata()
 
 
