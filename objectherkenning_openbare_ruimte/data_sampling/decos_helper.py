@@ -1,5 +1,5 @@
-import datetime
 import pathlib
+from datetime import datetime, time
 
 import geopandas as gpd
 import pandas as pd
@@ -57,7 +57,7 @@ def load_and_combine_decos(decos_data_folder: str) -> gpd.GeoDataFrame:
 
 
 def filter_decos_by_date(
-    decos_gdf: gpd.GeoDataFrame, date: datetime.datetime
+    decos_gdf: gpd.GeoDataFrame, date: datetime
 ) -> gpd.GeoDataFrame:
     """
     Filter Decos data by a given date. All entries for which the date falls between
@@ -74,6 +74,9 @@ def filter_decos_by_date(
     -------
     GeoDataFrame with Decos entries valid on date
     """
+    # Get rid of hours/minutes/etc
+    date = datetime.combine(date.date(), time.min)
+
     filtered_gdf = decos_gdf[
         (decos_gdf["datum_object_van"] <= date) & (decos_gdf["datum_object_tm"] >= date)
     ]
