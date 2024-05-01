@@ -33,7 +33,7 @@ data_sampling:
   inputs:
     datastore: "oor_velotech"
     rel_path: "frames/20240329-141802"
-    metadata_rel_path: "frames/metadata"
+    frame_metadata_rel_path: "frames/metadata"
     decos_rel_path: "decos"
   outputs:
     datastore: "oor_velotech"

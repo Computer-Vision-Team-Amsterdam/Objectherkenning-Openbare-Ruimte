@@ -36,7 +36,7 @@ class DecosSampling:
     def __init__(
         self,
         input_folder: str,
-        metadata_folder: str,
+        frame_metadata_folder: str,
         decos_folder: str,
         output_folder: str,
     ):
@@ -51,14 +51,14 @@ class DecosSampling:
         ----------
         input_folder: str
             Path to folder with image frames
-        metadata_folder: str
-            Path to folder with corresponding metadata
+        frame_metadata_folder: str
+            Path to folder with corresponding frame metadata
         decos_folder: str
             Path to folder with corresponding permit data
         output_folder: str
             Path to folder where sampled images are stored
         """
-        self.metadata_folder = metadata_folder
+        self.frame_metadata_folder = frame_metadata_folder
         self.output_folder = output_folder
         self.n_frames = settings["data_sampling"]["n_frames"]
         self.sampling_weight = settings["data_sampling"]["sampling_weight"]
@@ -66,10 +66,10 @@ class DecosSampling:
 
         self.decos_gdf = decos_helper.load_and_combine_decos(decos_folder)
         self.frame_gdf = DecosSampling.create_frame_gdf(input_folder)
-        self._add_metadata_and_permits()
+        self._add_frame_metadata_and_permits()
 
     @staticmethod
-    def load_metadata_gdf(path: str) -> gpd.GeoDataFrame:
+    def load_frame_metadata_gdf(path: str) -> gpd.GeoDataFrame:
         """
         Load a CSV metadata file as GeoDataFrame. Assumes geometry information is
         stored in columns named gps_lon and gps_lat. CRS will be converted to Rijksdriehoek.
@@ -77,11 +77,11 @@ class DecosSampling:
         Parameters
         ----------
         path: str
-            Path to metadata CSV file
+            Path to frame metadata CSV file
 
         Returns
         -------
-        GeoDataFrame containing the metadata
+        GeoDataFrame containing the frame metadata
         """
         meta_df = pd.read_csv(path)
         return gpd.GeoDataFrame(
@@ -133,7 +133,7 @@ class DecosSampling:
 
         return frame_gdf
 
-    def _load_metadata_for_video_name(self, video_name: str) -> gpd.GeoDataFrame:
+    def _load_frame_metadata_for_video_name(self, video_name: str) -> gpd.GeoDataFrame:
         """
         Load the CSV metadata file for a given video as GeoDataFrame. Assumes geometry information is
         stored in columns named gps_lon and gps_lat. CRS will be converted to Rijksdriehoek.
@@ -148,19 +148,19 @@ class DecosSampling:
 
         Returns
         -------
-        GeoDataFrame containing the metadata
+        GeoDataFrame containing the frame metadata
         """
         # NOTE: this has to be changed when naming conventions change
         meta_key_split = video_name.split(sep="-", maxsplit=2)
         meta_file = f"{meta_key_split[0]}-{meta_key_split[2]}.csv"
-        meta_path = os.path.join(self.metadata_folder, meta_file)
-        return DecosSampling.load_metadata_gdf(meta_path)
+        meta_path = os.path.join(self.frame_metadata_folder, meta_file)
+        return DecosSampling.load_frame_metadata_gdf(meta_path)
 
-    def _get_metadata_for_gdf(
+    def _get_frame_metadata_for_gdf(
         self, frame_gdf: gpd.GeoDataFrame, video_name: str
     ) -> np.ndarray:
         """
-        Load the metadata corresponding to the frames in frame_gdf taken from the
+        Load the frame metadata corresponding to the frames in frame_gdf taken from the
         video with name video_name.
 
         In case of a mismatch in number of rows, metadata is clipped or appended
@@ -180,7 +180,7 @@ class DecosSampling:
         A numpy array with the columns [timestamp, geometry] for each frame.
         """
         # NOTE: we now use the system timestamp, using gps_time instead would prevent dependency on accurate system time
-        meta_gdf = self._load_metadata_for_video_name(video_name).set_index(
+        meta_gdf = self._load_frame_metadata_for_video_name(video_name).set_index(
             "new_frame_id"
         )[["timestamp", "geometry"]]
         meta_gdf["timestamp"] = pd.to_datetime(meta_gdf["timestamp"], unit="s")
@@ -229,25 +229,27 @@ class DecosSampling:
 
         return permits
 
-    def _add_metadata_and_permits(self):
+    def _add_frame_metadata_and_permits(self):
         """
-        Add metadata and permit information for each image frame in frame_gdf.
+        Add frame metadata and permit information for each image frame in frame_gdf.
 
         The frame_gdf is expected to contain one line for each frame, and a column
         "frame_src" indicating the video the frame originated from. This will be
-        used as key to locate the right metadata file.
+        used as key to locate the right frame metadata file.
 
-        The metadata file is expected to contain geometry (gps_lat, gps_lon)
+        The frame metadata file is expected to contain geometry (gps_lat, gps_lon)
         and timestamps for each frame.
 
         The permit data will be queried based on the time stamp and location.
         """
         for src_name in self.frame_gdf["frame_src"].unique():
             # src_name is the name of the source video file
-            print(f"Adding metadata and permits for {src_name}")
+            print(f"Adding frame metadata and permits for {src_name}")
             idx = np.where(self.frame_gdf["frame_src"] == src_name)[0]
 
-            meta_data = self._get_metadata_for_gdf(self.frame_gdf.loc[idx, :], src_name)
+            meta_data = self._get_frame_metadata_for_gdf(
+                self.frame_gdf.loc[idx, :], src_name
+            )
             self.frame_gdf.loc[idx, ["timestamp", "geometry"]] = meta_data
 
             permits = self._get_permits_for_gdf(self.frame_gdf.loc[idx, :])
@@ -300,18 +302,18 @@ class DecosSampling:
                 target_path = os.path.join(self.output_folder, frame.name)
                 shutil.copyfile(frame.as_posix(), target_path)
 
-    def _store_metadata(self):
+    def _store_sampling_metadata(self):
         """
         Store metadata (frame_gdf) as GPKG file in the same output folder as the sampled frames.
         """
-        metadata_file = os.path.join(self.output_folder, "metadata.gpkg")
+        metadata_file = os.path.join(self.output_folder, "sampling_metadata.gpkg")
         metadata_gdf = self.frame_gdf.assign(
             path=self.frame_gdf["path"].apply(lambda p: p.as_posix())
         )
         metadata_gdf["timestamp"] = metadata_gdf["timestamp"].apply(
             lambda t: (None if t is None else t.timestamp())
         )
-        print(f"Storing metadata in {metadata_file}")
+        print(f"Storing sampling metadata in {metadata_file}")
         metadata_gdf.to_file(metadata_file, driver="GPKG")
 
     def run_sampling_job(self):
@@ -334,14 +336,16 @@ class DecosSampling:
         )
 
         self._copy_sample_to_output_folder()
-        self._store_metadata()
+        self._store_sampling_metadata()
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--input_folder", dest="input_folder", type=str)
-    parser.add_argument("--metadata_folder", dest="metadata_folder", type=str)
+    parser.add_argument(
+        "--frame_metadata_folder", dest="frame_metadata_folder", type=str
+    )
     parser.add_argument("--decos_folder", dest="decos_folder", type=str)
     parser.add_argument("--output_folder", dest="output_folder", type=str)
 
@@ -352,6 +356,9 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     sampler = DecosSampling(
-        args.input_folder, args.metadata_folder, args.decos_folder, args.output_folder
+        args.input_folder,
+        args.frame_metadata_folder,
+        args.decos_folder,
+        args.output_folder,
     )
     sampler.run_sampling_job()

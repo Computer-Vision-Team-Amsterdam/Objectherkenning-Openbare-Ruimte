@@ -27,8 +27,12 @@ if __name__ == "__main__":
     )
     input_rel_path = settings["data_sampling"]["inputs"]["rel_path"]
     input_data_path = os.path.join(input_datastore_path, input_rel_path)
-    metadata_rel_path = settings["data_sampling"]["inputs"]["metadata_rel_path"]
-    input_metadata_path = os.path.join(input_datastore_path, metadata_rel_path)
+    frame_metadata_rel_path = settings["data_sampling"]["inputs"][
+        "frame_metadata_rel_path"
+    ]
+    input_frame_metadata_path = os.path.join(
+        input_datastore_path, frame_metadata_rel_path
+    )
     decos_rel_path = settings["data_sampling"]["inputs"]["decos_rel_path"]
     input_decos_path = os.path.join(input_datastore_path, decos_rel_path)
 
@@ -38,7 +42,7 @@ if __name__ == "__main__":
     output_rel_path = settings["data_sampling"]["outputs"]["rel_path"]
     output_data_path = os.path.join(output_datastore_path, output_rel_path)
 
-    decos_cmd = 'poetry run python objectherkenning_openbare_ruimte/data_sampling/decos_sampling.py --input_folder "${{inputs.input_folder}}" --metadata_folder "${{inputs.metadata_folder}}" --decos_folder "${{inputs.decos_folder}}" --output_folder "${{outputs.output_folder}}"'
+    decos_cmd = 'poetry run python objectherkenning_openbare_ruimte/data_sampling/decos_sampling.py --input_folder "${{inputs.input_folder}}" --frame_metadata_folder "${{inputs.frame_metadata_folder}}" --decos_folder "${{inputs.decos_folder}}" --output_folder "${{outputs.output_folder}}"'
 
     job = command(
         code=".",
@@ -49,8 +53,8 @@ if __name__ == "__main__":
                 type=AssetTypes.URI_FOLDER,
                 mode=InputOutputModes.RO_MOUNT,
             ),
-            "metadata_folder": Input(
-                path=input_metadata_path,
+            "frame_metadata_folder": Input(
+                path=input_frame_metadata_path,
                 type=AssetTypes.URI_FOLDER,
                 mode=InputOutputModes.RO_MOUNT,
             ),
