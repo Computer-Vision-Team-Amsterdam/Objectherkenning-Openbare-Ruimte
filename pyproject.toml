@@ -28,9 +28,6 @@ torch = {version = "2.2.2", source = "PyPI"}
 [tool.poetry.dev-dependencies]
 pytest = {version = "^7.0.1", source = "PyPI" }
 pytest-cov = {version = "^4.0.0", source = "PyPI" }
-ipykernel = "^6.29.4"
-ipympl = "^0.9.3"
-matplotlib = "~3.7.0"
 
 [tool.isort]
 profile = "black"
