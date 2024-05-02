@@ -111,7 +111,7 @@ class EquirectangularToCubemapConverter:
         bottom_right: Tuple[float, float],
         face_w: int,
         face_h: int,
-    ) -> Tuple[str, float, float, float, float]:
+    ) -> Tuple[float, float, float, float]:
         """
         Convert absolute corner coordinates to YOLO annotation with normalized values.
 
@@ -198,13 +198,13 @@ class EquirectangularToCubemapConverter:
         ----------
 
         processed_corners : dict
-            A dictionary containing the corners and other boundary points that have been processed. 
-            Keys include corner tags ('TL', 'TR', 'BL', 'BR') for each corner and may also include 
-            'x_max' and 'y_max' which represent the maximum allowable x and y coordinates 
+            A dictionary containing the corners and other boundary points that have been processed.
+            Keys include corner tags ('TL', 'TR', 'BL', 'BR') for each corner and may also include
+            'x_max' and 'y_max' which represent the maximum allowable x and y coordinates
             for the bounding box on that face, ensuring the bounding box fits within the face boundaries.
-            The values are tuples of (x, y) coordinates that represent the adjusted positions 
-            of these corners on a specific cubemap face. These adjustments ensure that the bounding box 
-            accurately represents the object within the constraints of that face, 
+            The values are tuples of (x, y) coordinates that represent the adjusted positions
+            of these corners on a specific cubemap face. These adjustments ensure that the bounding box
+            accurately represents the object within the constraints of that face,
             considering any geometrical shifts needed during the conversion from equirectangular to cubemap projection.
 
         face_width : int
@@ -219,9 +219,9 @@ class EquirectangularToCubemapConverter:
 
         Notes
         -----
-        This function dynamically adjusts the bounding box coordinates based on the processed corners 
-        and explicit boundary settings. For example, 'x_max' and 'y_max' provide upper limits on the 
-        bounding box size when corners like 'TR' or 'BR' have been processed, adjusting their values to 
+        This function dynamically adjusts the bounding box coordinates based on the processed corners
+        and explicit boundary settings. For example, 'x_max' and 'y_max' provide upper limits on the
+        bounding box size when corners like 'TR' or 'BR' have been processed, adjusting their values to
         ensure the object is encapsulated within the cube face boundaries.
 
         An explanation with pictures is available in the Wiki documentation.
@@ -336,7 +336,7 @@ class EquirectangularToCubemapConverter:
 
         processed_corners : dict
             A dictionary maintaining the state of already processed corners and explicit boundary limits.
-            Keys are corner tags ('TL', 'TR', 'BL', 'BR') and may also include 'x_max' and 'y_max' which represent 
+            Keys are corner tags ('TL', 'TR', 'BL', 'BR') and may also include 'x_max' and 'y_max' which represent
             the maximum values that the bounding box coordinates can take on the x and y axes, respectively.
             This dictionary is updated in-place to reflect the adjusted coordinates based on the current corner's
             processing.
@@ -743,7 +743,9 @@ class EquirectangularToCubemapConverter:
                         )
                     )
 
-                    final_annotation = (yolo_annotation_class,) + converted_yolo_annotation
+                    final_annotation = (
+                        yolo_annotation_class,
+                    ) + converted_yolo_annotation
 
                     EquirectangularToCubemapConverter._write_annotation_to_file(
                         self.output_path, img_name, face_idx, final_annotation
