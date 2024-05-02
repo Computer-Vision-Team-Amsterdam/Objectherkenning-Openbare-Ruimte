@@ -13,7 +13,7 @@ if __name__ == "__main__":
         try:
             detection_pipeline = DataDetection(
                 images_folder=settings["data_delivery_pipeline"]["images_path"],
-                detections_folder=settings["data_delivery_pipeline"]["detections_path"],
+                # detections_folder=settings["data_delivery_pipeline"]["detections_path"],
             )
             detection_pipeline.run_pipeline()
         except Exception as e:
