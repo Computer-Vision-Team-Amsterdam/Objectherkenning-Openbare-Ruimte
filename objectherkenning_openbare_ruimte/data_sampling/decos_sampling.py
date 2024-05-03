@@ -11,7 +11,11 @@ import shapely.geometry as sg
 
 sys.path.append(os.getcwd())
 
-from objectherkenning_openbare_ruimte.data_sampling import decos_helper  # noqa: E402
+from objectherkenning_openbare_ruimte.data_sampling import (  # noqa: E402
+    LAT_LON_CRS,
+    RD_CRS,
+    decos_helper,
+)
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -22,9 +26,6 @@ config_path = os.path.abspath(
 
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
-
-RD_CRS = "EPSG:28992"  # CRS code for the Dutch Rijksdriehoek coordinate system
-LAT_LON_CRS = "EPSG:4326"  # CRS code for WGS84 latitude/longitude coordinate system
 
 
 class DecosSampling:

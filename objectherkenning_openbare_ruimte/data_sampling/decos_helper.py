@@ -1,10 +1,14 @@
+import os
 import pathlib
+import sys
 from datetime import datetime, time
 
 import geopandas as gpd
 import pandas as pd
 
-RD_CRS = "EPSG:28992"  # CRS code for the Dutch Rijksdriehoek coordinate system
+sys.path.append(os.getcwd())
+
+from objectherkenning_openbare_ruimte.data_sampling import RD_CRS  # noqa: E402
 
 
 def _decos_df_to_gdf(decos_df: pd.DataFrame) -> gpd.GeoDataFrame:
