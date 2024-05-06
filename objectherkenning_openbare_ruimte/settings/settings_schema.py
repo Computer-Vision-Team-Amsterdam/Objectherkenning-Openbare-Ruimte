@@ -22,12 +22,6 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
-class DataDeliveryPipelineSpec(SettingsSpecModel):
-    images_path: str
-    detections_path: str
-    metadata_path: str
-
-
 class ConvertDataset(SettingsSpecModel):
     face_width: int = 1024
     input_old_datastore: str
@@ -41,6 +35,20 @@ class ConvertAnnotations(SettingsSpecModel):
     categories_file: str = "categories.json"
     separate_labels: bool = False
     label_folder: str = None
+
+
+class DataDeliveryPipelineSpec(SettingsSpecModel):
+    images_path: str
+    detections_path: str
+    metadata_path: str
+
+
+class DataSampling(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    n_frames: int
+    sampling_weight: float
+    decos_radius: float
 
 
 class DistortionCorrectionSpec(SettingsSpecModel):
@@ -84,6 +92,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
     data_delivery_pipeline: DataDeliveryPipelineSpec
+    data_sampling: DataSampling
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec
     logging: LoggingSpec = LoggingSpec()

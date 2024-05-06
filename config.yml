@@ -11,11 +11,6 @@ azure_iot:
   device_id: "test-diana"
   shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
 
-data_delivery_pipeline:
-  images_path: "/raw_frames"
-  detections_path: ""
-  metadata_path: ""
-
 convert_dataset:
   input_old_datastore: "old_datastore"
   output_new_datastore: "new_datastore"
@@ -28,6 +23,24 @@ convert_annotations:
   categories_file: categories.json
   separate_labels: True
   label_folder: prelabeling_new_dataset_oor/labels
+
+data_delivery_pipeline:
+  images_path: "/raw_frames"
+  detections_path: ""
+  metadata_path: ""
+
+data_sampling:
+  inputs:
+    datastore: "oor_velotech"
+    rel_path: "frames/20240329-141802"
+    frame_metadata_rel_path: "frames/metadata"
+    decos_rel_path: "decos"
+  outputs:
+    datastore: "oor_velotech"
+    rel_path: "frames/sample"
+  n_frames: 1500
+  sampling_weight: 1.0
+  decos_radius: 30
 
 distortion_correction:
   cx: 0.509
