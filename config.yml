@@ -29,6 +29,25 @@ convert_annotations:
   separate_labels: True
   label_folder: prelabeling_new_dataset_oor/labels
 
+distortion_correction:
+  cx: 0.509
+  cy: 0.488
+  k1: -0.241
+  k2: 0.106
+
+frame_extraction:
+  inputs:
+    datastore: "oor_velotech"
+    rel_path: ""
+  outputs:
+    datastore: "oor_velotech"
+    rel_path: "frames"
+    metadata_rel_path: "frames/metadata"
+  log_dir: "logs"
+  exclude_dirs: ["checkboard", "frames", "decos"]  # Do not check for MP4 in these dirs
+  exclude_files: ["D17M02Y2024-H20M50S55"]  # Metadata for this file is invalid
+  fps: 1
+
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
