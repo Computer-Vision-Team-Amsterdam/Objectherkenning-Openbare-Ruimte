@@ -22,12 +22,6 @@ class AzureIoTSpec(SettingsSpecModel):
     shared_access_key: str
 
 
-class DataDeliveryPipelineSpec(SettingsSpecModel):
-    images_path: str
-    detections_path: str
-    metadata_path: str
-
-
 class ConvertDataset(SettingsSpecModel):
     face_width: int = 1024
     input_old_datastore: str
@@ -43,12 +37,34 @@ class ConvertAnnotations(SettingsSpecModel):
     label_folder: str = None
 
 
+class DataDeliveryPipelineSpec(SettingsSpecModel):
+    images_path: str
+    detections_path: str
+    metadata_path: str
+
+
 class DataSampling(SettingsSpecModel):
     inputs: Dict[str, str]
     outputs: Dict[str, str]
     n_frames: int
     sampling_weight: float
     decos_radius: float
+
+
+class DistortionCorrectionSpec(SettingsSpecModel):
+    cx: float
+    cy: float
+    k1: float
+    k2: float
+
+
+class FrameExtractionSpec(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    log_dir: str = "logs"
+    exclude_dirs: List[str] = []
+    exclude_files: List[str] = []
+    fps: float
 
 
 class LoggingSpec(SettingsSpecModel):
@@ -71,10 +87,12 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
         extra = "forbid"
 
     customer: str
-    azure_iot: AzureIoTSpec
-    data_delivery_pipeline: DataDeliveryPipelineSpec
     aml_experiment_details: AMLExperimentDetailsSpec
+    azure_iot: AzureIoTSpec
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
+    data_delivery_pipeline: DataDeliveryPipelineSpec
     data_sampling: DataSampling
+    distortion_correction: DistortionCorrectionSpec
+    frame_extraction: FrameExtractionSpec
     logging: LoggingSpec = LoggingSpec()
