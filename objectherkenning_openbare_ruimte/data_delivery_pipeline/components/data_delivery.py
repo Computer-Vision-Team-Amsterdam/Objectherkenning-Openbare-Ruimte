@@ -80,28 +80,41 @@ class DataDelivery:
                 f"{self.images_folder}/{video_name}/{video_name}.csv"
             )
             already_existing_frames = []
-            with open(f"{self.metadata_folder}/{video_name}.csv") as metadata_file:
-                reader = csv.reader(metadata_file)
-                header = next(reader)
-                header.append("frame_number")
-                if not os.path.isfile(file_path_only_filtered_rows):
-                    filtered_rows.append(header)
-                else:
-                    already_existing_frames = self._get_frame_numbers_in_metadata_file(
-                        file_path_only_filtered_rows
-                    )
-                frame_numbers_int = [int(x) for x in frame_numbers]
-                for idx, row in enumerate(reader):
-                    if (
-                        idx + 1 in frame_numbers_int
-                        and idx + 1 not in already_existing_frames
-                    ):
-                        row.append(str(idx + 1))
-                        filtered_rows.append(row)
-            if filtered_rows:
-                with open(file_path_only_filtered_rows, "a", newline="") as output_file:
-                    csv_writer = csv.writer(output_file)
-                    csv_writer.writerows(filtered_rows)
+            try:
+                with open(f"{self.metadata_folder}/{video_name}.csv") as metadata_file:
+                    reader = csv.reader(metadata_file)
+                    header = next(reader)
+                    header.append("frame_number")
+                    if not os.path.isfile(file_path_only_filtered_rows):
+                        filtered_rows.append(header)
+                    else:
+                        already_existing_frames = (
+                            self._get_frame_numbers_in_metadata_file(
+                                file_path_only_filtered_rows
+                            )
+                        )
+                    frame_numbers_int = [int(x) for x in frame_numbers]
+                    for idx, row in enumerate(reader):
+                        if (
+                            idx + 1 in frame_numbers_int
+                            and idx + 1 not in already_existing_frames
+                        ):
+                            row.append(str(idx + 1))
+                            filtered_rows.append(row)
+                if filtered_rows:
+                    with open(
+                        file_path_only_filtered_rows, "a", newline=""
+                    ) as output_file:
+                        csv_writer = csv.writer(output_file)
+                        csv_writer.writerows(filtered_rows)
+            except FileNotFoundError as e:
+                print(
+                    f"FileNotFoundError during the creation of metadata file for: {video_name}: {e}"
+                )
+            except Exception as e:
+                print(
+                    f"Exception during the creation of metadata file for: {video_name}: {e}"
+                )
 
     @staticmethod
     def _get_frame_numbers_in_metadata_file(file_path):
