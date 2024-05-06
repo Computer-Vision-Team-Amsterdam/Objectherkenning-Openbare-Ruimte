@@ -35,19 +35,13 @@ RUN pip3 install pipx \
     && pipx ensurepath
 RUN pipx install poetry
 ENV PATH=/root/.local/bin:$PATH
-RUN poetry config virtualenvs.create false
-
-#ENV CURLOPT_SSL_VERIFYHOST=0
-#ENV CURLOPT_SSL_VERIFYPEER=0
 
 COPY pyproject.toml .
 COPY poetry.lock .
 
-# Initialize Conda, activate environment and install poetry packages
 RUN poetry update --no-ansi --no-interaction \
     && poetry install --no-ansi --no-interaction --no-root
 
-# Downloads to user config dir
 ADD https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf \
     https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.Unicode.ttf \
     /root/.config/Ultralytics/

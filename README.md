@@ -37,7 +37,7 @@ poetry run pre-commit install
 ### Manually upload docker image to device
 
 #### On the laptop:
-Install builder:
+Install builder (if building on an AMD64 architecture):
 
 ```bash
 docker buildx install
@@ -69,5 +69,5 @@ sudo systemctl restart docker
 ```
 ```bash
 sudo docker load -i {TAR_IMAGE_PAHT}
-sudo docker run -d --mount type=bind,source={source_path},target=/cert --mount type=bind,source={source_path},target=/raw_videos --mount type=bind,source={source_path},target=/raw_frames -e SHARED_ACCESS_KEY_IOT='{shared_access_key_value}' acroorontweuitr01.azurecr.io/oor-model-arm64-v8 
+sudo docker run -d --mount type=bind,source={source_path},target=/raw_videos --mount type=bind,source={source_path},target=/raw_frames -e SHARED_ACCESS_KEY_IOT='{shared_access_key_value}' acroorontweuitr01.azurecr.io/oor-model-arm64-v8 
 ```

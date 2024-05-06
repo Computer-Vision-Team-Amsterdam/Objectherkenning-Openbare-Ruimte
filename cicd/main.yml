@@ -23,31 +23,31 @@ variables:
   - template: variables.yaml
 
 stages:
-#  - stage: Prebuild
-#    displayName: "Collect all prerequisite and run tests prior to build"
-#    jobs:
-#      - template: "prebuild-pipeline.yml"
-#        parameters:
-#          serviceConnectionName: ${{ variables.serviceConnectionName }}
-#          AMLModelName: ${{ variables.AMLModelName }}
-#          AMLModelVersion: ${{ parameters.AMLModelVersion }}
-#          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
-#          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
-#          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
-#          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
-#          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
-#
+  - stage: Prebuild
+    displayName: "Collect all prerequisite and run tests prior to build"
+    jobs:
+      - template: "prebuild-pipeline.yml"
+        parameters:
+          serviceConnectionName: ${{ variables.serviceConnectionName }}
+          AMLModelName: ${{ variables.AMLModelName }}
+          AMLModelVersion: ${{ parameters.AMLModelVersion }}
+          AMLWorkspaceName: ${{ variables.AMLWorkspaceName }}
+          AMLResourceGroup: ${{ variables.AMLResourceGroup }}
+          AMLSubscriptionID: ${{ variables.AMLSubscriptionID }}
+          downloadedModelDirectory: ${{ variables.downloadedModelDirectory }}
+          publishedModelArtifactsName: ${{ variables.publishedModelArtifactsName }}
+
   - stage: Build_ont
     displayName: "[ont] Build and publish container to ont"
-#    dependsOn:
-#      - Prebuild
-#    condition: |
-#      and
-#      (
-#        succeeded(),
-#        eq( variables.dtapName, 'ont' ),
-#        ne( variables['Build.Reason'], 'PullRequest' )
-#      )
+    dependsOn:
+      - Prebuild
+    condition: |
+      and
+      (
+        succeeded(),
+        eq( variables.dtapName, 'ont' ),
+        ne( variables['Build.Reason'], 'PullRequest' )
+      )
     variables:
       - name: projectVersion
         value: $[ stageDependencies.Prebuild.GetProjectVersion.outputs['getProjectVersion.PROJECT_VERSION'] ]

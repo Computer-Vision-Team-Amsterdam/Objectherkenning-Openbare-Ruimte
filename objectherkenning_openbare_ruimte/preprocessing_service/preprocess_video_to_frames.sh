@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 VIDEOS_FOLDER="/raw_videos"
 OUTPUT_FOLDER="/raw_frames"

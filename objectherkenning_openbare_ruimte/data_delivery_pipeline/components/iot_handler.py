@@ -2,18 +2,9 @@ import os
 from contextlib import contextmanager
 from typing import Dict
 
-from azure.core.credentials import AccessToken
 from azure.core.exceptions import AzureError
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobClient
-
-
-class AccessTokenCredential:
-    def __init__(self, access_token):
-        self._access_token = access_token
-
-    def get_token(self, *scopes, **kwargs):
-        return AccessToken(token=self._access_token, expires_on=None)
 
 
 class IoTHandler:
@@ -22,9 +13,6 @@ class IoTHandler:
         hostname: str,
         device_id: str,
         shared_access_key: str = None,
-        cert_file_path: str = None,
-        key_file_path: str = None,
-        passphrase: str = None,
     ):
         """
         Object that handles the connection with IoT and the delivery of messages and files.
@@ -38,18 +26,11 @@ class IoTHandler:
         shared_access_key
             Access key to authenticate
         """
-        if shared_access_key:
-            self.connection_string = (
-                f"HostName={hostname};"
-                f"DeviceId={device_id};"
-                f"SharedAccessKey={shared_access_key}"
-            )
-        else:
-            self.cert_file_path = cert_file_path
-            self.key_file_path = key_file_path
-            self.passphrase = passphrase
-            self.hostname = hostname
-            self.device_id = device_id
+        self.connection_string = (
+            f"HostName={hostname};"
+            f"DeviceId={device_id};"
+            f"SharedAccessKey={shared_access_key}"
+        )
 
     @contextmanager
     def _connect(self):
@@ -61,18 +42,6 @@ class IoTHandler:
         with self._connect() as device_client:
             device_client.send_message(message)
         """
-        # x509 = X509(
-        #     cert_file=self.cert_file_path,
-        #     key_file=self.key_file_path,
-        #     pass_phrase=self.passphrase,
-        # )
-        #
-        # device_client = IoTHubDeviceClient.create_from_x509_certificate(
-        #     x509=x509,
-        #     hostname=self.hostname,
-        #     device_id=self.device_id,
-        #     websockets=True,
-        # )
         device_client = IoTHubDeviceClient.create_from_connection_string(
             self.connection_string,
             websockets=True,
@@ -152,21 +121,11 @@ class IoTHandler:
                 )
             )
 
-            # cred = AccessTokenCredential(blob_info["sasToken"].replace("?access_token=", ""))
-            #
-            # blob_client = BlobClient(blob_info["hostName"], credential=cred, container_name=blob_info["containerName"],
-            #                          blob_name=blob_info["blobName"])
             with BlobClient.from_blob_url(sas_url) as blob_client:
                 with open(file_name, "rb") as f:
                     print(f)
                     result = blob_client.upload_blob(f, overwrite=True)
                     return True, result
-
-            # Upload the specified file
-            # with BlobClient.from_blob_url(sas_url) as blob_client:
-            #     with open(file_name, "rb") as f:
-            #         result = blob_client.upload_blob(f, overwrite=True)
-            #         return True, result
 
         except FileNotFoundError as ex:
             return False, ex
