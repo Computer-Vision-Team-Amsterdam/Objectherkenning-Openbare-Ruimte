@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04 AS builder
+FROM nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ="Europe/Amsterdam"
@@ -7,9 +7,8 @@ RUN apt-get update  \
     && apt-get upgrade -y --fix-missing \
     && apt-get install -y --no-install-recommends \
     tzdata \
-    python3.10 \
     python3-pip \
-    python3.10-venv \
+    python3-venv \
     nano \
     gcc \
     python3-dev \
