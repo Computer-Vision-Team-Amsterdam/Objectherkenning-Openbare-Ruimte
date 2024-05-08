@@ -10,7 +10,8 @@ from PIL.Image import Image as ImageType
 class ImageSize(Enum):
     small = [0, 5000]
     medium = [5000, 10000]
-    large = [10000, 32000000]
+    large = [10000, 1048576]
+    all = [0, 1048576]
 
     def __repr__(self):
         return self.value
@@ -22,6 +23,9 @@ class ImageSize(Enum):
 class TargetClass(Enum):
     person = 0
     license_plate = 1
+    container = 2
+    mobile_toilet = 3
+    scaffolding = 4
 
     def __repr__(self):
         return self.value
@@ -75,7 +79,7 @@ def generate_binary_mask(
 
     """
 
-    mask = np.zeros((image_height, image_width))
+    mask = np.zeros((image_height, image_width), dtype=bool)
 
     if len(bounding_boxes):
         bounding_boxes = np.array(bounding_boxes)
