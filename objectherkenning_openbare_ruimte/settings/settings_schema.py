@@ -38,9 +38,24 @@ class ConvertAnnotations(SettingsSpecModel):
 
 
 class DataDeliveryPipelineSpec(SettingsSpecModel):
-    images_path: str
     detections_path: str
     metadata_path: str
+
+
+class InferenceModelParameters(SettingsSpecModel):
+    img_size: int = 640
+    conf: float = 0.5
+    save_img_flag: bool = False
+    save_txt_flag: bool = False
+    save_conf_flag: bool = False
+
+
+class DetectionPipelineSpec(SettingsSpecModel):
+    images_path: str
+    detections_path: str
+    model_name: str
+    pretrained_model_path: str
+    inference_params: InferenceModelParameters
 
 
 class DataSampling(SettingsSpecModel):
@@ -92,6 +107,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
     data_delivery_pipeline: DataDeliveryPipelineSpec
+    detection_pipeline: DetectionPipelineSpec
     data_sampling: DataSampling
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec

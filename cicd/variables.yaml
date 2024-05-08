@@ -8,7 +8,7 @@ variables:
 
   # Relating to connection to AML for downloading the model.
   AMLSubscriptionID: 'b5d1b0e0-1ce4-40f9-87d5-cf3fde7a7b14'
-  AMLModelName: 'dataoffice_model'
+  AMLModelName: 'oor_model'
   downloadedModelDirectory: 'model_artifacts'
   publishedModelArtifactsName: 'downloadedArtifacts'
 

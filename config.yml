@@ -25,9 +25,20 @@ convert_annotations:
   label_folder: prelabeling_new_dataset_oor/labels
 
 data_delivery_pipeline:
-  images_path: "/raw_frames"
-  detections_path: ""
+  detections_path: "/detections"
   metadata_path: "/raw_videos"
+
+detection_pipeline:
+  images_path: "/raw_frames"
+  detections_path: "/detections"
+  inference_params:
+    img_size: 1024
+    conf: 0.4
+    save_img_flag: True
+    save_txt_flag: True
+    save_conf_flag: True
+  model_name: "yolov8s_coco_nc_5_best.pt"
+  pretrained_model_path: "model_artifacts"
 
 data_sampling:
   inputs:

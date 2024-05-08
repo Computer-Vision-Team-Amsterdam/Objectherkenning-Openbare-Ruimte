@@ -39,16 +39,15 @@ ENV PATH=/root/.local/bin:$PATH
 COPY pyproject.toml .
 COPY poetry.lock .
 
-RUN poetry update --no-ansi --no-interaction \
-    && poetry install --no-ansi --no-interaction --no-root
+RUN poetry update --no-ansi --no-interaction --no-dev \
+    && poetry install --no-ansi --no-interaction --no-dev --no-root
 
 ADD https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.ttf \
     https://github.com/ultralytics/assets/releases/download/v0.0.0/Arial.Unicode.ttf \
     /root/.config/Ultralytics/
 
 WORKDIR /usr/src
-# This needs to be replaced to a generic model name when it's actually deployed
-#COPY model_artifacts/dataoffice_model/last-purple_boot_3l6p24vb.pt model_artifacts/last-purple_boot_3l6p24vb.pt
+COPY model_artifacts/oor_model/yolov8s_coco_nc_5_best.pt model_artifacts/yolov8s_coco_nc_5_best.pt
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
 COPY config.yml config.yml
 

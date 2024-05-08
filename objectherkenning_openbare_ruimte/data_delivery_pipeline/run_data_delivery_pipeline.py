@@ -10,13 +10,12 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 if __name__ == "__main__":
     settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
+    data_delivery_pipeline = DataDelivery(
+        detections_folder=settings["data_delivery_pipeline"]["detections_path"],
+        metadata_folder=settings["data_delivery_pipeline"]["metadata_path"],
+    )
     while True:
         try:
-            data_delivery_pipeline = DataDelivery(
-                images_folder=settings["data_delivery_pipeline"]["images_path"],
-                detections_folder=settings["data_delivery_pipeline"]["detections_path"],
-                metadata_folder=settings["data_delivery_pipeline"]["metadata_path"],
-            )
             data_delivery_pipeline.run_pipeline()
         except Exception:
             print(f"Exception occurred in data delivery: {traceback.format_exc()}")

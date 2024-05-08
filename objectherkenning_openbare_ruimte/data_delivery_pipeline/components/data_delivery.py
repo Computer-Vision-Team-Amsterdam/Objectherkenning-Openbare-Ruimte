@@ -13,21 +13,16 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 
 class DataDelivery:
-    def __init__(
-        self, images_folder: str, detections_folder: str, metadata_folder: str
-    ):
+    def __init__(self, detections_folder: str, metadata_folder: str):
         """
 
         Parameters
         ----------
-        images_folder
-            Folder containing the blurred images with containers detected
         detections_folder
-            Folder containing txt files with detections per image
+            Folder containing the blurred images with containers detected
         metadata_folder
             Folder containing the metadata files in csv format
         """
-        self.images_folder = images_folder
         self.detections_folder = detections_folder
         self.metadata_folder = metadata_folder
         self.iot_settings = ObjectherkenningOpenbareRuimteSettings.get_settings()[
@@ -41,7 +36,7 @@ class DataDelivery:
             - delivers the data to Azure;
             - deletes the delivered data.
         """
-        print(f"Running data delivery pipeline on {self.images_folder}..")
+        print(f"Running data delivery pipeline on {self.detections_folder}..")
         videos_and_frames = self._match_metadata_to_images()
         print(f"Images and frames: {videos_and_frames}")
         self._deliver_data(videos_and_frames=videos_and_frames)
@@ -56,7 +51,7 @@ class DataDelivery:
         -------
         Dictionary containing as key a video name and as values the number of frames containing containers.
         """
-        images_paths = find_image_paths(root_folder=self.images_folder)
+        images_paths = find_image_paths(root_folder=self.detections_folder)
         videos_and_frames = self._get_videos_and_frame_numbers(
             images_paths=images_paths
         )
@@ -77,7 +72,7 @@ class DataDelivery:
         for video_name, frame_numbers in videos_and_frames.items():
             filtered_rows = []
             file_path_only_filtered_rows = (
-                f"{self.images_folder}/{video_name}/{video_name}.csv"
+                f"{self.detections_folder}/{video_name}/{video_name}.csv"
             )
             already_existing_frames = []
             try:
@@ -169,11 +164,11 @@ class DataDelivery:
             shared_access_key=self.iot_settings["shared_access_key"],
         )
         for video_name, frame_numbers in videos_and_frames.items():
-            image_folder = f"{self.images_folder}/{video_name}"
-            iot_handler.upload_file(f"{image_folder}/{video_name}.csv")
+            detection_folder = f"{self.detections_folder}/{video_name}"
+            iot_handler.upload_file(f"{detection_folder}/{video_name}.csv")
             for frame_number in frame_numbers:
                 iot_handler.upload_file(
-                    f"{image_folder}/{video_name}_frame_{frame_number}.jpg"
+                    f"{detection_folder}/{video_name}_frame_{frame_number}.jpg"
                 )
 
     def _delete_data(self, videos_and_frames: Dict[str, List[str]]):
@@ -186,7 +181,7 @@ class DataDelivery:
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
         for video_name, frame_numbers in videos_and_frames.items():
-            image_folder = f"{self.images_folder}/{video_name}"
-            delete_file(f"{image_folder}/{video_name}.csv")
+            detection_folder = f"{self.detections_folder}/{video_name}"
+            delete_file(f"{detection_folder}/{video_name}.csv")
             for frame_number in frame_numbers:
-                delete_file(f"{image_folder}/{video_name}_frame_{frame_number}.jpg")
+                delete_file(f"{detection_folder}/{video_name}_frame_{frame_number}.jpg")
