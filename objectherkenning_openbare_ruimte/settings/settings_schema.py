@@ -40,7 +40,7 @@ class ConvertAnnotations(SettingsSpecModel):
 class DataDeliveryPipelineSpec(SettingsSpecModel):
     images_path: str
     detections_path: str
-    metadata_path: str
+    frame_metadata_path: str
 
 
 class DataSampling(SettingsSpecModel):

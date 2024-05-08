@@ -14,7 +14,7 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 class DataDelivery:
     def __init__(
-        self, images_folder: str, detections_folder: str, metadata_folder: str
+        self, images_folder: str, detections_folder: str, frame_metadata_folder: str
     ):
         """
 
@@ -24,12 +24,12 @@ class DataDelivery:
             Folder containing the blurred images with containers detected
         detections_folder
             Folder containing txt files with detections per image
-        metadata_folder
+        frame_metadata_folder
             Folder containing the metadata files in csv format
         """
         self.images_folder = images_folder
         self.detections_folder = detections_folder
-        self.metadata_folder = metadata_folder
+        self.frame_metadata_folder = frame_metadata_folder
         self.iot_settings = ObjectherkenningOpenbareRuimteSettings.get_settings()[
             "azure_iot"
         ]
@@ -81,7 +81,9 @@ class DataDelivery:
             )
             already_existing_frames = []
             try:
-                with open(f"{self.metadata_folder}/{video_name}.csv") as metadata_file:
+                with open(
+                    f"{self.frame_metadata_folder}/{video_name}.csv"
+                ) as metadata_file:
                     reader = csv.reader(metadata_file)
                     header = next(reader)
                     header.append("frame_number")
@@ -126,8 +128,10 @@ class DataDelivery:
                     try:
                         last_column_value = int(row[-1])
                         frame_numbers.append(last_column_value)
-                    except ValueError:
-                        pass
+                    except ValueError as e:
+                        print(
+                            f"ValueError during the _get_frame_numbers_in_metadata_file: {e}"
+                        )
         return frame_numbers
 
     @staticmethod
