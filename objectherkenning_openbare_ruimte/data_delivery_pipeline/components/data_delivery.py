@@ -14,7 +14,7 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 class DataDelivery:
     def __init__(
-        self, images_folder: str, detections_folder: str, metadata_folder: str
+        self, images_folder: str, detections_folder: str, frame_metadata_folder: str
     ):
         """
 
@@ -24,27 +24,28 @@ class DataDelivery:
             Folder containing the blurred images with containers detected
         detections_folder
             Folder containing txt files with detections per image
-        metadata_folder
+        frame_metadata_folder
             Folder containing the metadata files in csv format
         """
         self.images_folder = images_folder
         self.detections_folder = detections_folder
-        self.metadata_folder = metadata_folder
+        self.frame_metadata_folder = frame_metadata_folder
         self.iot_settings = ObjectherkenningOpenbareRuimteSettings.get_settings()[
             "azure_iot"
         ]
 
     def run_pipeline(self):
-        """ "
+        """
         Runs the data delivery pipeline:
             - matches metadata to images;
             - delivers the data to Azure;
             - deletes the delivered data.
         """
         print(f"Running data delivery pipeline on {self.images_folder}..")
-        images_and_frames = self._match_metadata_to_images()
-        self._deliver_data(images_and_frames=images_and_frames)
-        self._delete_data(images_and_frames=images_and_frames)
+        videos_and_frames = self._match_metadata_to_images()
+        print(f"Images and frames: {videos_and_frames}")
+        self._deliver_data(videos_and_frames=videos_and_frames)
+        self._delete_data(videos_and_frames=videos_and_frames)
 
     def _match_metadata_to_images(self) -> Dict[str, List[str]]:
         """
@@ -75,23 +76,39 @@ class DataDelivery:
         """
         for video_name, frame_numbers in videos_and_frames.items():
             filtered_rows = []
+            file_path_only_filtered_rows = (
+                f"{self.images_folder}/{video_name}/{video_name}.csv"
+            )
+            already_existing_frames = []
             try:
-                with open(f"{self.metadata_folder}/{video_name}.csv") as fd:
-                    reader = csv.reader(fd)
+                with open(
+                    f"{self.frame_metadata_folder}/{video_name}.csv"
+                ) as metadata_file:
+                    reader = csv.reader(metadata_file)
                     header = next(reader)
                     header.append("frame_number")
-                    filtered_rows.append(header)
+                    if not os.path.isfile(file_path_only_filtered_rows):
+                        filtered_rows.append(header)
+                    else:
+                        already_existing_frames = (
+                            self._get_frame_numbers_in_metadata_file(
+                                file_path_only_filtered_rows
+                            )
+                        )
+                    frame_numbers_int = [int(x) for x in frame_numbers]
                     for idx, row in enumerate(reader):
-                        if idx + 1 in frame_numbers:
+                        if (
+                            idx + 1 in frame_numbers_int
+                            and idx + 1 not in already_existing_frames
+                        ):
                             row.append(str(idx + 1))
                             filtered_rows.append(row)
-                with open(
-                    f"{self.images_folder}/{video_name}/{video_name}.csv",
-                    "w",
-                    newline="",
-                ) as output_file:
-                    csv_writer = csv.writer(output_file)
-                    csv_writer.writerows(filtered_rows)
+                if filtered_rows:
+                    with open(
+                        file_path_only_filtered_rows, "a", newline=""
+                    ) as output_file:
+                        csv_writer = csv.writer(output_file)
+                        csv_writer.writerows(filtered_rows)
             except FileNotFoundError as e:
                 print(
                     f"FileNotFoundError during the creation of metadata file for: {video_name}: {e}"
@@ -100,6 +117,22 @@ class DataDelivery:
                 print(
                     f"Exception during the creation of metadata file for: {video_name}: {e}"
                 )
+
+    @staticmethod
+    def _get_frame_numbers_in_metadata_file(file_path):
+        frame_numbers = []
+        with open(file_path) as metadata_file:
+            reader = csv.reader(metadata_file)
+            for row in reader:
+                if row:
+                    try:
+                        last_column_value = int(row[-1])
+                        frame_numbers.append(last_column_value)
+                    except ValueError as e:
+                        print(
+                            f"ValueError during the _get_frame_numbers_in_metadata_file: {e}"
+                        )
+        return frame_numbers
 
     @staticmethod
     def _get_videos_and_frame_numbers(images_paths: List[str]) -> Dict[str, List[str]]:
@@ -125,13 +158,13 @@ class DataDelivery:
                 videos_and_frames[video_name].append(frame_number)
         return videos_and_frames
 
-    def _deliver_data(self, images_and_frames: Dict[str, List[str]]):
+    def _deliver_data(self, videos_and_frames: Dict[str, List[str]]):
         """
         Using Azure IoT delivers the images and metadata to Azure.
 
         Parameters
         ----------
-        images_and_frames
+        videos_and_frames
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
         iot_handler = IoTHandler(
@@ -139,25 +172,25 @@ class DataDelivery:
             device_id=self.iot_settings["device_id"],
             shared_access_key=self.iot_settings["shared_access_key"],
         )
-        for image_name, frame_numbers in images_and_frames.items():
-            image_folder = f"{self.images_folder}/{image_name}"
-            iot_handler.upload_file(f"{image_folder}/{image_name}.csv")
+        for video_name, frame_numbers in videos_and_frames.items():
+            image_folder = f"{self.images_folder}/{video_name}"
+            iot_handler.upload_file(f"{image_folder}/{video_name}.csv")
             for frame_number in frame_numbers:
                 iot_handler.upload_file(
-                    f"{image_folder}/{image_name}_frame_{frame_number}.jpg"
+                    f"{image_folder}/{video_name}_frame_{frame_number}.jpg"
                 )
 
-    def _delete_data(self, images_and_frames: Dict[str, List[str]]):
+    def _delete_data(self, videos_and_frames: Dict[str, List[str]]):
         """
         Deletes the data that has been delivered to Azure.
 
         Parameters
         ----------
-        images_and_frames
+        videos_and_frames
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
-        for image_name, frame_numbers in images_and_frames.items():
-            image_folder = f"{self.images_folder}/{image_name}"
-            delete_file(f"{image_folder}/{image_name}.csv")
+        for video_name, frame_numbers in videos_and_frames.items():
+            image_folder = f"{self.images_folder}/{video_name}"
+            delete_file(f"{image_folder}/{video_name}.csv")
             for frame_number in frame_numbers:
-                delete_file(f"{image_folder}/{image_name}_frame_{frame_number}.jpg")
+                delete_file(f"{image_folder}/{video_name}_frame_{frame_number}.jpg")

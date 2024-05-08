@@ -27,7 +27,7 @@ convert_annotations:
 data_delivery_pipeline:
   images_path: "/raw_frames"
   detections_path: ""
-  metadata_path: ""
+  frame_metadata_path: "/raw_videos"
 
 data_sampling:
   inputs:

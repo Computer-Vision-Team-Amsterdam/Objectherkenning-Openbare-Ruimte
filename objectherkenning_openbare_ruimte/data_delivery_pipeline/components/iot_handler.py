@@ -8,7 +8,12 @@ from azure.storage.blob import BlobClient
 
 
 class IoTHandler:
-    def __init__(self, hostname: str, device_id: str, shared_access_key: str):
+    def __init__(
+        self,
+        hostname: str,
+        device_id: str,
+        shared_access_key: str = None,
+    ):
         """
         Object that handles the connection with IoT and the delivery of messages and files.
 
@@ -38,7 +43,8 @@ class IoTHandler:
             device_client.send_message(message)
         """
         device_client = IoTHubDeviceClient.create_from_connection_string(
-            self.connection_string
+            self.connection_string,
+            websockets=True,
         )
         try:
             device_client.connect()
@@ -115,9 +121,9 @@ class IoTHandler:
                 )
             )
 
-            # Upload the specified file
             with BlobClient.from_blob_url(sas_url) as blob_client:
                 with open(file_name, "rb") as f:
+                    print(f)
                     result = blob_client.upload_blob(f, overwrite=True)
                     return True, result
 
