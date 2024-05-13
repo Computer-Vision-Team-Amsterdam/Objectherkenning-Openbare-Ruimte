@@ -2,10 +2,11 @@
 
 VIDEOS_FOLDER="/raw_videos"
 OUTPUT_FOLDER="/raw_frames"
+LOGS_FOLDER="/cvt_logs"
 
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_FILE="$LOGS_FOLDER/preprocess_$TIMESTAMP.txt"
 while true; do
-  TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-  LOG_FILE="log_$TIMESTAMP.txt"
   printf "%s\n" $VIDEOS_FOLDER
   for video_file in "$VIDEOS_FOLDER"/*.mp4; do
     printf "%s\n" "$video_file" >> "$LOG_FILE"

@@ -1,15 +1,21 @@
+import logging
 import time
+from datetime import datetime
 
 from objectherkenning_openbare_ruimte.detection_pipeline.components.data_detection import (
     DataDetection,
 )
+from objectherkenning_openbare_ruimte.settings.luna_logging import setup_luna_logging
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
 
 if __name__ == "__main__":
     settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
-    print("Building the detection pipeline..")
+    logging_file_path = f"{settings['logging']['luna_logs_dir']}/detection_pipeline/{datetime.now()}.txt"
+    setup_luna_logging(settings["logging"], logging_file_path)
+    logger = logging.getLogger("detection_pipeline")
+    logger.info("Building the detection pipeline..")
     detection_pipeline = DataDetection(
         images_folder=settings["detection_pipeline"]["images_path"],
         detections_folder=settings["detection_pipeline"]["detections_path"],
@@ -19,8 +25,8 @@ if __name__ == "__main__":
     )
     while True:
         try:
-            print("Running the detection pipeline..")
+            logger.info("Running the detection pipeline..")
             detection_pipeline.run_pipeline()
         except Exception as e:
-            print(f"Exception occurred in container detection: {e}")
+            logger.info(f"Exception occurred in container detection: {e}")
         time.sleep(30)

@@ -95,6 +95,7 @@ class LoggingSpec(SettingsSpecModel):
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
     ai_instrumentation_key: str = ""
+    luna_logs_dir: str = ""
 
 
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):

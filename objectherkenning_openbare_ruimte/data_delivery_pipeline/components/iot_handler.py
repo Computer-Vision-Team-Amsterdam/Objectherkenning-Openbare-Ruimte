@@ -1,3 +1,4 @@
+import logging
 import os
 from contextlib import contextmanager
 from typing import Dict
@@ -5,6 +6,8 @@ from typing import Dict
 from azure.core.exceptions import AzureError
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobClient
+
+logger = logging.getLogger("data_delivery_pipeline")
 
 
 class IoTHandler:
@@ -82,12 +85,12 @@ class IoTHandler:
 
             success, result = self._store_blob(storage_info, file_path)
             if success:
-                print(f"Upload succeeded. Result is: {result}")
+                logger.info(f"Upload succeeded. Result is: {result}")
                 device_client.notify_blob_upload_status(
                     storage_info["correlationId"], True, 200, "OK: {}".format(file_path)
                 )
             else:
-                print(f"Upload failed. Exception is: {result}")
+                logger.error(f"Upload failed. Exception is: {result}")
                 device_client.notify_blob_upload_status(
                     storage_info["correlationId"],
                     False,
@@ -115,7 +118,7 @@ class IoTHandler:
                 blob_info["sasToken"],
             )
 
-            print(
+            logger.info(
                 "\nUploading file: {} to Azure Storage as blob: {} in container {}\n".format(
                     file_name, blob_info["blobName"], blob_info["containerName"]
                 )
@@ -123,7 +126,6 @@ class IoTHandler:
 
             with BlobClient.from_blob_url(sas_url) as blob_client:
                 with open(file_name, "rb") as f:
-                    print(f)
                     result = blob_client.upload_blob(f, overwrite=True)
                     return True, result
 

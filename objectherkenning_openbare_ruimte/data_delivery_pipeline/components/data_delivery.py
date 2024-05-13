@@ -1,4 +1,5 @@
 import csv
+import logging
 import os
 from typing import Dict, List
 
@@ -10,6 +11,8 @@ from objectherkenning_openbare_ruimte.data_delivery_pipeline.components.iot_hand
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
+
+logger = logging.getLogger("data_delivery_pipeline")
 
 
 class DataDelivery:
@@ -36,9 +39,9 @@ class DataDelivery:
             - delivers the data to Azure;
             - deletes the delivered data.
         """
-        print(f"Running data delivery pipeline on {self.detections_folder}..")
+        logger.info(f"Running data delivery pipeline on {self.detections_folder}..")
         videos_and_frames = self._match_metadata_to_images()
-        print(f"Images and frames: {videos_and_frames}")
+        logger.info(f"Images and frames: {videos_and_frames}")
         self._deliver_data(videos_and_frames=videos_and_frames)
         self._delete_data(videos_and_frames=videos_and_frames)
 
@@ -103,11 +106,11 @@ class DataDelivery:
                         csv_writer = csv.writer(output_file)
                         csv_writer.writerows(filtered_rows)
             except FileNotFoundError as e:
-                print(
+                logger.error(
                     f"FileNotFoundError during the creation of metadata file for: {video_name}: {e}"
                 )
             except Exception as e:
-                print(
+                logger.error(
                     f"Exception during the creation of metadata file for: {video_name}: {e}"
                 )
 
