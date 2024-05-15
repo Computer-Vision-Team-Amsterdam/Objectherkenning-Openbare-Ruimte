@@ -1,7 +1,7 @@
 import csv
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from cvtoolkit.helpers.file_helpers import delete_file, find_image_paths
 
@@ -39,13 +39,14 @@ class DataDelivery:
             - delivers the data to Azure;
             - deletes the delivered data.
         """
-        logger.info(f"Running data delivery pipeline on {self.detections_folder}..")
         videos_and_frames = self._match_metadata_to_images()
-        logger.info(f"Images and frames: {videos_and_frames}")
+        logger.info(
+            f"Number of frames to deliver: {sum(len(frames) for frames in videos_and_frames.values())}"
+        )
         self._deliver_data(videos_and_frames=videos_and_frames)
         self._delete_data(videos_and_frames=videos_and_frames)
 
-    def _match_metadata_to_images(self) -> Dict[str, List[str]]:
+    def _match_metadata_to_images(self) -> Dict[str, List[Tuple[str, str]]]:
         """
         Creates a csv file containing only the metadata of images with containers.
         Returns video names and which frames contains containers.
@@ -55,14 +56,16 @@ class DataDelivery:
         Dictionary containing as key a video name and as values the number of frames containing containers.
         """
         images_paths = find_image_paths(root_folder=self.detections_folder)
+        logger.info(f"Images path: {images_paths}")
         videos_and_frames = self._get_videos_and_frame_numbers(
             images_paths=images_paths
         )
+        logger.info(f"videos_and_frames: {videos_and_frames}")
         self._create_filtered_metadata_files(videos_and_frames=videos_and_frames)
         return videos_and_frames
 
     def _create_filtered_metadata_files(
-        self, videos_and_frames: Dict[str, List[str]]
+        self, videos_and_frames: Dict[str, List[Tuple[str, str]]]
     ) -> None:
         """
         Creates a metadata file containing only metadata information of frames with containers.
@@ -72,10 +75,10 @@ class DataDelivery:
         videos_and_frames
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
-        for video_name, frame_numbers in videos_and_frames.items():
+        for video_name, frame_info in videos_and_frames.items():
             filtered_rows = []
             file_path_only_filtered_rows = (
-                f"{self.detections_folder}/{video_name}/{video_name}.csv"
+                f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
             )
             already_existing_frames = []
             try:
@@ -91,7 +94,7 @@ class DataDelivery:
                                 file_path_only_filtered_rows
                             )
                         )
-                    frame_numbers_int = [int(x) for x in frame_numbers]
+                    frame_numbers_int = [int(x) for x in frame_info[1]]
                     for idx, row in enumerate(reader):
                         if (
                             idx + 1 in frame_numbers_int
@@ -129,7 +132,9 @@ class DataDelivery:
         return frame_numbers
 
     @staticmethod
-    def _get_videos_and_frame_numbers(images_paths: List[str]) -> Dict[str, List[str]]:
+    def _get_videos_and_frame_numbers(
+        images_paths: List[str],
+    ) -> Dict[str, List[Tuple[str, str]]]:
         """
         Starting from a list of paths, groups all the frame numbers under the same video name.
 
@@ -144,15 +149,16 @@ class DataDelivery:
         """
         videos_and_frames = {}
         for path in images_paths:
+            folder_name = os.path.basename(os.path.dirname(path))
             video_name, frame_info = os.path.basename(path).rsplit("_frame_", 1)
             frame_number, _ = frame_info.rsplit(".", 1)
             if video_name not in videos_and_frames:
-                videos_and_frames[video_name] = [frame_number]
+                videos_and_frames[video_name] = [(folder_name, frame_number)]
             else:
-                videos_and_frames[video_name].append(frame_number)
+                videos_and_frames[video_name].append((folder_name, frame_number))
         return videos_and_frames
 
-    def _deliver_data(self, videos_and_frames: Dict[str, List[str]]):
+    def _deliver_data(self, videos_and_frames: Dict[str, List[Tuple[str, str]]]):
         """
         Using Azure IoT delivers the images and metadata to Azure.
 
@@ -166,15 +172,22 @@ class DataDelivery:
             device_id=self.iot_settings["device_id"],
             shared_access_key=self.iot_settings["shared_access_key"],
         )
-        for video_name, frame_numbers in videos_and_frames.items():
-            detection_folder = f"{self.detections_folder}/{video_name}"
-            iot_handler.upload_file(f"{detection_folder}/{video_name}.csv")
-            for frame_number in frame_numbers:
+        batch_count = 0
+        for video_name, frames_info in videos_and_frames.items():
+            for frame_info in frames_info:
                 iot_handler.upload_file(
-                    f"{detection_folder}/{video_name}_frame_{frame_number}.jpg"
+                    f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
                 )
+                iot_handler.upload_file(
+                    f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
+                )
+                logger.info(
+                    f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
+                )
+                batch_count += 1
+        logger.info(f"Number of frames delivered: {batch_count}")
 
-    def _delete_data(self, videos_and_frames: Dict[str, List[str]]):
+    def _delete_data(self, videos_and_frames: Dict[str, List[Tuple[str, str]]]):
         """
         Deletes the data that has been delivered to Azure.
 
@@ -183,8 +196,14 @@ class DataDelivery:
         videos_and_frames
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
-        for video_name, frame_numbers in videos_and_frames.items():
-            detection_folder = f"{self.detections_folder}/{video_name}"
-            delete_file(f"{detection_folder}/{video_name}.csv")
-            for frame_number in frame_numbers:
-                delete_file(f"{detection_folder}/{video_name}_frame_{frame_number}.jpg")
+        batch_count = 0
+        for video_name, frames_info in videos_and_frames.items():
+            for frame_info in frames_info:
+                delete_file(
+                    f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
+                )
+                delete_file(
+                    f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
+                )
+                batch_count += 1
+        logger.info(f"Number of frames deleted: {batch_count}")

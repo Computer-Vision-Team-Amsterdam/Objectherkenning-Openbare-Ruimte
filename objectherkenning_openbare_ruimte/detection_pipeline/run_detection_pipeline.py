@@ -25,7 +25,9 @@ if __name__ == "__main__":
     )
     while True:
         try:
-            logger.info("Running the detection pipeline..")
+            logger.info(
+                f"Running the detection pipeline on {settings['detection_pipeline']['images_path']}.."
+            )
             detection_pipeline.run_pipeline()
         except Exception as e:
             logger.info(f"Exception occurred in container detection: {e}")
