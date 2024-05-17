@@ -43,6 +43,20 @@ class DataDeliveryPipelineSpec(SettingsSpecModel):
     metadata_path: str
 
 
+class DataMinimisation(SettingsSpecModel):
+    sensitive_classes: List[int]
+    target_class: int
+    blur_kernel_size_outside: int
+    blur_kernel_size_inside: int
+    blur_outside_padding: int
+    crop_padding: int
+
+
+class DataMinimisationExperiment(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+
+
 class DataSampling(SettingsSpecModel):
     inputs: Dict[str, str]
     outputs: Dict[str, str]
@@ -92,6 +106,8 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
     data_delivery_pipeline: DataDeliveryPipelineSpec
+    data_minimisation: DataMinimisation
+    data_minimisation_experiment: DataMinimisationExperiment
     data_sampling: DataSampling
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec
