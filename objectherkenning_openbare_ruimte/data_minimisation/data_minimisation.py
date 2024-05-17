@@ -1,3 +1,4 @@
+import argparse
 import os
 import pathlib
 import sys
@@ -158,6 +159,8 @@ class DataMinimisation:
         image_format : str (default: 'jpg')
             Image file format.
         """
+        pathlib.Path(output_folder).mkdir(exist_ok=True, parents=True)
+
         images = pathlib.Path(images_folder).glob(f"*.{image_format}")
         for img_file in images:
             print(f"=== {img_file.stem} ===")
@@ -176,3 +179,26 @@ class DataMinimisation:
                         output_folder, f"{img_file.stem}_scen_{scenario.name}.jpg"
                     )
                     cv2.imwrite(out_path, image)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--images_folder", dest="images_folder", type=str)
+    parser.add_argument("--labels_folder", dest="labels_folder", type=str)
+    parser.add_argument("--output_folder", dest="output_folder", type=str)
+    parser.add_argument("--image_format", dest="image_format", type=str)
+
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    data_minimisation = DataMinimisation()
+    data_minimisation.process_folder(
+        args.images_folder,
+        args.labels_folder,
+        args.output_folder,
+        args.image_format,
+    )

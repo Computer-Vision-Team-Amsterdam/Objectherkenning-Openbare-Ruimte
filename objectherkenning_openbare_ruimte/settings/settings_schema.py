@@ -55,6 +55,7 @@ class DataMinimisation(SettingsSpecModel):
 class DataMinimisationExperiment(SettingsSpecModel):
     inputs: Dict[str, str]
     outputs: Dict[str, str]
+    image_format: str
 
 
 class DataSampling(SettingsSpecModel):

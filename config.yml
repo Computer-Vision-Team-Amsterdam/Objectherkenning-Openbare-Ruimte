@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: cpu-blurring-model2
   env_name: oor-environment
-  env_version: 2
+  env_version: 23
   src_dir: "."
 
 azure_iot:
@@ -39,12 +39,13 @@ data_minimisation:
 
 data_minimisation_experiment:
   inputs:
-    datastore: ""
+    datastore: "data_minimisation_experiment"
     images_rel_path: "images"
     labels_rel_Path: "labels"
   outputs:
-    datastore: ""
+    datastore: "data_minimisation_experiment"
     rel_path: "blurred"
+  image_format: ".png"
 
 data_sampling:
   inputs:
