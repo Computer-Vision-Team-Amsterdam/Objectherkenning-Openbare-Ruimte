@@ -45,7 +45,7 @@ data_minimisation_experiment:
   outputs:
     datastore: "data_minimisation_experiment"
     rel_path: "blurred"
-  image_format: ".png"
+  image_format: "png"
 
 data_sampling:
   inputs:
