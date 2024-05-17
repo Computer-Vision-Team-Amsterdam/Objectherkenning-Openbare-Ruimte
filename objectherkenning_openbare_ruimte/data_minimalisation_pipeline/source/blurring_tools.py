@@ -69,6 +69,7 @@ def blur_inside_yolo_box(
     numpy.ndarray
         The blurred image
     """
+    image = image.copy()
     img_height, img_width, _ = image.shape
 
     x_min, y_min, x_max, y_max = yolo_annotation_to_bounds(
@@ -131,6 +132,7 @@ def crop_outside_yolo_box(
     image: npt.NDArray[np.int_],
     yolo_annotation: str,
     box_padding: int = 0,
+    fill_bg: bool = False,
 ) -> npt.NDArray[np.int_]:
     """
     Crop image to the area given by the yolo annotation box.
@@ -144,12 +146,15 @@ def crop_outside_yolo_box(
         "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
     box_padding : int (default: 0)
         Optional: increase box by this amount of pixels before cropping.
+    fill_bg : bool (default: False)
+        Instead of cropping, fill the backrgound with white.
 
     Returns
     -------
     numpy.ndarray
         The cropped image
     """
+    image = image.copy()
     img_height, img_width, _ = image.shape
 
     x_min, y_min, x_max, y_max = yolo_annotation_to_bounds(
@@ -160,7 +165,13 @@ def crop_outside_yolo_box(
     x_max = min(img_width, x_max + box_padding)
     y_max = min(img_height, y_max + box_padding)
     print(f"Cropping: {(x_min, y_min)} -> {(x_max, y_max)}")
-    return image[y_min:y_max, x_min:x_max]
+    if not fill_bg:
+        return image[y_min:y_max, x_min:x_max]
+    else:
+        area_to_keep = image[y_min:y_max, x_min:x_max].copy()
+        image[:, :, :] = 255
+        image[y_min:y_max, x_min:x_max] = area_to_keep
+        return image
 
 
 def draw_yolo_box(
