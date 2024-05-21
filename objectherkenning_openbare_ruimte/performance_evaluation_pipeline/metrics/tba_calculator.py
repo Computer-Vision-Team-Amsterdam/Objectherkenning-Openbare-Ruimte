@@ -132,7 +132,7 @@ def store_tba_results(
     with open(markdown_output_path, "w") as f:
         f.write(
             " Person Small | Person Medium | Person Large | Person ALL |"
-            " License Plate Small |  License Plate Medium  | License Plate Large | Licence Platse ALL |\n"
+            " License Plate Small |  License Plate Medium  | License Plate Large | Licence Plate ALL |\n"
         )
         f.write("|----- | ----- |  ----- | ----- | ----- | ----- | ----- | ----- |\n")
         f.write(
