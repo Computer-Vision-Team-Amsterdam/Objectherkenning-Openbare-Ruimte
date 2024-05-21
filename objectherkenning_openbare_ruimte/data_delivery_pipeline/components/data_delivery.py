@@ -5,9 +5,6 @@ from typing import Dict, List, Tuple
 
 from cvtoolkit.helpers.file_helpers import delete_file, find_image_paths
 
-from objectherkenning_openbare_ruimte.data_delivery_pipeline.components.iot_handler import (
-    IoTHandler,
-)
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -75,11 +72,9 @@ class DataDelivery:
         videos_and_frames
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
-        for video_name, frame_info in videos_and_frames.items():
+        for video_name, frames_info in videos_and_frames.items():
             filtered_rows = []
-            file_path_only_filtered_rows = (
-                f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
-            )
+            file_path_only_filtered_rows = f"{self.detections_folder}/{video_name}.csv"
             already_existing_frames = []
             try:
                 with open(f"{self.metadata_folder}/{video_name}.csv") as metadata_file:
@@ -94,7 +89,9 @@ class DataDelivery:
                                 file_path_only_filtered_rows
                             )
                         )
-                    frame_numbers_int = [int(x) for x in frame_info[1]]
+                    frame_numbers_int = [
+                        int(frame_info[1]) for frame_info in frames_info
+                    ]
                     for idx, row in enumerate(reader):
                         if (
                             idx + 1 in frame_numbers_int
@@ -167,20 +164,20 @@ class DataDelivery:
         videos_and_frames
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
-        iot_handler = IoTHandler(
-            hostname=self.iot_settings["hostname"],
-            device_id=self.iot_settings["device_id"],
-            shared_access_key=self.iot_settings["shared_access_key"],
-        )
+        # iot_handler = IoTHandler(
+        #     hostname=self.iot_settings["hostname"],
+        #     device_id=self.iot_settings["device_id"],
+        #     shared_access_key=self.iot_settings["shared_access_key"],
+        # )
         batch_count = 0
         for video_name, frames_info in videos_and_frames.items():
             for frame_info in frames_info:
-                iot_handler.upload_file(
-                    f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
-                )
-                iot_handler.upload_file(
-                    f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
-                )
+                # iot_handler.upload_file(
+                #     f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
+                # )
+                # iot_handler.upload_file(
+                #     f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
+                # )
                 logger.info(
                     f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
                 )

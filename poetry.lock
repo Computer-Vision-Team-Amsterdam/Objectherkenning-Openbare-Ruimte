@@ -2,7 +2,7 @@
 name = "aml-interface"
 version = "1.1.0"
 description = "AML-Interface is developed with the purpose of simplifying the use of AzureML, adding an abstraction layer over repetitive AzureML functions."
-category = "main"
+category = "dev"
 optional = false
 python-versions = "~3.8"
 develop = false
@@ -20,7 +20,7 @@ resolved_reference = "0a5a8de9528ca963e75f674d3ec025adba425d9b"
 name = "attrs"
 version = "23.2.0"
 description = "Classes Without Boilerplate"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -34,32 +34,32 @@ tests-no-zope = ["attrs", "cloudpickle", "hypothesis", "pympler", "pytest-xdist"
 
 [[package]]
 name = "azure-ai-ml"
-version = "1.15.0"
+version = "1.16.0"
 description = "Microsoft Azure Machine Learning Client Library for Python"
-category = "main"
+category = "dev"
 optional = false
-python-versions = "<4.0,>=3.7"
+python-versions = ">=3.7"
 
 [package.dependencies]
-azure-common = ">=1.1,<2.0.0"
-azure-core = ">=1.23.0,<2.0.0"
-azure-mgmt-core = ">=1.3.0,<2.0.0"
-azure-storage-blob = ">=12.10.0,<13.0.0"
-azure-storage-file-datalake = "<13.0.0"
-azure-storage-file-share = "<13.0.0"
-colorama = "<0.5.0"
+azure-common = ">=1.1"
+azure-core = ">=1.23.0"
+azure-mgmt-core = ">=1.3.0"
+azure-storage-blob = ">=12.10.0"
+azure-storage-file-datalake = ">=12.2.0"
+azure-storage-file-share = "*"
+colorama = "*"
 isodate = "*"
-jsonschema = ">=4.0.0,<5.0.0"
-marshmallow = ">=3.5,<4.0.0"
+jsonschema = ">=4.0.0"
+marshmallow = ">=3.5"
 msrest = ">=0.6.18"
-opencensus-ext-azure = "<2.0.0"
-opencensus-ext-logging = "<=0.1.1"
+opencensus-ext-azure = "*"
+opencensus-ext-logging = "*"
 pydash = ">=6.0.0"
-pyjwt = "<3.0.0"
-pyyaml = ">=5.1.0,<7.0.0"
-strictyaml = "<2.0.0"
-tqdm = "<5.0.0"
-typing-extensions = "<5.0.0"
+pyjwt = "*"
+pyyaml = ">=5.1.0"
+strictyaml = "*"
+tqdm = "*"
+typing-extensions = "*"
 
 [package.extras]
 designer = ["mldesigner"]
@@ -69,7 +69,7 @@ mount = ["azureml-dataprep-rslex (>=2.22.0)"]
 name = "azure-common"
 version = "1.1.28"
 description = "Microsoft Azure Client Library for Python (Common)"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -125,7 +125,7 @@ urllib3 = ">=1.26.5,<1.27"
 name = "azure-mgmt-core"
 version = "1.4.0"
 description = "Microsoft Azure Management Core Library for Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -134,54 +134,54 @@ azure-core = ">=1.26.2,<2.0.0"
 
 [[package]]
 name = "azure-storage-blob"
-version = "12.19.1"
+version = "12.20.0"
 description = "Microsoft Azure Blob Storage Client Library for Python"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
-azure-core = ">=1.28.0,<2.0.0"
+azure-core = ">=1.28.0"
 cryptography = ">=2.1.4"
 isodate = ">=0.6.1"
-typing-extensions = ">=4.3.0"
+typing-extensions = ">=4.6.0"
 
 [package.extras]
-aio = ["azure-core[aio] (>=1.28.0,<2.0.0)"]
+aio = ["azure-core[aio] (>=1.28.0)"]
 
 [[package]]
 name = "azure-storage-file-datalake"
-version = "12.14.0"
+version = "12.15.0"
 description = "Microsoft Azure File DataLake Storage Client Library for Python"
-category = "main"
+category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
-azure-core = ">=1.28.0,<2.0.0"
-azure-storage-blob = ">=12.19.0,<13.0.0"
+azure-core = ">=1.28.0"
+azure-storage-blob = ">=12.20.0"
 isodate = ">=0.6.1"
-typing-extensions = ">=4.3.0"
+typing-extensions = ">=4.6.0"
 
 [package.extras]
-aio = ["azure-core[aio] (>=1.28.0,<2.0.0)"]
+aio = ["azure-core[aio] (>=1.28.0)"]
 
 [[package]]
 name = "azure-storage-file-share"
-version = "12.15.0"
+version = "12.16.0"
 description = "Microsoft Azure Azure File Share Storage Client Library for Python"
-category = "main"
+category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
-azure-core = ">=1.28.0,<2.0.0"
+azure-core = ">=1.28.0"
 cryptography = ">=2.1.4"
 isodate = ">=0.6.1"
-typing-extensions = ">=4.3.0"
+typing-extensions = ">=4.6.0"
 
 [package.extras]
-aio = ["azure-core[aio] (>=1.28.0,<2.0.0)"]
+aio = ["azure-core[aio] (>=1.28.0)"]
 
 [[package]]
 name = "cachetools"
@@ -230,7 +230,7 @@ python-versions = ">=3.7.0"
 name = "click"
 version = "8.1.7"
 description = "Composable command line interface toolkit"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -241,7 +241,7 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 name = "click-plugins"
 version = "1.1.1"
 description = "An extension module for click to enable registering CLI commands via setuptools entry-points."
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -255,7 +255,7 @@ dev = ["pytest (>=3.6)", "pytest-cov", "wheel", "coveralls"]
 name = "cligj"
 version = "0.7.2"
 description = "Click params for commmand line interfaces to GeoJSON"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, <4"
 
@@ -408,7 +408,7 @@ typing = ["typing-extensions (>=4.8)"]
 name = "fiona"
 version = "1.9.6"
 description = "Fiona reads and writes spatial data files"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -451,7 +451,7 @@ woff = ["zopfli (>=0.1.4)", "brotlicffi (>=0.8.0)", "brotli (>=1.0.1)"]
 
 [[package]]
 name = "fsspec"
-version = "2024.3.1"
+version = "2024.5.0"
 description = "File-system specification"
 category = "main"
 optional = false
@@ -462,8 +462,8 @@ abfs = ["adlfs"]
 adl = ["adlfs"]
 arrow = ["pyarrow (>=1)"]
 dask = ["dask", "distributed"]
-devel = ["pytest", "pytest-cov"]
-dropbox = ["dropboxdrivefs", "requests", "dropbox"]
+dev = ["pre-commit", "ruff"]
+dropbox = ["dropbox", "dropboxdrivefs", "requests"]
 full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "dask", "distributed", "dropbox", "dropboxdrivefs", "fusepy", "gcsfs", "libarchive-c", "ocifs", "panel", "paramiko", "pyarrow (>=1)", "pygit2", "requests", "s3fs", "smbprotocol", "tqdm"]
 fuse = ["fusepy"]
 gcs = ["gcsfs"]
@@ -479,13 +479,16 @@ s3 = ["s3fs"]
 sftp = ["paramiko"]
 smb = ["smbprotocol"]
 ssh = ["paramiko"]
+test = ["aiohttp (!=4.0.0a0,!=4.0.0a1)", "numpy", "pytest", "pytest-asyncio (!=0.22.0)", "pytest-benchmark", "pytest-cov", "pytest-mock", "pytest-recording", "pytest-rerunfailures", "requests"]
+test-downstream = ["aiobotocore (>=2.5.4,<3.0.0)", "dask-expr", "dask", "moto[server] (>4,<5)", "pytest-timeout", "xarray"]
+test-full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "cloudpickle", "dask", "distributed", "dropbox", "dropboxdrivefs", "fastparquet", "fusepy", "gcsfs", "jinja2", "kerchunk", "libarchive-c", "lz4", "notebook", "numpy", "ocifs", "pandas", "panel", "paramiko", "pyarrow", "pyarrow (>=1)", "pyftpdlib", "pygit2", "pytest", "pytest-asyncio (!=0.22.0)", "pytest-benchmark", "pytest-cov", "pytest-mock", "pytest-recording", "pytest-rerunfailures", "python-snappy", "requests", "smbprotocol", "tqdm", "urllib3", "zarr", "zstandard"]
 tqdm = ["tqdm"]
 
 [[package]]
 name = "geopandas"
 version = "0.13.2"
 description = "Geographic pandas extensions"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -585,7 +588,7 @@ python-versions = ">=3.5"
 name = "importlib-metadata"
 version = "7.1.0"
 description = "Read metadata from Python packages"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -660,7 +663,7 @@ i18n = ["Babel (>=2.7)"]
 name = "jsonschema"
 version = "4.22.0"
 description = "An implementation of JSON Schema validation for Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -680,7 +683,7 @@ format-nongpl = ["fqdn", "idna", "isoduration", "jsonpointer (>1.13)", "rfc3339-
 name = "jsonschema-specifications"
 version = "2023.12.1"
 description = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -708,7 +711,7 @@ python-versions = ">=3.7"
 name = "marshmallow"
 version = "3.21.2"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -807,7 +810,7 @@ portalocker = [
 name = "msrest"
 version = "0.7.1"
 description = "AutoRest swagger generator Python client runtime."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -963,7 +966,7 @@ python-versions = ">=3"
 name = "oauthlib"
 version = "3.2.2"
 description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -1012,7 +1015,7 @@ requests = ">=2.19.0"
 name = "opencensus-ext-logging"
 version = "0.1.1"
 description = "OpenCensus logging Integration"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -1123,13 +1126,13 @@ xmp = ["defusedxml"]
 name = "pkgutil-resolve-name"
 version = "1.3.10"
 description = "Resolve a name to an object."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
 [[package]]
 name = "platformdirs"
-version = "4.2.1"
+version = "4.2.2"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
 category = "main"
 optional = false
@@ -1310,6 +1313,14 @@ docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
 tests = ["pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)"]
 
 [[package]]
+name = "pynvml"
+version = "11.5.0"
+description = "Python Bindings for the NVIDIA Management Library"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "pyparsing"
 version = "3.1.2"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -1324,7 +1335,7 @@ diagrams = ["railroad-diagrams", "jinja2"]
 name = "pyproj"
 version = "3.5.0"
 description = "Python interface to PROJ (cartographic projections and coordinate transformations library)"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -1412,7 +1423,7 @@ python-versions = ">=3.6"
 name = "referencing"
 version = "0.35.1"
 description = "JSON Referencing + Python"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -1422,11 +1433,11 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "requests"
-version = "2.31.0"
+version = "2.32.1"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 certifi = ">=2017.4.17"
@@ -1436,13 +1447,13 @@ urllib3 = ">=1.21.1,<3"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
-use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
+use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "requests-oauthlib"
 version = "2.0.0"
 description = "OAuthlib authentication support for Requests."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.4"
 
@@ -1468,7 +1479,7 @@ requests = ">=1.1"
 name = "rpds-py"
 version = "0.18.1"
 description = "Python bindings to Rust's persistent data structures (rpds)"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.8"
 
@@ -1521,7 +1532,7 @@ stats = ["scipy (>=1.7)", "statsmodels (>=0.12)"]
 name = "shapely"
 version = "2.0.4"
 description = "Manipulation and analysis of geometric objects"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -1576,7 +1587,7 @@ sqlcipher = ["sqlcipher3-binary"]
 name = "strictyaml"
 version = "1.7.3"
 description = "Strict, typed YAML parser"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7.0"
 
@@ -1712,7 +1723,7 @@ python-versions = ">=2"
 
 [[package]]
 name = "ultralytics"
-version = "8.2.10"
+version = "8.2.18"
 description = "Ultralytics YOLOv8 for SOTA object detection, multi-object tracking, instance segmentation, pose estimation and image classification."
 category = "main"
 optional = false
@@ -1756,7 +1767,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.26.1"
+version = "20.26.2"
 description = "Virtual Python Environment builder"
 category = "main"
 optional = false
@@ -1773,7 +1784,7 @@ test = ["covdefaults (>=2.3)", "coverage-enable-subprocess (>=1)", "coverage (>=
 
 [[package]]
 name = "zipp"
-version = "3.18.1"
+version = "3.18.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 category = "main"
 optional = false
@@ -1781,12 +1792,12 @@ python-versions = ">=3.8"
 
 [package.extras]
 docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9.3)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
-testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ruff (>=0.2.1)", "jaraco.itertools", "jaraco.functools", "more-itertools", "big-o", "pytest-ignore-flaky", "pytest-mypy"]
+testing = ["pytest (>=6,<8.1.0 || >=8.2.0)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-mypy", "pytest-enabler (>=2.2)", "pytest-ruff (>=0.2.1)", "jaraco.itertools", "jaraco.functools", "more-itertools", "big-o", "pytest-ignore-flaky", "jaraco.test"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "05b4500819c4d4f2e3f8c415a65cb145bae720d0f5ad721fcf781e6449434c61"
+content-hash = "99d2f01fee07cc38abf690f97caba9f2a38df264d96463068d63bf0c9faaf606"
 
 [metadata.files]
 aml-interface = []
@@ -1887,6 +1898,7 @@ pycparser = []
 pydantic = []
 pydash = []
 pyjwt = []
+pynvml = []
 pyparsing = []
 pyproj = []
 pysocks = []
