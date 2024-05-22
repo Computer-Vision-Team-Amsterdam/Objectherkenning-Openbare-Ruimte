@@ -1,17 +1,15 @@
+import sys
 from enum import Enum
 from typing import List, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image
-from PIL.Image import Image as ImageType
 
 
-class ImageSize(Enum):
+class BoxSize(Enum):
     small = [0, 5000]
     medium = [5000, 10000]
-    large = [10000, 1048576]
-    all = [0, 1048576]
+    large = [10000, sys.maxsize]
+    all = [0, sys.maxsize]
 
     def __repr__(self):
         return self.value
@@ -20,7 +18,7 @@ class ImageSize(Enum):
         return self.value[index]
 
 
-class TargetClass(Enum):
+class ObjectClass(Enum):
     person = 0
     license_plate = 1
     container = 2
@@ -102,53 +100,3 @@ def generate_binary_mask(
             mask[y_min[i] : y_max[i], x_min[i] : x_max[i]] = 1
 
     return mask
-
-
-def generate_mask(
-    bounding_boxes, image: ImageType, consider_upper_half=False
-) -> ImageType:
-    """
-    Generates an RGB mask for an image given a list of bounding boxes.
-    Similar to generate_binary_mask, but this is used for visualizations, mainly as sanity checks
-
-    Parameters
-    ----------
-    bounding_boxes List of bounding boxes with normalised (x_center, y_center, width, height)
-    image  An image to generate the mask for.
-    consider_upper_half only look at the upper half of the bounding boxes
-
-    Returns
-    -------
-
-    """
-    mask = np.zeros_like(np.array(image))
-
-    if len(bounding_boxes):
-        bounding_boxes = np.array(bounding_boxes)
-        y_min = (
-            (bounding_boxes[:, 1] - bounding_boxes[:, 3] / 2) * image.height
-        ).astype(int)
-        x_min = (
-            (bounding_boxes[:, 0] - bounding_boxes[:, 2] / 2) * image.width
-        ).astype(int)
-        x_max = (
-            (bounding_boxes[:, 0] + bounding_boxes[:, 2] / 2) * image.width
-        ).astype(int)
-        if consider_upper_half:
-            y_max = (bounding_boxes[:, 1] * image.height).astype(int)
-        else:
-            y_max = (
-                (bounding_boxes[:, 1] + bounding_boxes[:, 3] / 2) * image.height
-            ).astype(int)
-        for i in range(len(x_min)):
-            mask[y_min[i] : y_max[i], x_min[i] : x_max[i], :] = np.array(image)[
-                y_min[i] : y_max[i], x_min[i] : x_max[i], :
-            ]
-    return Image.fromarray(mask)
-
-
-def visualize_mask(image, name="mask.jpg"):
-    plt.figure(name, figsize=(16, 8))
-    plt.imshow(np.array(image))
-    plt.savefig(name, dpi=500)
-    plt.show()
