@@ -1,6 +1,5 @@
 import os
 
-from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
 from azure.ai.ml import Input, Output
 from azure.ai.ml.constants import AssetTypes
 from azure.ai.ml.dsl import pipeline
@@ -14,7 +13,6 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
-setup_azure_logging(settings["logging"], __name__)
 
 from aml_interface.aml_interface import AMLInterface  # noqa: E402
 

@@ -21,12 +21,14 @@ class InferenceModelParameters(SettingsSpecModel):
     conf: float = 0.5
     save_img_flag: bool = False
     save_txt_flag: bool = False
+    save_conf_flag: bool = False
 
 
 class InferencePipelineSpec(SettingsSpecModel):
-    inference_params: InferenceModelParameters
+    detection_params: InferenceModelParameters
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
+    tracking_params: Dict[str, Any] = None
 
 
 class LoggingSpec(SettingsSpecModel):

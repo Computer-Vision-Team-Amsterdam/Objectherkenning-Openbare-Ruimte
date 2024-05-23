@@ -1,0 +1,37 @@
+customer: ""
+
+aml_experiment_details:
+  compute_name: oor-testing
+  env_name: oor-environment
+  env_version: 21
+  src_dir: "."
+
+inference_pipeline:
+  detection_params:
+    img_size: 1024
+    conf: 0.4
+    save_img_flag: True
+    save_txt_flag: False
+    save_conf_flag: True
+  inputs:
+    datastore_path: "new_dataset_oor"
+    inference_data_rel_path: "velotech_smaller_sample"
+    model_weights_rel_path: "model"
+    model_name: "yolov8s_coco_nc_5_best.pt"
+    tracker: "botsort.yaml"
+  outputs:
+    project_rel_path: "model/inference_run_no_labels_test_batch_new"
+  tracking_params:
+    tracking_flag: True
+    tracking_persist_flag: True
+    tracking_classes: [2,3,4]
+
+logging:
+  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_dataset"]
+  basic_config:
+    # log config as arguments to `logging.basicConfig`
+    level: WARNING
+    format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  ai_instrumentation_key: ""
