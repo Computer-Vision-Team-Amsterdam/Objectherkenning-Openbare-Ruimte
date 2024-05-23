@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Dict, List, Tuple
 
-from cvtoolkit.helpers.file_helpers import find_image_paths
+from cvtoolkit.helpers.file_helpers import delete_file, find_image_paths
 
 from objectherkenning_openbare_ruimte.data_delivery_pipeline.components.iot_handler import (
     IoTHandler,
@@ -182,9 +182,7 @@ class DataDelivery:
         batch_count = 0
         for video_name, frames_info in videos_and_frames.items():
             for frame_info in frames_info:
-                iot_handler.upload_file(
-                    f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
-                )
+                iot_handler.upload_file(f"{self.detections_folder}/{video_name}.csv")
                 iot_handler.upload_file(
                     f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
                 )
@@ -215,14 +213,12 @@ class DataDelivery:
                 )
                 batch_count += 1
             if not self._any_image_in_dir_and_subdirs(f"{self.detections_folder}"):
-                # delete_file(
-                #     f"{self.detections_folder}/{video_name}.csv"
-                # )
+                delete_file(f"{self.detections_folder}/{video_name}.csv")
                 logger.debug(f"Deleted: {self.detections_folder}/{video_name}.csv")
                 if not self._any_image_in_dir_and_subdirs(
                     f"{self.images_folder}/{video_name}"
                 ):
-                    # delete_file(f"{self.metadata_folder}/{video_name}/{video_name}.csv")
+                    delete_file(f"{self.metadata_folder}/{video_name}/{video_name}.csv")
                     logger.debug(
                         f"Deleted: {self.metadata_folder}/{video_name}/{video_name}.csv"
                     )
