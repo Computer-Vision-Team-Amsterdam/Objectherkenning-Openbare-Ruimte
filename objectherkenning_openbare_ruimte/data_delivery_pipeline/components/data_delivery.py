@@ -3,8 +3,11 @@ import logging
 import os
 from typing import Dict, List, Tuple
 
-from cvtoolkit.helpers.file_helpers import delete_file, find_image_paths
+from cvtoolkit.helpers.file_helpers import find_image_paths
 
+from objectherkenning_openbare_ruimte.data_delivery_pipeline.components.iot_handler import (
+    IoTHandler,
+)
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -13,7 +16,9 @@ logger = logging.getLogger("data_delivery_pipeline")
 
 
 class DataDelivery:
-    def __init__(self, detections_folder: str, metadata_folder: str):
+    def __init__(
+        self, detections_folder: str, metadata_folder: str, images_folder: str
+    ):
         """
 
         Parameters
@@ -23,6 +28,7 @@ class DataDelivery:
         metadata_folder
             Folder containing the metadata files in csv format
         """
+        self.images_folder = images_folder
         self.detections_folder = detections_folder
         self.metadata_folder = metadata_folder
         self.iot_settings = ObjectherkenningOpenbareRuimteSettings.get_settings()[
@@ -77,7 +83,9 @@ class DataDelivery:
             file_path_only_filtered_rows = f"{self.detections_folder}/{video_name}.csv"
             already_existing_frames = []
             try:
-                with open(f"{self.metadata_folder}/{video_name}.csv") as metadata_file:
+                with open(
+                    f"{self.metadata_folder}/{video_name}/{video_name}.csv"
+                ) as metadata_file:
                     reader = csv.reader(metadata_file)
                     header = next(reader)
                     header.append("frame_number")
@@ -92,6 +100,8 @@ class DataDelivery:
                     frame_numbers_int = [
                         int(frame_info[1]) for frame_info in frames_info
                     ]
+                    logger.debug(f"Already existing frames: {already_existing_frames}")
+                    logger.debug(f"Frame numbers int: {frame_numbers_int}")
                     for idx, row in enumerate(reader):
                         if (
                             idx + 1 in frame_numbers_int
@@ -164,23 +174,24 @@ class DataDelivery:
         videos_and_frames
             Dictionary containing as key a video name and as values the number of frames containing containers.
         """
-        # iot_handler = IoTHandler(
-        #     hostname=self.iot_settings["hostname"],
-        #     device_id=self.iot_settings["device_id"],
-        #     shared_access_key=self.iot_settings["shared_access_key"],
-        # )
+        iot_handler = IoTHandler(
+            hostname=self.iot_settings["hostname"],
+            device_id=self.iot_settings["device_id"],
+            shared_access_key=self.iot_settings["shared_access_key"],
+        )
         batch_count = 0
         for video_name, frames_info in videos_and_frames.items():
             for frame_info in frames_info:
-                # iot_handler.upload_file(
-                #     f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
-                # )
-                # iot_handler.upload_file(
-                #     f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
-                # )
-                logger.info(
+                iot_handler.upload_file(
+                    f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
+                )
+                iot_handler.upload_file(
                     f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
                 )
+                logger.debug(
+                    f"Delivered: {self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
+                )
+                logger.debug(f"Delivered: {self.detections_folder}/{video_name}.csv")
                 batch_count += 1
         logger.info(f"Number of frames delivered: {batch_count}")
 
@@ -196,11 +207,32 @@ class DataDelivery:
         batch_count = 0
         for video_name, frames_info in videos_and_frames.items():
             for frame_info in frames_info:
-                delete_file(
-                    f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
-                )
-                delete_file(
-                    f"{self.detections_folder}/{frame_info[0]}/{video_name}.csv"
+                # delete_file(
+                #     f"{self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
+                # )
+                logger.debug(
+                    f"Deleted: {self.detections_folder}/{frame_info[0]}/{video_name}_frame_{frame_info[1]}.jpg"
                 )
                 batch_count += 1
+            if not self._any_image_in_dir_and_subdirs(f"{self.detections_folder}"):
+                # delete_file(
+                #     f"{self.detections_folder}/{video_name}.csv"
+                # )
+                logger.debug(f"Deleted: {self.detections_folder}/{video_name}.csv")
+                if not self._any_image_in_dir_and_subdirs(
+                    f"{self.images_folder}/{video_name}"
+                ):
+                    # delete_file(f"{self.metadata_folder}/{video_name}/{video_name}.csv")
+                    logger.debug(
+                        f"Deleted: {self.metadata_folder}/{video_name}/{video_name}.csv"
+                    )
         logger.info(f"Number of frames deleted: {batch_count}")
+
+    @staticmethod
+    def _any_image_in_dir_and_subdirs(dir_path):
+        image_extensions = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".svg"}
+        return any(
+            os.path.splitext(file)[1].lower() in image_extensions
+            for root, dirs, files in os.walk(dir_path)
+            for file in files
+        )

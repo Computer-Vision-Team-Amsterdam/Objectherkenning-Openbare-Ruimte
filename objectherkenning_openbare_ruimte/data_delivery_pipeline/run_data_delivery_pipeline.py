@@ -19,6 +19,7 @@ if __name__ == "__main__":
     data_delivery_pipeline = DataDelivery(
         detections_folder=settings["data_delivery_pipeline"]["detections_path"],
         metadata_folder=settings["data_delivery_pipeline"]["metadata_path"],
+        images_folder=settings["detection_pipeline"]["images_path"],
     )
     while True:
         try:

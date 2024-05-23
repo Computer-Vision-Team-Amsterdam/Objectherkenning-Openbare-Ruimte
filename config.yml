@@ -26,7 +26,7 @@ convert_annotations:
 
 data_delivery_pipeline:
   detections_path: "/detections"
-  metadata_path: "/raw_videos"
+  metadata_path: "/raw_frames"
 
 detection_pipeline:
   images_path: "/raw_frames"
@@ -73,7 +73,7 @@ frame_extraction:
   fps: 1
 
 logging:
-  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
+  loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations",
                  "performance_monitoring", "detection_pipeline", "data_delivery_pipeline"]
   basic_config:
