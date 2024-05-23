@@ -74,10 +74,10 @@ def train_model(
     # Prepare dynamic parameters for training
     train_params = {
         "data": yaml_path,
-        "epochs": model_parameters.get("epochs", 10),
-        "imgsz": model_parameters.get("img_size", 640),
+        "epochs": model_parameters.get("epochs", 100),
+        "imgsz": model_parameters.get("img_size", 1024),
         "project": project_path,
-        "batch": model_parameters.get("batch", 16),
+        "batch": model_parameters.get("batch", -1),
         "patience": model_parameters.get("patience", 25),
     }
 

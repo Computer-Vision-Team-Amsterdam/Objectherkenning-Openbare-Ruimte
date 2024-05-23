@@ -65,7 +65,7 @@ training_pipeline:
   model_parameters:
     img_size: 1024
     batch: -1
-    epochs: 1
+    epochs: 100
     patience: 25
     n_classes: 3
     name_classes: ["person", "license plate", "container"]

@@ -86,8 +86,8 @@ class TrainingModelParameters(SettingsSpecModel):
     img_size: int = 1024
     batch: int = -1
     epochs: int = 100
-    patience: int = 10
-    n_classes: int = 1
+    patience: int = 25
+    n_classes: int = 3
     name_classes: List[str] = ["object"]
 
 
