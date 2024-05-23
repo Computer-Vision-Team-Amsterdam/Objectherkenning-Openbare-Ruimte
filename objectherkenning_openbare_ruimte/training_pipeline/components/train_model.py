@@ -44,6 +44,9 @@ def train_model(
             - /images/train/
             - /images/val/
             - /images/test/
+            - /labels/train/
+            - /labels/val/
+            - /labels/test/
     model_weights:
         Path to the pretrained model weights.
     yolo_yaml_path:
