@@ -102,7 +102,7 @@ def run_inference(
                         if track_id is not None:
                             line = f"{class_id} {bbox_str} {conf_score_str} {int(track_id)}\n"
                         else:
-                            line = f"{class_id} {bbox_str} {conf_score_str}\n"
+                            line = f"{class_id} {bbox_str} {conf_score_str} -1\n"
 
                         f.write(line)
 
