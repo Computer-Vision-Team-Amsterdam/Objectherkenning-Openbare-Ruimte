@@ -111,6 +111,7 @@ class DataMinimisation:
         image = image.copy()
         img_height, img_width, _ = image.shape
 
+        # TODO: process object classes one by one, grouped
         for line in yolo_annotations:
             yolo_annotation = line.strip()
             class_id = int(yolo_annotation.split(sep=" ", maxsplit=1)[0])
@@ -120,25 +121,25 @@ class DataMinimisation:
             if scenario.blur_inside and (
                 class_id in self.settings["sensitive_classes"]
             ):
-                image = blurring_tools.blur_inside_bounds(
-                    image, annotation_bounds, self.settings["blur_kernel_size_inside"]
+                image = blurring_tools.blur_inside_boxes(
+                    image, [annotation_bounds], self.settings["blur_kernel_size_inside"]
                 )
             if scenario.blur_outside and (class_id == self.settings["target_class"]):
-                image = blurring_tools.blur_outside_bounds(
+                image = blurring_tools.blur_outside_boxes(
                     image,
-                    annotation_bounds,
+                    [annotation_bounds],
                     self.settings["blur_kernel_size_outside"],
                     self.settings["blur_outside_padding"],
                 )
             if scenario.crop and (class_id == self.settings["target_class"]):
-                image = blurring_tools.crop_outside_bounds(
+                image = blurring_tools.crop_outside_boxes(
                     image,
-                    annotation_bounds,
+                    [annotation_bounds],
                     self.settings["crop_padding"],
                     scenario.fill_bg,
-                )
+                )[0]
             if scenario.draw_box and (class_id == self.settings["target_class"]):
-                image = blurring_tools.draw_box_from_bounds(image, annotation_bounds)
+                image = blurring_tools.draw_bounding_boxes(image, [annotation_bounds])
         return image
 
     def process_folder(
