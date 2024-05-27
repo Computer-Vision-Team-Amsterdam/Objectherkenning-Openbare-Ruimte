@@ -43,9 +43,9 @@ def yolo_annotation_to_bounds(
     return x_min, y_min, x_max, y_max
 
 
-def blur_inside_yolo_box(
+def blur_inside_bounds(
     image: npt.NDArray[np.int_],
-    yolo_annotation: str,
+    bounds: Tuple[int, int, int, int],
     blur_kernel_size: int = 165,
     box_padding: int = 0,
 ) -> npt.NDArray[np.int_]:
@@ -56,9 +56,8 @@ def blur_inside_yolo_box(
     ----------
     image : numpy.ndarray
         The image to blur.
-    yolo_annotation : str
-        YOLO annotation string in the format:
-        "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+    bounds : Tuple[int, int, int, int]
+        Bounds of the box to blur, in the format (xmin, ymin, xmax, ymax).
     blur_kernel_size : int (default: 165)
         Kernel size (used for both width and height) for GaussianBlur.
     box_padding : int (default: 0)
@@ -71,24 +70,24 @@ def blur_inside_yolo_box(
     """
     image = image.copy()
     img_height, img_width, _ = image.shape
+    x_min, y_min, x_max, y_max = bounds
 
-    x_min, y_min, x_max, y_max = yolo_annotation_to_bounds(
-        yolo_annotation, img_height, img_width
-    )
     x_min = max(0, x_min - box_padding)
     y_min = max(0, y_min - box_padding)
     x_max = min(img_width, x_max + box_padding)
     y_max = min(img_height, y_max + box_padding)
-    print(f"Blurring inside: {(x_min, y_min)} -> {(x_max, y_max)}")
+
+    # print(f"Blurring inside: {(x_min, y_min)} -> {(x_max, y_max)}")
     area_to_blur = image[y_min:y_max, x_min:x_max]
     blurred = cv2.GaussianBlur(area_to_blur, (blur_kernel_size, blur_kernel_size), 0)
     image[y_min:y_max, x_min:x_max] = blurred
+
     return image
 
 
-def blur_outside_yolo_box(
+def blur_outside_bounds(
     image: npt.NDArray[np.int_],
-    yolo_annotation: str,
+    bounds: Tuple[int, int, int, int],
     blur_kernel_size: int = 165,
     box_padding: int = 0,
 ) -> npt.NDArray[np.int_]:
@@ -99,9 +98,8 @@ def blur_outside_yolo_box(
     ----------
     image : numpy.ndarray
         The image to blur.
-    yolo_annotation : str
-        YOLO annotation string in the format:
-        "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+    bounds : Tuple[int, int, int, int]
+        Bounds of the box outside which to blur, in the format (xmin, ymin, xmax, ymax).
     blur_kernel_size : int (default: 165)
         Kernel size (used for both width and height) for GaussianBlur.
     box_padding : int (default: 0)
@@ -113,24 +111,24 @@ def blur_outside_yolo_box(
         The blurred image
     """
     img_height, img_width, _ = image.shape
+    x_min, y_min, x_max, y_max = bounds
 
-    x_min, y_min, x_max, y_max = yolo_annotation_to_bounds(
-        yolo_annotation, img_height, img_width
-    )
     x_min = max(0, x_min - box_padding)
     y_min = max(0, y_min - box_padding)
     x_max = min(img_width, x_max + box_padding)
     y_max = min(img_height, y_max + box_padding)
-    print(f"Blurring outside: {(x_min, y_min)} -> {(x_max, y_max)}")
+
+    # print(f"Blurring outside: {(x_min, y_min)} -> {(x_max, y_max)}")
     area_to_keep = image[y_min:y_max, x_min:x_max]
     blurred_image = cv2.GaussianBlur(image, (blur_kernel_size, blur_kernel_size), 0)
     blurred_image[y_min:y_max, x_min:x_max] = area_to_keep
+
     return blurred_image
 
 
-def crop_outside_yolo_box(
+def crop_outside_bounds(
     image: npt.NDArray[np.int_],
-    yolo_annotation: str,
+    bounds: Tuple[int, int, int, int],
     box_padding: int = 0,
     fill_bg: bool = False,
 ) -> npt.NDArray[np.int_]:
@@ -141,9 +139,8 @@ def crop_outside_yolo_box(
     ----------
     image : numpy.ndarray
         The image to blur.
-    yolo_annotation : str
-        YOLO annotation string in the format:
-        "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+    bounds : Tuple[int, int, int, int]
+        Bounds of the box to crop, in the format (xmin, ymin, xmax, ymax).
     box_padding : int (default: 0)
         Optional: increase box by this amount of pixels before cropping.
     fill_bg : bool (default: False)
@@ -156,15 +153,14 @@ def crop_outside_yolo_box(
     """
     image = image.copy()
     img_height, img_width, _ = image.shape
+    x_min, y_min, x_max, y_max = bounds
 
-    x_min, y_min, x_max, y_max = yolo_annotation_to_bounds(
-        yolo_annotation, img_height, img_width
-    )
     x_min = max(0, x_min - box_padding)
     y_min = max(0, y_min - box_padding)
     x_max = min(img_width, x_max + box_padding)
     y_max = min(img_height, y_max + box_padding)
-    print(f"Cropping: {(x_min, y_min)} -> {(x_max, y_max)}")
+
+    # print(f"Cropping: {(x_min, y_min)} -> {(x_max, y_max)}")
     if not fill_bg:
         return image[y_min:y_max, x_min:x_max]
     else:
@@ -174,9 +170,9 @@ def crop_outside_yolo_box(
         return image
 
 
-def draw_yolo_box(
+def draw_box_from_bounds(
     image: npt.NDArray[np.int_],
-    yolo_annotation: str,
+    bounds: Tuple[int, int, int, int],
     box_padding: int = 0,
 ) -> npt.NDArray[np.int_]:
     """
@@ -186,9 +182,8 @@ def draw_yolo_box(
     ----------
     image : numpy.ndarray
         The image to blur.
-    yolo_annotation : str
-        YOLO annotation string in the format:
-        "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
+    bounds : Tuple[int, int, int, int]
+        Bounds of the box to draw, in the format (xmin, ymin, xmax, ymax).
     box_padding : int (default: 0)
         Optional: increase box by this amount of pixels before drawing.
 
@@ -198,15 +193,14 @@ def draw_yolo_box(
         The image with drawn bounding box.
     """
     img_height, img_width, _ = image.shape
+    x_min, y_min, x_max, y_max = bounds
 
-    x_min, y_min, x_max, y_max = yolo_annotation_to_bounds(
-        yolo_annotation, img_height, img_width
-    )
     x_min = max(0, x_min - box_padding)
     y_min = max(0, y_min - box_padding)
     x_max = min(img_width, x_max + box_padding)
     y_max = min(img_height, y_max + box_padding)
-    print(f"Drawing: {(x_min, y_min)} -> {(x_max, y_max)}")
+
+    # print(f"Drawing: {(x_min, y_min)} -> {(x_max, y_max)}")
     image = cv2.rectangle(
         image, (x_min, y_min), (x_max, y_max), (0, 0, 255), thickness=2
     )

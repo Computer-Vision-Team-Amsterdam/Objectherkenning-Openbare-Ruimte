@@ -109,31 +109,36 @@ class DataMinimisation:
         The processed image.
         """
         image = image.copy()
+        img_height, img_width, _ = image.shape
+
         for line in yolo_annotations:
             yolo_annotation = line.strip()
             class_id = int(yolo_annotation.split(sep=" ", maxsplit=1)[0])
+            annotation_bounds = blurring_tools.yolo_annotation_to_bounds(
+                yolo_annotation, img_height, img_width
+            )
             if scenario.blur_inside and (
                 class_id in self.settings["sensitive_classes"]
             ):
-                image = blurring_tools.blur_inside_yolo_box(
-                    image, yolo_annotation, self.settings["blur_kernel_size_inside"]
+                image = blurring_tools.blur_inside_bounds(
+                    image, annotation_bounds, self.settings["blur_kernel_size_inside"]
                 )
             if scenario.blur_outside and (class_id == self.settings["target_class"]):
-                image = blurring_tools.blur_outside_yolo_box(
+                image = blurring_tools.blur_outside_bounds(
                     image,
-                    yolo_annotation,
+                    annotation_bounds,
                     self.settings["blur_kernel_size_outside"],
                     self.settings["blur_outside_padding"],
                 )
             if scenario.crop and (class_id == self.settings["target_class"]):
-                image = blurring_tools.crop_outside_yolo_box(
+                image = blurring_tools.crop_outside_bounds(
                     image,
-                    yolo_annotation,
+                    annotation_bounds,
                     self.settings["crop_padding"],
                     scenario.fill_bg,
                 )
             if scenario.draw_box and (class_id == self.settings["target_class"]):
-                image = blurring_tools.draw_yolo_box(image, yolo_annotation)
+                image = blurring_tools.draw_box_from_bounds(image, annotation_bounds)
         return image
 
     def process_folder(
