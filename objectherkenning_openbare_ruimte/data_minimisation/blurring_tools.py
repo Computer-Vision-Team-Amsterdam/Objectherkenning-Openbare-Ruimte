@@ -45,7 +45,7 @@ def yolo_annotation_to_bounds(
 
 def blur_inside_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[int, int, int, int]],
+    boxes: List[Tuple[float, float, float, float]],
     blur_kernel_size: int = 165,
     box_padding: int = 0,
 ) -> npt.NDArray[np.int_]:
@@ -56,7 +56,7 @@ def blur_inside_boxes(
     ----------
     image : numpy.ndarray
         The image to blur.
-    boxes : List[Tuple[int, int, int, int]]
+    boxes : List[Tuple[float, float, float, float]]
         Bounding box(es) of the area(s) to blur, in the format (xmin, ymin, xmax, ymax).
     blur_kernel_size : int (default: 165)
         Kernel size (used for both width and height) for GaussianBlur.
@@ -72,7 +72,7 @@ def blur_inside_boxes(
     img_height, img_width, _ = image.shape
 
     for box in boxes:
-        x_min, y_min, x_max, y_max = box
+        x_min, y_min, x_max, y_max = map(int, box)
 
         x_min = max(0, x_min - box_padding)
         y_min = max(0, y_min - box_padding)
@@ -91,7 +91,7 @@ def blur_inside_boxes(
 
 def blur_outside_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[int, int, int, int]],
+    boxes: List[Tuple[float, float, float, float]],
     blur_kernel_size: int = 165,
     box_padding: int = 0,
 ) -> npt.NDArray[np.int_]:
@@ -102,7 +102,7 @@ def blur_outside_boxes(
     ----------
     image : numpy.ndarray
         The image to blur.
-    boxes : List[Tuple[int, int, int, int]]
+    boxes : List[Tuple[float, float, float, float]]
         Bounding box(es) outside which to blur, in the format (xmin, ymin, xmax, ymax).
     blur_kernel_size : int (default: 165)
         Kernel size (used for both width and height) for GaussianBlur.
@@ -119,7 +119,7 @@ def blur_outside_boxes(
     blurred_image = cv2.GaussianBlur(image, (blur_kernel_size, blur_kernel_size), 0)
 
     for box in boxes:
-        x_min, y_min, x_max, y_max = box
+        x_min, y_min, x_max, y_max = map(int, box)
 
         x_min = max(0, x_min - box_padding)
         y_min = max(0, y_min - box_padding)
@@ -134,7 +134,7 @@ def blur_outside_boxes(
 
 def crop_outside_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[int, int, int, int]],
+    boxes: List[Tuple[float, float, float, float]],
     box_padding: int = 0,
     fill_bg: bool = False,
 ) -> List[npt.NDArray[np.int_]]:
@@ -148,7 +148,7 @@ def crop_outside_boxes(
     ----------
     image : numpy.ndarray
         The image to blur.
-    boxes : List[Tuple[int, int, int, int]]
+    boxes : List[Tuple[float, float, float, float]]
         Bounding box(es) of the area(s) to crop, in the format (xmin, ymin, xmax, ymax).
     box_padding : int (default: 0)
         Optional: increase box by this amount of pixels before cropping.
@@ -168,7 +168,7 @@ def crop_outside_boxes(
         cropped_images.append(np.ones_like(image) * 255)
 
     for box in boxes:
-        x_min, y_min, x_max, y_max = box
+        x_min, y_min, x_max, y_max = map(int, box)
 
         x_min = max(0, x_min - box_padding)
         y_min = max(0, y_min - box_padding)
@@ -188,7 +188,7 @@ def crop_outside_boxes(
 
 def draw_bounding_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[int, int, int, int]],
+    boxes: List[Tuple[float, float, float, float]],
     colours: List[Tuple[int, int, int]] = [(0, 0, 255)],
     box_padding: int = 0,
     line_thickness: int = 2,
@@ -200,7 +200,7 @@ def draw_bounding_boxes(
     ----------
     image : numpy.ndarray
         The image to draw on.
-    boxes : List[Tuple[int, int, int, int]]
+    boxes : List[Tuple[float, float, float, float]]
         Bounding box(es) to draw, in the format (xmin, ymin, xmax, ymax).
     colours : List[Tuple[int, int, int]] (default: [(0, 0, 255)])
         Optional: list of colours for each bounding box, in the format (255, 255, 255)
