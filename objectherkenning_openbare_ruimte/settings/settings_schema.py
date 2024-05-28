@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 
@@ -50,12 +50,21 @@ class InferenceModelParameters(SettingsSpecModel):
     save_conf_flag: bool = False
 
 
+class DefisheyeParameters(SettingsSpecModel):
+    camera_matrix: List[List[float]]
+    distortion_params: List[List[float]]
+    input_image_size: Tuple[int, int]
+
+
 class DetectionPipelineSpec(SettingsSpecModel):
     images_path: str
     detections_path: str
     model_name: str
     pretrained_model_path: str
     inference_params: InferenceModelParameters
+    defisheye_params: DefisheyeParameters
+    target_classes: List[int]
+    sensitive_classes: List[int]
 
 
 class DataSampling(SettingsSpecModel):

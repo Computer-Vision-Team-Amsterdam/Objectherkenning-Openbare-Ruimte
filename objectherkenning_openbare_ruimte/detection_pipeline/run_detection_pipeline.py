@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 from datetime import datetime
 
 from objectherkenning_openbare_ruimte.detection_pipeline.components.data_detection import (
@@ -22,6 +23,9 @@ if __name__ == "__main__":
         model_name=settings["detection_pipeline"]["model_name"],
         pretrained_model_path=settings["detection_pipeline"]["pretrained_model_path"],
         inference_params=settings["detection_pipeline"]["inference_params"],
+        defisheye_params=settings["detection_pipeline"]["defisheye_params"],
+        target_classes=settings["detection_pipeline"]["target_classes"],
+        sensitive_classes=settings["detection_pipeline"]["sensitive_classes"],
     )
     while True:
         try:
@@ -31,4 +35,5 @@ if __name__ == "__main__":
             detection_pipeline.run_pipeline()
         except Exception as e:
             logger.info(f"Exception occurred in container detection: {e}")
+            logger.debug(traceback.format_exc())
         time.sleep(30)
