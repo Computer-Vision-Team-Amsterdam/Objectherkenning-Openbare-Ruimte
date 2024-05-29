@@ -59,7 +59,7 @@ class SignalConnectionConfigurer:
             environment = environment_tag.get("value")
             if environment == "Productie":
                 self.access_token_url = "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
-                self.base_url = "https://api.meldingen.amsterdam.nl/signals/"
+                self.base_url = "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
                 self.client_secret_name = "sia-password-prd"
             elif environment == "Ontwikkel":
                 self.access_token_url = "https://acc.iam.amsterdam.nl/auth/realms/datapunt-ad-acc/protocol/openid-connect/token"
