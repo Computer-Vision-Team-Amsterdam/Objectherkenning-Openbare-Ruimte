@@ -1,6 +1,7 @@
 import os
 import sys
 
+import torch
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
 from ultralytics import YOLO
@@ -108,6 +109,37 @@ def run_inference(
 
         print("Tracking complete. Results saved.")
     else:
+        print('Tracking flag is set to "False". Running detection only.')
         model = YOLO(model=pretrained_model_path, task="detect")
 
-        results = model(**params)
+        def process_batches(model, inference_params, image_paths, batch_size):
+            results = []
+            for i in range(0, len(image_paths), batch_size):
+                batch_paths = image_paths[i : i + batch_size]
+                inference_params["source"] = batch_paths
+                try:
+                    batch_results = model(**inference_params)
+                    results.extend(batch_results)
+                    torch.cuda.empty_cache()  # Clear unused memory
+                except RuntimeError as e:
+                    if "out of memory" in str(e):
+                        print("Out of memory with batch size of {}".format(batch_size))
+                        if batch_size > 1:
+                            new_batch_size = batch_size // 2
+                            print(
+                                "Trying smaller batch size: {}".format(new_batch_size)
+                            )
+                            return process_batches(
+                                model, inference_params, image_paths, new_batch_size
+                            )
+                        else:
+                            raise RuntimeError(
+                                "Out of memory with the smallest batch size"
+                            )
+                    else:
+                        raise e
+            return results
+
+    params["show_labels"] = False
+    results = process_batches(model, params, image_paths, batch_size=32)
+    print(results)

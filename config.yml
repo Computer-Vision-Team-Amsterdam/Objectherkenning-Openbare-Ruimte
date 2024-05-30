@@ -8,21 +8,21 @@ aml_experiment_details:
 
 inference_pipeline:
   detection_params:
-    img_size: 1024
+    img_size: 1920
     conf: 0.4
     save_img_flag: True
-    save_txt_flag: False
-    save_conf_flag: True
+    save_txt_flag: True
+    save_conf_flag: False
   inputs:
-    datastore_path: "new_dataset_oor"
-    inference_data_rel_path: "velotech_smaller_sample"
+    datastore_path: "second_batch_prelabeling_new_dataset_oor"
+    inference_data_rel_path: "second-batch-new-dataset-oor/images/"
     model_weights_rel_path: "model"
-    model_name: "yolov8s_coco_nc_5_best.pt"
+    model_name: "best_yolov8m_1920_norect_500_100.pt"
     tracker: "botsort.yaml"
   outputs:
-    project_rel_path: "model/inference_run_no_labels_test_batch_new"
+    project_rel_path: "model/inference_run_second_batch_new"
   tracking_params:
-    tracking_flag: True
+    tracking_flag: False
     tracking_persist_flag: True
     tracking_classes: [2,3,4]
 
