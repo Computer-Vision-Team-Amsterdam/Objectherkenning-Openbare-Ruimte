@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import pathlib
+import shutil
 from typing import Dict, List
 
 import cv2
@@ -74,7 +75,7 @@ class DataDetection:
         )
         logger.info(f"Number of CSVs to detect: {len(metadata_csv_file_paths)}")
         self._detect_and_blur(metadata_csv_file_paths=metadata_csv_file_paths)
-        # self._delete_data(videos_and_frames=videos_and_frames)
+        self._delete_data(metadata_csv_file_paths=metadata_csv_file_paths)
 
     @staticmethod
     def _get_frame_metadata_csv_file_paths(root_folder):
@@ -96,28 +97,49 @@ class DataDetection:
             csv_path = pathlib.Path(metadata_csv_file_path)
             relative_path = csv_path.relative_to(self.images_folder)
             images_path = pathlib.Path(self.images_folder) / relative_path.parent
+            detections_path = (
+                pathlib.Path(self.detections_folder) / relative_path.parent
+            )
 
             with open(metadata_csv_file_path) as frame_metadata_file:
                 reader = csv.reader(frame_metadata_file)
+                _ = next(reader)
+                processed_images_count = target_objects_detected_count = 0
                 for idx, row in enumerate(reader):
-                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.jpg")
+                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.png")
                     image_full_path = images_path / image_file_name
                     if os.path.isfile(image_full_path):
                         image = cv2.imread(str(image_full_path))
-                        image = self._defisheye(image)
+                        # image = self._defisheye(image)
                         self.inference_params["source"] = image
                         self.inference_params["name"] = csv_path.stem
                         detection_results = self.model(**self.inference_params)
-                        logger.debug(f"Result YOLO: {detection_results}")
-                        torch.cuda.empty_cache()  # Clear unused memory
-                        image_detection_path = (
-                            pathlib.Path(self.detections_folder) / relative_path.parent
+                        # logger.debug(f"Result YOLO: {detection_results}")
+                        torch.cuda.empty_cache()
+                        target_objects_detected_count += sum(
+                            len(
+                                np.where(
+                                    np.in1d(
+                                        model_result.cpu().boxes.numpy().cls,
+                                        self.target_classes,
+                                    )
+                                )[0]
+                            )
+                            for model_result in detection_results
                         )
+
                         self._process_results(
                             detection_results,
-                            str(image_detection_path),
+                            str(detections_path),
                             image_file_name,
                         )
+                        processed_images_count += 1
+            if target_objects_detected_count:
+                shutil.copyfile(csv_path, os.path.join(detections_path, csv_path.name))
+            logger.info(
+                f"Processed {processed_images_count} images from {metadata_csv_file_path}, "
+                f"detected {target_objects_detected_count} containers."
+            )
 
     def _defisheye(self, image):
         if self.roi is None or self.mapx is None or self.mapy is None:
@@ -147,7 +169,7 @@ class DataDetection:
         return img_dst
 
     @staticmethod
-    def _get_annotion_string_from_boxes(boxes: Boxes) -> str:
+    def _get_annotation_string_from_boxes(boxes: Boxes) -> str:
         boxes = boxes.cpu()
 
         annotation_lines = []
@@ -171,6 +193,7 @@ class DataDetection:
             boxes = result.boxes.numpy()
 
             target_idxs = np.where(np.in1d(boxes.cls, self.target_classes))[0]
+            logger.info(f"target_idxs {target_idxs}")
             if len(target_idxs) == 0:  # Nothing to do!
                 logger.debug("No container detected, not storing the image.")
                 return False
@@ -194,7 +217,7 @@ class DataDetection:
             logger.debug("Saved image.")
 
             # Save annotation
-            annotation_str = self._get_annotion_string_from_boxes(boxes[target_idxs])
+            annotation_str = self._get_annotation_string_from_boxes(boxes[target_idxs])
             annotation_path = os.path.join(
                 image_detection_path, f"{image_file_name.stem}.txt"
             )
@@ -203,8 +226,7 @@ class DataDetection:
 
             return True
 
-    @staticmethod
-    def _delete_data(videos_and_frames: Dict[str, List[str]]):
+    def _delete_data(self, metadata_csv_file_paths):
         """
         Deletes the data that has been processed.
 
@@ -213,9 +235,21 @@ class DataDetection:
         videos_and_frames
             List containing the paths of the images to delete.
         """
-        batch_count = 0
-        for video_name, images_paths in videos_and_frames.items():
-            for image_path in images_paths:
-                delete_file(image_path)
-                batch_count += 1
-        logger.info(f"Number of images deleted: {batch_count}")
+        for metadata_csv_file_path in metadata_csv_file_paths:
+            csv_path = pathlib.Path(metadata_csv_file_path)
+            relative_path = csv_path.relative_to(self.images_folder)
+            images_path = pathlib.Path(self.images_folder) / relative_path.parent
+            with open(metadata_csv_file_path) as frame_metadata_file:
+                images_deleted_count = 0
+                reader = csv.reader(frame_metadata_file)
+                _ = next(reader)
+                for idx, row in enumerate(reader):
+                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.png")
+                    image_full_path = images_path / image_file_name
+                    if os.path.isfile(image_full_path):
+                        delete_file(image_full_path)
+                        images_deleted_count += 1
+            delete_file(metadata_csv_file_path)
+            logger.info(
+                f"Deleted {images_deleted_count} images from {metadata_csv_file_path}"
+            )
