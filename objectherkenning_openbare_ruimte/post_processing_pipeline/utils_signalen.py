@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-
+from databricks.sdk.runtime import *
 import json
 import requests
 from typing import Any, Dict, List, Optional
@@ -38,22 +38,26 @@ class SignalConnectionConfigurer:
         self.access_token_url = None
         self.base_url = None
 
-        self._set_tags_from_spark_conf()
+        self.spark = SparkSession.builder \
+            .appName("OOR") \
+            .getOrCreate()
+
+        #self._set_tags_from_spark_conf()
         self._set_connection_details()
 
-    def _set_tags_from_spark_conf(self):
-       self.tags = spark.conf.get("spark.databricks.clusterUsageTags.clusterAllTags")
+    # def _set_tags_from_spark_conf(self):
+    #    self.tags = spark.conf.get("spark.databricks.clusterUsageTags.clusterAllTags")
 
     def _set_connection_details(self) -> Optional[Dict[str, str]]:
-        try:
-            tags_json = json.loads(self.tags)
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
-            return None
+        # try:
+        #     tags_json = json.loads(self.tags)
+        # except json.JSONDecodeError as e:
+        #     print(f"Error decoding JSON: {e}")
+        #     return None
 
-        environment_tag = next((tag for tag in tags_json if tag.get("key") == "environment"), None)
+        # environment_tag = next((tag for tag in tags_json if tag.get("key") == "environment"), None)
 
-        # environment_tag = {"value": "Ontwikkel"}
+        environment_tag = {"value": "Ontwikkel"}
 
         if environment_tag:
             environment = environment_tag.get("value")
