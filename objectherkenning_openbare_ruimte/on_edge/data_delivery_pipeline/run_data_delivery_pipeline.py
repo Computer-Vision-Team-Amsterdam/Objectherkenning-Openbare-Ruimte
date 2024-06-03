@@ -3,7 +3,7 @@ import time
 import traceback
 from datetime import datetime
 
-from objectherkenning_openbare_ruimte.data_delivery_pipeline.components.data_delivery import (
+from objectherkenning_openbare_ruimte.on_edge.data_delivery_pipeline.components.data_delivery import (
     DataDelivery,
 )
 from objectherkenning_openbare_ruimte.settings.luna_logging import setup_luna_logging
@@ -19,7 +19,6 @@ if __name__ == "__main__":
     data_delivery_pipeline = DataDelivery(
         detections_folder=settings["data_delivery_pipeline"]["detections_path"],
         metadata_folder=settings["data_delivery_pipeline"]["metadata_path"],
-        images_folder=settings["detection_pipeline"]["images_path"],
     )
     while True:
         try:

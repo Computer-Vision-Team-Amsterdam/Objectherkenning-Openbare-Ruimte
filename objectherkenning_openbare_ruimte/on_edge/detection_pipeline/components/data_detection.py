@@ -12,8 +12,11 @@ from cvtoolkit.helpers.file_helpers import delete_file
 from ultralytics import YOLO
 from ultralytics.engine.results import Boxes
 
-from objectherkenning_openbare_ruimte.detection_pipeline.components import (
+from objectherkenning_openbare_ruimte.on_edge.detection_pipeline.components import (
     blurring_tools,
+)
+from objectherkenning_openbare_ruimte.on_edge.utils import (
+    get_frame_metadata_csv_file_paths,
 )
 
 logger = logging.getLogger("detection_pipeline")
@@ -70,26 +73,12 @@ class DataDetection:
             - deletes the raw images.
         """
         logger.info(f"Running container detection pipeline on {self.images_folder}..")
-        metadata_csv_file_paths = self._get_frame_metadata_csv_file_paths(
+        metadata_csv_file_paths = get_frame_metadata_csv_file_paths(
             root_folder=self.images_folder
         )
         logger.info(f"Number of CSVs to detect: {len(metadata_csv_file_paths)}")
         self._detect_and_blur(metadata_csv_file_paths=metadata_csv_file_paths)
         self._delete_data(metadata_csv_file_paths=metadata_csv_file_paths)
-
-    @staticmethod
-    def _get_frame_metadata_csv_file_paths(root_folder):
-        csvs = []
-        for foldername, subfolders, filenames in os.walk(root_folder):
-            for filename in filenames:
-                if (
-                    filename.endswith("csv")
-                    and filename != "runs.csv"
-                    and filename != "system_metrics.csv"
-                ):
-                    filepath = os.path.join(foldername, filename)
-                    csvs.append(filepath)
-        return csvs
 
     def _detect_and_blur(self, metadata_csv_file_paths):
         for metadata_csv_file_path in metadata_csv_file_paths:

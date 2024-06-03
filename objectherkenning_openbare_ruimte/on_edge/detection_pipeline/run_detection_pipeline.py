@@ -3,7 +3,7 @@ import time
 import traceback
 from datetime import datetime
 
-from objectherkenning_openbare_ruimte.detection_pipeline.components.data_detection import (
+from objectherkenning_openbare_ruimte.on_edge.detection_pipeline.components.data_detection import (
     DataDetection,
 )
 from objectherkenning_openbare_ruimte.settings.luna_logging import setup_luna_logging

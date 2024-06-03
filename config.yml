@@ -26,7 +26,7 @@ convert_annotations:
 
 data_delivery_pipeline:
   detections_path: "/detections"
-  metadata_path: "/raw_frames"
+  metadata_path: "/temp_metadata"
 
 detection_pipeline:
   images_path: "/raw_frames"
