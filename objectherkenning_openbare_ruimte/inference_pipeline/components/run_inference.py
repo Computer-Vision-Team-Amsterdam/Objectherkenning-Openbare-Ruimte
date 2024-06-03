@@ -1,15 +1,16 @@
 import os
 import sys
 
-import torch
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
-from ultralytics import YOLO
 
 sys.path.append("../../..")
 
 from cvtoolkit.helpers.file_helpers import find_image_paths  # noqa: E402
 
+from objectherkenning_openbare_ruimte.inference_pipeline.source.data_inference import (  # noqa: E402
+    DataInference,
+)
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -44,102 +45,56 @@ def run_inference(
     detection_params = settings["inference_pipeline"]["detection_params"]
     tracking_flag = settings["inference_pipeline"]["tracking_params"]["tracking_flag"]
 
-    params = {
-        "source": image_paths,
-        "imgsz": detection_params.get("img_size", 640),
-        "save": detection_params.get("save_img_flag", False),
-        "save_txt": detection_params.get("save_txt_flag", False),
-        "save_conf": detection_params.get("save_conf_flag", False),
-        "conf": detection_params.get("conf", 0.25),
-        "project": project_path,
-    }
-
     if tracking_flag:
         tracker = settings["inference_pipeline"]["inputs"]["tracker"]
         tracker_path = os.path.join(model_weights, tracker)
         tracking_persist_flag = settings["inference_pipeline"]["tracking_params"][
             "tracking_persist_flag"
         ]
-        tracking_classes = settings["inference_pipeline"]["tracking_params"][
-            "tracking_classes"
-        ]
 
-        labels_dir = os.path.join(project_path, "labels_manual")
-        os.makedirs(labels_dir, exist_ok=True)
+        detection_params["persist"] = tracking_persist_flag
+        detection_params["tracker"] = tracker_path
 
-        model = YOLO(model=pretrained_model_path, task="track")
+    inference_pipeline = DataInference(
+        images_folder=image_paths,
+        inference_folder=project_path,
+        model_name=model_name,
+        pretrained_model_path=pretrained_model_path,
+        inference_params=detection_params,
+        target_classes=[2, 3, 4],
+        sensitive_classes=[0, 1],
+        tracking_flag=tracking_flag,
+    )
 
-        params["persist"] = tracking_persist_flag
-        params["tracker"] = tracker_path
+    inference_pipeline.run_pipeline()
 
-        results = model.track(**params)
 
-        for result in results:
-            image_path = result.path  # Path of the input image
-            image_name = os.path.basename(image_path)
-            label_file = os.path.join(
-                labels_dir, f"{os.path.splitext(image_name)[0]}.txt"
-            )
-
-            with open(label_file, "w") as f:
-                for box in result.boxes:
-                    class_id = int(box.cls)
-                    if class_id in tracking_classes:
-                        bbox = box.xywhn.tolist()[0]
-                        track_id = box.id if hasattr(box, "id") else None
-
-                        x_center, y_center, width, height = (
-                            float(bbox[0]),
-                            float(bbox[1]),
-                            float(bbox[2]),
-                            float(bbox[3]),
-                        )
-                        bbox_str = (
-                            f"{x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}"
-                        )
-                        conf_score = float(box.conf)
-                        conf_score_str = f"{conf_score:.6f}"
-
-                        if track_id is not None:
-                            line = f"{class_id} {bbox_str} {conf_score_str} {int(track_id)}\n"
-                        else:
-                            line = f"{class_id} {bbox_str} {conf_score_str} -1\n"
-
-                        f.write(line)
-
-        print("Tracking complete. Results saved.")
-    else:
-        print('Tracking flag is set to "False". Running detection only.')
-        model = YOLO(model=pretrained_model_path, task="detect")
-
-        def process_batches(model, inference_params, image_paths, batch_size):
-            results = []
-            for i in range(0, len(image_paths), batch_size):
-                batch_paths = image_paths[i : i + batch_size]
-                inference_params["source"] = batch_paths
-                try:
-                    batch_results = model(**inference_params)
-                    results.extend(batch_results)
-                    torch.cuda.empty_cache()  # Clear unused memory
-                except RuntimeError as e:
-                    if "out of memory" in str(e):
-                        print("Out of memory with batch size of {}".format(batch_size))
-                        if batch_size > 1:
-                            new_batch_size = batch_size // 2
-                            print(
-                                "Trying smaller batch size: {}".format(new_batch_size)
-                            )
-                            return process_batches(
-                                model, inference_params, image_paths, new_batch_size
-                            )
-                        else:
-                            raise RuntimeError(
-                                "Out of memory with the smallest batch size"
-                            )
-                    else:
-                        raise e
-            return results
-
-    params["show_labels"] = False
-    results = process_batches(model, params, image_paths, batch_size=32)
-    print(results)
+# labels_dir = os.path.join(project_path, "labels_manual")
+# os.makedirs(labels_dir, exist_ok=True)
+#
+# if tracking_flag:
+#    tracker = settings["inference_pipeline"]["inputs"]["tracker"]
+#    tracker_path = os.path.join(model_weights, tracker)
+#    tracking_persist_flag = settings["inference_pipeline"]["tracking_params"][
+#        "tracking_persist_flag"
+#    ]
+#    tracking_classes = settings["inference_pipeline"]["tracking_params"][
+#        "tracking_classes"
+#    ]
+#
+#    model = YOLO(model=pretrained_model_path, task="track")
+#
+#    params["persist"] = tracking_persist_flag
+#    params["tracker"] = tracker_path
+#    results = model.track(**params)
+#    processing_tools.process_tracking_results(results, labels_dir, tracking_classes)
+# else:
+#    print('Tracking flag is set to "False". Running detection only.')
+#    model = YOLO(model=pretrained_model_path, task="detect")
+#    params["show_labels"] = False
+#    sensitive_classes = [0,1]
+#    target_classes = [2,3,4]
+#    batch_size = 32
+#    image_dir = os.path.join(project_path, "images_manual")
+#    os.makedirs(image_dir, exist_ok=True)
+#    results = processing_tools.process_batches(model, params, image_paths, batch_size, image_dir, labels_dir, sensitive_classes, target_classes)"""
