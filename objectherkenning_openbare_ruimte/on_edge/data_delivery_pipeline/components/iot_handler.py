@@ -97,6 +97,7 @@ class IoTHandler:
                     result.status_code,
                     str(result),
                 )
+                raise Exception(result)
 
     @staticmethod
     def _store_blob(blob_info: Dict[str, str], file_name: str):

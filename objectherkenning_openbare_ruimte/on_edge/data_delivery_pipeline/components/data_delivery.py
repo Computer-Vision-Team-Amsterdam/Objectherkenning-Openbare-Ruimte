@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import pathlib
+from typing import List
 
 from cvtoolkit.helpers.file_helpers import delete_file
 
@@ -34,6 +35,7 @@ class DataDelivery:
         self.iot_settings = ObjectherkenningOpenbareRuimteSettings.get_settings()[
             "azure_iot"
         ]
+        self.metadata_csv_file_paths_with_errors: List[str] = []
 
     def run_pipeline(self):
         """
@@ -189,6 +191,7 @@ class DataDelivery:
                 logger.error(
                     f"Exception during the delivery of: {metadata_csv_file_path}: {e}"
                 )
+                self.metadata_csv_file_paths_with_errors.append(metadata_csv_file_path)
 
     def _delete_data(self, metadata_csv_file_paths):
         """
@@ -199,7 +202,9 @@ class DataDelivery:
         metadata_csv_file_paths
 
         """
-        for metadata_csv_file_path in metadata_csv_file_paths:
+        for metadata_csv_file_path in list(
+            set(metadata_csv_file_paths) - set(self.metadata_csv_file_paths_with_errors)
+        ):
             (
                 csv_path,
                 relative_path,

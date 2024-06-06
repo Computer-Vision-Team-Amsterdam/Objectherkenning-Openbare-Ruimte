@@ -3,6 +3,8 @@ import os
 from datetime import datetime
 from typing import Any, Dict
 
+from aml_interface.azure_logging import AzureLoggingConfigurer
+
 
 def setup_luna_logging(logging_cfg: Dict[str, Any], logging_file_path: str):
     """
@@ -27,8 +29,7 @@ def setup_luna_logging(logging_cfg: Dict[str, Any], logging_file_path: str):
     os.makedirs(os.path.dirname(logging_file_path), exist_ok=True)
     with open(logging_file_path, "w") as f:
         f.write(f"Starting logging: {datetime.now()}")
-    logging.basicConfig(**logging_cfg["basic_config"])
 
-    for pkg in logging_cfg["own_packages"]:
-        logging.getLogger(pkg).setLevel(logging_cfg["loglevel_own"])
-        logging.getLogger(pkg).addHandler(logging.StreamHandler())
+    logging.basicConfig(**logging_cfg["basic_config"])
+    azure_logging_configurer = AzureLoggingConfigurer(logging_cfg, __name__)
+    azure_logging_configurer.setup_oor_logging()
