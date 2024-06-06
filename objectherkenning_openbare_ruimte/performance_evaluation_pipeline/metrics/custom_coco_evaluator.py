@@ -68,6 +68,9 @@ class CustomCOCOeval:
         """
         if not iouType:
             print("iouType not specified. use default iouType segm")
+        if not iouType == "bbox":
+            print("iouType must be `bbox` with this custom version!")
+            return
         self.cocoGt = cocoGt  # ground truth COCO API
         self.cocoDt = cocoDt  # detections COCO API
         self.evalImgs = defaultdict(
@@ -254,7 +257,7 @@ class CustomCOCOeval:
                 ious[i, j] = np.sum(np.exp(-e)) / e.shape[0]
         return ious
 
-    def evaluateImg(self, imgId, catId, aRng, maxDet):
+    def evaluateImg(self, imgId, catId, aRngDict, maxDet):
         """
         perform evaluation for single category and image
         :return: dict (single image results)
@@ -269,6 +272,10 @@ class CustomCOCOeval:
         if len(gt) == 0 and len(dt) == 0:
             return None
 
+        if "all" in aRngDict.keys():
+            aRng = aRngDict["all"]
+        else:
+            aRng = aRngDict[catId]
         for g in gt:
             if g["ignore"] or (g["area"] < aRng[0] or g["area"] > aRng[1]):
                 g["_ignore"] = 1
@@ -575,10 +582,10 @@ class Params:
         # changed from [1, 10, 100]
         self.maxDets = [10, 100, 300]
         self.areaRng = [
-            [0**2, 1e5**2],
-            [0**2, 32**2],
-            [32**2, 96**2],
-            [96**2, 1e5**2],
+            {"areaRngLbl": "all", "all": (0**2, 1e5**2)},
+            {"areaRngLbl": "small", "all": (0**2, 32**2)},
+            {"areaRngLbl": "medium", "all": (32**2, 96**2)},
+            {"areaRngLbl": "large", "all": (96**2, 1e5**2)},
         ]
         self.areaRngLbl = ["all", "small", "medium", "large"]
         self.useCats = 1
