@@ -463,15 +463,18 @@ class CustomCOCOeval:
         toc = time.time()
         print("DONE (t={:0.2f}s).".format(toc - tic))
 
-    def summarize(self):
+    def summarize(self, print_summary=True):
         """
         Compute and display summary metrics for evaluation results.
         Note this functin can *only* be applied on the default parameter setting
         """
 
-        def _summarize(ap=1, iouThr=None, areaRng="all", maxDets=100):
+        def _summarize(
+            ap=1, iouThr=None, areaRng="all", maxDets=self.params.maxDets[-1]
+        ):
             p = self.params
-            iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.3f}"
+            # iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.3f}"
+            iStr = " {:<18} {} @[ IoU={:<9} | area={:>6s} ] = {:0.3f}"
             titleStr = "Average Precision" if ap == 1 else "Average Recall"
             typeStr = "(AP)" if ap == 1 else "(AR)"
             iouStr = (
@@ -501,14 +504,16 @@ class CustomCOCOeval:
                 mean_s = -1
             else:
                 mean_s = np.mean(s[s > -1])
-            print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
+            if print_summary:
+                # print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
+                print(iStr.format(titleStr, typeStr, iouStr, areaRng, mean_s))
             return mean_s
 
         def _summarizeDets():
             stats = np.zeros((12,))
-            stats[0] = _summarize(1)
-            stats[1] = _summarize(1, iouThr=0.5, maxDets=self.params.maxDets[2])
-            stats[2] = _summarize(1, iouThr=0.75, maxDets=self.params.maxDets[2])
+            stats[0] = _summarize(1, maxDets=self.params.maxDets[2])
+            stats[1] = _summarize(1, iouThr=0.75, maxDets=self.params.maxDets[2])
+            stats[2] = _summarize(1, iouThr=0.5, maxDets=self.params.maxDets[2])
             ### added iouThr arg
             stats[3] = _summarize(
                 1, iouThr=0.5, areaRng="small", maxDets=self.params.maxDets[2]
@@ -520,9 +525,11 @@ class CustomCOCOeval:
                 1, iouThr=0.5, areaRng="large", maxDets=self.params.maxDets[2]
             )
             ###
-            stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
-            stats[7] = _summarize(0, maxDets=self.params.maxDets[1])
-            stats[8] = _summarize(0, maxDets=self.params.maxDets[2])
+            # stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
+            # stats[7] = _summarize(0, maxDets=self.params.maxDets[1])
+            stats[6] = _summarize(0, maxDets=self.params.maxDets[2])
+            stats[7] = _summarize(0, iouThr=0.75, maxDets=self.params.maxDets[2])
+            stats[8] = _summarize(0, iouThr=0.5, maxDets=self.params.maxDets[2])
 
             ###
             stats[9] = _summarize(
@@ -553,6 +560,11 @@ class CustomCOCOeval:
 
         if not self.eval:
             raise Exception("Please run accumulate() first")
+        if len(self.params.catLbls) != len(self.params.catIds):
+            print("Note: params.catLbls do not match params.catIds")
+            self.params.catLbls = self.params.catIds
+        self.params.catLbls = map(str, self.params.catLbls)
+        print(f"Summarizing statistics for classes: [{', '.join(self.params.catLbls)}]")
         iouType = self.params.iouType
         if iouType == "segm" or iouType == "bbox":
             summarize = _summarizeDets
@@ -572,6 +584,7 @@ class Params:
     def setDetParams(self):
         self.imgIds = []
         self.catIds = []
+        self.catLbls = []
         # np.arange causes trouble.  the data point on arange is slightly larger than the true value
         self.iouThrs = np.linspace(
             0.5, 0.95, int(np.round((0.95 - 0.5) / 0.05)) + 1, endpoint=True
@@ -580,7 +593,7 @@ class Params:
             0.0, 1.00, int(np.round((1.00 - 0.0) / 0.01)) + 1, endpoint=True
         )
         # changed from [1, 10, 100]
-        self.maxDets = [10, 100, 300]
+        self.maxDets = [1, 10, 500]
         self.areaRng = [
             {"areaRngLbl": "all", "all": (0**2, 1e5**2)},
             {"areaRngLbl": "small", "all": (0**2, 32**2)},
