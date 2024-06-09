@@ -5,7 +5,7 @@ from typing import Dict, Iterable, Tuple
 import numpy as np
 import numpy.typing as npt
 from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 sys.path.append("../../..")
 
@@ -85,8 +85,10 @@ class EvaluatePixelWise:
         ground_truth_path: str,
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
+        hide_progress: bool = False,
     ):
         self.img_shape = image_shape
+        self.tqdm_disable = True if hide_progress else None
         img_area = self.img_shape[0] * self.img_shape[1]
         self.gt_dataset = YoloLabelsDataset(
             folder_path=ground_truth_path, image_area=img_area
@@ -99,6 +101,7 @@ class EvaluatePixelWise:
         self,
         true_labels: Dict[str, npt.NDArray],
         predicted_labels: Dict[str, npt.NDArray],
+        tqdm_prefix: str = "",
     ):
         """
         Calculates per pixel statistics (tp, tn, fp, fn, precision, recall, f1 score)
@@ -119,7 +122,9 @@ class EvaluatePixelWise:
 
         (img_width, img_height) = self.img_shape
 
-        for image_id in tqdm(true_labels.keys(), total=len(true_labels)):
+        for image_id in tqdm(
+            true_labels.keys(), desc=tqdm_prefix, unit="img", disable=self.tqdm_disable
+        ):
             tba_true_mask = generate_binary_mask(
                 true_labels[image_id][:, 1:5],
                 image_width=img_width,
@@ -178,9 +183,12 @@ class EvaluatePixelWise:
                     .get_filtered_labels()
                 )
 
+                tqdm_prefix = f"{target_class.name}, {box_size_name}"
                 results[f"{target_class.name}_{box_size_name}"] = (
                     self._get_per_pixel_statistics(
-                        true_target_class_size, predicted_target_class
+                        true_labels=true_target_class_size,
+                        predicted_labels=predicted_target_class,
+                        tqdm_prefix=tqdm_prefix,
                     )
                 )
 

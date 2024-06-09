@@ -1,3 +1,5 @@
+import json
+import pathlib
 from enum import Enum
 from typing import Dict, List, Tuple
 
@@ -16,10 +18,10 @@ class ObjectClass(Enum):
 
 
 class BoxSize:
+    all: Tuple[float, float] = (0.0, 1.0)
     small: Tuple[float, float]
     medium: Tuple[float, float]
     large: Tuple[float, float]
-    all: Tuple[float, float] = (0.0, 1.0)
 
     def __init__(self, bounds: Tuple[float, float] = (0.005, 0.01)):
         self.small = (0.0, bounds[0])
@@ -42,10 +44,10 @@ class BoxSize:
             return {"all": self.all}
         else:
             return {
+                "all": self.all,
                 "small": self.small,
                 "medium": self.medium,
                 "large": self.large,
-                "all": self.all,
             }
 
     def __repr__(self) -> str:
@@ -123,3 +125,28 @@ def generate_binary_mask(
             mask[y_min[i] : y_max[i], x_min[i] : x_max[i]] = 1
 
     return mask
+
+
+def predictions_to_coco_json(
+    predictions_folder: str, image_shape: Tuple[int, int], json_file: str
+):
+    annotation_data = []
+    for pred_file in pathlib.Path(predictions_folder).glob("*.txt"):
+        with open(pred_file) as f:
+            for annotation in f.readlines():
+                cat, xn, yn, wn, hn, score = map(float, annotation.strip().split())
+                width = wn * image_shape[0]
+                height = hn * image_shape[1]
+                x = (xn * image_shape[0]) - (width / 2)
+                y = (yn * image_shape[1]) - (height / 2)
+                annotation_data.append(
+                    {
+                        "image_id": pred_file.stem,
+                        "category_id": int(cat),
+                        "bbox": [x, y, width, height],
+                        "score": score,
+                    }
+                )
+
+    with open(json_file, "w") as f:
+        f.write(json.dumps(annotation_data))
