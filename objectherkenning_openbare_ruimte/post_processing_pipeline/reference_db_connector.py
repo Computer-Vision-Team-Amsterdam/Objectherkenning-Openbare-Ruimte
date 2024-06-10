@@ -5,6 +5,7 @@ import psycopg2
 from pyspark.sql import SparkSession
  
 class ReferenceDatabaseConnector(ABC):
+
     def __init__(self, az_tenant_id, db_scope, db_host, db_name, db_port):
         self.az_tenant_id = az_tenant_id
         self.db_scope = db_scope
@@ -46,6 +47,27 @@ class ReferenceDatabaseConnector(ABC):
     @abstractmethod
     def run_query(self, conn, query):
         pass
+
+    @abstractmethod
+    def process_query_results(self, rows, colnames):
+        """
+        Process the results of the query.
+        """
+        pass
+
+    def run_query(self, conn, query):
+        """
+        Run the SQL query and process the results.
+        """
+        try:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+            cursor.close()
+            self.process_query_results(rows, colnames)
+        except psycopg2.Error as e:
+            print(f"Error executing query: {e}")
 
     def run(self, query):
         """

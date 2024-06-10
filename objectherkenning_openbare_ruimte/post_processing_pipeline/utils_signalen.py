@@ -7,7 +7,7 @@ from databricks.sdk.runtime import *
 import json
 import requests
 from typing import Any, Dict, List, Optional
-
+from databricks_workspace import get_catalog_name
 
 class SignalConnectionConfigurer:
     """
@@ -52,7 +52,7 @@ class SignalConnectionConfigurer:
             return None
 
         environment_tag = next((tag for tag in tags_json if tag.get("key") == "environment"), None)
-
+ 
         #environment_tag = {"value": "Ontwikkel"}
 
         if environment_tag:
@@ -101,6 +101,9 @@ class SignalHandler:
         self.base_url: str = signalConnectionConfigurer.get_base_url()
         access_token = signalConnectionConfigurer.get_access_token()
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}
+
+        self.catalog_name = get_catalog_name()
+
 
     def get_signal(self, sig_id: str) -> Any:
         """

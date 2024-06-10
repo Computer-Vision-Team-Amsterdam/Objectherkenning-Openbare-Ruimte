@@ -1,9 +1,9 @@
-
+from databricks_workspace import get_catalog_name
     
 class Clustering:
 
     def __init__(self, environment, date):
-        self.catalog = "dpcv_dev" if environment == "dev" else "dpcv_prd"
+        self.catalog = get_catalog_name()
         self.schema = "oor"
         self.detection_metadata = spark.read.table(f'{self.catalog}.{self.schema}.bronze_detection_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
         self.frame_metadata = spark.read.table(f'{self.catalog}.{self.schema}.bronze_frame_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
