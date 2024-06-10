@@ -45,7 +45,7 @@ class DataDeliveryPipelineSpec(SettingsSpecModel):
 
 class DataMinimisation(SettingsSpecModel):
     sensitive_classes: List[int]
-    target_class: int
+    target_classes: List[int]
     blur_kernel_size_outside: int
     blur_kernel_size_inside: int
     blur_outside_padding: int

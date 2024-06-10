@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import cv2
 import numpy as np
@@ -6,7 +6,7 @@ import numpy.typing as npt
 
 
 def yolo_annotation_to_bounds(
-    yolo_annotation: str, img_height: int, img_width: int
+    yolo_annotation: str, img_shape: Tuple[int, int]
 ) -> Tuple[int, int, int, int]:
     """
     Convert YOLO annotation with normalized values to absolute bounds.
@@ -16,10 +16,8 @@ def yolo_annotation_to_bounds(
     yolo_annotation : str
         YOLO annotation string in the format:
         "<class_id> <x_center_norm> <y_center_norm> <w_norm> <h_norm>".
-    img_height : int
-        Height of the image.
-    img_width : int
-        Width of the image.
+    img_shape : Tuple[int, int]
+        Image dimensions as tuple (width, height)
 
     Returns
     -------
@@ -27,13 +25,13 @@ def yolo_annotation_to_bounds(
         A tuple (x_min, y_min, x_max, y_max).
     """
     _, x_center_norm, y_center_norm, w_norm, h_norm = map(
-        float, yolo_annotation.split()
+        float, yolo_annotation.split()[0:5]
     )
 
-    x_center_abs = x_center_norm * img_width
-    y_center_abs = y_center_norm * img_height
-    w_abs = w_norm * img_width
-    h_abs = h_norm * img_height
+    x_center_abs = x_center_norm * img_shape[0]
+    y_center_abs = y_center_norm * img_shape[1]
+    w_abs = w_norm * img_shape[0]
+    h_abs = h_norm * img_shape[1]
 
     x_min = int(x_center_abs - (w_abs / 2))
     y_min = int(y_center_abs - (h_abs / 2))
@@ -45,7 +43,7 @@ def yolo_annotation_to_bounds(
 
 def blur_inside_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[float, float, float, float]],
+    boxes: Union[List[Tuple[float, float, float, float]], npt.NDArray[np.float_]],
     blur_kernel_size: int = 165,
     box_padding: int = 0,
 ) -> npt.NDArray[np.int_]:
@@ -91,7 +89,7 @@ def blur_inside_boxes(
 
 def blur_outside_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[float, float, float, float]],
+    boxes: Union[List[Tuple[float, float, float, float]], npt.NDArray[np.float_]],
     blur_kernel_size: int = 165,
     box_padding: int = 0,
 ) -> npt.NDArray[np.int_]:
@@ -134,7 +132,7 @@ def blur_outside_boxes(
 
 def crop_outside_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[float, float, float, float]],
+    boxes: Union[List[Tuple[float, float, float, float]], npt.NDArray[np.float_]],
     box_padding: int = 0,
     fill_bg: bool = False,
 ) -> List[npt.NDArray[np.int_]]:
@@ -188,7 +186,7 @@ def crop_outside_boxes(
 
 def draw_bounding_boxes(
     image: npt.NDArray[np.int_],
-    boxes: List[Tuple[float, float, float, float]],
+    boxes: Union[List[Tuple[float, float, float, float]], npt.NDArray[np.float_]],
     colours: List[Tuple[int, int, int]] = [(0, 0, 255)],
     box_padding: int = 0,
     line_thickness: int = 2,

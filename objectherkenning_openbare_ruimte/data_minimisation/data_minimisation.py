@@ -3,7 +3,7 @@ import os
 import pathlib
 import sys
 from enum import Enum
-from typing import List, Tuple
+from typing import Dict, Tuple
 
 import cv2
 import numpy as np
@@ -57,7 +57,7 @@ class DataMinimisation:
     @staticmethod
     def load_image_and_annotations(
         image_path, annotations_folder
-    ) -> Tuple[npt.NDArray[np.int_], List[str]]:
+    ) -> Tuple[npt.NDArray[np.int_], Dict[str, npt.NDArray[np.float_]]]:
         """
         Load an image and the corresponding annotations.
 
@@ -70,24 +70,41 @@ class DataMinimisation:
 
         Returns
         -------
-        A tuple with the image as numpy array and annotations as list of strings.
+        A tuple with the image as numpy array and annotations as dict {"classes": np.ndarray, "bounds": np.ndarray}.
         """
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
 
         filename = pathlib.Path(image_path).stem
         label_file = os.path.join(annotations_folder, filename + ".txt")
+
+        classes = []
+        bounds = []
+
         if os.path.isfile(label_file):
             with open(label_file, "r") as file:
-                annotations = file.readlines()
-        else:
-            annotations = []
+                annotation_strings = file.readlines()
+                classes = [
+                    int(line.strip().split(sep=" ", maxsplit=1)[0])
+                    for line in annotation_strings
+                ]
+                bounds = [
+                    blurring_tools.yolo_annotation_to_bounds(
+                        line, (image.shape[1], image.shape[0])
+                    )
+                    for line in annotation_strings
+                ]
+
+        annotations = {
+            "classes": np.array(classes),
+            "bounds": np.array(bounds),
+        }
 
         return image, annotations
 
     def process_image(
         self,
         image: npt.NDArray[np.int_],
-        yolo_annotations: List[str],
+        yolo_annotations: Dict[str, npt.NDArray[np.float_]],
         scenario: Scenarios,
     ) -> npt.NDArray[np.int_]:
         """
@@ -99,8 +116,12 @@ class DataMinimisation:
         ----------
         image : numpy.NDArray
             The image to process.
-        yolo_annotations : list[str]
-            A list of annotation strings in YOLO format.
+        yolo_annotations : Dict[str, npt.NDArray[np.float_]]
+            A dictionary of annotation bounds as
+            {
+                "classes": numpy array of size (n_annotations,),
+                "bounds": numpy array of size (n_annotations, 4) containing [xmin, ymin, xmax, ymax]
+            }
         scenario : Scenarios instance
             The data minimisation scenario to apply.
 
@@ -109,37 +130,40 @@ class DataMinimisation:
         The processed image.
         """
         image = image.copy()
-        img_height, img_width, _ = image.shape
 
-        # TODO: process object classes one by one, grouped
-        for line in yolo_annotations:
-            yolo_annotation = line.strip()
-            class_id = int(yolo_annotation.split(sep=" ", maxsplit=1)[0])
-            annotation_bounds = blurring_tools.yolo_annotation_to_bounds(
-                yolo_annotation, img_height, img_width
-            )
-            if scenario.blur_inside and (
-                class_id in self.settings["sensitive_classes"]
-            ):
+        sensitive_idxs = np.where(
+            np.in1d(yolo_annotations["classes"], self.settings["sensitive_classes"])
+        )[0]
+        target_idxs = np.where(
+            np.in1d(yolo_annotations["classes"], self.settings["target_classes"])
+        )[0]
+
+        if len(sensitive_idxs) > 0:
+            if (len(sensitive_idxs) > 0) and scenario.blur_inside:
                 image = blurring_tools.blur_inside_boxes(
-                    image, [annotation_bounds], self.settings["blur_kernel_size_inside"]
+                    image,
+                    yolo_annotations["bounds"][sensitive_idxs],
+                    self.settings["blur_kernel_size_inside"],
                 )
-            if scenario.blur_outside and (class_id == self.settings["target_class"]):
+        if len(target_idxs) > 0:
+            if scenario.blur_outside:
                 image = blurring_tools.blur_outside_boxes(
                     image,
-                    [annotation_bounds],
+                    yolo_annotations["bounds"][target_idxs],
                     self.settings["blur_kernel_size_outside"],
                     self.settings["blur_outside_padding"],
                 )
-            if scenario.crop and (class_id == self.settings["target_class"]):
+            if scenario.crop:
                 image = blurring_tools.crop_outside_boxes(
                     image,
-                    [annotation_bounds],
+                    yolo_annotations["bounds"][target_idxs],
                     self.settings["crop_padding"],
                     scenario.fill_bg,
                 )[0]
-            if scenario.draw_box and (class_id == self.settings["target_class"]):
-                image = blurring_tools.draw_bounding_boxes(image, [annotation_bounds])
+            if scenario.draw_box:
+                image = blurring_tools.draw_bounding_boxes(
+                    image, yolo_annotations["bounds"][target_idxs]
+                )
         return image
 
     def process_folder(
@@ -174,10 +198,9 @@ class DataMinimisation:
                 img_file.as_posix(), annotations_folder
             )
 
-            if len(yolo_annotations) == 0:
+            if len(yolo_annotations["classes"]) == 0:
                 print("Nothing to blur!")
             else:
-                yolo_annotations = sorted(yolo_annotations)
                 for scenario in Scenarios:
                     print(f"--- Scenario {scenario.name} ---")
                     image = self.process_image(image_raw, yolo_annotations, scenario)
