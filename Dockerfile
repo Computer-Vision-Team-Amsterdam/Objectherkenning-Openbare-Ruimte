@@ -51,10 +51,14 @@ COPY model_artifacts/oor_model/yolov8s_coco_nc_5_best.pt model_artifacts/yolov8s
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
 COPY config.yml config.yml
 
-ARG AML_MODEL_ID_arg=1
-ENV AML_MODEL_ID=$AML_MODEL_ID_arg
+ARG ML_MODEL_ID_arg=1
+ENV ML_MODEL_ID=$ML_MODEL_ID_arg
 ARG PROJECT_VERSION_arg=1
 ENV PROJECT_VERSION=$PROJECT_VERSION_arg
+ARG SHARED_ACCESS_KEY_IOT_arg=1
+ENV SHARED_ACCESS_KEY_IOT=$SHARED_ACCESS_KEY_IOT_arg
+ARG AI_INSTRUMENTATION_KEY_arg=1
+ENV AI_INSTRUMENTATION_KEY=$AI_INSTRUMENTATION_KEY_arg
 
 COPY entrypoint.sh .
 
