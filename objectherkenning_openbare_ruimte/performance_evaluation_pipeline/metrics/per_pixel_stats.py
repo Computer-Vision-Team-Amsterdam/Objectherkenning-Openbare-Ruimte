@@ -86,9 +86,11 @@ class EvaluatePixelWise:
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
         hide_progress: bool = False,
+        upper_half: bool = False,
     ):
         self.img_shape = image_shape
         self.tqdm_disable = True if hide_progress else None
+        self.upper_half = upper_half
         img_area = self.img_shape[0] * self.img_shape[1]
         self.gt_dataset = YoloLabelsDataset(
             folder_path=ground_truth_path, image_area=img_area
@@ -129,6 +131,7 @@ class EvaluatePixelWise:
                 true_labels[image_id][:, 1:5],
                 image_width=img_width,
                 image_height=img_height,
+                consider_upper_half=self.upper_half,
             )
             if image_id in predicted_labels.keys():
                 pred_labels = predicted_labels[image_id][:, 1:5]
@@ -138,6 +141,7 @@ class EvaluatePixelWise:
                 pred_labels,
                 image_width=img_width,
                 image_height=img_height,
+                consider_upper_half=self.upper_half,
             )
 
             pixel_stats.update_statistics_based_on_masks(
