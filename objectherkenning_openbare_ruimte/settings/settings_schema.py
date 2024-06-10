@@ -109,6 +109,21 @@ class LoggingSpec(SettingsSpecModel):
     luna_logs_dir: str = ""
 
 
+class TrainingModelParameters(SettingsSpecModel):
+    img_size: int = 1024
+    batch: int = -1
+    epochs: int = 100
+    patience: int = 25
+    n_classes: int = 3
+    name_classes: List[str] = ["person", "license plate", "container"]
+
+
+class TrainingPipelineSpec(SettingsSpecModel):
+    model_parameters: TrainingModelParameters
+    inputs: Dict[str, str] = None
+    outputs: Dict[str, str] = None
+
+
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     class Config:
         extra = "forbid"
@@ -124,3 +139,4 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec
     logging: LoggingSpec = LoggingSpec()
+    training_pipeline: TrainingPipelineSpec = None

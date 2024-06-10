@@ -1,9 +1,9 @@
 customer: ""
 
 aml_experiment_details:
-  compute_name: cpu-blurring-model2
+  compute_name: oor-testing
   env_name: oor-environment
-  env_version: 2
+  env_version: 25
   src_dir: "."
 
 azure_iot:
@@ -79,6 +79,23 @@ frame_extraction:
   exclude_dirs: ["checkboard", "frames", "decos"]  # Do not check for MP4 in these dirs
   exclude_files: ["D17M02Y2024-H20M50S55"]  # Metadata for this file is invalid
   fps: 1
+
+training_pipeline:
+  model_parameters:
+    img_size: 1024
+    batch: -1
+    epochs: 100
+    patience: 25
+    n_classes: 3
+    name_classes: ["person", "license plate", "container"]
+  inputs:
+    datastore_path: "first_training_dataset_oor"
+    training_data_rel_path: "first-training-dataset-oor"
+    model_weights_rel_path: "model"
+    model_name: "yolov8m.pt"
+  outputs:
+    project_datastore_path: "first_training_dataset_oor"
+    project_rel_path: "model"
 
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`

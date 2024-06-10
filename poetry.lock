@@ -2,7 +2,7 @@
 name = "aml-interface"
 version = "1.1.0"
 description = "AML-Interface is developed with the purpose of simplifying the use of AzureML, adding an abstraction layer over repetitive AzureML functions."
-category = "dev"
+category = "main"
 optional = false
 python-versions = "~3.8"
 develop = false
@@ -20,7 +20,7 @@ resolved_reference = "0a5a8de9528ca963e75f674d3ec025adba425d9b"
 name = "attrs"
 version = "23.2.0"
 description = "Classes Without Boilerplate"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -34,9 +34,9 @@ tests-no-zope = ["attrs", "cloudpickle", "hypothesis", "pympler", "pytest-xdist"
 
 [[package]]
 name = "azure-ai-ml"
-version = "1.16.0"
+version = "1.16.1"
 description = "Microsoft Azure Machine Learning Client Library for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -69,17 +69,17 @@ mount = ["azureml-dataprep-rslex (>=2.22.0)"]
 name = "azure-common"
 version = "1.1.28"
 description = "Microsoft Azure Client Library for Python (Common)"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
 [[package]]
 name = "azure-core"
-version = "1.30.1"
+version = "1.30.2"
 description = "Microsoft Azure Core Library for Python"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 requests = ">=2.21.0"
@@ -105,18 +105,18 @@ msal-extensions = ">=0.3.0"
 
 [[package]]
 name = "azure-iot-device"
-version = "2.13.0"
+version = "2.13.1"
 description = "Microsoft Azure IoT Device Library"
 category = "main"
 optional = false
-python-versions = ">=3.7, <4"
+python-versions = "<4,>=3.7"
 
 [package.dependencies]
 deprecation = ">=2.1.0,<3.0.0"
 janus = "*"
 paho-mqtt = ">=1.6.1,<2.0.0"
 PySocks = "*"
-requests = ">=2.20.0,<3.0.0"
+requests = ">=2.20.0,<2.32.0"
 requests-unixsocket = ">=0.1.5,<1.0.0"
 typing-extensions = "*"
 urllib3 = ">=1.26.5,<1.27"
@@ -125,7 +125,7 @@ urllib3 = ">=1.26.5,<1.27"
 name = "azure-mgmt-core"
 version = "1.4.0"
 description = "Microsoft Azure Management Core Library for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -153,7 +153,7 @@ aio = ["azure-core[aio] (>=1.28.0)"]
 name = "azure-storage-file-datalake"
 version = "12.15.0"
 description = "Microsoft Azure File DataLake Storage Client Library for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 
@@ -170,7 +170,7 @@ aio = ["azure-core[aio] (>=1.28.0)"]
 name = "azure-storage-file-share"
 version = "12.16.0"
 description = "Microsoft Azure Azure File Share Storage Client Library for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 
@@ -193,7 +193,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "certifi"
-version = "2024.2.2"
+version = "2024.6.2"
 description = "Python package for providing Mozilla's CA Bundle."
 category = "main"
 optional = false
@@ -293,7 +293,7 @@ test-no-images = ["pytest", "pytest-cov", "wurlitzer"]
 
 [[package]]
 name = "coverage"
-version = "7.5.1"
+version = "7.5.3"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -307,7 +307,7 @@ toml = ["tomli"]
 
 [[package]]
 name = "cryptography"
-version = "42.0.7"
+version = "42.0.8"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
 category = "main"
 optional = false
@@ -429,7 +429,7 @@ test = ["fiona", "pytest (>=7)", "pytest-cov", "pytz"]
 
 [[package]]
 name = "fonttools"
-version = "4.51.0"
+version = "4.53.0"
 description = "Tools to manipulate font files"
 category = "main"
 optional = false
@@ -451,7 +451,7 @@ woff = ["zopfli (>=0.1.4)", "brotlicffi (>=0.8.0)", "brotli (>=1.0.1)"]
 
 [[package]]
 name = "fsspec"
-version = "2024.5.0"
+version = "2024.6.0"
 description = "File-system specification"
 category = "main"
 optional = false
@@ -463,6 +463,7 @@ adl = ["adlfs"]
 arrow = ["pyarrow (>=1)"]
 dask = ["dask", "distributed"]
 dev = ["pre-commit", "ruff"]
+doc = ["numpydoc", "sphinx", "sphinx-design", "sphinx-rtd-theme", "yarl"]
 dropbox = ["dropbox", "dropboxdrivefs", "requests"]
 full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "dask", "distributed", "dropbox", "dropboxdrivefs", "fusepy", "gcsfs", "libarchive-c", "ocifs", "panel", "paramiko", "pyarrow (>=1)", "pygit2", "requests", "s3fs", "smbprotocol", "tqdm"]
 fuse = ["fusepy"]
@@ -521,7 +522,7 @@ grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0.dev0)"]
 
 [[package]]
 name = "google-auth"
-version = "2.29.0"
+version = "2.30.0"
 description = "Google Authentication Library"
 category = "main"
 optional = false
@@ -541,14 +542,14 @@ requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.63.0"
+version = "1.63.1"
 description = "Common protobufs used in Google APIs"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<5.0.0.dev0"
+protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0.dev0"
 
 [package.extras]
 grpc = ["grpcio (>=1.44.0,<2.0.0.dev0)"]
@@ -663,7 +664,7 @@ i18n = ["Babel (>=2.7)"]
 name = "jsonschema"
 version = "4.22.0"
 description = "An implementation of JSON Schema validation for Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 
@@ -683,7 +684,7 @@ format-nongpl = ["fqdn", "idna", "isoduration", "jsonpointer (>1.13)", "rfc3339-
 name = "jsonschema-specifications"
 version = "2023.12.1"
 description = "The JSON Schema meta-schemas and vocabularies, exposed as a Registry"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 
@@ -709,9 +710,9 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "marshmallow"
-version = "3.21.2"
+version = "3.21.3"
 description = "A lightweight library for converting complex datatypes to and from native Python datatypes."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 
@@ -810,7 +811,7 @@ portalocker = [
 name = "msrest"
 version = "0.7.1"
 description = "AutoRest swagger generator Python client runtime."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -841,11 +842,11 @@ test = ["pytest (>=7.2)", "pytest-cov (>=4.0)", "codecov (>=2.1)"]
 
 [[package]]
 name = "nodeenv"
-version = "1.8.0"
+version = "1.9.1"
 description = "Node.js virtual environment builder"
 category = "main"
 optional = false
-python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*"
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 
 [[package]]
 name = "numpy"
@@ -948,7 +949,7 @@ python-versions = ">=3"
 
 [[package]]
 name = "nvidia-nvjitlink-cu12"
-version = "12.4.127"
+version = "12.5.40"
 description = "Nvidia JIT LTO Library"
 category = "main"
 optional = false
@@ -966,7 +967,7 @@ python-versions = ">=3"
 name = "oauthlib"
 version = "3.2.2"
 description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -1015,7 +1016,7 @@ requests = ">=2.19.0"
 name = "opencensus-ext-logging"
 version = "0.1.1"
 description = "OpenCensus logging Integration"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -1024,7 +1025,7 @@ opencensus = ">=0.8.0,<1.0.0"
 
 [[package]]
 name = "opencv-python"
-version = "4.9.0.80"
+version = "4.10.0.82"
 description = "Wrapper package for OpenCV python bindings."
 category = "main"
 optional = false
@@ -1040,11 +1041,11 @@ numpy = [
 
 [[package]]
 name = "packaging"
-version = "24.0"
+version = "24.1"
 description = "Core utilities for Python packages"
 category = "main"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [[package]]
 name = "paho-mqtt"
@@ -1126,7 +1127,7 @@ xmp = ["defusedxml"]
 name = "pkgutil-resolve-name"
 version = "1.3.10"
 description = "Resolve a name to an object."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -1423,7 +1424,7 @@ python-versions = ">=3.6"
 name = "referencing"
 version = "0.35.1"
 description = "JSON Referencing + Python"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 
@@ -1433,11 +1434,11 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "requests"
-version = "2.32.1"
+version = "2.31.0"
 description = "Python HTTP for Humans."
 category = "main"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 
 [package.dependencies]
 certifi = ">=2017.4.17"
@@ -1447,13 +1448,13 @@ urllib3 = ">=1.21.1,<3"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
-use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
+use_chardet_on_py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "requests-oauthlib"
 version = "2.0.0"
 description = "OAuthlib authentication support for Requests."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.4"
 
@@ -1479,7 +1480,7 @@ requests = ">=1.1"
 name = "rpds-py"
 version = "0.18.1"
 description = "Python bindings to Rust's persistent data structures (rpds)"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 
@@ -1587,7 +1588,7 @@ sqlcipher = ["sqlcipher3-binary"]
 name = "strictyaml"
 version = "1.7.3"
 description = "Strict, typed YAML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7.0"
 
@@ -1596,25 +1597,14 @@ python-dateutil = ">=2.6.0"
 
 [[package]]
 name = "sympy"
-version = "1.12"
+version = "1.12.1"
 description = "Computer algebra system (CAS) in Python"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 
 [package.dependencies]
-mpmath = ">=0.19"
-
-[[package]]
-name = "thop"
-version = "0.1.1.post2209072238"
-description = "A tool to count the FLOPs of PyTorch model."
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-torch = "*"
+mpmath = ">=1.1.0,<1.4.0"
 
 [[package]]
 name = "tomli"
@@ -1655,6 +1645,17 @@ typing-extensions = ">=4.8.0"
 [package.extras]
 opt-einsum = ["opt-einsum (>=3.3)"]
 optree = ["optree (>=0.9.1)"]
+
+[[package]]
+name = "torchaudio"
+version = "2.2.2"
+description = "An audio package for PyTorch"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+torch = "2.2.2"
 
 [[package]]
 name = "torchvision"
@@ -1707,7 +1708,7 @@ tutorials = ["matplotlib", "pandas", "tabulate", "torch"]
 
 [[package]]
 name = "typing-extensions"
-version = "4.11.0"
+version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 category = "main"
 optional = false
@@ -1723,7 +1724,7 @@ python-versions = ">=2"
 
 [[package]]
 name = "ultralytics"
-version = "8.2.18"
+version = "8.2.30"
 description = "Ultralytics YOLOv8 for SOTA object detection, multi-object tracking, instance segmentation, pose estimation and image classification."
 category = "main"
 optional = false
@@ -1740,17 +1741,29 @@ pyyaml = ">=5.3.1"
 requests = ">=2.23.0"
 scipy = ">=1.4.1"
 seaborn = ">=0.11.0"
-thop = ">=0.1.1"
 torch = ">=1.8.0"
 torchvision = ">=0.9.0"
 tqdm = ">=4.64.0"
+ultralytics-thop = ">=0.2.5"
 
 [package.extras]
-dev = ["ipython", "check-manifest", "pre-commit", "pytest", "pytest-cov", "coverage", "mkdocs (>=1.6.0)", "mkdocs-material (>=9.5.9)", "mkdocstrings", "mkdocs-jupyter", "mkdocs-redirects", "mkdocs-ultralytics-plugin (>=0.0.44)"]
+dev = ["ipython", "check-manifest", "pre-commit", "pytest", "pytest-cov", "coverage", "mkdocs (>=1.6.0)", "mkdocs-material (>=9.5.9)", "mkdocstrings", "mkdocs-jupyter", "mkdocs-redirects", "mkdocs-ultralytics-plugin (>=0.0.45)"]
 explorer = ["lancedb", "duckdb (<=0.9.2)", "streamlit"]
-export = ["onnx (>=1.12.0)", "openvino (>=2024.0.0)", "flatbuffers (>=23.5.26,<100)", "numpy (==1.23.5)", "h5py (!=3.11.0)", "coremltools (>=7.0)", "tensorflow (<=2.13.1)", "tensorflowjs (>=3.9.0)"]
+export = ["onnx (>=1.12.0)", "openvino (>=2024.0.0)", "tensorflow (>=2.0.0)", "tensorflowjs (>=3.9.0)", "keras", "flatbuffers (>=23.5.26,<100)", "numpy (==1.23.5)", "h5py (!=3.11.0)", "coremltools (>=7.0)"]
 extra = ["hub-sdk (>=0.0.5)", "ipython", "albumentations (>=1.4.6)", "pycocotools (>=2.0.7)"]
 logging = ["comet", "tensorboard (>=2.13.0)", "dvclive (>=2.12.0)"]
+
+[[package]]
+name = "ultralytics-thop"
+version = "0.2.8"
+description = "Ultralytics THOP package for fast computation of PyTorch model FLOPs and parameters."
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+numpy = "*"
+torch = "*"
 
 [[package]]
 name = "urllib3"
@@ -1784,20 +1797,20 @@ test = ["covdefaults (>=2.3)", "coverage-enable-subprocess (>=1)", "coverage (>=
 
 [[package]]
 name = "zipp"
-version = "3.18.2"
+version = "3.19.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
 category = "main"
 optional = false
 python-versions = ">=3.8"
 
 [package.extras]
-docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9.3)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
-testing = ["pytest (>=6,<8.1.0 || >=8.2.0)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-mypy", "pytest-enabler (>=2.2)", "pytest-ruff (>=0.2.1)", "jaraco.itertools", "jaraco.functools", "more-itertools", "big-o", "pytest-ignore-flaky", "jaraco.test"]
+doc = ["sphinx (>=3.5)", "jaraco.packaging (>=9.3)", "rst.linker (>=1.9)", "furo", "sphinx-lint", "jaraco.tidelift (>=1.4)"]
+test = ["pytest (>=6,<8.1.0 || >=8.2.0)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-mypy", "pytest-enabler (>=2.2)", "pytest-ruff (>=0.2.1)", "jaraco.itertools", "jaraco.functools", "more-itertools", "big-o", "pytest-ignore-flaky", "jaraco.test", "importlib-resources"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "99d2f01fee07cc38abf690f97caba9f2a38df264d96463068d63bf0c9faaf606"
+content-hash = "7b2c518652ac4e29e5628de08ddcf57979a22431c58e5cf577b2bab188b3a285"
 
 [metadata.files]
 aml-interface = []
@@ -1921,15 +1934,16 @@ six = []
 sqlalchemy = []
 strictyaml = []
 sympy = []
-thop = []
 tomli = []
 torch = []
+torchaudio = []
 torchvision = []
 tqdm = []
 triton = []
 typing-extensions = []
 tzdata = []
 ultralytics = []
+ultralytics-thop = []
 urllib3 = []
 virtualenv = []
 zipp = []

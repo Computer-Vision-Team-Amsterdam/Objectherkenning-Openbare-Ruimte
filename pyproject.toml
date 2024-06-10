@@ -24,8 +24,10 @@ pre-commit = {version = "^3.2.0", source = "PyPI"}
 py360convert-modified = {version = "^1.0.1", source = "PyPI"}
 pydantic = {version = "^1.8.2", source = "PyPI"}
 torch = {version = "2.2.2", source = "PyPI"}
+torchaudio = { version = "^2.2.1", source="PyPI"}
+torchvision = { version = "^0.17.1", source="PyPI"}
 ultralytics = {version = "^8.2.2", source = "PyPI"}
-pynvml = "^11.5.0"
+pynvml = {version = "^11.5.0", source = "PyPI"}
 
 [tool.poetry.dev-dependencies]
 aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.1.0" }
