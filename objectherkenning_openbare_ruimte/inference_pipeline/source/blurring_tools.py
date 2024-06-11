@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
@@ -189,12 +189,16 @@ def crop_outside_boxes(
 def draw_bounding_boxes(
     image: npt.NDArray[np.int_],
     boxes: List[Tuple[int, int, int, int]],
-    colours: List[Tuple[int, int, int]] = [(0, 0, 255)],
+    categories: List[int],
+    colours: Dict[int, Tuple[int, int, int]],
     box_padding: int = 0,
-    line_thickness: int = 2,
+    line_thickness: int = 3,
+    tracking_ids: List[int] = None,
+    font_scale: float = 0.7,
+    font_thickness: int = 2,
 ) -> npt.NDArray[np.int_]:
     """
-    Draw the given bounding box(es).
+    Draw the given bounding box(es) with optional tracking IDs.
 
     Parameters
     ----------
@@ -202,12 +206,20 @@ def draw_bounding_boxes(
         The image to draw on.
     boxes : List[Tuple[int, int, int, int]]
         Bounding box(es) to draw, in the format (xmin, ymin, xmax, ymax).
-    colours : List[Tuple[int, int, int]] (default: [(0, 0, 255)])
-        Optional: list of colours for each bounding box, in the format (255, 255, 255)
+    categories : List[int]
+        The category of each bounding box.
+    colours : Dict[int, Tuple[int, int, int]]
+        Dictionary of colours for each category, in the format {category: (255, 255, 255)}.
     box_padding : int (default: 0)
         Optional: increase box by this amount of pixels before drawing.
-    line_thickness : int (default: 2)
+    line_thickness : int (default: 3)
         Line thickness for the bounding box.
+    tracking_ids : List[int] (default: None)
+        Optional: list of tracking IDs for each bounding box. If not provided, no tracking IDs are drawn.
+    font_scale : float (default: 0.7)
+        Font scale for the text.
+    font_thickness : int (default: 2)
+        Thickness of the text.
 
     Returns
     -------
@@ -216,11 +228,10 @@ def draw_bounding_boxes(
     """
     img_height, img_width, _ = image.shape
 
-    if len(colours) < len(boxes):
-        difference = len(boxes) - len(colours)
-        colours.extend([colours[-1]] * difference)
+    for i, (box, category) in enumerate(zip(boxes, categories)):
+        color = colours[category]
+        print(f"Drawing a bounding box for category {category} with color {color}")
 
-    for colour, box in zip(colours, boxes):
         x_min, y_min, x_max, y_max = map(int, box)
 
         x_min = max(0, x_min - box_padding)
@@ -228,8 +239,31 @@ def draw_bounding_boxes(
         x_max = min(img_width, x_max + box_padding)
         y_max = min(img_height, y_max + box_padding)
 
-        # print(f"Drawing: {(x_min, y_min)} -> {(x_max, y_max)} in colour {colour}")
         image = cv2.rectangle(
-            image, (x_min, y_min), (x_max, y_max), colour, thickness=line_thickness
+            image, (x_min, y_min), (x_max, y_max), color, thickness=line_thickness
         )
+
+        if tracking_ids and tracking_ids[i] != -1:
+            text = f"ID: {tracking_ids[i]}"
+            (text_width, text_height), baseline = cv2.getTextSize(
+                text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness
+            )
+            cv2.rectangle(
+                image,
+                (x_min, y_min - text_height - baseline),
+                (x_min + text_width, y_min),
+                color,
+                thickness=cv2.FILLED,
+            )
+            cv2.putText(
+                image,
+                text,
+                (x_min, y_min - baseline),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                font_scale,
+                (255, 255, 255),
+                font_thickness,
+                lineType=cv2.LINE_AA,
+            )
+
     return image

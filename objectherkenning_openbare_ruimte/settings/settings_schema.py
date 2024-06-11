@@ -29,6 +29,7 @@ class InferencePipelineSpec(SettingsSpecModel):
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
     tracking_params: Dict[str, Any] = None
+    prelabeling_flag: bool = False
 
 
 class LoggingSpec(SettingsSpecModel):
