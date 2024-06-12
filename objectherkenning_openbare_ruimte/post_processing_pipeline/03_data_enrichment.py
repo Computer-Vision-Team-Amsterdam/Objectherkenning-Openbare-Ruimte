@@ -37,8 +37,20 @@ def get_catalog_name():
    
     return catalog_name  
 
+def calculate_score(bridge_distance: float, permit_distance: float) -> float:
+    """
+    Calculate score for bridge and permit distance;
+    """
+    if permit_distance >= 40 and bridge_distance < 25:
+        return 1 + max([(25 - bridge_distance) / 25, 0])
+    elif permit_distance >= 40 and bridge_distance >= 25:
+        return min(1.0, permit_distance / 100.0)
+    else:
+        return 0    
+
 from pyspark.sql.functions import monotonically_increasing_id, row_number
 from pyspark.sql import Window
+from pyspark.sql.types import StructType, StructField, StringType, FloatType
 
 class Clustering:
 
@@ -100,8 +112,9 @@ class Clustering:
         return containers_coordinates_geometry
 
     # why is this operation so complicated!?    
-    def add_column(self, column_name, values):
+    def add_column(self, column_name, values, data_type=StringType()):
 
+        schema=StructType([StructField(column_name, data_type, True)])
         # Ensure the length of the values matches the number of rows in the dataframe
         if len(values) != self.df_joined.count():
             raise ValueError("The length of the list does not match the number of rows in the dataframe")
@@ -134,6 +147,7 @@ class ReferenceDatabaseConnector(ABC):
         self.az_login_password = dbutils.secrets.get(scope=self.db_scope, key="app-reg-refdb-key")
         self.spn_refDb_username = dbutils.secrets.get(scope=self.db_scope, key="referenceDatabaseSpnUsername")
         self.spn_refDb_password = None
+        self._query_result_df = None # set in run_query()
 
     def azure_login(self):
         command = [
@@ -165,10 +179,11 @@ class ReferenceDatabaseConnector(ABC):
     def run_query(self, conn, query):
         pass
 
+
     @abstractmethod
-    def process_query_results(self, rows, colnames):
+    def create_dataframe(self, rows, colnames):
         """
-        Process the results of the query.
+        Create dataframe from query result.
         """
         pass
 
@@ -182,7 +197,7 @@ class ReferenceDatabaseConnector(ABC):
             rows = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             cursor.close()
-            self.process_query_results(rows, colnames)
+            self._query_result_df = self.create_dataframe(rows, colnames)
         except psycopg2.Error as e:
             print(f"Error executing query: {e}")
 
@@ -200,6 +215,8 @@ class ReferenceDatabaseConnector(ABC):
         except Exception as e:
             print(f"Error: {e}")
 
+    def get_query_result_df(self):
+        return self.query_result_df
 
 import pandas as pd
 from difflib import get_close_matches
@@ -210,12 +227,16 @@ from abc import ABC, abstractmethod
 import json
 import subprocess
 import psycopg2 
+from shapely.geometry import LineString, Point
+import numpy as np
 
-class DecosDataConnector(ReferenceDatabaseConnector):
+class DecosDataHandler(ReferenceDatabaseConnector):
 
     def __init__(self, az_tenant_id, db_scope, db_host, db_name, db_port):
         super().__init__(az_tenant_id, db_scope, db_host, db_name, db_port)
         self.catalog_name = get_catalog_name()  
+
+        self.query_result_df = None
 
     def is_container_permit(self, objects):
         """
@@ -233,21 +254,38 @@ class DecosDataConnector(ReferenceDatabaseConnector):
 
         return False
 
-    def process_query_results(self, rows, colnames):
+    def process_query_result(self):
         """
         Process the results of the query.
         """
-        df = self.create_dataframe(rows, colnames)
         
-        df['objecten'] = df['objecten'].apply(lambda x: json.loads(x) if x else [])
-        df = df[df['objecten'].apply(self.is_container_permit)] # Only keep rows with permits about containers
-        df = df[df['locatie'].notnull()] # Only keep rows where location of the permit is not null
-        addresses = df["locatie"].tolist()  # Get list of permit addresses in BAG format
-        df = self.add_permit_coordinates_columns(df, addresses)  # Add new columns for lat lon coordinates of permits
-        #self.write_null_coordinates_to_quarantine_table(df)
-        self.write_healthy_df_to_table(df)
-        self.display_dataframe(df)       
-   
+        self.query_result_df['objecten'] = self.query_result_df['objecten'].apply(lambda x: json.loads(x) if x else [])
+
+        # Only keep rows with permits about containers
+        self.query_result_df =  self.query_result_df[ self.query_result_df['objecten'].apply(self.is_container_permit)] 
+
+        # Only keep rows where location of the permit is not null
+        self.query_result_df = self.query_result_df[ self.query_result_df['locatie'].notnull()] 
+
+         # Get list of permit addresses in BAG format
+        addresses = self.query_result_df["locatie"].tolist() 
+
+        # Add new columns for lat lon coordinates of permits
+        self.query_result_df = self.add_permit_coordinates_columns(self.query_result_df, addresses)  
+
+        # Store rows where permit_lat and permit_lon are non null as healthy data
+        self._healthy_df = self.query_result_df[self.query_result_df['permit_lat'].notnull() & self.query_result_df['permit_lon'].notnull()]
+
+        # Store rows where permit_lat and permit_lon are null as quarantine data
+        self._quarantine_df = self.query_result_df[self.query_result_df['permit_lat'].isnull() | self.query_result_df['permit_lon'].isnull()]
+
+        self._permits_coordinates = self._extract_permits_coordinates()  
+        self._permits_coordinates_geometry = self._convert_coordinates_to_point()
+
+        #self.write_healthy_df_to_table()
+        #self.write_qurantine_df_to_table()
+
+    # TODO create the dataframe with spark!
     def create_dataframe(self, rows, colnames):
         """
         Create a DataFrame .
@@ -268,7 +306,8 @@ class DecosDataConnector(ReferenceDatabaseConnector):
             
         data = _load_columns_with_unsupported_data_type()
         df = pd.DataFrame(data, columns=colnames)
-        return df     
+        
+        self.query_result_df = df     
 
     def display_dataframe(self, df):
         """
@@ -301,7 +340,7 @@ class DecosDataConnector(ReferenceDatabaseConnector):
             if split_dutch_address:
                 street_and_number = split_dutch_address[0][0] + " " + split_dutch_address[0][1]
             else:
-                print(f"Warning: Unable to split Dutch street address using regex: {address}. Still trying to query the BAG API with the address...")
+                print(f"Warning: Unable to split Dutch street address using regex: {address}")
                 street_and_number = address
 
             with requests.get(bag_url + street_and_number) as response:
@@ -328,42 +367,105 @@ class DecosDataConnector(ReferenceDatabaseConnector):
         for address in addresses:
             coordinates = self.convert_address_to_coordinates(address)
             if coordinates:
-                latitudes.append(coordinates[0])
-                longitudes.append(coordinates[1])
+                longitudes.append(coordinates[0])
+                latitudes.append(coordinates[1])
             else: # None, because there was an exception while converting the address into coordinates
-                latitudes.append(None)
                 longitudes.append(None)
+                latitudes.append(None)
+                
         df["permit_lat"] = latitudes
         df["permit_lon"] = longitudes
         return df
     
-    def write_null_coordinates_to_quarantine_table(self, df):
+    def write_quarantine_df_to_table(self, df):
         """
         Write rows with null permit_lat or permit_lon to the 'quarantine' table in Databricks.
         
         Args:
         df (DataFrame): Input DataFrame containing the data.
         """
-        # Filter rows with null permit_lat or permit_lon
-        quarantine_df = df[df['permit_lat'].isnull() | df['permit_lon'].isnull()]
-
         # Write the filtered DataFrame to the 'quarantine' table in Databricks
         #quarantine_df.write.format("delta").mode("overwrite").saveAsTable("{env}.oor.{table_name_quarantine}")
 
-    def write_healthy_df_to_table(self, df):
+    def write_healthy_df_to_table(self, healthy_df):
         """
         Write rows with non-null permit_lat and permit_lon to the 'good' table in Databricks.
         
         Args:
         df (DataFrame): Input DataFrame containing the data.
         """
-        # Filter rows with non-null permit_lat and permit_lon
-        healthy_df = df[df['permit_lat'].notnull() & df['permit_lon'].notnull()]
-
         # Write the filtered DataFrame to the 'good' table in Databricks
         #healthy_df.write.format("delta").mode("overwrite").saveAsTable("{env}.oor.{table_name}")
 
+    def _extract_permits_coordinates(self):
+        # -----> for spark dataframes
+        # # Collect the DataFrame rows as a list of Row objects
+        # rows = self._healthy_df.select("permit_lat", "permit_lon").collect()
+    
+        # # Convert the list of Row objects into a list of tuples
+        # permits_coordinates = [(row['permit_lat'], row['permit_lon']) for row in rows]
 
+        # ------> for pandas dataframes
+
+        permits_coordinates = list(self._healthy_df[['permit_lat', 'permit_lon']].itertuples(index=False, name=None))
+
+        return permits_coordinates
+    
+    def get_permits_ids(self):
+        # -----> for spark dataframes
+        # # Collect the DataFrame rows as a list of Row objects
+        # rows = self._healthy_df.select("id").collect()
+
+        # # Convert the list of Row objects into a list of tuples
+        # permits_ids = [(row['id']) for row in rows]
+
+        # ------> for pandas dataframes
+        permits_ids = self._healthy_df['id'].tolist()
+
+        return permits_ids
+           
+    def _convert_coordinates_to_point(self):
+        """
+        We need the permits coordinates as Point to perform distance calculations
+        """
+        permits_coordinates_geometry = [Point(location) for location in self._permits_coordinates] 
+        return permits_coordinates_geometry    
+
+    def get_permits_coordinates(self):
+        return self._permits_coordinates
+    
+    def get_permits_coordinates_geometry(self):
+        return self._permits_coordinates_geometry
+    
+    def get_healthy_df(self):
+        return self._healthy_df
+
+    def get_quarantine_df(self):
+        return self._quarantine_df
+    
+    def calculate_distances_to_closest_permits(permits_locations_as_points: List[Point], permits_ids: str, containers_locations_as_points: List[Point]):
+        permit_distances = []
+        closest_permits = [] # TODO rename this!
+        for container_location in containers_locations_as_points:
+            closest_permit_distances = []
+            for permit_location in permits_locations_as_points:
+                try:
+                    permit_dist = geopy.distance.distance(container_location.coords, permit_location.coords).meters
+                except:
+                    permit_dist = 0
+                    print("Error occured:")
+                    print(f"Container location: {container_location}, {container_location.coords}")
+                    print(f"Permit location: {permit_location}, {permit_location.coords}")
+                closest_permit_distances.append(permit_dist)
+            permit_distances.append(np.amin(closest_permit_distances))
+            closest_permits.append(permits_ids[np.argmin(closest_permit_distances)])
+
+            # otherwise spark complains about float64 not being supported
+            permit_distances = [float(p) for p in permit_distances]
+
+        return permit_distances, closest_permits
+
+    
 import os
 import geojson
 from tqdm import tqdm
@@ -373,7 +475,7 @@ from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 import geopy.distance
 
-class BridgesCoordinatesParser:
+class VulnerableBridgesHandler:
     def __init__(self, file_path):
         self.file_path = file_path
         self._bridges_coordinates = []
@@ -442,62 +544,91 @@ class BridgesCoordinatesParser:
         ]
         return bridges_coordinates_geom
 
+    @staticmethod
+    def _line_to_point_in_meters(line: LineString, point: Point) -> float:
+        """
+        Calculates the shortest distance between a line and point, returns a float in meters
+        """
+        closest_point = nearest_points(line, point)[0]
+        closest_point_in_meters = float(geopy.distance.distance(closest_point.coords, point.coords).meters)
+        return closest_point_in_meters
 
-def calculate_distances_to_closest_vulnerable_bridges(bridges_locations_as_linestrings: List[LineString], containers_locations_as_points: List[Point]):
-    bridges_distances = []
-    for container_location in containers_locations_as_points:
-        bridge_container_distances = []
-        for bridge_location in bridges_locations_as_linestrings:
-            try:  
-                bridge_dist = calculate_distance_in_meters(bridge_location, container_location)
-            except:
-                bridge_dist = 10000
-                print("Error occured:")
-                print(f"Container location: {container_location}, {container_location.coords}")
-                print(f"Bridge location: {bridge_location}")
-            bridge_container_distances.append(bridge_dist)
-        closest_bridge_distance = min(bridge_container_distances)
-        bridges_distances.append(round(closest_bridge_distance, 2))    
-    return bridges_distances 
+    @staticmethod
+    def calculate_distances_to_closest_vulnerable_bridges(bridges_locations_as_linestrings: List[LineString], containers_locations_as_points: List[Point]):
+        bridges_distances = []
+        for container_location in containers_locations_as_points:
+            bridge_container_distances = []
+            for bridge_location in bridges_locations_as_linestrings:
+                try:  
+                    bridge_dist = VulnerableBridgesHandler._line_to_point_in_meters(bridge_location, container_location)
+                except:
+                    bridge_dist = 10000
+                    print("Error occured:")
+                    print(f"Container location: {container_location}, {container_location.coords}")
+                    print(f"Bridge location: {bridge_location}")
+                bridge_container_distances.append(bridge_dist)
+            closest_bridge_distance = min(bridge_container_distances)
+            bridges_distances.append(round(closest_bridge_distance, 2))    
+        return bridges_distances 
 
-def calculate_distance_in_meters(line: LineString, point: Point) -> float:
-    """
-    Calculates the shortest distance between a line and point, returns a float in meters
-    """
-    closest_point = nearest_points(line, point)[0]
-    closest_point_in_meters = float(geopy.distance.distance(closest_point.coords, point.coords).meters)
-    return closest_point_in_meters
+
 
 if __name__ == "__main__":
 
+    ########## SETUP ##########    
     # Setup clustering
     clustering = Clustering(date="D14M03Y2024")  
     containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
     
-    # Setup Bridges data
+    # Setup bridges data
     root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
     vuln_bridges_rel_path = "test-diana/vuln_bridges.geojson"
     file_path = f"{root_source}/{vuln_bridges_rel_path}"
-    parser = BridgesCoordinatesParser(file_path)
-    bridges_coordinates_geometry = parser.get_bridges_coordinates_geometry()
+    bridgesHandler = VulnerableBridgesHandler(file_path)
+    bridges_coordinates_geometry = bridgesHandler.get_bridges_coordinates_geometry()
+
+    # Setup permit data
+    az_tenant_id = "72fca1b1-2c2e-4376-a445-294d80196804"
+    db_scope = "keyvault"
+    db_host = "dev-bbn1-01-dbhost.postgres.database.azure.com"
+    db_name = "mdbdataservices"
+    db_port = "5432"
+ 
+    decosDataHandler = DecosDataHandler(az_tenant_id, db_scope, db_host, db_name, db_port)
+
+    ######### ENRICHMENTS ###########
 
     # Enrich with bridges data
-    closest_bridges_distances = calculate_distances_to_closest_vulnerable_bridges(bridges_locations_as_linestrings=bridges_coordinates_geometry,
-                                                                                  containers_locations_as_points=containers_coordinates_geometry)
-    clustering.add_column(column_name="closest_bridge_distance", 
-                          values=closest_bridges_distances)
+    closest_bridges_distances = VulnerableBridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
+        bridges_locations_as_linestrings=bridgesHandler.get_bridges_coordinates_geometry(),
+        containers_locations_as_points=clustering.get_containers_coordinates_geometry())
+    
+    clustering.add_column(column_name="closest_bridge_distance", values=closest_bridges_distances)
+
+    # Enrich with decos data
+    query = "SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '2024-02-17' AND datum_object_tm >= '2024-02-17'"
+    decosDataHandler.run(query)
+    query_result_df = decosDataHandler.get_query_result_df()
+    decosDataHandler.process_query_result()
+    permit_distances, closest_permits = DecosDataHandler.calculate_distances_to_closest_permits(
+        permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
+        permits_ids=decosDataHandler.get_permits_ids(),
+        containers_locations_as_points=containers_coordinates_geometry)
+
+    clustering.add_column(column_name="closest_permit_distance", values=permit_distances, data_type=FloatType())
+    clustering.add_column(column_name="closest_permit_id", values=closest_permits)
+
+    # Enrich with score 
+
+    scores = [
+            float(calculate_score(closest_bridges_distances[idx], permit_distances[idx]))
+            for idx in range(len(clustering.get_containers_coordinates()))
+        ]
+    clustering.add_column(column_name="score", values=scores)
+
     display(clustering.df_joined)
 
-    # # enrich with decos data 
-    # az_tenant_id = "72fca1b1-2c2e-4376-a445-294d80196804"
-    # db_scope = "keyvault"
-    # db_host = "dev-bbn1-01-dbhost.postgres.database.azure.com"
-    # db_name = "mdbdataservices"
-    # db_port = "5432"
-    # query = "SELECT id,kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '2024-02-17' AND datum_object_tm >= '2024-02-17'"
 
-    # connector = DecosDataConnector(az_tenant_id, db_scope, db_host, db_name, db_port)
-    # connector.run(query)
 
     
 
