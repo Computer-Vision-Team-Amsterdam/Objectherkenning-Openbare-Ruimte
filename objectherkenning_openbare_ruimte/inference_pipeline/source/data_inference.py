@@ -134,18 +134,7 @@ class DataInference:
         ]
         results = []
         for image_path in all_image_paths:
-            # result = self.model(image_path, **self.inference_params)
-            result = self.model(
-                image_path,
-                persist=self.inference_params["persist"],
-                tracker=self.inference_params["tracker"],
-                save=self.inference_params["save"],
-                save_txt=self.inference_params["save_txt"],
-                save_conf=self.inference_params["save_conf"],
-                conf=self.inference_params["conf"],
-                project=self.inference_folder,
-                imgsz=self.inference_params["imgsz"],
-            )
+            result = self.model.track(image_path, **self.inference_params)
             results.append(result)
         self._process_results_tracking(results)
 
@@ -156,18 +145,7 @@ class DataInference:
         results = []
         print(self.inference_params)
         for image_path in all_image_paths:
-            # result = self.model(image_path, **self.inference_params)
-            result = self.model(
-                image_path,
-                persist=self.inference_params["persist"],
-                tracker=self.inference_params["tracker"],
-                save=self.inference_params["save"],
-                save_txt=self.inference_params["save_txt"],
-                save_conf=self.inference_params["save_conf"],
-                conf=self.inference_params["conf"],
-                project=self.inference_folder,
-                imgsz=self.inference_params["imgsz"],
-            )
+            result = self.model.track(image_path, **self.inference_params)
             results.append(result)
         self._process_results_tracking_prelabeling(results)
 
