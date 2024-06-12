@@ -1,12 +1,18 @@
-from databricks_workspace import get_catalog_name
+import sys
+import os
+sys.path.append(os.path.abspath('..'))
+
+from helpers.databricks_workspace import get_catalog_name
+
     
 class Clustering:
 
-    def __init__(self, environment, date):
+    def __init__(self, date):
+        
         self.catalog = get_catalog_name()
         self.schema = "oor"
-        self.detection_metadata = spark.read.table(f'{self.catalog}.{self.schema}.bronze_detection_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
-        self.frame_metadata = spark.read.table(f'{self.catalog}.{self.schema}.bronze_frame_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
+        self.detection_metadata = self.park.read.table(f'{self.catalog}.{self.schema}.bronze_detection_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
+        self.frame_metadata = self.spark.read.table(f'{self.catalog}.{self.schema}.bronze_frame_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
         self.filter_objects_by_date(date)
         self.filter_objects_randomly()
 
@@ -30,11 +36,3 @@ class Clustering:
                     .withColumnRenamed("id", "detection_id")
 
         return renamed_df
-
-if __name__ == "__main__":
-    clustering = Clustering(environment="dev", date="D14M03Y2024")  
-    #clustering.detection_metadata.show()
-    #print(clustering.detection_metadata.count())
-    joined_df = clustering.combine_data()
-    display(joined_df)
-    

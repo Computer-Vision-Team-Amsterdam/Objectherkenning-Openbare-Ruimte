@@ -48,12 +48,3 @@ class BridgesCoordinatesParser:
                 bridges_coords.append(bridge_coords)
 
         return bridges_coords
-
-
-if __name__ == "__main__":
-    root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
-    vuln_bridges_rel_path = "test-diana/vuln_bridges.geojson"
-    file_path = f"{root_source}/{vuln_bridges_rel_path}"
-
-    parser = BridgesCoordinatesParser(file_path)
-    bridges = parser.parse_bridges_coordinates()

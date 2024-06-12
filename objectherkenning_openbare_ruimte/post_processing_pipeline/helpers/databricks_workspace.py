@@ -2,8 +2,10 @@ def get_databricks_environment():
     """
     Returns Productie, Ontwikkel or None based on the tags set in the subscription
     """
+
     tags = spark.conf.get("spark.databricks.clusterUsageTags.clusterAllTags")
-    tags_json = json.loads(tags)
+    try:
+        tags_json = json.loads(tags)
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
         return None

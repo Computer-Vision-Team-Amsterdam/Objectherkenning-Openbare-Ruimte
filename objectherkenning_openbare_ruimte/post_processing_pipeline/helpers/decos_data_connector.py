@@ -1,4 +1,3 @@
-import logging
 import pandas as pd
 from difflib import get_close_matches
 import requests
@@ -8,11 +7,9 @@ from abc import ABC, abstractmethod
 import json
 import subprocess
 import psycopg2
-from databricks_workspace import get_catalog_name
-from reference_db_connector import ReferenceDatabaseConnector
+from .databricks_workspace import get_catalog_name
+from .reference_db_connector import ReferenceDatabaseConnector
 
-# Suppress py4j INFO logs
-logging.getLogger("py4j").setLevel(logging.WARNING)
  
 class DecosDataConnector(ReferenceDatabaseConnector):
 
@@ -166,13 +163,3 @@ class DecosDataConnector(ReferenceDatabaseConnector):
 
         # Write the filtered DataFrame to the 'good' table in Databricks
         #healthy_df.write.format("delta").mode("overwrite").saveAsTable("{env}.oor.{table_name}")
-
-az_tenant_id = "72fca1b1-2c2e-4376-a445-294d80196804"
-db_scope = "keyvault"
-db_host = "dev-bbn1-01-dbhost.postgres.database.azure.com"
-db_name = "mdbdataservices"
-db_port = "5432"
-query = "SELECT id,kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '2024-02-17' AND datum_object_tm >= '2024-02-17'"
-
-connector = DecosDataConnector(az_tenant_id, db_scope, db_host, db_name, db_port)
-connector.run(query)

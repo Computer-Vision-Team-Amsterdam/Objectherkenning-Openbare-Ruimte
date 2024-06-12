@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import json
 import subprocess
 import psycopg2
-from pyspark.sql import SparkSession
+
  
 class ReferenceDatabaseConnector(ABC):
 
