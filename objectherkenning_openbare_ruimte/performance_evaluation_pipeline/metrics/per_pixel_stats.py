@@ -92,12 +92,22 @@ class EvaluatePixelWise:
         self.tqdm_disable = True if hide_progress else None
         self.upper_half = upper_half
         img_area = self.img_shape[0] * self.img_shape[1]
-        self.gt_dataset = YoloLabelsDataset(
-            folder_path=ground_truth_path, image_area=img_area
-        )
-        self.pred_dataset = YoloLabelsDataset(
-            folder_path=predictions_path, image_area=img_area
-        )
+        if ground_truth_path.endswith(".json"):
+            self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
+                yolo_val_json=ground_truth_path, image_shape=image_shape
+            )
+        else:
+            self.gt_dataset = YoloLabelsDataset(
+                folder_path=ground_truth_path, image_area=img_area
+            )
+        if predictions_path.endswith(".json"):
+            self.pred_dataset = YoloLabelsDataset.from_yolo_validation_json(
+                yolo_val_json=predictions_path, image_shape=image_shape
+            )
+        else:
+            self.pred_dataset = YoloLabelsDataset(
+                folder_path=predictions_path, image_area=img_area
+            )
 
     def _get_per_pixel_statistics(
         self,

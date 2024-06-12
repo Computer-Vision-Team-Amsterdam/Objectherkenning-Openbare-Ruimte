@@ -134,7 +134,7 @@ def predictions_to_coco_json(
     for pred_file in pathlib.Path(predictions_folder).glob("*.txt"):
         with open(pred_file) as f:
             for annotation in f.readlines():
-                cat, xn, yn, wn, hn, score = map(float, annotation.strip().split())
+                cat, xn, yn, wn, hn, score = map(float, annotation.strip().split()[0:6])
                 width = wn * image_shape[0]
                 height = hn * image_shape[1]
                 x = (xn * image_shape[0]) - (width / 2)
