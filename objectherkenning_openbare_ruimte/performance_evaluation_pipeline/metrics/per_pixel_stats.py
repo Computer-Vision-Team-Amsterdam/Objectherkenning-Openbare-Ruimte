@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, List, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -210,7 +210,8 @@ class EvaluatePixelWise:
 
     @staticmethod
     def store_tba_results(
-        results: Dict[str, Dict[str, float]],
+        results: Union[Dict[str, Dict[str, float]], List[Dict[str, Dict[str, float]]]],
+        model_name: Union[str, List[str]] = "Default",
         markdown_output_path: str = "tba_results.md",
     ):
         """
@@ -226,21 +227,30 @@ class EvaluatePixelWise:
         -------
 
         """
+        if not isinstance(results, list):
+            results = [results]
+        if not isinstance(model_name, list):
+            model_name = [model_name] * len(results)
+        elif len(model_name) != len(results):
+            print("Mismatch between 'results' and 'model_name': not the same length.")
+            return
+
         with open(markdown_output_path, "w") as f:
             f.write(
-                " Person Small | Person Medium | Person Large | Person ALL |"
+                " Model | Person Small | Person Medium | Person Large | Person ALL |"
                 " License Plate Small |  License Plate Medium  | License Plate Large | Licence Plate ALL |\n"
             )
             f.write(
-                "|----- | ----- |  ----- | ----- | ----- | ----- | ----- | ----- |\n"
+                "| ----- | ----- | ----- |  ----- | ----- | ----- | ----- | ----- | ----- |\n"
             )
+            for model, rslt in zip(model_name, results):
+                f.write(
+                    f'| {model} | {rslt["person_small"]["recall"]:.3f} | {rslt["person_medium"]["recall"]:.3f} '
+                    f'| {rslt["person_large"]["recall"]:.3f} | {rslt["person_all"]["recall"]:.3f} '
+                    f'| {rslt["license_plate_small"]["recall"]:.3f} | {rslt["license_plate_medium"]["recall"]:.3f} '
+                    f'| {rslt["license_plate_large"]["recall"]:.3f} | {rslt["license_plate_all"]["recall"]:.3f}\n'
+                )
             f.write(
-                f'| {results["person_small"]["recall"]} | {results["person_medium"]["recall"]} '
-                f'| {results["person_large"]["recall"]} | {results["person_all"]["recall"]} '
-                f'| {results["license_plate_small"]["recall"]} | {results["license_plate_medium"]["recall"]} '
-                f'| {results["license_plate_large"]["recall"]} | {results["license_plate_all"]["recall"]}\n\n'
-            )
-            f.write(
-                f"Thresholds used for these calculations: Person=`{BoxSize.from_objectclass(ObjectClass.person)}`, "
+                f"\nThresholds used for these calculations: Person=`{BoxSize.from_objectclass(ObjectClass.person)}`, "
                 f"License Plate=`{BoxSize.from_objectclass(ObjectClass.license_plate)}`."
             )
