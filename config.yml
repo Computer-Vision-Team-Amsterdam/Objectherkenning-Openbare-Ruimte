@@ -34,7 +34,7 @@ detection_pipeline:
   images_path: "/raw_frames"
   detections_path: "/detections"
   inference_params:
-    img_size: 1024
+    img_size: 1920ßß
     conf: 0.4
     save_img_flag: False
     save_txt_flag: False
