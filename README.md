@@ -47,10 +47,10 @@ docker pull multiarch/qemu-user-static
 docker run --rm --privileged multiarch/qemu-user-static:register --reset
 ```
 ```bash
-docker build . --platform linux/arm64 --pull --load -t {IMAGE_NAME} --build-arg ML_MODEL_ID_arg=ML_MODEL_ID --build-arg PROJECT_VERSION_arg=PROJECT_VERSION --build-arg SHARED_ACCESS_KEY_IOT_arg=SHARED_ACCESS_KEY_IOT --build-arg AI_INSTRUMENTATION_KEY_arg=AI_INSTRUMENTATION_KEY 
+docker build . --platform linux/arm64 --pull --load -t {IMAGE_NAME} --build-arg ML_MODEL_ID_arg=ML_MODEL_ID --build-arg PROJECT_VERSION_arg=PROJECT_VERSION
 docker save -o {PATH}/oor-docker-image.tar {IMAGE_NAME}
 ```
-Remember to replace with the correct values: ML_MODEL_ID, PROJECT_VERSION, SHARED_ACCESS_KEY_IOT, AI_INSTRUMENTATION_KEY.
+Remember to replace with the correct values: ML_MODEL_ID, PROJECT_VERSION.
 
 
 On the device:
@@ -71,5 +71,6 @@ sudo systemctl restart docker
 ```
 ```bash
 sudo docker load -i {TAR_IMAGE_PAHT}
-sudo docker run -d --mount type=bind,source={source_path},target=/cvt_logs  --mount type=bind,source={source_path},target=/raw_videos  --mount type=bind,source={source_path},target=/detections --mount type=bind,source={source_path},target=/raw_frames --gpus all --runtime nvidia acroorontweuitr01.azurecr.io/oor-model-arm64-v8 
+sudo docker run -d --mount type=bind,source={source_path},target=/cvt_logs  --mount type=bind,source={source_path},target=/raw_videos  --mount type=bind,source={source_path},target=/detections --mount type=bind,source={source_path},target=/raw_frames -e SHARED_ACCESS_KEY_IOT={SHARED_ACCESS_KEY_IOT} -e AI_INSTRUMENTATION_KEY={AI_INSTRUMENTATION_KEY}  --gpus all --runtime nvidia acroorontweuitr01.azurecr.io/oor-model-arm64-v8 
 ```
+Remember to replace with the correct values: SHARED_ACCESS_KEY_IOT, AI_INSTRUMENTATION_KEY.
