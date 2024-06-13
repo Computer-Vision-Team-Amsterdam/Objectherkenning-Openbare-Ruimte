@@ -99,7 +99,11 @@ class DataDetection:
                     image_full_path = images_path / image_file_name
                     if os.path.isfile(image_full_path):
                         image = cv2.imread(str(image_full_path))
-                        # image = self._defisheye(image)
+                        if self.inference_params["defisheye_flag"]:
+                            image = self._defisheye(image)
+                        image = cv2.resize(
+                            image, self.inference_params["output_image_size"]
+                        )
                         self.inference_params["source"] = image
                         self.inference_params["name"] = csv_path.stem
                         detection_results = self.model(**self.inference_params)
@@ -190,9 +194,12 @@ class DataDetection:
             image = result.orig_img.copy()
             sensitive_idxs = np.where(np.in1d(boxes.cls, self.sensitive_classes))[0]
 
-            # Blur sensitive data
-            sensitive_bounding_boxes = boxes[sensitive_idxs].xyxy
-            image = blurring_tools.blur_inside_boxes(image, sensitive_bounding_boxes)
+            if len(sensitive_idxs) > 0:
+                # Blur sensitive data
+                sensitive_bounding_boxes = boxes[sensitive_idxs].xyxy
+                image = blurring_tools.blur_inside_boxes(
+                    image, sensitive_bounding_boxes
+                )
 
             # Draw annotation boxes
             target_bounding_boxes = boxes[target_idxs].xyxy
