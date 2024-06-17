@@ -8,6 +8,7 @@ aml_experiment_details:
 
 inference_pipeline:
   detection_params:
+    batch_size: 1
     img_size: 1920
     conf: 0.4
     save_img_flag: False
@@ -18,13 +19,8 @@ inference_pipeline:
     inference_data_rel_path: "val"
     model_weights_rel_path: "model"
     model_name: "best_yolov8m_1920_norect_500_100.pt"
-    tracker: "botsort.yaml"
   outputs:
-    project_rel_path: "model/inference_run_inference_1920_val"
-  tracking_params:
-    tracking_flag: False
-    tracking_persist_flag: True
-    tracking_classes: [2]
+    project_rel_path: "model/inference_run_test_1920_val"
   prelabeling_flag: False
 
 logging:
@@ -32,7 +28,7 @@ logging:
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "inference_pipeline"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
-    level: WARNING
+    level: DEBUG
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
   ai_instrumentation_key: ""

@@ -1,24 +1,24 @@
 import os
 
-from azure.ai.ml import Input, Output
-from azure.ai.ml.constants import AssetTypes
-from azure.ai.ml.dsl import pipeline
+from aml_interface.azure_logging import AzureLoggingConfigurer  # noqa: E402
 
-from objectherkenning_openbare_ruimte.inference_pipeline.components.run_inference import (
-    run_inference,
-)
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
 
-# from aml_interface.azure_logging import setup_oor_logging  # noqa: E402
-
-
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
-# setup_oor_logging(settings["logging"], __name__)
+azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
+azure_logging_configurer.setup_oor_logging()
 
 from aml_interface.aml_interface import AMLInterface  # noqa: E402
+from azure.ai.ml import Input, Output  # noqa: E402
+from azure.ai.ml.constants import AssetTypes  # noqa: E402
+from azure.ai.ml.dsl import pipeline  # noqa: E402
+
+from objectherkenning_openbare_ruimte.inference_pipeline.components.run_inference import (  # noqa: E402
+    run_inference,
+)
 
 
 @pipeline()

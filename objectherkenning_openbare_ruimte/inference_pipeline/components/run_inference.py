@@ -1,14 +1,11 @@
+import logging
 import os
 import sys
 
-from azure.ai.ml.constants import AssetTypes
-from mldesigner import Input, Output, command_component
-
 sys.path.append("../../..")
 
-from objectherkenning_openbare_ruimte.inference_pipeline.source.data_inference import (  # noqa: E402
-    DataInference,
-)
+from aml_interface.azure_logging import AzureLoggingConfigurer  # noqa: E402
+
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -19,7 +16,17 @@ config_path = os.path.abspath(
 
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
+azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
+azure_logging_configurer.setup_oor_logging()
 aml_experiment_settings = settings["aml_experiment_details"]
+logger = logging.getLogger("inference_pipeline")
+
+from azure.ai.ml.constants import AssetTypes  # noqa: E402
+from mldesigner import Input, Output, command_component  # noqa: E402
+
+from objectherkenning_openbare_ruimte.inference_pipeline.source.data_inference import (  # noqa: E402
+    DataInference,
+)
 
 
 @command_component(
@@ -41,7 +48,7 @@ def run_inference(
     model_name = settings["inference_pipeline"]["inputs"]["model_name"]
     pretrained_model_path = os.path.join(model_weights, model_name)
     detection_params = settings["inference_pipeline"]["detection_params"]
-    tracking_flag = settings["inference_pipeline"]["tracking_params"]["tracking_flag"]
+    batch_size = settings["inference_pipeline"]["detection_params"]["batch_size"]
     prelabeling_flag = settings["inference_pipeline"]["prelabeling_flag"]
 
     params = {
@@ -53,16 +60,6 @@ def run_inference(
         "project": project_path,
     }
 
-    if tracking_flag:
-        tracker = settings["inference_pipeline"]["inputs"]["tracker"]
-        tracker_path = os.path.join(model_weights, tracker)
-        tracking_persist_flag = settings["inference_pipeline"]["tracking_params"][
-            "tracking_persist_flag"
-        ]
-
-        params["persist"] = tracking_persist_flag
-        params["tracker"] = tracker_path
-
     inference_pipeline = DataInference(
         images_folder=mounted_dataset,
         inference_folder=project_path,
@@ -71,41 +68,10 @@ def run_inference(
         inference_params=params,
         target_classes=[2, 3, 4],
         sensitive_classes=[0, 1],
-        tracking_flag=tracking_flag,
+        batch_size=batch_size,
     )
 
     if prelabeling_flag:
         inference_pipeline.run_pipeline_prelabeling()
     else:
         inference_pipeline.run_pipeline()
-
-
-# labels_dir = os.path.join(project_path, "labels_manual")
-# os.makedirs(labels_dir, exist_ok=True)
-#
-# if tracking_flag:
-#    tracker = settings["inference_pipeline"]["inputs"]["tracker"]
-#    tracker_path = os.path.join(model_weights, tracker)
-#    tracking_persist_flag = settings["inference_pipeline"]["tracking_params"][
-#        "tracking_persist_flag"
-#    ]
-#    tracking_classes = settings["inference_pipeline"]["tracking_params"][
-#        "tracking_classes"
-#    ]
-#
-#    model = YOLO(model=pretrained_model_path, task="track")
-#
-#    params["persist"] = tracking_persist_flag
-#    params["tracker"] = tracker_path
-#    results = model.track(**params)
-#    processing_tools.process_tracking_results(results, labels_dir, tracking_classes)
-# else:
-#    print('Tracking flag is set to "False". Running detection only.')
-#    model = YOLO(model=pretrained_model_path, task="detect")
-#    params["show_labels"] = False
-#    sensitive_classes = [0,1]
-#    target_classes = [2,3,4]
-#    batch_size = 32
-#    image_dir = os.path.join(project_path, "images_manual")
-#    os.makedirs(image_dir, exist_ok=True)
-#    results = processing_tools.process_batches(model, params, image_paths, batch_size, image_dir, labels_dir, sensitive_classes, target_classes)"""

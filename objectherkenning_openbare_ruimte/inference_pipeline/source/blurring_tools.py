@@ -230,7 +230,6 @@ def draw_bounding_boxes(
 
     for i, (box, category) in enumerate(zip(boxes, categories)):
         color = colours[category]
-        print(f"Drawing a bounding box for category {category} with color {color}")
 
         x_min, y_min, x_max, y_max = map(int, box)
 

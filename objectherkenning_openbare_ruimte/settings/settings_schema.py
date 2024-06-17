@@ -17,6 +17,7 @@ class AMLExperimentDetailsSpec(SettingsSpecModel):
 
 
 class InferenceModelParameters(SettingsSpecModel):
+    batch_size: int = 1
     img_size: int = 640
     conf: float = 0.5
     save_img_flag: bool = False
@@ -28,7 +29,6 @@ class InferencePipelineSpec(SettingsSpecModel):
     detection_params: InferenceModelParameters
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
-    tracking_params: Dict[str, Any] = None
     prelabeling_flag: bool = False
 
 
