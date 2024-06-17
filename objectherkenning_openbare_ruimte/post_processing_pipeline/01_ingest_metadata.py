@@ -2,7 +2,7 @@
 dbutils.library.restartPython() 
 
 import tempfile
-from pyspark.sql.functions import input_file_name, col, split, array, expr, regexp_extract
+from pyspark.sql.functions import input_file_name, col, split, array, expr, lit
 from pyspark.sql import SparkSession
 
 from helpers.databricks_workspace import get_catalog_name
@@ -71,28 +71,16 @@ class DataLoader:
                 .option("cloudFiles.format", format) \
                 .option("cloudFiles.schemaLocation", path_table_schema) \
                 .option("cloudFiles.inferColumnTypes", "true") \
-                .option("cloudFiles.schemaHints", 'imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, gps_lat float, gps_lon float')  
+                .option("cloudFiles.schemaHints", 'imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, gps_lat float, gps_lon float, gps_date date')  
                 .option("cloudFiles.schemaEvolutionMode", "none")   
                 .load(source)
                 .withColumnRenamed("pylon://0_frame_counter", "pylon0_frame_counter")
-                .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp"))
+                .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
+                .withColumn("status", lit("Pending")))
         return bronze_df
     
     def _load_new_detection_metadata(self, source:str):
-        bronze_d1 = self.spark.read.option("recursiveFileLookup", "true") \
-            .text(source) \
-            .withColumn("filename", input_file_name())
-
-        # Filter out rows not ending with .txt and extract filename
-        bronze_d1 = bronze_d1.filter( bronze_d1["filename"].endswith(".txt")) \
-                .withColumn("filename", regexp_extract(input_file_name(), r"/([^/]+)\.txt$", 1))
-
-
-        # Split the 'value' column and create 'class' and 'bounding_box' columns
-        bronze_d1 = bronze_d1.withColumn("split_col", split(bronze_d1["value"], " ")) \
-                .withColumn("class", col("split_col")[0]) \
-                .withColumn("bounding_box", array([col("split_col")[i].cast("float") for i in range(0, 4)])) \
-                .drop("value", "split_col")
+       pass
 
 
     def _store_new_data(self, df, target):
