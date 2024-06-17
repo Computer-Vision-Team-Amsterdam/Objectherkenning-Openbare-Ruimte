@@ -33,7 +33,7 @@ if __name__ == "__main__":
     root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
     vuln_bridges_rel_path = "test-diana/vuln_bridges.geojson"
     file_path = f"{root_source}/{vuln_bridges_rel_path}"
-    bridgesHandler = VulnerableBridgesHandler(file_path)
+    bridgesHandler = VulnerableBridgesHandler(spark, file_path)
     bridges_coordinates_geometry = bridgesHandler.get_bridges_coordinates_geometry()
 
     # Setup permit data
