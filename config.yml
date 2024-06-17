@@ -10,22 +10,22 @@ inference_pipeline:
   detection_params:
     img_size: 1920
     conf: 0.4
-    save_img_flag: True
+    save_img_flag: False
     save_txt_flag: False
     save_conf_flag: False
   inputs:
     datastore_path: "new_dataset_oor"
-    inference_data_rel_path: "velotech_smaller_sample"
+    inference_data_rel_path: "val"
     model_weights_rel_path: "model"
     model_name: "best_yolov8m_1920_norect_500_100.pt"
     tracker: "botsort.yaml"
   outputs:
-    project_rel_path: "model/inference_run_tracking_test_1920_prelabeling"
+    project_rel_path: "model/inference_run_inference_1920_val"
   tracking_params:
-    tracking_flag: True
+    tracking_flag: False
     tracking_persist_flag: True
-    tracking_classes: [2,3,4]
-  prelabeling_flag: True
+    tracking_classes: [2]
+  prelabeling_flag: False
 
 logging:
   loglevel_own: INFO  # override loglevel for packages defined in `own_packages`

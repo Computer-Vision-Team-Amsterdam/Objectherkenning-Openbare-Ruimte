@@ -280,7 +280,9 @@ class DataInference:
             annotation_str = self._get_annotion_string_from_boxes(boxes[target_idxs])
             labels_dir = os.path.join(self.inference_folder, "processed_labels")
             os.makedirs(labels_dir, exist_ok=True)
-            annotation_path = os.path.join(labels_dir, f"{image_name}.txt")
+            annotation_path = os.path.join(
+                labels_dir, f"{os.path.splitext(image_name)[0]}.txt"
+            )
             with open(annotation_path, "w") as f:
                 f.write(annotation_str)
 
@@ -322,7 +324,9 @@ class DataInference:
                 self.inference_folder, "processed_labels_prelabeling"
             )
             os.makedirs(labels_dir, exist_ok=True)
-            annotation_path = os.path.join(labels_dir, f"{image_name}.txt")
+            annotation_path = os.path.join(
+                labels_dir, f"{os.path.splitext(image_name)[0]}.txt"
+            )
             with open(annotation_path, "w") as f:
                 f.write(annotation_str)
 
@@ -424,7 +428,9 @@ class DataInference:
                 annotation_str = self._get_annotion_string_from_boxes(
                     boxes[target_idxs]
                 )
-                annotation_path = os.path.join(labels_dir, f"{image_name}.txt")
+                annotation_path = os.path.join(
+                    labels_dir, f"{os.path.splitext(image_name)[0]}.txt"
+                )
                 with open(annotation_path, "w") as f:
                     f.write(annotation_str)
 
