@@ -1,0 +1,27 @@
+azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
+
+environment:
+  Ontwikkel:
+    catalog: "dpcv_dev"
+    storage_account_root_path: "abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net/Luna"
+    reference_database:
+      host: "dev-bbn1-01-dbhost.postgres.database.azure.com"
+      name: "mdbdataservices"
+    signalen:  
+      access_token_url: "https://acc.iam.amsterdam.nl/auth/realms/datapunt-ad-acc/protocol/openid-connect/token"
+      base_url: "https://api.acc.meldingen.amsterdam.nl/signals/v1/private/signals"
+      client_secret_name: "sia-password-acc"
+  Productie: 
+    catalog: "dpcv_prd"
+    storage_account_root_path: "abfss://landingzone@stlandingdpcvprdweu01.dfs.core.windows.net/Luna"
+    reference_database:
+      host: "prd-bbn1-01-dbhost.postgres.database.azure.com"
+      name: "mdbdataservices"
+    signalen:  
+      access_token_url: "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
+      base_url: "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
+      client_secret_name: "sia-password-prd"
+
+schema: "oor"
+
+    

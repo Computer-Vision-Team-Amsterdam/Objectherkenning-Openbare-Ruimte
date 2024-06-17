@@ -3,19 +3,22 @@ from difflib import get_close_matches
 import requests
 import re
 from typing import List
-from abc import ABC, abstractmethod
 import json
-import subprocess
-import psycopg2
+from shapely.geometry import Point
+import numpy as np
+import geopy.distance
+
 from .databricks_workspace import get_catalog_name
 from .reference_db_connector import ReferenceDatabaseConnector
 
- 
-class DecosDataConnector(ReferenceDatabaseConnector):
 
-    def __init__(self):
-       super().__init__() 
-       self.catalog_name = get_catalog_name() # dpcv_dev or dpcv_prd
+class DecosDataHandler(ReferenceDatabaseConnector):
+
+    def __init__(self, spark, az_tenant_id, db_host, db_name, db_port):
+        super().__init__(az_tenant_id, db_host, db_name, db_port)
+        self.spark = spark
+        self.catalog_name = get_catalog_name(self.spark)  
+        self.query_result_df = None
 
     def is_container_permit(self, objects):
         """
@@ -33,21 +36,38 @@ class DecosDataConnector(ReferenceDatabaseConnector):
 
         return False
 
-    def process_query_results(self, rows, colnames):
+    def process_query_result(self):
         """
         Process the results of the query.
         """
-        df = self.create_dataframe(rows, colnames)
         
-        df['objecten'] = df['objecten'].apply(lambda x: json.loads(x) if x else [])
-        df = df[df['objecten'].apply(self.is_container_permit)] # Only keep rows with permits about containers
-        df = df[df['locatie'].notnull()] # Only keep rows where location of the permit is not null
-        addresses = df["locatie"].tolist()  # Get list of permit addresses in BAG format
-        df = self.add_permit_coordinates_columns(df, addresses)  # Add new columns for lat lon coordinates of permits
-        #self.write_null_coordinates_to_quarantine_table(df)
-        self.write_healthy_df_to_table()
-        self.display_dataframe(df)       
-   
+        self.query_result_df['objecten'] = self.query_result_df['objecten'].apply(lambda x: json.loads(x) if x else [])
+
+        # Only keep rows with permits about containers
+        self.query_result_df =  self.query_result_df[ self.query_result_df['objecten'].apply(self.is_container_permit)] 
+
+        # Only keep rows where location of the permit is not null
+        self.query_result_df = self.query_result_df[ self.query_result_df['locatie'].notnull()] 
+
+         # Get list of permit addresses in BAG format
+        addresses = self.query_result_df["locatie"].tolist() 
+
+        # Add new columns for lat lon coordinates of permits
+        self.query_result_df = self.add_permit_coordinates_columns(self.query_result_df, addresses)  
+
+        # Store rows where permit_lat and permit_lon are non null as healthy data
+        self._healthy_df = self.query_result_df[self.query_result_df['permit_lat'].notnull() & self.query_result_df['permit_lon'].notnull()]
+
+        # Store rows where permit_lat and permit_lon are null as quarantine data
+        self._quarantine_df = self.query_result_df[self.query_result_df['permit_lat'].isnull() | self.query_result_df['permit_lon'].isnull()]
+
+        self._permits_coordinates = self._extract_permits_coordinates()  
+        self._permits_coordinates_geometry = self._convert_coordinates_to_point()
+
+        #self.write_healthy_df_to_table()
+        #self.write_qurantine_df_to_table()
+
+    # TODO create the dataframe with spark!
     def create_dataframe(self, rows, colnames):
         """
         Create a DataFrame .
@@ -68,7 +88,8 @@ class DecosDataConnector(ReferenceDatabaseConnector):
             
         data = _load_columns_with_unsupported_data_type()
         df = pd.DataFrame(data, columns=colnames)
-        return df     
+        
+        self.query_result_df = df     
 
     def display_dataframe(self, df):
         """
@@ -101,7 +122,7 @@ class DecosDataConnector(ReferenceDatabaseConnector):
             if split_dutch_address:
                 street_and_number = split_dutch_address[0][0] + " " + split_dutch_address[0][1]
             else:
-                print(f"Warning: Unable to split Dutch street address using regex: {address}. Still trying to query the BAG API with the address...")
+                print(f"Warning: Unable to split Dutch street address using regex: {address}")
                 street_and_number = address
 
             with requests.get(bag_url + street_and_number) as response:
@@ -119,7 +140,6 @@ class DecosDataConnector(ReferenceDatabaseConnector):
       
             return None
 
-
     def add_permit_coordinates_columns(self, df, addresses):
         """
         Add new columns "permit_lat" and "permit_lon" to the DataFrame and populate them with latitude and longitude values fetched from the BAG API.
@@ -129,37 +149,100 @@ class DecosDataConnector(ReferenceDatabaseConnector):
         for address in addresses:
             coordinates = self.convert_address_to_coordinates(address)
             if coordinates:
-                latitudes.append(coordinates[0])
-                longitudes.append(coordinates[1])
+                longitudes.append(coordinates[0])
+                latitudes.append(coordinates[1])
             else: # None, because there was an exception while converting the address into coordinates
-                latitudes.append(None)
                 longitudes.append(None)
+                latitudes.append(None)
+                
         df["permit_lat"] = latitudes
         df["permit_lon"] = longitudes
         return df
     
-    def write_null_coordinates_to_quarantine_table(self, df):
+    def write_quarantine_df_to_table(self, df):
         """
         Write rows with null permit_lat or permit_lon to the 'quarantine' table in Databricks.
         
         Args:
         df (DataFrame): Input DataFrame containing the data.
         """
-        # Filter rows with null permit_lat or permit_lon
-        quarantine_df = df[df['permit_lat'].isnull() | df['permit_lon'].isnull()]
-
         # Write the filtered DataFrame to the 'quarantine' table in Databricks
         #quarantine_df.write.format("delta").mode("overwrite").saveAsTable("{env}.oor.{table_name_quarantine}")
 
-    def write_healthy_df_to_table(df):
+    def write_healthy_df_to_table(self, healthy_df):
         """
         Write rows with non-null permit_lat and permit_lon to the 'good' table in Databricks.
         
         Args:
         df (DataFrame): Input DataFrame containing the data.
         """
-        # Filter rows with non-null permit_lat and permit_lon
-        healthy_df = df[df['permit_lat'].notnull() & df['permit_lon'].notnull()]
-
         # Write the filtered DataFrame to the 'good' table in Databricks
         #healthy_df.write.format("delta").mode("overwrite").saveAsTable("{env}.oor.{table_name}")
+
+    def _extract_permits_coordinates(self):
+        # -----> for spark dataframes
+        # # Collect the DataFrame rows as a list of Row objects
+        # rows = self._healthy_df.select("permit_lat", "permit_lon").collect()
+    
+        # # Convert the list of Row objects into a list of tuples
+        # permits_coordinates = [(row['permit_lat'], row['permit_lon']) for row in rows]
+
+        # ------> for pandas dataframes
+
+        permits_coordinates = list(self._healthy_df[['permit_lat', 'permit_lon']].itertuples(index=False, name=None))
+
+        return permits_coordinates
+    
+    def get_permits_ids(self):
+        # -----> for spark dataframes
+        # # Collect the DataFrame rows as a list of Row objects
+        # rows = self._healthy_df.select("id").collect()
+
+        # # Convert the list of Row objects into a list of tuples
+        # permits_ids = [(row['id']) for row in rows]
+
+        # ------> for pandas dataframes
+        permits_ids = self._healthy_df['id'].tolist()
+
+        return permits_ids
+           
+    def _convert_coordinates_to_point(self):
+        """
+        We need the permits coordinates as Point to perform distance calculations
+        """
+        permits_coordinates_geometry = [Point(location) for location in self._permits_coordinates] 
+        return permits_coordinates_geometry    
+
+    def get_permits_coordinates(self):
+        return self._permits_coordinates
+    
+    def get_permits_coordinates_geometry(self):
+        return self._permits_coordinates_geometry
+    
+    def get_healthy_df(self):
+        return self._healthy_df
+
+    def get_quarantine_df(self):
+        return self._quarantine_df
+    
+    def calculate_distances_to_closest_permits(permits_locations_as_points: List[Point], permits_ids: str, containers_locations_as_points: List[Point]):
+        permit_distances = []
+        closest_permits = [] # TODO rename this!
+        for container_location in containers_locations_as_points:
+            closest_permit_distances = []
+            for permit_location in permits_locations_as_points:
+                try:
+                    permit_dist = geopy.distance.distance(container_location.coords, permit_location.coords).meters
+                except:
+                    permit_dist = 0
+                    print("Error occured:")
+                    print(f"Container location: {container_location}, {container_location.coords}")
+                    print(f"Permit location: {permit_location}, {permit_location.coords}")
+                closest_permit_distances.append(permit_dist)
+            permit_distances.append(np.amin(closest_permit_distances))
+            closest_permits.append(permits_ids[np.argmin(closest_permit_distances)])
+
+            # otherwise spark complains about float64 not being supported
+            permit_distances = [float(p) for p in permit_distances]
+
+        return permit_distances, closest_permits

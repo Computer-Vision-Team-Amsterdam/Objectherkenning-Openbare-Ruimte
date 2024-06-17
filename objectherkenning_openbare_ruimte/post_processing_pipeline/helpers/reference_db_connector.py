@@ -2,13 +2,13 @@ from abc import ABC, abstractmethod
 import json
 import subprocess
 import psycopg2
+from databricks.sdk.runtime import *
 
- 
 class ReferenceDatabaseConnector(ABC):
 
-    def __init__(self, az_tenant_id, db_scope, db_host, db_name, db_port):
+    def __init__(self, az_tenant_id, db_host, db_name, db_port):
         self.az_tenant_id = az_tenant_id
-        self.db_scope = db_scope
+        self.db_scope = "keyvault"
         self.db_host = db_host
         self.db_name = db_name
         self.db_port = db_port
@@ -17,6 +17,7 @@ class ReferenceDatabaseConnector(ABC):
         self.az_login_password = dbutils.secrets.get(scope=self.db_scope, key="app-reg-refdb-key")
         self.spn_refDb_username = dbutils.secrets.get(scope=self.db_scope, key="referenceDatabaseSpnUsername")
         self.spn_refDb_password = None
+        self._query_result_df = None # set in run_query()
 
     def azure_login(self):
         command = [
@@ -48,10 +49,11 @@ class ReferenceDatabaseConnector(ABC):
     def run_query(self, conn, query):
         pass
 
+
     @abstractmethod
-    def process_query_results(self, rows, colnames):
+    def create_dataframe(self, rows, colnames):
         """
-        Process the results of the query.
+        Create dataframe from query result.
         """
         pass
 
@@ -65,7 +67,7 @@ class ReferenceDatabaseConnector(ABC):
             rows = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             cursor.close()
-            self.process_query_results(rows, colnames)
+            self._query_result_df = self.create_dataframe(rows, colnames)
         except psycopg2.Error as e:
             print(f"Error executing query: {e}")
 
@@ -82,3 +84,6 @@ class ReferenceDatabaseConnector(ABC):
                 conn.close()
         except Exception as e:
             print(f"Error: {e}")
+
+    def get_query_result_df(self):
+        return self.query_result_df

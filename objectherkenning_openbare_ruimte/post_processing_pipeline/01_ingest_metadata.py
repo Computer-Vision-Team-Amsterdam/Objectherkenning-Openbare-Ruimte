@@ -1,16 +1,22 @@
+# this fixes the caching issues, reimports all modules
+dbutils.library.restartPython() 
+
 import tempfile
 from pyspark.sql.functions import input_file_name, col, split, array, expr, regexp_extract
+from pyspark.sql import SparkSession
 
-class DataLoader():
+from helpers.databricks_workspace import get_catalog_name
+
+class DataLoader:
     
-    def __init__(self, environment, device_id):
-        self.catalog = "dpcv_dev" if environment == "dev" else "dpcv_prd"
+    def __init__(self, spark):
+        self.spark = spark
+        self.catalog = get_catalog_name(spark)
         self.schema = "oor"
    
         self.frame_metadata_table = f"{self.catalog}.{self.schema}.bronze_frame_metadata"
         self.detection_metadata_table = f"{self.catalog}.{self.schema}.bronze_detection_metadata"        
-        self.device_id = device_id 
-        self.root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
+        self.root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net/Luna"
         self.checkpoint_path = f"{self.root_source}/_checkpoint"
 
         self._setup_initial_files()
@@ -30,7 +36,7 @@ class DataLoader():
             str: The path to the temporary file containing the schema JSON.
         """
         # Retrieve the schema of the specified table
-        existing_table_schema = spark.table(table_name).schema
+        existing_table_schema = self.spark.table(table_name).schema
         schema_json = existing_table_schema.json()
 
         # Save the JSON schema to a temporary file
@@ -42,7 +48,7 @@ class DataLoader():
 
     def ingest_frame_metadata(self):
         
-        source = f"{self.root_source}/{self.device_id}/frame_metadata"
+        source = f"{self.root_source}/frame_metadata"
         path_table_schema = self._get_schema_path(self.frame_metadata_table)
 
         df = self._load_new_frame_metadata(source, path_table_schema=path_table_schema, format="csv")
@@ -51,7 +57,7 @@ class DataLoader():
 
     def ingest_detection_metadata(self):
 
-        source = f"{self.root_source}/{self.device_id}/detection_metadata"
+        source = f"{self.root_source}/detection_metadata"
         path_table_schema = self._get_schema_path(self.detection_metadata_table)
 
         df = self._load_new_detection_metadata(source, path_table_schema, format="txt")
@@ -60,7 +66,7 @@ class DataLoader():
 
     def _load_new_frame_metadata(self, source:str, path_table_schema:str, format:str):
 
-        bronze_df = (spark.readStream \
+        bronze_df = (self.spark.readStream \
                 .format("cloudFiles") \
                 .option("cloudFiles.format", format) \
                 .option("cloudFiles.schemaLocation", path_table_schema) \
@@ -70,11 +76,10 @@ class DataLoader():
                 .load(source)
                 .withColumnRenamed("pylon://0_frame_counter", "pylon0_frame_counter")
                 .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp"))
-        
         return bronze_df
     
     def _load_new_detection_metadata(self, source:str):
-        bronze_d1 = spark.read.option("recursiveFileLookup", "true") \
+        bronze_d1 = self.spark.read.option("recursiveFileLookup", "true") \
             .text(source) \
             .withColumn("filename", input_file_name())
 
@@ -98,5 +103,6 @@ class DataLoader():
 
 
 if __name__ == "__main__":
-    dataLoader = DataLoader(environment="dev", device_id="test-diana")
-    dataLoader.ingest_frame_metadata()
+    sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
+    dataLoader = DataLoader(sparkSession)
+    df = dataLoader.ingest_frame_metadata()

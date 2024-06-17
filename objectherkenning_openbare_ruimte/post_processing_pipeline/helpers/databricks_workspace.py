@@ -1,4 +1,8 @@
-def get_databricks_environment():
+import json
+from pyspark.sql import SparkSession
+
+
+def get_databricks_environment(spark: SparkSession):
     """
     Returns Productie, Ontwikkel or None based on the tags set in the subscription
     """
@@ -17,12 +21,12 @@ def get_databricks_environment():
         return environment   
     return None 
 
-def get_catalog_name():
+def get_catalog_name(spark: SparkSession):
     """
     Sets the catalog name based on the environment retrieved from Databricks cluster tags
     """
 
-    environment = get_databricks_environment()
+    environment = get_databricks_environment(spark)
     if environment is None:
         raise ValueError("Databricks environment is not set.")
     if environment == "Ontwikkel":
@@ -30,4 +34,17 @@ def get_catalog_name():
     elif environment == "Productie":
         catalog_name = "dpcv_prd"
    
-    return catalog_name    
+    return catalog_name  
+
+
+def get_storage_account(spark: SparkSession):
+
+    environment = get_databricks_environment(spark)
+    if environment is None:
+        raise ValueError("Databricks environment is not set.")
+    if environment == "Ontwikkel":
+        storage_account_path = "dpcv_dev"
+    elif environment == "Productie":
+        catalog_name = "dpcv_prd"
+   
+    return catalog_name  
