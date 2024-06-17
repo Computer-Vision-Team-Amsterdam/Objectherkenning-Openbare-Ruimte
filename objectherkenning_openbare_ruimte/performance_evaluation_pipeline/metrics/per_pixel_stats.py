@@ -5,7 +5,7 @@ from typing import Dict, Iterable, List, Tuple, Union
 import numpy as np
 import numpy.typing as npt
 from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 sys.path.append("../../..")
 
