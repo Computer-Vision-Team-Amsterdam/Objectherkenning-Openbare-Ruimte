@@ -16,29 +16,29 @@ RUN apt-get update  \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://git.ffmpeg.org/ffmpeg.git
-RUN cd ffmpeg \
-    && ./configure \
-    && make \
-    && make install
-
 ENV PATH=/root/.local/bin:$PATH
 
-RUN pip3 install pipx \
-    && pipx ensurepath \
+# RUN pip3 install pipx \
+#     && pipx ensurepath \
 
-RUN pipx install poetry \
-    && pipx inject poetry poetry-plugin-export
+# RUN pipx install poetry \
+#     && pipx inject poetry poetry-plugin-export
 
 WORKDIR /usr/src
 
-COPY pyproject.toml .
-COPY poetry.lock .
+# COPY poetry.lock .
 
-RUN poetry export --without-hashes --format=requirements.txt > requirements.txt \
-    && pip3 install -r requirements.txt
+# RUN poetry export --without-hashes --format=requirements.txt > requirements.txt \
+#     && pip3 install -r requirements.txt
 
-COPY model_artifacts/oor_model/yolov8s_coco_nc_5_best.pt model_artifacts/yolov8s_coco_nc_5_best.pt
+COPY requirements_on_edge.txt .
+
+# Need to install this separately to prevent CVToolkit deps from installing Torch
+RUN pip3 install --no-deps git+https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git
+
+RUN pip3 install -r requirements_on_edge.txt
+
+COPY model_artifacts/oor_model model_artifacts
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
 COPY config.yml config.yml
 
