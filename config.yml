@@ -34,12 +34,12 @@ detection_pipeline:
   images_path: "/raw_frames"
   detections_path: "/detections"
   inference_params:
-    img_size: 1920
+    img_size: 1280
     conf: 0.4
     save_img_flag: False
     save_txt_flag: False
     save_conf_flag: False
-  model_name: "yolov8s_coco_nc_5_best.pt"
+  model_name: "yolov8m_1280.pt"
   pretrained_model_path: "model_artifacts"
   defisheye_flag: False
   defisheye_params:
