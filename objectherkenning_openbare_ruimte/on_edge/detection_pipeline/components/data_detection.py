@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 import shutil
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
@@ -29,7 +29,9 @@ class DataDetection:
         detections_folder: str,
         model_name: str,
         pretrained_model_path: str,
+        output_image_size: Tuple[int, int],
         inference_params: Dict,
+        defisheye_flag: bool,
         defisheye_params: Dict,
         target_classes: List,
         sensitive_classes: List,
@@ -46,6 +48,7 @@ class DataDetection:
         self.detections_folder = detections_folder
         self.model_name = model_name
         self.pretrained_model_path = os.path.join(pretrained_model_path, model_name)
+        self.output_image_size = output_image_size
         self.inference_params = {
             "imgsz": inference_params.get("img_size", 640),
             "save": inference_params.get("save_img_flag", False),
@@ -54,6 +57,7 @@ class DataDetection:
             "conf": inference_params.get("conf", 0.25),
             "project": self.detections_folder,
         }
+        self.defisheye_flag = defisheye_flag
         self.defisheye_params = defisheye_params
         logger.info(f"Inference_params: {self.inference_params}")
         logger.info(f"Pretrained_model_path: {self.pretrained_model_path}")
@@ -95,15 +99,13 @@ class DataDetection:
                 _ = next(reader)
                 processed_images_count = target_objects_detected_count = 0
                 for idx, row in enumerate(reader):
-                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.png")
+                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.jpg")
                     image_full_path = images_path / image_file_name
                     if os.path.isfile(image_full_path):
                         image = cv2.imread(str(image_full_path))
-                        if self.inference_params["defisheye_flag"]:
+                        if self.defisheye_flag:
                             image = self._defisheye(image)
-                        image = cv2.resize(
-                            image, self.inference_params["output_image_size"]
-                        )
+                        image = cv2.resize(image, self.output_image_size)
                         self.inference_params["source"] = image
                         self.inference_params["name"] = csv_path.stem
                         detection_results = self.model(**self.inference_params)
