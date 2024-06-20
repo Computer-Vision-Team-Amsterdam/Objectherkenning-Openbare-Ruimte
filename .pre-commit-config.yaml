@@ -11,8 +11,8 @@ repos:
     hooks:
       - id: pip-audit
         args: [
-          "--ignore-vuln", "PYSEC-2023-228"
-        ]
+          "--ignore-vuln", "PYSEC-2023-228",
+          "-r", "requirements_on_edge.txt"]
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:
