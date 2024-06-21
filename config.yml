@@ -9,7 +9,7 @@ aml_experiment_details:
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
   device_id: "test-diana"
-  shared_access_key: "SHARED_ACCESS_KEY_IOT"
+  shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
 
 convert_dataset:
   input_old_datastore: "old_datastore"
