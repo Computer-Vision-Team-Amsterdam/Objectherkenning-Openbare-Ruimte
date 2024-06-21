@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS base-image
+FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04:20240614.v1 AS base-image
 
 # Upgrade and install system libraries
 RUN apt-get -y update \
-    && ACCEPT_EULA=Y apt-get upgrade -qq \
     && apt-get -y install \
+        bsdutils \
         build-essential \
         curl \
         ffmpeg \
@@ -14,9 +14,16 @@ RUN apt-get -y update \
 
 WORKDIR /opt/app
 
+RUN conda update conda \
+    && conda config --add channels conda-forge \
+    && conda config --set channel_priority strict
+
 RUN conda create -n env python=3.8
 RUN echo "source activate env" > ~/.bashrc
 ENV PATH="/opt/miniconda/envs/env/bin:$PATH"
+
+# EVERYTHING UNTIL HERE without vulnerabilities
+# Somewhere in the lines below "setuptools 56.0.0.0" is installed, but no evidence of this in the build log
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:$PATH"
