@@ -14,7 +14,7 @@ notification_json = SignalHandler.fill_incident_details(incident_date=date_of_no
                                                        )
 
 signalHandler = SignalHandler()
-# id = signalHandler.post_signal_with_image_attachment(json_content=notification_json, filename=image_to_upload)
+id = signalHandler.post_signal_with_image_attachment(json_content=notification_json, filename=image_to_upload)
 
 
 # Check status of notification 

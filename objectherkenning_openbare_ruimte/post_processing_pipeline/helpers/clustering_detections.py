@@ -13,8 +13,9 @@ class Clustering:
         self.spark = spark
         self.catalog = get_catalog_name(spark=spark)
         self.schema = "oor"
-        self.detection_metadata = self.spark.read.table(f'{self.catalog}.{self.schema}.bronze_detection_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
-        self.frame_metadata = self.spark.read.table(f'{self.catalog}.{self.schema}.bronze_frame_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
+        self.detection_metadata = self.spark.read.table(f'{self.catalog}.{self.schema}.silver_detection_metadata')  
+        self.frame_metadata = self.spark.read.table(f'{self.catalog}.{self.schema}.silver_frame_metadata')
+        self._filter_objects_based_on_what_is_pending()?
         self._filter_objects_by_date(date)
         self._filter_objects_randomly()
         self.df_joined= self._join_frame_and_detection_metadata()
