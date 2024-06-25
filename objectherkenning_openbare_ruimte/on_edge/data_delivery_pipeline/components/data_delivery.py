@@ -109,7 +109,7 @@ class DataDelivery:
 
                     images_delivered = 0
                     for row in reader:
-                        image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.png")
+                        image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.jpg")
                         image_full_path = detections_path / image_file_name
                         detection_metadata_full_path = detections_path / pathlib.Path(
                             f"{csv_path.stem}-{row[1]}.txt"
@@ -196,7 +196,7 @@ class DataDelivery:
                 _ = next(reader)
                 for idx, row in enumerate(reader):
                     image_full_path = detections_path / pathlib.Path(
-                        f"{csv_path.stem}-{row[1]}.png"
+                        f"{csv_path.stem}-{row[1]}.jpg"
                     )
                     detection_metadata_full_path = detections_path / pathlib.Path(
                         f"{csv_path.stem}-{row[1]}.txt"

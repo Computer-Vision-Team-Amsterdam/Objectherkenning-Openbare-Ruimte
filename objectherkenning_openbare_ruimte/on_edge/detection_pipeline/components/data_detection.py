@@ -242,7 +242,7 @@ class DataDetection:
                 reader = csv.reader(frame_metadata_file)
                 _ = next(reader)
                 for idx, row in enumerate(reader):
-                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.png")
+                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.jpg")
                     image_full_path = images_path / image_file_name
                     if os.path.isfile(image_full_path):
                         delete_file(image_full_path)
