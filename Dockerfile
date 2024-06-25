@@ -18,6 +18,8 @@ RUN apt-get update  \
 
 ENV PATH=/root/.local/bin:$PATH
 
+RUN python3 -m pip install --upgrade pip
+
 # RUN pip3 install pipx \
 #     && pipx ensurepath \
 
@@ -34,9 +36,9 @@ WORKDIR /usr/src
 COPY requirements_on_edge.txt .
 
 # Need to install this separately to prevent CVToolkit deps from installing Torch
-RUN pip3 install --no-deps git+https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git
+RUN python3 -m pip install --no-deps git+https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git
 
-RUN pip3 install -r requirements_on_edge.txt
+RUN python3 -m pip install -r requirements_on_edge.txt
 
 COPY model_artifacts/oor_model model_artifacts
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte

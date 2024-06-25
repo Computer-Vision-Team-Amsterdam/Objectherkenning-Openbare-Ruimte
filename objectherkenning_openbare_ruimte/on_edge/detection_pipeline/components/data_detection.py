@@ -17,6 +17,7 @@ from objectherkenning_openbare_ruimte.on_edge.detection_pipeline.components impo
 )
 from objectherkenning_openbare_ruimte.on_edge.utils import (
     get_frame_metadata_csv_file_paths,
+    get_img_name_from_csv_row,
 )
 
 logger = logging.getLogger("detection_pipeline")
@@ -99,18 +100,22 @@ class DataDetection:
                 _ = next(reader)
                 processed_images_count = target_objects_detected_count = 0
                 for idx, row in enumerate(reader):
-                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.jpg")
+                    image_file_name = pathlib.Path(
+                        get_img_name_from_csv_row(csv_path, row)
+                    )
                     image_full_path = images_path / image_file_name
                     if os.path.isfile(image_full_path):
+                        logger.info(f"Processing {image_file_name}")
                         image = cv2.imread(str(image_full_path))
                         if self.defisheye_flag:
                             image = self._defisheye(image)
                         image = cv2.resize(image, self.output_image_size)
                         self.inference_params["source"] = image
                         self.inference_params["name"] = csv_path.stem
+
                         detection_results = self.model(**self.inference_params)
-                        # logger.debug(f"Result YOLO: {detection_results}")
                         torch.cuda.empty_cache()
+
                         target_objects_detected_count += sum(
                             len(
                                 np.where(
@@ -129,6 +134,8 @@ class DataDetection:
                             image_file_name,
                         )
                         processed_images_count += 1
+                    else:
+                        logger.debug(f"Image {image_full_path} not found, skipping.")
             if target_objects_detected_count:
                 shutil.copyfile(csv_path, os.path.join(detections_path, csv_path.name))
             logger.info(
@@ -187,10 +194,11 @@ class DataDetection:
             result = model_result.cpu()
             boxes = result.boxes.numpy()
 
-            logger.info(self._print_result(result))
+            for summary_str in self._yolo_result_summary(result):
+                logger.info(summary_str)
 
             target_idxs = np.where(np.in1d(boxes.cls, self.target_classes))[0]
-            logger.info(f"target_idxs {target_idxs}")
+            # logger.debug(f"target_idxs {target_idxs}")
             if len(target_idxs) == 0:  # Nothing to do!
                 logger.debug("No container detected, not storing the image.")
                 return False
@@ -226,19 +234,21 @@ class DataDetection:
 
             return True
 
-    def _print_result(self, result):
+    def _yolo_result_summary(self, result):
         obj_classes, obj_counts = np.unique(result.boxes.cls, return_counts=True)
         obj_str = "Detected: {"
         for obj_cls, obj_count in zip(obj_classes, obj_counts):
             obj_str = obj_str + f"{result.names[obj_cls]}: {obj_count}, "
-        obj_str = obj_str[0:-2] + "}"
+        if len(obj_classes):
+            obj_str = obj_str[0:-2]
+        obj_str = obj_str + "}"
 
         speed_str = "Compute: {"
         for key, value in result.speed.items():
             speed_str = speed_str + f"{key}: {value:.2f}ms, "
-
         speed_str = speed_str[0:-2] + "}"
-        return f"{obj_str}\n{speed_str}"
+
+        return [obj_str, speed_str]
 
     def _delete_data(self, metadata_csv_file_paths):
         """
@@ -258,7 +268,7 @@ class DataDetection:
                 reader = csv.reader(frame_metadata_file)
                 _ = next(reader)
                 for idx, row in enumerate(reader):
-                    image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.jpg")
+                    image_file_name = get_img_name_from_csv_row(csv_path, row)
                     image_full_path = images_path / image_file_name
                     if os.path.isfile(image_full_path):
                         delete_file(image_full_path)

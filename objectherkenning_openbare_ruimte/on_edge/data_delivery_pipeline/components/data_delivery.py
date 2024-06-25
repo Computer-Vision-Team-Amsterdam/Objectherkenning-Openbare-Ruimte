@@ -11,6 +11,7 @@ from objectherkenning_openbare_ruimte.on_edge.data_delivery_pipeline.components.
 )
 from objectherkenning_openbare_ruimte.on_edge.utils import (
     get_frame_metadata_csv_file_paths,
+    get_img_name_from_csv_row,
 )
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
@@ -109,10 +110,10 @@ class DataDelivery:
 
                     images_delivered = 0
                     for row in reader:
-                        image_file_name = pathlib.Path(f"{csv_path.stem}-{row[1]}.jpg")
+                        image_file_name = get_img_name_from_csv_row(csv_path, row)
                         image_full_path = detections_path / image_file_name
                         detection_metadata_full_path = detections_path / pathlib.Path(
-                            f"{csv_path.stem}-{row[1]}.txt"
+                            f"{image_full_path.stem}.txt"
                         )
 
                         if os.path.isfile(image_full_path) and os.path.isfile(
@@ -195,11 +196,10 @@ class DataDelivery:
                 reader = csv.reader(frame_metadata_file)
                 _ = next(reader)
                 for idx, row in enumerate(reader):
-                    image_full_path = detections_path / pathlib.Path(
-                        f"{csv_path.stem}-{row[1]}.jpg"
-                    )
+                    img_name = pathlib.Path(get_img_name_from_csv_row(csv_path, row))
+                    image_full_path = detections_path / img_name
                     detection_metadata_full_path = detections_path / pathlib.Path(
-                        f"{csv_path.stem}-{row[1]}.txt"
+                        f"{img_name.stem}.txt"
                     )
                     if os.path.isfile(image_full_path):
                         delete_file(image_full_path)
