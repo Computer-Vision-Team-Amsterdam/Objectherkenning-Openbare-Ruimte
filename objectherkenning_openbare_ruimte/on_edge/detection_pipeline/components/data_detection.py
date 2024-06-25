@@ -187,6 +187,8 @@ class DataDetection:
             result = model_result.cpu()
             boxes = result.boxes.numpy()
 
+            logger.info(self._print_result(result))
+
             target_idxs = np.where(np.in1d(boxes.cls, self.target_classes))[0]
             logger.info(f"target_idxs {target_idxs}")
             if len(target_idxs) == 0:  # Nothing to do!
@@ -223,6 +225,20 @@ class DataDetection:
                 f.write(annotation_str)
 
             return True
+
+    def _print_result(self, result):
+        obj_classes, obj_counts = np.unique(result.boxes.cls, return_counts=True)
+        obj_str = "Detected: {"
+        for obj_cls, obj_count in zip(obj_classes, obj_counts):
+            obj_str = obj_str + f"{result.names[obj_cls]}: {obj_count}, "
+        obj_str = obj_str[0:-2] + "}"
+
+        speed_str = "Compute: {"
+        for key, value in result.speed.items():
+            speed_str = speed_str + f"{key}: {value:.2f}ms, "
+
+        speed_str = speed_str[0:-2] + "}"
+        return f"{obj_str}\n{speed_str}"
 
     def _delete_data(self, metadata_csv_file_paths):
         """
