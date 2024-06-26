@@ -1,5 +1,4 @@
 import logging
-import os
 from contextlib import contextmanager
 from typing import Dict
 
@@ -70,24 +69,30 @@ class IoTHandler:
         with self._connect() as device_client:
             device_client.send_message(message)
 
-    def upload_file(self, file_path: str):
+    def upload_file(self, file_source_path: str, file_destination_path: str):
         """
         Uploads a file to Azure IoT.
 
         Parameters
         ----------
-        file_path
+        file_source_path
             Path of the file to upload.
+        file_destination_path
+            Path of where to upload it.
         """
         with self._connect() as device_client:
-            blob_name = os.path.basename(file_path)
-            storage_info = device_client.get_storage_info_for_blob(blob_name)
+            storage_info = device_client.get_storage_info_for_blob(
+                file_destination_path
+            )
 
-            success, result = self._store_blob(storage_info, file_path)
+            success, result = self._store_blob(storage_info, file_source_path)
             if success:
                 logger.info(f"Upload succeeded. Result is: {result}")
                 device_client.notify_blob_upload_status(
-                    storage_info["correlationId"], True, 200, "OK: {}".format(file_path)
+                    storage_info["correlationId"],
+                    True,
+                    200,
+                    "OK: {}".format(file_source_path),
                 )
             else:
                 logger.error(f"Upload failed. Exception is: {result}")

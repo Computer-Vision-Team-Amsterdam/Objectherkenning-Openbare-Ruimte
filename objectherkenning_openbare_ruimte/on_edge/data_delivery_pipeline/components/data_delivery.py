@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import pathlib
+from datetime import datetime
 from typing import List
 
 from cvtoolkit.helpers.file_helpers import delete_file
@@ -146,11 +147,17 @@ class DataDelivery:
                 self.save_csv_file(
                     file_path_only_filtered_rows, filtered_frame_metadata_rows
                 )
-                iot_handler.upload_file(str(file_path_only_filtered_rows))
+                upload_destination_path = f"frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_only_filtered_rows)}"
+                iot_handler.upload_file(
+                    str(file_path_only_filtered_rows), str(upload_destination_path)
+                )
                 self.save_csv_file(
                     file_path_detection_metadata, detection_metadata_rows
                 )
-                iot_handler.upload_file(str(file_path_detection_metadata))
+                upload_destination_path = f"detection_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_only_filtered_rows)}"
+                iot_handler.upload_file(
+                    str(file_path_detection_metadata), str(upload_destination_path)
+                )
 
         logger.info(
             f"From {frame_metadata_file_path} number of frames delivered: {images_delivered}"
@@ -198,7 +205,8 @@ class DataDelivery:
                         [image_file_name] + detection_metadata_row
                     )
 
-            iot_handler.upload_file(str(image_full_path))
+            upload_destination_path = f"images/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(image_full_path)}"
+            iot_handler.upload_file(str(image_full_path), str(upload_destination_path))
         return detection_metadata_rows
 
     @staticmethod
