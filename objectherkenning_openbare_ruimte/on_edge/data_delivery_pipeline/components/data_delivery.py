@@ -63,7 +63,7 @@ class DataDelivery:
         )
         logger.info(f"Number of CSVs to deliver: {len(metadata_csv_file_paths)}")
         self._deliver_data(frame_metadata_file_paths=metadata_csv_file_paths)
-        self._delete_data(metadata_csv_file_paths=metadata_csv_file_paths)
+        self._delete_processed_data(metadata_csv_file_paths=metadata_csv_file_paths)
 
     def _deliver_data(self, frame_metadata_file_paths):
         """
@@ -82,72 +82,8 @@ class DataDelivery:
             shared_access_key=self.settings["azure_iot"]["shared_access_key"],
         )
         for frame_metadata_file_path in frame_metadata_file_paths:
-            (
-                csv_path,
-                relative_path,
-                detections_path,
-                path_only_filtered_rows,
-                file_path_only_filtered_rows,
-                file_path_detection_metadata,
-            ) = self._calculate_all_paths(
-                metadata_csv_file_path=frame_metadata_file_path
-            )
-
-            filtered_frame_metadata_rows = []
-            detection_metadata_rows = []
-
             try:
-                with open(frame_metadata_file_path) as frame_metadata_file:
-                    reader = csv.reader(frame_metadata_file)
-                    header = next(reader)
-                    new_frame_metadata_header = (
-                        ["image_name"]
-                        + header
-                        + ["model_name", "model_version", "code_version"]
-                    )
-                    filtered_frame_metadata_rows.append(new_frame_metadata_header)
-                    detection_metadata_rows.append(self.detection_metadata_header)
-
-                    images_delivered = 0
-                    for row in reader:
-                        image_file_name = get_img_name_from_csv_row(csv_path, row)
-                        image_full_path = detections_path / image_file_name
-                        detection_metadata_full_path = detections_path / pathlib.Path(
-                            f"{image_full_path.stem}.txt"
-                        )
-
-                        if os.path.isfile(image_full_path) and os.path.isfile(
-                            detection_metadata_full_path
-                        ):
-                            with open(
-                                detection_metadata_full_path, "r"
-                            ) as detections_file:
-                                for detection_metadata_row in csv.reader(
-                                    detections_file, delimiter=" "
-                                ):
-                                    detection_metadata_rows.append(
-                                        [image_file_name] + detection_metadata_row
-                                    )
-
-                            filtered_frame_metadata_rows.append(
-                                [image_file_name] + row + self.model_and_code_version
-                            )
-                            iot_handler.upload_file(str(image_full_path))
-                            images_delivered += 1
-
-                    if images_delivered:
-                        self.save_csv_file(
-                            file_path_only_filtered_rows, filtered_frame_metadata_rows
-                        )
-                        iot_handler.upload_file(str(file_path_only_filtered_rows))
-                        self.save_csv_file(
-                            file_path_detection_metadata, detection_metadata_rows
-                        )
-                        iot_handler.upload_file(str(file_path_detection_metadata))
-
-                logger.info(
-                    f"From {frame_metadata_file_path} number of frames delivered: {images_delivered}"
-                )
+                self._deliver_data_batch(frame_metadata_file_path, iot_handler)
             except FileNotFoundError as e:
                 logger.error(
                     f"FileNotFoundError during the delivery of: {frame_metadata_file_path}: {e}"
@@ -160,6 +96,111 @@ class DataDelivery:
                     frame_metadata_file_path
                 )
 
+    def _deliver_data_batch(
+        self, frame_metadata_file_path: str, iot_handler: IoTHandler
+    ):
+        """
+        Delivers the data of a single frame metadata csv file.
+        This includes the frame metadata, the detections metadata and the images containing containers.
+
+        Returns
+        -------
+
+        """
+        (
+            csv_path,
+            relative_path,
+            detections_path,
+            path_only_filtered_rows,
+            file_path_only_filtered_rows,
+            file_path_detection_metadata,
+        ) = self._calculate_all_paths(metadata_csv_file_path=frame_metadata_file_path)
+
+        filtered_frame_metadata_rows = []
+        detection_metadata_rows = []
+
+        with open(frame_metadata_file_path) as frame_metadata_file:
+            reader = csv.reader(frame_metadata_file)
+            header = next(reader)
+            new_frame_metadata_header = (
+                ["image_name"]
+                + header
+                + ["model_name", "model_version", "code_version"]
+            )
+            filtered_frame_metadata_rows.append(new_frame_metadata_header)
+            detection_metadata_rows.append(self.detection_metadata_header)
+
+            images_delivered = 0
+            for row in reader:
+                image_file_name = get_img_name_from_csv_row(csv_path, row)
+                row_detection_metadata_rows = self._deliver_image_and_prepare_metadata(
+                    image_file_name, detections_path, iot_handler
+                )
+                detection_metadata_rows.extend(row_detection_metadata_rows)
+                filtered_frame_metadata_rows.append(
+                    [image_file_name] + row + self.model_and_code_version
+                )
+                images_delivered += len(row_detection_metadata_rows)
+
+            if images_delivered:
+                self.save_csv_file(
+                    file_path_only_filtered_rows, filtered_frame_metadata_rows
+                )
+                iot_handler.upload_file(str(file_path_only_filtered_rows))
+                self.save_csv_file(
+                    file_path_detection_metadata, detection_metadata_rows
+                )
+                iot_handler.upload_file(str(file_path_detection_metadata))
+
+        logger.info(
+            f"From {frame_metadata_file_path} number of frames delivered: {images_delivered}"
+        )
+
+    @staticmethod
+    def _deliver_image_and_prepare_metadata(
+        image_file_name, detections_path, iot_handler
+    ):
+        """
+        Delivers an image specified by row, and returns the metadata, this will be collected and sent all together
+        for all the images of the same metadata csv file.
+
+        Parameters
+        ----------
+        image_file_name:
+            Filename of the image.
+        detections_path:
+            where are the detections located.
+        iot_handler:
+            IoTHandler object to deliver the data.
+
+        Returns
+        -------
+        detection_metadata_rows
+            Detection metadata information.
+
+        """
+        image_full_path = detections_path / image_file_name
+        detection_metadata_full_path = detections_path / pathlib.Path(
+            f"{image_full_path.stem}.txt"
+        )
+        detection_metadata_rows = []
+
+        if not os.path.isfile(image_full_path):
+            logger.error(f"The file {image_full_path} could not be found.")
+        elif not os.path.isfile(detection_metadata_full_path):
+            logger.error(f"The file {detection_metadata_full_path} could not be found.")
+        else:
+            with open(detection_metadata_full_path, "r") as detections_file:
+                for detection_metadata_row in csv.reader(
+                    detections_file, delimiter=" "
+                ):
+                    detection_metadata_rows.append(
+                        [image_file_name] + detection_metadata_row
+                    )
+
+            iot_handler.upload_file(str(image_full_path))
+        return detection_metadata_rows
+
     @staticmethod
     def save_csv_file(file_path: str, data: List[List[str]]):
         directory = os.path.dirname(file_path)
@@ -170,7 +211,7 @@ class DataDelivery:
             csv_writer = csv.writer(output_file)
             csv_writer.writerows(data)
 
-    def _delete_data(self, metadata_csv_file_paths):
+    def _delete_processed_data(self, metadata_csv_file_paths):
         """
         Deletes the data that has been delivered to Azure.
 

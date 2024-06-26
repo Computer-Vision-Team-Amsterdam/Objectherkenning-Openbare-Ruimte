@@ -29,6 +29,7 @@ data_delivery_pipeline:
   metadata_path: "/temp_metadata"
   ml_model_id: "{ML_MODEL_ID}"
   project_version: "{PROJECT_VERSION}"
+  sleep_time: 30
 
 detection_pipeline:
   images_path: "/raw_frames"
@@ -49,6 +50,7 @@ detection_pipeline:
   target_classes: [2]
   sensitive_classes: [0,1]
   output_image_size: [1920, 1080]
+  sleep_time: 30
 
 data_sampling:
   inputs:

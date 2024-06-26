@@ -38,4 +38,4 @@ if __name__ == "__main__":
         except Exception as e:
             logger.info(f"Exception occurred in container detection: {e}")
             logger.debug(traceback.format_exc())
-        time.sleep(30)
+        time.sleep(settings["detection_pipeline"]["sleep_time"])

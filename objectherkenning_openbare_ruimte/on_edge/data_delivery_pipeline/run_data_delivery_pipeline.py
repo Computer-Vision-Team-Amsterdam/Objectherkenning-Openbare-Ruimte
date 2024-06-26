@@ -30,4 +30,4 @@ if __name__ == "__main__":
             logger.error(
                 f"Exception occurred in data delivery pipeline: {traceback.format_exc()}"
             )
-        time.sleep(30)
+        time.sleep(settings["data_delivery_pipeline"]["sleep_time"])

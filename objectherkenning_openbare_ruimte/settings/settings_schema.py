@@ -42,6 +42,7 @@ class DataDeliveryPipelineSpec(SettingsSpecModel):
     metadata_path: str
     ml_model_id: str
     project_version: str
+    sleep_time: int
 
 
 class InferenceModelParameters(SettingsSpecModel):
@@ -69,6 +70,7 @@ class DetectionPipelineSpec(SettingsSpecModel):
     target_classes: List[int]
     sensitive_classes: List[int]
     output_image_size: Tuple[int, int]
+    sleep_time: int
 
 
 class DataSampling(SettingsSpecModel):
