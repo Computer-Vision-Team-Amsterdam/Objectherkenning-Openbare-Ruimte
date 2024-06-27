@@ -19,6 +19,7 @@ from objectherkenning_openbare_ruimte.on_edge.utils import (
     get_frame_metadata_csv_file_paths,
     get_img_name_from_csv_row,
     log_execution_time,
+    move_file,
 )
 
 logger = logging.getLogger("detection_pipeline")
@@ -38,6 +39,7 @@ class DataDetection:
         target_classes: List,
         sensitive_classes: List,
         training_mode: bool,
+        training_mode_destination_path: str,
     ):
         """
         Object that find containers in the images using a pre-trained YOLO model and blurs sensitive data.
@@ -48,7 +50,10 @@ class DataDetection:
             Folder containing images to run detection on.
         """
         self.training_mode = training_mode
-        self.images_folder = images_folder
+        self.training_mode_destination_path = pathlib.Path(
+            training_mode_destination_path
+        )
+        self.images_folder = pathlib.Path(images_folder)
         self.detections_folder = detections_folder
         self.model_name = model_name
         self.pretrained_model_path = os.path.join(pretrained_model_path, model_name)
@@ -88,7 +93,9 @@ class DataDetection:
         )
         logger.info(f"Number of CSVs to detect: {len(metadata_csv_file_paths)}")
         self._detect_and_blur_step(metadata_csv_file_paths=metadata_csv_file_paths)
-        if not self.training_mode:
+        if self.training_mode:
+            self._move_data(metadata_csv_file_paths=metadata_csv_file_paths)
+        else:
             self._delete_data_step(metadata_csv_file_paths=metadata_csv_file_paths)
 
     @log_execution_time
@@ -199,7 +206,7 @@ class DataDetection:
         """
         csv_path = pathlib.Path(metadata_csv_file_path)
         relative_path = csv_path.relative_to(self.images_folder)
-        images_path = pathlib.Path(self.images_folder) / relative_path.parent
+        images_path = self.images_folder / relative_path.parent
         detections_path = pathlib.Path(self.detections_folder) / relative_path.parent
 
         return (
@@ -333,7 +340,7 @@ class DataDetection:
         ):
             csv_path = pathlib.Path(metadata_csv_file_path)
             relative_path = csv_path.relative_to(self.images_folder)
-            images_path = pathlib.Path(self.images_folder) / relative_path.parent
+            images_path = self.images_folder / relative_path.parent
             with open(metadata_csv_file_path) as frame_metadata_file:
                 images_deleted_count = 0
                 reader = csv.reader(frame_metadata_file)
@@ -347,4 +354,40 @@ class DataDetection:
             delete_file(metadata_csv_file_path)
             logger.info(
                 f"Deleted {images_deleted_count} images from {metadata_csv_file_path}"
+            )
+
+    @log_execution_time
+    def _move_data(self, metadata_csv_file_paths):
+        """
+        Moves the data that has been processed to a training folder.
+
+        Parameters
+        ----------
+        metadata_csv_file_paths
+            CSV files containing the metadata of the pictures,
+            it's used to keep track of which files had to be detected.
+        """
+        for metadata_csv_file_path in metadata_csv_file_paths:
+            csv_path = pathlib.Path(metadata_csv_file_path)
+            relative_path = csv_path.relative_to(self.images_folder)
+            images_path = self.images_folder / relative_path.parent
+            with open(metadata_csv_file_path) as frame_metadata_file:
+                images_moved_count = 0
+                reader = csv.reader(frame_metadata_file)
+                _ = next(reader)
+                for idx, row in enumerate(reader):
+                    image_file_name = get_img_name_from_csv_row(csv_path, row)
+                    image_full_path = images_path / image_file_name
+                    if os.path.isfile(image_full_path):
+                        image_destination_full_path = (
+                            self.training_mode_destination_path / image_file_name
+                        )
+                        move_file(image_full_path, image_destination_full_path)
+                        images_moved_count += 1
+            metadata_csv_destination_file_path = (
+                self.training_mode_destination_path / metadata_csv_file_path.name
+            )
+            move_file(metadata_csv_file_path, metadata_csv_destination_file_path)
+            logger.info(
+                f"Moved {images_moved_count} images from {metadata_csv_file_path}"
             )

@@ -72,6 +72,7 @@ class DetectionPipelineSpec(SettingsSpecModel):
     output_image_size: Tuple[int, int]
     sleep_time: int
     training_mode: bool
+    training_mode_destination_path: str
 
 
 class DataSampling(SettingsSpecModel):

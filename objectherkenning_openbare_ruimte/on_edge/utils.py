@@ -38,3 +38,14 @@ def log_execution_time(func):
         return result
 
     return wrapper
+
+
+def move_file(file_path, output_file_path):
+    try:
+        os.rename(file_path, output_file_path)
+        logger.info(f"{file_path} has been moved to {output_file_path}.")
+    except FileNotFoundError:
+        logger.error(f"{file_path} does not exist.")
+    except Exception as e:
+        logger.error(f"Failed to move file '{file_path}': {str(e)}")
+        raise Exception(f"Failed to move file '{file_path}': {e}")

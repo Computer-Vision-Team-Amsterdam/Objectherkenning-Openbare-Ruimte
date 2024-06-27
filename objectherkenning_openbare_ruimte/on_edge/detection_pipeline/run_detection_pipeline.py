@@ -29,6 +29,9 @@ if __name__ == "__main__":
         target_classes=settings["detection_pipeline"]["target_classes"],
         sensitive_classes=settings["detection_pipeline"]["sensitive_classes"],
         training_mode=settings["detection_pipeline"]["training_mode"],
+        training_mode_destination_path=settings["detection_pipeline"][
+            "training_mode_destination_path"
+        ],
     )
     while True:
         try:
