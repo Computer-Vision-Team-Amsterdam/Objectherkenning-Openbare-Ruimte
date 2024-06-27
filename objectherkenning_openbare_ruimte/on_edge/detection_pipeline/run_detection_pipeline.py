@@ -28,6 +28,7 @@ if __name__ == "__main__":
         defisheye_params=settings["detection_pipeline"]["defisheye_params"],
         target_classes=settings["detection_pipeline"]["target_classes"],
         sensitive_classes=settings["detection_pipeline"]["sensitive_classes"],
+        training_mode=settings["detection_pipeline"]["training_mode"],
     )
     while True:
         try:

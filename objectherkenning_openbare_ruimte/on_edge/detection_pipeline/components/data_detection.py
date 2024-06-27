@@ -37,6 +37,7 @@ class DataDetection:
         defisheye_params: Dict,
         target_classes: List,
         sensitive_classes: List,
+        training_mode: bool,
     ):
         """
         Object that find containers in the images using a pre-trained YOLO model and blurs sensitive data.
@@ -46,6 +47,7 @@ class DataDetection:
         images_folder
             Folder containing images to run detection on.
         """
+        self.training_mode = training_mode
         self.images_folder = images_folder
         self.detections_folder = detections_folder
         self.model_name = model_name
@@ -86,7 +88,8 @@ class DataDetection:
         )
         logger.info(f"Number of CSVs to detect: {len(metadata_csv_file_paths)}")
         self._detect_and_blur_step(metadata_csv_file_paths=metadata_csv_file_paths)
-        self._delete_data_step(metadata_csv_file_paths=metadata_csv_file_paths)
+        if not self.training_mode:
+            self._delete_data_step(metadata_csv_file_paths=metadata_csv_file_paths)
 
     @log_execution_time
     def _detect_and_blur_step(self, metadata_csv_file_paths):

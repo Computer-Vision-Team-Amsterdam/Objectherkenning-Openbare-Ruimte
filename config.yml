@@ -51,6 +51,7 @@ detection_pipeline:
   sensitive_classes: [0,1]
   output_image_size: [1920, 1080]
   sleep_time: 30
+  training_mode: False
 
 data_sampling:
   inputs:
