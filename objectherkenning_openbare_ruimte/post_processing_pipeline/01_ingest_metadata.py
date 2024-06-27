@@ -46,8 +46,6 @@ class DataLoader:
         path_table_schema = self._get_schema_path(self.frame_metadata_table)
         df = self._load_new_frame_metadata(source, path_table_schema=path_table_schema, format="csv")
         self._store_new_data(df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table)
-        print("Stored frame metadata.")
-
 
     def ingest_detection_metadata(self):
 
@@ -55,8 +53,6 @@ class DataLoader:
         path_table_schema = self._get_schema_path(self.detection_metadata_table)
         df = self._load_new_detection_metadata(source, path_table_schema=path_table_schema, format="csv")
         self._store_new_data(df, checkpoint_path=self.checkpoint_detections, target=self.detection_metadata_table)
-        print("Stored detection metadata.")
-
 
 
     def _load_new_frame_metadata(self, source:str, path_table_schema:str, format:str):
@@ -73,7 +69,6 @@ class DataLoader:
                 .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
                 .withColumn("status", lit("Pending")))
         
-        print(f"Loaded {bronze_df_frame.count()} new rows of bronze frame metadata.")
         return bronze_df_frame
     
     def _load_new_detection_metadata(self, source:str, path_table_schema: str, format: str):
@@ -87,7 +82,6 @@ class DataLoader:
                 .load(source)
                 .withColumn("status", lit("Pending")))
 
-        print(f"Loaded {bronze_df_detection.count()} new rows of bronze detection metadata.")
         return bronze_df_detection
        
     # availableNow = process all files that have been added before the time when this query ran. Used with batch processing
@@ -95,9 +89,14 @@ class DataLoader:
         stream_query = (df.writeStream 
             .option("checkpointLocation", checkpoint_path) 
             .trigger(availableNow=True)
-            .toTable(target)
-            .start())
+            .toTable(target))
         
+
+        # query = f"SELECT COUNT(*) FROM {target}"
+        # query_result = spark.sql(query)
+        # display(query_result)
+        #print(f"Stored {query_result.count()} new rows in {target}.")
+
         stream_query.awaitTermination()
 
 if __name__ == "__main__":
