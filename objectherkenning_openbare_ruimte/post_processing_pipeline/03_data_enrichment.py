@@ -28,6 +28,7 @@ if __name__ == "__main__":
     # Setup clustering
     clustering = Clustering(spark=sparkSession, date="D14M03Y2024")  
     containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
+ 
     
     # Setup bridges data
     root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
@@ -52,7 +53,8 @@ if __name__ == "__main__":
     
     clustering.add_column(column_name="closest_bridge_distance", values=closest_bridges_distances)
 
-    # Enrich with decos data # TODO fix the date to correspond with clustering
+    # Enrich with decos data 
+    # TODO fix the date to correspond with clustering
     query = "SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '2024-02-17' AND datum_object_tm >= '2024-02-17'"
     decosDataHandler.run(query)
     query_result_df = decosDataHandler.get_query_result_df()
@@ -75,6 +77,7 @@ if __name__ == "__main__":
 
     display(clustering.df_joined)
 
+    sparkSession.stop()
 
 
     

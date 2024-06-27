@@ -19,12 +19,6 @@ class DataLoader:
         self.checkpoint_frames = f"{self.root_source}/checkpoints/_checkpoint_frames"
         self.checkpoint_detections = f"{self.root_source}/checkpoints/_checkpoint_detections"
 
-        self._setup_initial_files()
-
-
-    def _setup_initial_files(self):
-        pass
-
     def _get_schema_path(self, table_name):
         """
         Retrieves the schema of the specified table and saves it to a temporary file.
@@ -52,6 +46,7 @@ class DataLoader:
         path_table_schema = self._get_schema_path(self.frame_metadata_table)
         df = self._load_new_frame_metadata(source, path_table_schema=path_table_schema, format="csv")
         self._store_new_data(df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table)
+        print("Stored frame metadata.")
 
 
     def ingest_detection_metadata(self):
@@ -60,11 +55,13 @@ class DataLoader:
         path_table_schema = self._get_schema_path(self.detection_metadata_table)
         df = self._load_new_detection_metadata(source, path_table_schema=path_table_schema, format="csv")
         self._store_new_data(df, checkpoint_path=self.checkpoint_detections, target=self.detection_metadata_table)
+        print("Stored detection metadata.")
+
 
 
     def _load_new_frame_metadata(self, source:str, path_table_schema:str, format:str):
 
-        bronze_df = (self.spark.readStream \
+        bronze_df_frame = (self.spark.readStream \
                 .format("cloudFiles") \
                 .option("cloudFiles.format", format) \
                 .option("cloudFiles.schemaLocation", path_table_schema) \
@@ -76,8 +73,8 @@ class DataLoader:
                 .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
                 .withColumn("status", lit("Pending")))
         
-        display(bronze_df)
-        return bronze_df
+        print(f"Loaded {bronze_df_frame.count()} new rows of bronze frame metadata.")
+        return bronze_df_frame
     
     def _load_new_detection_metadata(self, source:str, path_table_schema: str, format: str):
         bronze_df_detection = (self.spark.readStream \
@@ -90,19 +87,23 @@ class DataLoader:
                 .load(source)
                 .withColumn("status", lit("Pending")))
 
-
+        print(f"Loaded {bronze_df_detection.count()} new rows of bronze detection metadata.")
         return bronze_df_detection
        
-
+    # availableNow = process all files that have been added before the time when this query ran. Used with batch processing
     def _store_new_data(self, df, checkpoint_path, target):
         stream_query = (df.writeStream 
             .option("checkpointLocation", checkpoint_path) 
-            .trigger(availableNow=True) 
-            .toTable(target))
-
+            .trigger(availableNow=True)
+            .toTable(target)
+            .start())
+        
+        stream_query.awaitTermination()
 
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
     dataLoader = DataLoader(sparkSession)
     dataLoader.ingest_frame_metadata()
-    #dataLoader.ingest_detection_metadata()
+    dataLoader.ingest_detection_metadata()
+
+    sparkSession.stop()
