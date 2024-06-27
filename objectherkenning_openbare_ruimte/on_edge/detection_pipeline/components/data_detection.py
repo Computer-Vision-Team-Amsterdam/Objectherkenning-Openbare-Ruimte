@@ -18,6 +18,7 @@ from objectherkenning_openbare_ruimte.on_edge.detection_pipeline.components impo
 from objectherkenning_openbare_ruimte.on_edge.utils import (
     get_frame_metadata_csv_file_paths,
     get_img_name_from_csv_row,
+    log_execution_time,
 )
 
 logger = logging.getLogger("detection_pipeline")
@@ -69,7 +70,9 @@ class DataDetection:
         self.roi = self.mapx = self.mapy = None
         self.target_classes = target_classes
         self.sensitive_classes = sensitive_classes
+        self.metadata_csv_file_paths_with_errors: List[str] = []
 
+    @log_execution_time
     def run_pipeline(self):
         """
         Runs the detection pipeline:
@@ -82,67 +85,128 @@ class DataDetection:
             root_folder=self.images_folder
         )
         logger.info(f"Number of CSVs to detect: {len(metadata_csv_file_paths)}")
-        self._detect_and_blur(metadata_csv_file_paths=metadata_csv_file_paths)
-        self._delete_data(metadata_csv_file_paths=metadata_csv_file_paths)
+        self._detect_and_blur_step(metadata_csv_file_paths=metadata_csv_file_paths)
+        self._delete_data_step(metadata_csv_file_paths=metadata_csv_file_paths)
 
-    def _detect_and_blur(self, metadata_csv_file_paths):
+    @log_execution_time
+    def _detect_and_blur_step(self, metadata_csv_file_paths):
         for metadata_csv_file_path in metadata_csv_file_paths:
-            logger.debug(f"metadata_csv_file_path: {metadata_csv_file_path}")
-            csv_path = pathlib.Path(metadata_csv_file_path)
-            relative_path = csv_path.relative_to(self.images_folder)
-            images_path = pathlib.Path(self.images_folder) / relative_path.parent
-            detections_path = (
-                pathlib.Path(self.detections_folder) / relative_path.parent
-            )
+            try:
+                logger.debug(f"metadata_csv_file_path: {metadata_csv_file_path}")
+                (
+                    csv_path,
+                    relative_path,
+                    images_path,
+                    detections_path,
+                ) = self._calculate_all_paths(metadata_csv_file_path)
 
-            with open(metadata_csv_file_path) as frame_metadata_file:
-                reader = csv.reader(frame_metadata_file)
-                _ = next(reader)
-                processed_images_count = target_objects_detected_count = 0
-                for idx, row in enumerate(reader):
-                    image_file_name = pathlib.Path(
-                        get_img_name_from_csv_row(csv_path, row)
-                    )
-                    image_full_path = images_path / image_file_name
-                    if os.path.isfile(image_full_path):
-                        logger.info(f"Processing {image_file_name}")
-                        image = cv2.imread(str(image_full_path))
-                        if self.defisheye_flag:
-                            image = self._defisheye(image)
-                        image = cv2.resize(image, self.output_image_size)
-                        self.inference_params["source"] = image
-                        self.inference_params["name"] = csv_path.stem
-
-                        detection_results = self.model(**self.inference_params)
-                        torch.cuda.empty_cache()
-
-                        target_objects_detected_count += sum(
-                            len(
-                                np.where(
-                                    np.in1d(
-                                        model_result.cpu().boxes.numpy().cls,
-                                        self.target_classes,
-                                    )
-                                )[0]
+                with open(metadata_csv_file_path) as frame_metadata_file:
+                    reader = csv.reader(frame_metadata_file)
+                    _ = next(reader)
+                    processed_images_count = target_objects_detected_count = 0
+                    for row in reader:
+                        image_file_name = pathlib.Path(
+                            get_img_name_from_csv_row(csv_path, row)
+                        )
+                        image_full_path = images_path / image_file_name
+                        if os.path.isfile(image_full_path):
+                            target_objects_detected_count += (
+                                self._detect_and_blur_image(
+                                    image_file_name,
+                                    image_full_path,
+                                    csv_path,
+                                    detections_path,
+                                )
                             )
-                            for model_result in detection_results
-                        )
+                            processed_images_count += 1
+                        else:
+                            logger.debug(
+                                f"Image {image_full_path} not found, skipping."
+                            )
+                if target_objects_detected_count:
+                    shutil.copyfile(
+                        csv_path, os.path.join(detections_path, csv_path.name)
+                    )
+                logger.info(
+                    f"Processed {processed_images_count} images from {metadata_csv_file_path}, "
+                    f"detected {target_objects_detected_count} containers."
+                )
+            except Exception as e:
+                logger.error(
+                    f"Exception during the detection of: {metadata_csv_file_path}: {e}"
+                )
+                self.metadata_csv_file_paths_with_errors.append(metadata_csv_file_path)
 
-                        self._process_results(
-                            detection_results,
-                            str(detections_path),
-                            image_file_name,
-                        )
-                        processed_images_count += 1
-                    else:
-                        logger.debug(f"Image {image_full_path} not found, skipping.")
-            if target_objects_detected_count:
-                shutil.copyfile(csv_path, os.path.join(detections_path, csv_path.name))
-            logger.info(
-                f"Processed {processed_images_count} images from {metadata_csv_file_path}, "
-                f"detected {target_objects_detected_count} containers."
+    @log_execution_time
+    def _detect_and_blur_image(
+        self, image_file_name, image_full_path, csv_path, detections_path
+    ):
+        logger.info(f"Detecting and blurring: {image_file_name}")
+        image = cv2.imread(str(image_full_path))
+        if self.defisheye_flag:
+            image = self._defisheye(image)
+        image = cv2.resize(image, self.output_image_size)
+        self.inference_params["source"] = image
+        self.inference_params["name"] = csv_path.stem
+
+        detection_results = self.model(**self.inference_params)
+        torch.cuda.empty_cache()
+
+        self._process_results(
+            detection_results,
+            str(detections_path),
+            image_file_name,
+        )
+        return sum(
+            len(
+                np.where(
+                    np.in1d(
+                        model_result.cpu().boxes.numpy().cls,
+                        self.target_classes,
+                    )
+                )[0]
             )
+            for model_result in detection_results
+        )
 
+    def _calculate_all_paths(self, metadata_csv_file_path):
+        """
+        Calculate all the folders where the data should be retrieved and stored.
+
+        Parameters
+        ----------
+        metadata_csv_file_path
+            CSV file containing the metadata of the pictures,
+            it's used to keep track of which files need to be delivered.
+
+        Returns
+        -------
+            csv_path
+                Path where the csv metadata file is stored. For example:
+                /detections/folder1/file1.csv
+            relative_path
+                Folder structure to the images folder, excluding the root. For example:
+                folder1/file1.csv
+            images_path
+                Path of images excluding the file. For example:
+                /detections/folder1
+            detections_path
+                Path of detections excluding the file. For example:
+                /detections/folder1
+        """
+        csv_path = pathlib.Path(metadata_csv_file_path)
+        relative_path = csv_path.relative_to(self.images_folder)
+        images_path = pathlib.Path(self.images_folder) / relative_path.parent
+        detections_path = pathlib.Path(self.detections_folder) / relative_path.parent
+
+        return (
+            csv_path,
+            relative_path,
+            images_path,
+            detections_path,
+        )
+
+    @log_execution_time
     def _defisheye(self, image):
         if self.roi is None or self.mapx is None or self.mapy is None:
             newcameramtx, self.roi = cv2.getOptimalNewCameraMatrix(
@@ -173,7 +237,6 @@ class DataDetection:
     @staticmethod
     def _get_annotation_string_from_boxes(boxes: Boxes) -> str:
         boxes = boxes.cpu()
-
         annotation_lines = []
 
         for box in boxes:
@@ -184,6 +247,7 @@ class DataDetection:
             annotation_lines.append(f"{cls} {yolo_box_str} {conf:.6f} {tracking_id}")
         return "\n".join(annotation_lines)
 
+    @log_execution_time
     def _process_results(
         self,
         model_results: List,
@@ -250,16 +314,20 @@ class DataDetection:
 
         return [obj_str, speed_str]
 
-    def _delete_data(self, metadata_csv_file_paths):
+    @log_execution_time
+    def _delete_data_step(self, metadata_csv_file_paths):
         """
         Deletes the data that has been processed.
 
         Parameters
         ----------
-        videos_and_frames
-            List containing the paths of the images to delete.
+        metadata_csv_file_paths
+            CSV files containing the metadata of the pictures,
+            it's used to keep track of which files had to be detected.
         """
-        for metadata_csv_file_path in metadata_csv_file_paths:
+        for metadata_csv_file_path in list(
+            set(metadata_csv_file_paths) - set(self.metadata_csv_file_paths_with_errors)
+        ):
             csv_path = pathlib.Path(metadata_csv_file_path)
             relative_path = csv_path.relative_to(self.images_folder)
             images_path = pathlib.Path(self.images_folder) / relative_path.parent

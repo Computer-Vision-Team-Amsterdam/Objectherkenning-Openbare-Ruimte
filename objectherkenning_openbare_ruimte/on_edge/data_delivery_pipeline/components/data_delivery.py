@@ -13,6 +13,7 @@ from objectherkenning_openbare_ruimte.on_edge.data_delivery_pipeline.components.
 from objectherkenning_openbare_ruimte.on_edge.utils import (
     get_frame_metadata_csv_file_paths,
     get_img_name_from_csv_row,
+    log_execution_time,
 )
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
@@ -51,6 +52,7 @@ class DataDelivery:
             "tracking_id",
         ]
 
+    @log_execution_time
     def run_pipeline(self):
         """
         Runs the data delivery pipeline:
@@ -66,6 +68,7 @@ class DataDelivery:
         self._deliver_data(frame_metadata_file_paths=metadata_csv_file_paths)
         self._delete_processed_data(metadata_csv_file_paths=metadata_csv_file_paths)
 
+    @log_execution_time
     def _deliver_data(self, frame_metadata_file_paths):
         """
         Using Azure IoT delivers the images and metadata to Azure.
@@ -97,6 +100,7 @@ class DataDelivery:
                     frame_metadata_file_path
                 )
 
+    @log_execution_time
     def _deliver_data_batch(
         self, frame_metadata_file_path: str, iot_handler: IoTHandler
     ):
@@ -164,6 +168,7 @@ class DataDelivery:
         )
 
     @staticmethod
+    @log_execution_time
     def _deliver_image_and_prepare_metadata(
         image_file_name, detections_path, iot_handler
     ):
@@ -192,11 +197,9 @@ class DataDelivery:
         )
         detection_metadata_rows = []
 
-        if not os.path.isfile(image_full_path):
-            logger.error(f"The file {image_full_path} could not be found.")
-        elif not os.path.isfile(detection_metadata_full_path):
-            logger.error(f"The file {detection_metadata_full_path} could not be found.")
-        else:
+        if os.path.isfile(image_full_path) and os.path.isfile(
+            detection_metadata_full_path
+        ):
             with open(detection_metadata_full_path, "r") as detections_file:
                 for detection_metadata_row in csv.reader(
                     detections_file, delimiter=" "
@@ -210,6 +213,7 @@ class DataDelivery:
         return detection_metadata_rows
 
     @staticmethod
+    @log_execution_time
     def save_csv_file(file_path: str, data: List[List[str]]):
         directory = os.path.dirname(file_path)
         if not os.path.exists(directory):
@@ -219,6 +223,7 @@ class DataDelivery:
             csv_writer = csv.writer(output_file)
             csv_writer.writerows(data)
 
+    @log_execution_time
     def _delete_processed_data(self, metadata_csv_file_paths):
         """
         Deletes the data that has been delivered to Azure.
