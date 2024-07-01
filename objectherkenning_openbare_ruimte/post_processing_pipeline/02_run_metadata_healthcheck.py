@@ -7,11 +7,14 @@ class MetadataHealthChecker:
         self.catalog = get_catalog_name(spark)
         # load bronze metadata that is pending
         self.bronze_frame_metadata = self.load_bronze_metadata(table_name="bronze_frame_metadata")
+        print(f"02: Loaded {self.bronze_frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.bronze_frame_metadata.")
         self.process_and_save_frame_metadata()
         self.update_bronze_status(table_name="bronze_frame_metadata")
 
 
         self.bronze_detection_metadata = self.load_bronze_metadata(table_name="bronze_detection_metadata")
+        print(f"02: Loaded {self.bronze_detection_metadata.count()} 'Pending' rows from {self.catalog}.oor.bronze_detection_metadata.")
+
         self.process_and_save_detection_metadata()
         # update bronze metadata status to processed
         self.update_bronze_status(table_name="bronze_detection_metadata")
@@ -31,10 +34,13 @@ class MetadataHealthChecker:
         invalid_metadata = self.bronze_frame_metadata.filter((col('gps_lat').isNull()) | (col('gps_lat') == 0) |
                                         (col('gps_lon').isNull()) | (col('gps_lon') == 0))
         
-        
+        print("02: Processed frame metadata.")
+
         valid_metadata.write.mode('append').saveAsTable(f'{self.catalog}.oor.silver_frame_metadata')
-        
+        print(f"02: Appended {valid_metadata.count()} rows to {self.catalog}.oor.silver_frame_metadata.")
+
         invalid_metadata.write.mode('append').saveAsTable(f'{self.catalog}.oor.silver_frame_metadata_quarantine')
+        print(f"02: Appended {invalid_metadata.count()} rows to {self.catalog}.oor.silver_frame_metadata_quarantine.")
 
     def process_and_save_detection_metadata(self):
 
@@ -42,6 +48,8 @@ class MetadataHealthChecker:
         valid_metadata = self.bronze_detection_metadata
         #display(valid_metadata)
         valid_metadata.write.mode('append').saveAsTable(f'{self.catalog}.oor.silver_detection_metadata')
+        print(f"02: Appended {valid_metadata.count()} rows to silver_detection_metadata.")
+
         
     def update_bronze_status(self, table_name):
         # Update the status of the rows where status is 'Pending'
@@ -50,10 +58,9 @@ class MetadataHealthChecker:
         """
         # Execute the update query
         spark.sql(update_query)
+        print(f"02: Updated 'Pending' status to 'Processed' in {self.catalog}.oor.{table_name}.")
 
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("MetadataHealthChecker").getOrCreate()
     metadataHealthChecker = MetadataHealthChecker(sparkSession)
-
-    sparkSession.stop()
     

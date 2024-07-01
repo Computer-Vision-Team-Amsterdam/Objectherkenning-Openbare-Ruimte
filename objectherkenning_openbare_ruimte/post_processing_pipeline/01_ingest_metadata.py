@@ -1,4 +1,3 @@
-import dbutils
 
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()
@@ -57,7 +56,7 @@ class DataLoader:
         source = f"{self.root_source}/frame_metadata"
         path_table_schema = self._get_schema_path(self.frame_metadata_table)
         df = self._load_new_frame_metadata(source, path_table_schema=path_table_schema, format="csv")
-        print("Loaded frame metadata.")
+        print("01: Loaded frame metadata.")
         self._store_new_data(df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table)
 
     def ingest_detection_metadata(self):
@@ -67,6 +66,7 @@ class DataLoader:
         df = self._load_new_detection_metadata(
             source, path_table_schema=path_table_schema, format="csv"
         )
+        print("01: Loaded detection metadata.")
         self._store_new_data(
             df,
             checkpoint_path=self.checkpoint_detections,
@@ -125,14 +125,14 @@ class DataLoader:
             .toTable(target))
             
 
-        # query_progress = stream_query.awaitTermination()  # Wait for 60 seconds (or adjust as needed)
+        query_progress = stream_query.awaitTermination(60) 
     
-        # # Get number of rows processed
-        # if query_progress:
-        #     rows_processed = stream_query.lastProgress["numInputRows"]
-        #     print(f"Number of rows ingested: {rows_processed}")
-        # else:
-        #     print("Query did not terminate properly.")
+        # Get number of rows processed
+        if query_progress:
+            rows_processed = stream_query.lastProgress["numInputRows"]
+            print(f"01: Stored {rows_processed} new rows into {target}.")
+        else:
+            print("01: Query did not terminate properly.")
 
 
         # stream_query.stop()
@@ -142,6 +142,6 @@ if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
     dataLoader = DataLoader(sparkSession)
     dataLoader.ingest_frame_metadata()
-   # dataLoader.ingest_detection_metadata()
+    dataLoader.ingest_detection_metadata()
 
-    sparkSession.stop()
+    #sparkSession.stop()
