@@ -20,7 +20,7 @@ def run_model_conversion():
     pretrained_model_path = settings["detection_pipeline"]["pretrained_model_path"]
     model_name = settings["detection_pipeline"]["model_name"]
 
-    if model_name.rsplit(sep=".", maxsplits=1)[-1] == "pt":
+    if model_name.rsplit(sep=".", maxsplit=1)[-1] == "pt":
         logger.info("Required model is a Torch model, no conversion needed.")
         return
 
@@ -28,7 +28,7 @@ def run_model_conversion():
         logger.info("Converted model already exists.")
         return
 
-    model_src_name = model_name.rsplit(sep=".", maxsplits=1)[0] + ".pt"
+    model_src_name = model_name.rsplit(sep=".", maxsplit=1)[0] + ".pt"
     if not os.path.isfile(os.path.join(pretrained_model_path, model_src_name)):
         logger.error(
             f"Cannot convert model {model_name} because {model_src_name} is not found."
