@@ -40,7 +40,7 @@ detection_pipeline:
     save_img_flag: False
     save_txt_flag: False
     save_conf_flag: False
-  model_name: "yolov8m_1280.pt"
+  model_name: "yolov8m_1280.engine"
   pretrained_model_path: "model_artifacts"
   defisheye_flag: True
   defisheye_params:
@@ -106,7 +106,7 @@ training_pipeline:
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations",
-                 "performance_monitoring", "detection_pipeline", "data_delivery_pipeline"]
+                 "performance_monitoring", "model_conversion_pipeline", "detection_pipeline", "data_delivery_pipeline"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING

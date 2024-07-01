@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 import shutil
+import time
 from typing import Dict, List, Tuple
 
 import cv2
@@ -73,6 +74,11 @@ class DataDetection:
         logger.info(f"Yolo model: {self.model_name}")
         logger.info(f"Project_path: {self.detections_folder}")
 
+        while not os.path.isfile(self.pretrained_model_path):
+            logger.info(
+                f"Model {self.model_name} not found, waiting for model_conversion_pipeline.."
+            )
+            time.sleep(10)
         self.model = YOLO(model=self.pretrained_model_path, task="detect")
         self.roi = self.mapx = self.mapy = None
         self.target_classes = target_classes
