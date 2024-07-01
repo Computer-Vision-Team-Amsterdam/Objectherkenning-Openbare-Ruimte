@@ -2,7 +2,7 @@ minimum_pre_commit_version: "1.21"
 files: ^.*\.py$
 repos:
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.8
+    rev: 1.7.9
     hooks:
       - id: bandit
         args: ["-c", "bandit.yaml"]
@@ -11,8 +11,8 @@ repos:
     hooks:
       - id: pip-audit
         args: [
-          "--ignore-vuln", "PYSEC-2023-228"
-        ]
+          "--ignore-vuln", "PYSEC-2023-228",
+          "-r", "requirements_on_edge.txt"]
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:
@@ -23,7 +23,7 @@ repos:
     hooks:
       - id: black
   - repo: https://github.com/PYCQA/flake8
-    rev: 7.0.0
+    rev: 7.1.0
     hooks:
       - id: flake8
         exclude: ^.venv
