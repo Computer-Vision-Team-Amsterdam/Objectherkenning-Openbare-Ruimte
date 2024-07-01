@@ -1,22 +1,29 @@
-from pyspark.sql.functions import monotonically_increasing_id, row_number
+from pyspark.sql.functions import monotonically_increasing_id, row_number, col, mean
 from pyspark.sql import Window
 from pyspark.sql.types import StructType, StructField, StringType, FloatType
 from shapely.geometry import Point
 from pyspark.sql import SparkSession
+from sklearn.cluster import DBSCAN
+import numpy as np
 
 from .databricks_workspace import get_catalog_name
 
+from databricks.sdk.runtime import *
+
+MS_PER_RAD = 6371008.8 # Earth radius in meters
+MIN_SAMPLES = 1 # avoid noise points. All points are either in a cluster or are a cluster of their own.
+
 class Clustering:
 
-    def __init__(self, spark: SparkSession, date):
+    def __init__(self, spark: SparkSession):
         
         self.spark = spark
         self.catalog = get_catalog_name(spark=spark)
         self.schema = "oor"
-        self.detection_metadata = self.spark.read.table(f'{self.catalog}.{self.schema}.bronze_detection_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
-        self.frame_metadata = self.spark.read.table(f'{self.catalog}.{self.schema}.bronze_frame_metadata') # TODO change table to silver_detection_metadata after implementing metadata healthcheck
-        self._filter_objects_by_date(date)
-        self._filter_objects_randomly()
+        query_detection_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_detection_metadata WHERE status='Pending'"
+        self.detection_metadata = self.spark.sql(query_detection_metadata)
+        query_frame_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_frame_metadata WHERE status='Pending'"
+        self.frame_metadata = self.spark.sql(query_frame_metadata)
         self.df_joined= self._join_frame_and_detection_metadata()
 
         self._containers_coordinates = self._extract_containers_coordinates()  
@@ -39,13 +46,26 @@ class Clustering:
 
     def _join_frame_and_detection_metadata(self):
 
-        joined_df = self.frame_metadata.join(self.detection_metadata, self.frame_metadata["image_name"] == self.detection_metadata["image_name"])
-        filtered_df = joined_df.filter(self.frame_metadata["image_name"] == self.detection_metadata["image_name"])
-        columns = ["gps_date", "id", "object_class", "gps_lat", "gps_lon"]
-        selected_df = filtered_df.select(columns)
-        joined_df = selected_df \
-                    .withColumnRenamed("gps_date", "detection_date") \
-                    .withColumnRenamed("id", "detection_id")
+        joined_df = self.frame_metadata.alias("fm").join(
+        self.detection_metadata.alias("dm"),
+        col("fm.image_name") == col("dm.image_name")
+        )
+
+        columns = [
+        col("fm.gps_date").alias("detection_date"),
+        col("dm.id").alias("detection_id"),
+        col("dm.object_class"),
+        col("dm.image_name"),
+        col("dm.x_center"),
+        col("dm.y_center"),
+        col("dm.width"),
+        col("dm.height"),
+        col("dm.confidence"),
+        col("fm.gps_lat"),
+        col("fm.gps_lon"),
+        ]
+
+        joined_df = joined_df.select(columns)
 
         return joined_df
     
@@ -82,3 +102,53 @@ class Clustering:
 
         self.df_joined = self.df_joined.join(b, self.df_joined.row_idx == b.row_idx).\
                     drop("row_idx")
+
+    def _cluster_points(self, eps, min_samples=MIN_SAMPLES):
+        """
+        Cluster points in a DataFrame using DBSCAN.
+
+        Parameters:
+        points (np.ndarray): [lon, lat] coordinates for each point
+        eps (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+        min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
+        """
+
+        coordinates = np.array(self._containers_coordinates)
+
+        db = DBSCAN(
+            eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
+        ).fit(np.radians(coordinates))
+        
+        # Add cluster labels to the DataFrame
+        labels = [int(v) for v in db.labels_]
+        self.add_column("tracking_id", labels)
+    
+    def cluster_and_select_images(self, distance=10):
+        # Cluster the points based on distance
+        epsilon = distance / MS_PER_RAD  # radius of the neighborhood
+        print(f'Epsilon: {epsilon}')
+        self._cluster_points(eps=epsilon)
+        print(f'DF_JOINED after _cluster_points')
+        display(self.df_joined)
+
+        # Calculate the mean confidence for each cluster
+        window_spec = Window.partitionBy("tracking_id")
+        self.df_joined = self.df_joined.withColumn("mean_confidence", mean("confidence").over(window_spec))
+
+        # Select images with confidence above the mean confidence of their cluster
+        self.df_joined = self.df_joined.filter(col("confidence") >= col("mean_confidence"))
+
+        # Calculate area for each image
+        self.df_joined = self.df_joined.withColumn("area", col("width") * col("height"))
+
+        # Select the image with the largest area within each cluster
+        window_spec_area = Window.partitionBy("tracking_id").orderBy(col("area").desc())
+        self.df_joined = self.df_joined.withColumn("row_number", row_number().over(window_spec_area))
+        self.df_joined = self.df_joined.filter(col("row_number") == 1).drop("row_number", "mean_confidence", "area")
+
+        # Update container coordinates after clustering
+        self._containers_coordinates = self._extract_containers_coordinates()  
+        self._containers_coordinates_geometry = self._convert_coordinates_to_point()
+
+        print('Final df_joined with clustered detections:')
+        display(self.df_joined)

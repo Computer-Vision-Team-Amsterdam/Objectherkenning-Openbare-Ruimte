@@ -26,10 +26,11 @@ if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("DataEnrichment").getOrCreate()
     ########## SETUP ##########    
     # Setup clustering
-    clustering = Clustering(spark=sparkSession, date="D14M03Y2024")  
+    clustering = Clustering(spark=sparkSession)  
+    clustering.cluster_and_select_images()
     containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
     
-    # Setup bridges data
+    '''# Setup bridges data
     root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
     vuln_bridges_rel_path = "test-diana/vuln_bridges.geojson"
     file_path = f"{root_source}/{vuln_bridges_rel_path}"
@@ -41,14 +42,15 @@ if __name__ == "__main__":
     db_host = "dev-bbn1-01-dbhost.postgres.database.azure.com"
     db_name = "mdbdataservices"
  
-    decosDataHandler = DecosDataHandler(az_tenant_id, db_host, db_name, db_port=5432)
+    decosDataHandler = DecosDataHandler(spark, az_tenant_id, db_host, db_name, db_port=5432)
 
     ######### ENRICHMENTS ###########
-
+    print(f'Len of containers: {len(containers_coordinates_geometry)}')
+    print(f'Len of vulnerable bridges: {len(bridgesHandler.get_bridges_coordinates())}')
     # Enrich with bridges data
     closest_bridges_distances = VulnerableBridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
         bridges_locations_as_linestrings=bridgesHandler.get_bridges_coordinates_geometry(),
-        containers_locations_as_points=clustering.get_containers_coordinates_geometry())
+        containers_locations_as_points=containers_coordinates_geometry)
     
     clustering.add_column(column_name="closest_bridge_distance", values=closest_bridges_distances)
 
@@ -73,7 +75,7 @@ if __name__ == "__main__":
         ]
     clustering.add_column(column_name="score", values=scores)
 
-    display(clustering.df_joined)
+    display(clustering.df_joined)'''
 
 
 

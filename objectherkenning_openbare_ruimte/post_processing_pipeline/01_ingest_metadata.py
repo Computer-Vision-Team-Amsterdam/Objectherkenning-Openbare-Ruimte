@@ -71,11 +71,13 @@ class DataLoader:
                 .option("cloudFiles.format", format) \
                 .option("cloudFiles.schemaLocation", path_table_schema) \
                 .option("cloudFiles.inferColumnTypes", "true") \
-                .option("cloudFiles.schemaHints", 'imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, gps_lat float, gps_lon float, gps_date date')  
+                .option("cloudFiles.schemaHints", 'imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float')  
                 .option("cloudFiles.schemaEvolutionMode", "none")   
                 .load(source)
                 .withColumnRenamed("pylon://0_frame_counter", "pylon0_frame_counter")
                 .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
+                .withColumn("gps_lat", col("gps_lat").cast("string"))
+                .withColumn("gps_lon", col("gps_lon").cast("string"))
                 .withColumn("status", lit("Pending")))
         return bronze_df
     
