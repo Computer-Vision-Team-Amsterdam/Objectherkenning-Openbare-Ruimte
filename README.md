@@ -71,6 +71,6 @@ sudo systemctl restart docker
 ```
 ```bash
 sudo docker load -i {TAR_IMAGE_PAHT}
-sudo docker run -d --restart unless-stopped --mount type=bind,source={source_path},target=/cvt_logs  --mount type=bind,source={source_path},target=/raw_videos  --mount type=bind,source={source_path},target=/detections --mount type=bind,source={source_path},target=/raw_frames --mount type=bind,source={training_mode_output_path},target=/training_mode -e SHARED_ACCESS_KEY_IOT={SHARED_ACCESS_KEY_IOT} -e AI_INSTRUMENTATION_KEY={AI_INSTRUMENTATION_KEY}  --gpus all --runtime nvidia acroorontweuitr01.azurecr.io/oor-model-arm64-v8 
+sudo docker run -d --restart unless-stopped --mount type=bind,source={logs_path},target=/cvt_logs --mount type=bind,source={detections_path},target=/detections --mount type=bind,source={temp_metadata_path},target=/temp_metadata --mount type=bind,source={training_mode_output_path},target=/training_mode --mount type=bind,source={input_path},target=/raw_frames -e SHARED_ACCESS_KEY_IOT={SHARED_ACCESS_KEY_IOT} -e AI_INSTRUMENTATION_KEY={AI_INSTRUMENTATION_KEY}  --gpus all --runtime nvidia acroorontweuitr01.azurecr.io/oor-model-arm64-v8
 ```
 Remember to replace with the correct values: SHARED_ACCESS_KEY_IOT, AI_INSTRUMENTATION_KEY.
