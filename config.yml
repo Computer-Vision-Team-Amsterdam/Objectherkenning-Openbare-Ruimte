@@ -42,7 +42,7 @@ detection_pipeline:
     save_conf_flag: False
   model_name: "yolov8m_1280.pt"
   pretrained_model_path: "model_artifacts"
-  defisheye_flag: False
+  defisheye_flag: True
   defisheye_params:
     camera_matrix: [[2028, 0, 1954.1], [0, 2029.6, 1055.1], [ 0, 0, 1]]
     distortion_params: [[-0.24083, 0.10647, 0.00083113, 0.0001802, -0.025874]]
