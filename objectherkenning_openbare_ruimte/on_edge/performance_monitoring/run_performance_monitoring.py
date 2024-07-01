@@ -54,4 +54,4 @@ if __name__ == "__main__":
         logger.info(
             f"system_status: [internet: {internet()}, cpu: {cpu_load}, ram: {ram_load}, gpu: {gpu_status}]"
         )
-        sleep(1.0)
+        sleep(30.0)
