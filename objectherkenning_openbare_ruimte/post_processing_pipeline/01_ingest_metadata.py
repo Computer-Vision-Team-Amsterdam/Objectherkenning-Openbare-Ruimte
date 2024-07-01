@@ -56,17 +56,25 @@ class DataLoader:
 
         source = f"{self.root_source}/frame_metadata"
         path_table_schema = self._get_schema_path(self.frame_metadata_table)
+<<<<<<< Updated upstream
         df = self._load_new_frame_metadata(
             source, path_table_schema=path_table_schema, format="csv"
         )
         self._store_new_data(
             df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table
         )
+=======
+        df = self._load_new_frame_metadata(source, path_table_schema=path_table_schema, format="csv")
+        print("Loaded frame metadata.")
+        self._store_new_data(df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table)
+         
+>>>>>>> Stashed changes
 
     def ingest_detection_metadata(self):
 
         source = f"{self.root_source}/detection_metadata"
         path_table_schema = self._get_schema_path(self.detection_metadata_table)
+<<<<<<< Updated upstream
         df = self._load_new_detection_metadata(
             source, path_table_schema=path_table_schema, format="csv"
         )
@@ -75,6 +83,13 @@ class DataLoader:
             checkpoint_path=self.checkpoint_detections,
             target=self.detection_metadata_table,
         )
+=======
+        df = self._load_new_detection_metadata(source, path_table_schema=path_table_schema, format="csv")
+        print("Loaded detection metadata.")
+        # self._store_new_data(df, checkpoint_path=self.checkpoint_detections, target=self.detection_metadata_table)
+        # print("Stored detection metadata.")
+
+>>>>>>> Stashed changes
 
     def _load_new_frame_metadata(
         self, source: str, path_table_schema: str, format: str
@@ -98,6 +113,21 @@ class DataLoader:
             .withColumn("status", lit("Pending"))
         )
 
+<<<<<<< Updated upstream
+=======
+        bronze_df_frame = (self.spark.readStream \
+                .format("cloudFiles") \
+                .option("cloudFiles.format", format) \
+                .option("cloudFiles.schemaLocation", path_table_schema) \
+                .option("cloudFiles.inferColumnTypes", "true") \
+                .option("cloudFiles.schemaHints", 'imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, gps_lat float, gps_lon float')  
+                .option("cloudFiles.schemaEvolutionMode", "none")   
+                .load(source)
+                .withColumnRenamed("pylon://0_frame_counter", "pylon0_frame_counter")
+                .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
+                .withColumn("status", lit("Pending")))
+        
+>>>>>>> Stashed changes
         return bronze_df_frame
 
     def _load_new_detection_metadata(
@@ -124,6 +154,7 @@ class DataLoader:
         stream_query = (
             df.writeStream.option("checkpointLocation", checkpoint_path)
             .trigger(availableNow=True)
+<<<<<<< Updated upstream
             .toTable(target)
         )
 
@@ -131,14 +162,27 @@ class DataLoader:
         # query_result = spark.sql(query)
         # display(query_result)
         # print(f"Stored {query_result.count()} new rows in {target}.")
+=======
+            .toTable(target))
+            
 
-        stream_query.awaitTermination()
+        query_progress = stream_query.awaitTermination()  # Wait for 60 seconds (or adjust as needed)
+    
+        # Get number of rows processed
+        if query_progress:
+            rows_processed = stream_query.lastProgress["numInputRows"]
+            print(f"Number of rows ingested: {rows_processed}")
+        else:
+            print("Query did not terminate properly.")
+>>>>>>> Stashed changes
+
+        stream_query.stop()
 
 
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
     dataLoader = DataLoader(sparkSession)
     dataLoader.ingest_frame_metadata()
-    dataLoader.ingest_detection_metadata()
+   # dataLoader.ingest_detection_metadata()
 
     sparkSession.stop()
