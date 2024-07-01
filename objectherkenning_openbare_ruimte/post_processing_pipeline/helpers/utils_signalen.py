@@ -9,7 +9,7 @@ import requests
 from typing import Any, Dict, List, Optional
 from pyspark.sql import SparkSession
 
-from databricks_workspace import get_databricks_environment
+from .databricks_workspace import get_databricks_environment, get_catalog_name
 
 class SignalConnectionConfigurer:
     """
@@ -77,15 +77,16 @@ class SignalConnectionConfigurer:
 
 class SignalHandler:
 
-    def __init__(self):
+    def __init__(self, spark):
 
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
-        signalConnectionConfigurer = SignalConnectionConfigurer()
+        signalConnectionConfigurer = SignalConnectionConfigurer(spark)
         self.base_url: str = signalConnectionConfigurer.get_base_url()
         access_token = signalConnectionConfigurer.get_access_token()
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}
 
-        self.catalog_name = get_catalog_name()
+        self.catalog_name = get_catalog_name(spark)
+        self.spark = spark
 
 
     def get_signal(self, sig_id: str) -> Any:
@@ -404,3 +405,26 @@ class SignalHandler:
             json_to_send.update(location_json)
 
         return json_to_send
+    
+   
+    def get_top_pending_records(self, table_name, limit=10):
+        # Select all rows where status is 'Pending', sort by score in descending order, and limit the results to the top 10
+        select_query = f"""
+        SELECT * FROM {self.catalog_name}.oor.{table_name}
+        WHERE status = 'Pending'
+        ORDER BY score DESC
+        LIMIT {limit}
+        """
+        results = self.spark.sql(select_query)
+        return results 
+
+
+    # TODO refactor this into a separate class which handles common table operations
+    def update_status(self, table_name):
+        # Update the status of the rows where status is 'Pending'
+        update_query = f"""
+        UPDATE {self.catalog}.oor.{table_name} SET status = 'Processed' WHERE status = 'Pending'
+        """
+        # Execute the update query
+        self.spark.sql(update_query)
+        print(f"04: Updated 'Pending' status to 'Processed' in {self.catalog}.oor.{table_name}.")   
