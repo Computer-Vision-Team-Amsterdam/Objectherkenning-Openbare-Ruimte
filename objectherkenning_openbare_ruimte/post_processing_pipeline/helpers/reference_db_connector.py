@@ -15,7 +15,7 @@ class ReferenceDatabaseConnector(ABC):
 
         self.az_login_username = dbutils.secrets.get(scope=self.db_scope, key="app-reg-refdb-id")
         self.az_login_password = dbutils.secrets.get(scope=self.db_scope, key="app-reg-refdb-key")
-        self.spn_refDb_username = dbutils.secrets.get(scope=self.db_scope, key="referenceDatabaseSpnUsername")
+        self.spn_refDb_username = "cvision_databricks"
         self.spn_refDb_password = None
         self._query_result_df = None # set in run_query()
 
