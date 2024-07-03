@@ -69,6 +69,7 @@ class DetectionPipelineSpec(SettingsSpecModel):
     defisheye_params: DefisheyeParameters
     target_classes: List[int]
     sensitive_classes: List[int]
+    input_image_size: Tuple[int, int]
     output_image_size: Tuple[int, int]
     sleep_time: int
     training_mode: bool

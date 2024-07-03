@@ -22,6 +22,7 @@ if __name__ == "__main__":
         detections_folder=settings["detection_pipeline"]["detections_path"],
         model_name=settings["detection_pipeline"]["model_name"],
         pretrained_model_path=settings["detection_pipeline"]["pretrained_model_path"],
+        input_image_size=settings["detection_pipeline"]["input_image_size"],
         output_image_size=settings["detection_pipeline"]["output_image_size"],
         inference_params=settings["detection_pipeline"]["inference_params"],
         defisheye_flag=settings["detection_pipeline"]["defisheye_flag"],

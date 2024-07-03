@@ -50,7 +50,8 @@ detection_pipeline:
     input_image_size: [3840, 2160]
   target_classes: [2]
   sensitive_classes: [0,1]
-  output_image_size: [1920, 1080]
+  input_image_size: [3840, 2160]
+  output_image_size: [1280, 720]
   sleep_time: 30
   training_mode: False
   training_mode_destination_path: "/training_mode"

@@ -8,6 +8,7 @@ from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
+import pyvips
 import torch
 from cvtoolkit.helpers.file_helpers import delete_file
 from ultralytics import YOLO
@@ -33,6 +34,7 @@ class DataDetection:
         detections_folder: str,
         model_name: str,
         pretrained_model_path: str,
+        input_image_size: Tuple[int, int],
         output_image_size: Tuple[int, int],
         inference_params: Dict,
         defisheye_flag: bool,
@@ -58,7 +60,10 @@ class DataDetection:
         self.detections_folder = detections_folder
         self.model_name = model_name
         self.pretrained_model_path = os.path.join(pretrained_model_path, model_name)
+        self.input_image_size = input_image_size
         self.output_image_size = output_image_size
+        self.shrink_factor = None
+        self.resize_backend = "pyvips"
         self.inference_params = {
             "imgsz": inference_params.get("img_size", 640),
             "save": inference_params.get("save_img_flag", False),
@@ -158,10 +163,10 @@ class DataDetection:
         self, image_file_name, image_full_path, csv_path, detections_path
     ):
         logger.info(f"Detecting and blurring: {image_file_name}")
-        image = cv2.imread(str(image_full_path))
+        image = self._load_and_resize(image_full_path)
         if self.defisheye_flag:
             image = self._defisheye(image)
-        image = cv2.resize(image, self.output_image_size)
+
         self.inference_params["source"] = image
         self.inference_params["name"] = csv_path.stem
 
@@ -221,6 +226,40 @@ class DataDetection:
             images_path,
             detections_path,
         )
+
+    @log_execution_time
+    def _load_and_resize(self, image_full_path):
+        if self.shrink_factor is None:
+            shrink_factors = (
+                self.output_image_size[0] / self.input_image_size[0],
+                self.output_image_size[1] / self.input_image_size[1],
+            )
+            if shrink_factors[0] != shrink_factors[1]:
+                raise ValueError(
+                    "Invalid output_image_size dimensions: aspect ratio should be preserved"
+                )
+            if shrink_factors[0] != int(shrink_factors[0]):
+                self.shrink_factor = None
+                self.resize_backend = "opencv"
+                logger.debug(
+                    f"Non-integer shrink factor {self.input_image_size} -> {self.output_image_size}."
+                    f" Using {self.resize_backend} for loading and resizing images. This may reduce performance."
+                )
+            else:
+                self.shrink_factor = int(shrink_factors[0])
+                self.resize_backend = "pyvips"
+                logger.debug(
+                    f"Using {self.resize_backend} for loading and resizing images with shrink factor {self.shrink_factor}."
+                )
+
+        if self.resize_backend == "pyvips":
+            image = pyvips.Image.new_from_file(
+                str(image_full_path), access="sequential", shrink=self.shrink_factor
+            )
+            return image.numpy()[:, :, ::-1]
+        elif self.shrink_factor == "opencv":
+            image = cv2.imread(str(image_full_path))
+            return cv2.resize(image, self.output_image_size)
 
     @log_execution_time
     def _defisheye(self, image):
