@@ -80,7 +80,7 @@ class DataDetection:
             )
             time.sleep(10)
         self.model = YOLO(model=self.pretrained_model_path, task="detect")
-        self.roi = self.mapx = self.mapy = None
+        self.mapx = self.mapy = None
         self.target_classes = target_classes
         self.sensitive_classes = sensitive_classes
         self.metadata_csv_file_paths_with_errors: List[str] = []
@@ -224,29 +224,35 @@ class DataDetection:
 
     @log_execution_time
     def _defisheye(self, image):
-        if self.roi is None or self.mapx is None or self.mapy is None:
-            newcameramtx, self.roi = cv2.getOptimalNewCameraMatrix(
-                np.array(self.defisheye_params["camera_matrix"]),
+        if self.mapx is None or self.mapy is None:
+            old_w, old_h = self.defisheye_params["input_image_size"]
+            new_h, new_w = image.shape[:2]
+
+            cam_mtx = np.array(self.defisheye_params["camera_matrix"])
+            cam_mtx[0, :] = cam_mtx[0, :] * (float(new_w) / float(old_w))
+            cam_mtx[1, :] = cam_mtx[1, :] * (float(new_h) / float(old_h))
+
+            logger.debug(f"Defisheye: {(old_w, old_h)} -> ({(new_w, new_h)})")
+            logger.debug(f"Scaled camera matrix:\n{cam_mtx}")
+
+            newcameramtx, _ = cv2.getOptimalNewCameraMatrix(
+                cam_mtx,
                 np.array(self.defisheye_params["distortion_params"]),
-                self.defisheye_params["input_image_size"],
-                1,
-                self.defisheye_params["input_image_size"],
+                (new_w, new_h),
+                0,
+                (new_w, new_h),
             )
             self.mapx, self.mapy = cv2.initUndistortRectifyMap(
-                np.array(self.defisheye_params["camera_matrix"]),
+                cam_mtx,
                 np.array(self.defisheye_params["distortion_params"]),
                 None,
                 newcameramtx,
-                self.defisheye_params["input_image_size"],
+                (new_w, new_h),
                 5,
             )
 
         # undistort
         img_dst = cv2.remap(image, self.mapx, self.mapy, cv2.INTER_LINEAR)
-
-        # crop the image
-        x, y, w, h = self.roi
-        img_dst = img_dst[y : y + h, x : x + w]
 
         return img_dst
 
