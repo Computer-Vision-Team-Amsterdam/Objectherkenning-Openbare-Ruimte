@@ -84,7 +84,7 @@ class DataLoader:
             .option("cloudFiles.inferColumnTypes", "true")
             .option(
                 "cloudFiles.schemaHints",
-                "timestamp double, imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, code_version string, gps_date string",
+                "timestamp double, imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, code_version string, gps_lat string, gps_lon string, gps_date string",
             )
             .option("cloudFiles.schemaEvolutionMode", "none")
             .load(source)
@@ -93,8 +93,6 @@ class DataLoader:
             .withColumn("pylon0_frame_timestamp", col("pylon0_frame_timestamp").cast("double"))
             .withColumn("gps_timestamp", col("gps_timestamp").cast("double"))
             .withColumn("gps_internal_timestamp", col("gps_internal_timestamp").cast("double"))
-            .withColumn("gps_lat", col("gps_lat").cast("string"))
-            .withColumn("gps_lon", col("gps_lon").cast("string"))
             .withColumn("status", lit("Pending"))
         )
 
@@ -135,9 +133,6 @@ class DataLoader:
             print(f"01: Stored {rows_processed} new rows into {target}.")
         else:
             print("01: Query did not terminate properly.")
-
-
-        # stream_query.stop()
 
 
 if __name__ == "__main__":

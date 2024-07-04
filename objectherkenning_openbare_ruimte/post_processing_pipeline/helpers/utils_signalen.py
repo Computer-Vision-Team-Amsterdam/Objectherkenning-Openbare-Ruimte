@@ -239,7 +239,7 @@ class SignalHandler:
         Text we send when creating a notification.
         """
         return (
-            "Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
+            "TEST CVT: Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
             "bouwkeet gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
             "adres betreft een schatting van het dichtstbijzijnde adres bij de containerlocatie, er is geen "
             "informatie bekend in hoeverre dit het adres is van de containereigenaar."
@@ -437,10 +437,10 @@ class SignalHandler:
 
    
     def get_top_pending_records(self, table_name, limit=10):
-        # Select all rows where status is 'Pending', sort by score in descending order, and limit the results to the top 10
+        # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
         select_query = f"""
         SELECT * FROM {self.catalog_name}.oor.{table_name}
-        WHERE status = 'Pending'
+        WHERE status = 'Pending' AND object_class = 2
         ORDER BY score DESC
         LIMIT {limit}
         """
@@ -461,8 +461,8 @@ class SignalHandler:
     def update_status(self, table_name):
         # Update the status of the rows where status is 'Pending'
         update_query = f"""
-        UPDATE {self.catalog}.oor.{table_name} SET status = 'Processed' WHERE status = 'Pending'
+        UPDATE {self.catalog_name}.oor.{table_name} SET status = 'Processed' WHERE status = 'Pending'
         """
         # Execute the update query
         self.spark.sql(update_query)
-        print(f"04: Updated 'Pending' status to 'Processed' in {self.catalog}.oor.{table_name}.")   
+        print(f"04: Updated 'Pending' status to 'Processed' in {self.catalog_name}.oor.{table_name}.")   

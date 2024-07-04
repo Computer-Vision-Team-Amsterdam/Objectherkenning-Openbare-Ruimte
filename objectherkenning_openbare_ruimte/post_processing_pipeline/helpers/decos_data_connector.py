@@ -1,6 +1,8 @@
 import pandas as pd
 from difflib import get_close_matches
 import requests
+import requests
+from requests.exceptions import SSLError, ConnectionError, Timeout, RequestException
 import re
 from typing import List, Tuple
 import json
@@ -40,7 +42,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         """
         Process the results of the query.
         """
-        
+        print("Processing object permits (filter by object name, convert address to coordinates)...")
         self.query_result_df['objecten'] = self.query_result_df['objecten'].apply(lambda x: json.loads(x) if x else [])
 
         # Only keep rows with permits about containers
@@ -57,9 +59,13 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
         # Store rows where permit_lat and permit_lon are non null as healthy data
         self._healthy_df = self.query_result_df[self.query_result_df['permit_lat'].notnull() & self.query_result_df['permit_lon'].notnull()]
+        
+        print(f"{len(self._healthy_df)} container permits with valid coordinates.")
 
         # Store rows where permit_lat and permit_lon are null as quarantine data
         self._quarantine_df = self.query_result_df[self.query_result_df['permit_lat'].isnull() | self.query_result_df['permit_lon'].isnull()]
+        print(f"{len(self._quarantine_df)} container permits with invalid coordinates.")
+
 
         self._permits_coordinates = self._extract_permits_coordinates()  
         self._permits_coordinates_geometry = self._convert_coordinates_to_point()
@@ -132,7 +138,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                         bag_coords_lon_and_lat = result["centroid"]
                         return [bag_coords_lon_and_lat[0], bag_coords_lon_and_lat[1]]
                 # If no centroid is found in any result
-                return None    
+                return None        
         except Exception as e:
             print(f"Error converting address into coordinates for {address}: {e}")
             print(f"Street and number: {split_dutch_address}")

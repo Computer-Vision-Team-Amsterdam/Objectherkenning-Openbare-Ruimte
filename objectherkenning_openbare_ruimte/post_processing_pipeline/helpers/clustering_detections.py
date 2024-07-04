@@ -20,8 +20,12 @@ class Clustering:
         self.schema = "oor"
         query_detection_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_detection_metadata WHERE status='Pending'"
         self.detection_metadata = self.spark.sql(query_detection_metadata)
+        print(f"03: Loaded {self.detection_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_detection_metadata.")
+
         query_frame_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_frame_metadata WHERE status='Pending'"
         self.frame_metadata = self.spark.sql(query_frame_metadata)
+        print(f"03: Loaded {self.frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_frame_metadata.")
+
         self.df_joined = self._join_frame_and_detection_metadata()
 
         self._containers_coordinates = self._extract_containers_coordinates()
