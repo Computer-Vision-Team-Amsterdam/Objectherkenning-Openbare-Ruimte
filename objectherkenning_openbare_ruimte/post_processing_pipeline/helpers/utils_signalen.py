@@ -86,8 +86,8 @@ class SignalHandler:
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}
 
         self.catalog_name = get_catalog_name(spark)
+        self.verify_ssl = False if self.catalog_name == "dpcv_dev" else True
         self.spark = spark
-
 
     def get_signal(self, sig_id: str) -> Any:
         """
@@ -99,7 +99,7 @@ class SignalHandler:
         ----------
         sig_id : str
             The ID of the signal to be retrieved.
-
+            
         Returns
         -------
         Any
@@ -111,7 +111,7 @@ class SignalHandler:
             If the server responds with a status code other than 200 (OK),
             an HTTPError will be raised with the response status and message.
         """
-        response = requests.get(self.base_url + f"/{sig_id}", headers=self.headers)
+        response = requests.get(self.base_url + f"/{sig_id}", headers=self.headers, verify=self.verify_ssl)
 
         if response.status_code == 200:
             print("The server successfully performed the GET request.")
@@ -139,7 +139,7 @@ class SignalHandler:
               If the server responds with a status code other than 201 (Created),
               an HTTPError will be raised with the response status and message.
           """
-        response = requests.post(self.base_url, json=json_content, headers=self.headers)
+        response = requests.post(self.base_url, json=json_content, headers=self.headers, verify=self.verify_ssl)
 
         if response.status_code == 201:
             print("The server successfully performed the POST request and created an incident.")
@@ -162,7 +162,7 @@ class SignalHandler:
             The ID of the signal to be updated.
         text_note : str
             The text note to be added to the signal.
-
+ 
         Returns
         -------
         Any
@@ -177,7 +177,7 @@ class SignalHandler:
         json_content = {"notes": [{"text": text_note}]}
 
         response = requests.patch(
-            self.base_url + f"/{sig_id}", json=json_content, headers=self.headers
+            self.base_url + f"/{sig_id}", json=json_content, headers=self.headers, verify=self.verify_ssl
         )
 
         if response.status_code == 200:
@@ -199,7 +199,7 @@ class SignalHandler:
             The path to the image file to be uploaded.
         sig_id : str
             The ID of the signal to which the image file will be attached.
-
+  
         Returns
         -------
         Any
@@ -220,7 +220,7 @@ class SignalHandler:
         files = {"file": (filename, open(filename, "rb"))}
 
         response = requests.post(
-            self.base_url + f"/{sig_id}/attachments/", files=files, headers=self.headers
+            self.base_url + f"/{sig_id}/attachments/", files=files, headers=self.headers, verify=self.verify_ssl
         )
 
         if response.status_code == 201:
@@ -406,6 +406,35 @@ class SignalHandler:
 
         return json_to_send
     
+
+    def get_image_upload_path(self, detection_id, date_of_notification):
+        """
+        Fetches the image name based on the detection_id and constructs the path for uploading the image.
+        
+        Parameters:
+        detection_id (int): The id of the detection.
+        date_of_notification (str): The date of notification.
+        
+        Returns:
+        str: The constructed image upload path.
+        """
+        
+        # Fetch the image name based on the detection_id
+        fetch_image_name_query = f"""
+                                SELECT {self.catalog_name}.oor.silver_detection_metadata.image_name
+                                FROM {self.catalog_name}.oor.silver_detection_metadata
+                                WHERE {self.catalog_name}.oor.silver_detection_metadata.id = {detection_id}
+                                """
+        image_name_result_df = spark.sql(fetch_image_name_query)
+
+        # Extract the image name from the result
+        image_basename = image_name_result_df.collect()[0]['image_name']
+
+        # Construct the path to the image to be uploaded to Signalen
+        image_upload_path = f'/Volumes/{self.catalog_name}/default/landingzone/Luna/images/{date_of_notification}/{image_basename}'
+
+        return image_upload_path
+
    
     def get_top_pending_records(self, table_name, limit=10):
         # Select all rows where status is 'Pending', sort by score in descending order, and limit the results to the top 10
@@ -413,6 +442,15 @@ class SignalHandler:
         SELECT * FROM {self.catalog_name}.oor.{table_name}
         WHERE status = 'Pending'
         ORDER BY score DESC
+        LIMIT {limit}
+        """
+        results = self.spark.sql(select_query)
+        return results 
+
+    def fake_get_top_pending_records(self, table_name, limit=10):
+        # Select all rows where status is 'Pending', sort by score in descending order, and limit the results to the top 10
+        select_query = f"""
+        SELECT * FROM {self.catalog_name}.oor.{table_name}
         LIMIT {limit}
         """
         results = self.spark.sql(select_query)
