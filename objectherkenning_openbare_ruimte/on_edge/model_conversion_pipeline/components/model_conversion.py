@@ -69,5 +69,6 @@ def run_model_conversion(
         model_path=os.path.join(pretrained_model_path, model_src_name),
         image_size=image_size,
     )
-    logger.info(f"Saving model in {model_save_path}")
-    shutil.copy2(trt_path, model_save_path)
+    if model_save_path != pretrained_model_path:
+        shutil.copy2(trt_path, model_save_path)
+    logger.info(f"Model converted and stored in {model_save_path}/{model_name}")

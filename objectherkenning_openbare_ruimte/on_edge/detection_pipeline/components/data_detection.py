@@ -34,6 +34,7 @@ class DataDetection:
         detections_folder: str,
         model_name: str,
         pretrained_model_path: str,
+        wait_for_model_timeout: float,
         input_image_size: Tuple[int, int],
         output_image_size: Tuple[int, int],
         inference_params: Dict,
@@ -84,7 +85,7 @@ class DataDetection:
                 logger.info(
                     f"Model {self.model_name} not found, waiting for model_conversion_pipeline.."
                 )
-                time.sleep(10)
+                time.sleep(wait_for_model_timeout)
         elif not os.path.isfile(self.pretrained_model_path):
             raise FileNotFoundError(f"Model not found: {self.pretrained_model_path}")
         self.model = YOLO(model=self.pretrained_model_path, task="detect")

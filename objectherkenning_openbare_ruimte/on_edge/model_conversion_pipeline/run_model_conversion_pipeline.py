@@ -19,7 +19,5 @@ if __name__ == "__main__":
         pretrained_model_path=settings["detection_pipeline"]["pretrained_model_path"],
         model_name=settings["detection_pipeline"]["model_name"],
         image_size=settings["detection_pipeline"]["output_image_size"],
-        model_save_path=settings["detection_pipeline"][
-            "training_mode_destination_path"
-        ],
+        model_save_path=settings["detection_pipeline"]["pretrained_model_path"],
     )
