@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04:20240614.v1 AS base-image
 
 # Upgrade and install system libraries
-RUN apt-get -y update \
-    && apt-get -y install \
+RUN apt -y update \
+    && apt -y install \
         bsdutils \
         build-essential \
         curl \
@@ -10,6 +10,7 @@ RUN apt-get -y update \
         libsm6 \
         libxext6 \
         libpq-dev \
+    && apt upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/app
@@ -31,6 +32,9 @@ RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml .
 COPY poetry.lock .
+
+RUN pip install --upgrade setuptools \
+    && pip3 install --upgrade setuptools
 
 # Initialize Conda, activate environment and install poetry packages
 RUN /opt/miniconda/bin/conda init bash && \

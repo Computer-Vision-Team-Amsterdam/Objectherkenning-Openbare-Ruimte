@@ -29,6 +29,8 @@ torch = { version = "^2.2.1", source="torch"}
 torchaudio = { version = "^2.2.1", source="torch"}
 torchvision = { version = "^0.17.1", source="torch"}
 ultralytics = "^8.1.35"
+setuptools = "^70.2.0"
+pip-audit = "^2.7.3"
 
 [[tool.poetry.source]]
 name = "torch"
@@ -38,6 +40,7 @@ priority = "explicit"
 [tool.poetry.dev-dependencies]
 pytest = {version = "^7.0.1", source = "PyPI" }
 pytest-cov = {version = "^4.0.0", source = "PyPI" }
+safety = "^3.2.3"
 
 [tool.isort]
 profile = "black"
