@@ -41,10 +41,7 @@ def generate_map(
     closest_permit_group = folium.FeatureGroup(name="Distances to closest permit").add_to(Map)
 
     # Add priority_id column for visualization
-    # Define the window specification
     window_spec = Window.orderBy(col("score").desc())
-
-    # Add the "priority_id" column
     dataframe_with_priority = dataframe.withColumn("priority_id", row_number().over(window_spec))
 
     display(dataframe_with_priority)
@@ -150,6 +147,5 @@ def generate_map(
     # create name for the map
     print(f"Map is saved at {name}")
     full_path = path + name + '.html'
-    print(f'Saving at {full_path}')
-    print(Map)
+    print(f'Saving map at {full_path}')
     Map.save(full_path)

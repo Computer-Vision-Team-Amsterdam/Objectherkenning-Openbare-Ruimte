@@ -101,12 +101,7 @@ if __name__ == "__main__":
 
     display(clustering.df_joined)
 
-    # - From here on, it's WIP -
-
     # Gather data to visualize
-    vulnerable_bridges = wkt_loads(closest_bridges_wkts)
-    permit_locations = [Point(x,y) for x,y in closest_permits_coordinates]
-    detections = containers_coordinates_geometry
     current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     name = f'{current_datetime}-map'
     path = "/Volumes/dpcv_dev/default/landingzone/test-diana/visualizations/"
