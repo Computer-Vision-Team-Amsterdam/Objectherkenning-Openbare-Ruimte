@@ -2,14 +2,14 @@ customer: ""
 
 aml_experiment_details:
   compute_name: oor-testing
-  env_name: oor-test-daan
-  env_version: 9
+  env_name: oor-environment
+  env_version: 26
   src_dir: "."
 
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
   device_id: "test-diana"
-  shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
+  shared_access_key: "SHARED_ACCESS_KEY_IOT"
 
 convert_dataset:
   input_old_datastore: "old_datastore"
@@ -65,7 +65,7 @@ training_pipeline:
   model_parameters:
     img_size: 1024
     batch: -1
-    epochs: 10
+    epochs: 100
     patience: 25
     n_classes: 3
     name_classes: ["person", "license plate", "container"]

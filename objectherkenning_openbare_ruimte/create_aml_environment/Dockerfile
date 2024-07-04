@@ -23,9 +23,6 @@ RUN conda create -n env python=3.8
 RUN echo "source activate env" > ~/.bashrc
 ENV PATH="/opt/miniconda/envs/env/bin:$PATH"
 
-# EVERYTHING UNTIL HERE without vulnerabilities
-# Somewhere in the lines below "setuptools 56.0.0.0" is installed, but no evidence of this in the build log
-
 RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:$PATH"
 RUN poetry config virtualenvs.create false
