@@ -1,11 +1,13 @@
 import os
 import geojson
+import shapely
 from tqdm import tqdm
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict
 from osgeo import osr  # pylint: disable-all
 from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 from pyspark.sql import SparkSession
+from shapely.wkt import dumps as wkt_dumps
 
 import geopy.distance
 
@@ -14,6 +16,7 @@ class VulnerableBridgesHandler:
         self.spark = spark
         self.file_path = file_path
         self._bridges_coordinates = []
+        self._bridges_ids = []
         self._parse_bridges_coordinates()
         self._bridges_coordinates_geometry = self._convert_coordinates_to_linestring()
 
@@ -22,6 +25,9 @@ class VulnerableBridgesHandler:
     
     def get_bridges_coordinates_geometry(self):
         return self._bridges_coordinates_geometry
+    
+    def get_bridges_ids(self):
+        return self._bridges_ids
 
     def _rd_to_wgs(self, coordinates: List[float]) -> List[float]:
         """
@@ -61,12 +67,13 @@ class VulnerableBridgesHandler:
         filtered_df = sparkDataFrame.filter(sparkDataFrame.geometry.isNotNull())
 
         # Iterate through each feature in the DataFrame
-        for feature in tqdm(filtered_df.collect(), desc="Parsing the bridges information"):
+        for feature_id, feature in enumerate(tqdm(filtered_df.collect(), desc="Parsing the bridges information")):
             bridge_coords = []
             if feature["geometry"]["coordinates"]:
                 for idx, coords in enumerate(feature["geometry"]["coordinates"][0]):
                     bridge_coords.append(self._rd_to_wgs(coords))
                 self._bridges_coordinates.append(bridge_coords)
+                self._bridges_ids.append(feature_id)
     
     def _convert_coordinates_to_linestring(self):
         """
@@ -89,19 +96,32 @@ class VulnerableBridgesHandler:
         return closest_point_in_meters
 
     @staticmethod
-    def calculate_distances_to_closest_vulnerable_bridges(bridges_locations_as_linestrings: List[LineString], containers_locations_as_points: List[Point]):
+    def calculate_distances_to_closest_vulnerable_bridges(
+        bridges_locations_as_linestrings: List[LineString], 
+        containers_locations_as_points: List[Point],
+        bridges_ids: List[int],
+        bridges_coordinates: List[List[List[float]]]
+    ) -> Tuple[List[float], List[int], List[List[float]], List[LineString]]:
         bridges_distances = []
+        closest_bridge_ids = []
+        closest_bridge_coordinates = []
+        closest_bridge_wkts = []
+        
         for container_location in containers_locations_as_points:
             bridge_container_distances = []
-            for bridge_location in bridges_locations_as_linestrings:
+            for idx, bridge_location in enumerate(bridges_locations_as_linestrings):
                 try:  
                     bridge_dist = VulnerableBridgesHandler._line_to_point_in_meters(bridge_location, container_location)
                 except:
                     bridge_dist = 10000
-                    print("Error occured:")
+                    print("Error occurred:")
                     print(f"Container location: {container_location}, {container_location.coords}")
                     print(f"Bridge location: {bridge_location}")
-                bridge_container_distances.append(bridge_dist)
-            closest_bridge_distance = min(bridge_container_distances)
-            bridges_distances.append(round(closest_bridge_distance, 2))    
-        return bridges_distances 
+                bridge_container_distances.append((bridge_dist, bridges_ids[idx], bridges_coordinates[idx][0], bridge_location))
+            closest_bridge_distance, closest_bridge_id, closest_bridge_coord, closest_bridge_linestring = min(bridge_container_distances, key=lambda x: x[0])
+            bridges_distances.append(round(closest_bridge_distance, 2))
+            closest_bridge_ids.append(closest_bridge_id)
+            closest_bridge_coordinates.append(closest_bridge_coord)
+            closest_bridge_wkts.append(wkt_dumps(closest_bridge_linestring))
+        
+        return bridges_distances, closest_bridge_ids, closest_bridge_coordinates, closest_bridge_wkts

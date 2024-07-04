@@ -1,5 +1,3 @@
-import dbutils
-
 # Run clustering
 # enrich with Decos data and with Bridges data
 # prioritize based on score
@@ -8,12 +6,18 @@ import dbutils
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # noqa
 
-from helpers.clustering_detections import Clustering  # noqa: E402
-
-# from helpers.decos_data_connector import DecosDataHandler
-# from helpers.vulnerable_bridges_handler import VulnerableBridgesHandler
+from helpers.decos_data_connector import DecosDataHandler
+from helpers.vulnerable_bridges_handler import VulnerableBridgesHandler
+from helpers import utils_visualization
 from pyspark.sql import SparkSession  # noqa: E402
+from pyspark.sql.functions import col, udf
+from pyspark.sql.types import StringType, DoubleType, ArrayType
+from shapely.geometry import Point
+import ast
+from shapely.wkt import loads as wkt_loads
 
+from datetime import datetime
+from helpers.clustering_detections import Clustering  # noqa: E402
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
     """
@@ -35,7 +39,7 @@ if __name__ == "__main__":
     clustering.cluster_and_select_images()
     containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
 
-    """# Setup bridges data
+    # Setup bridges data
     root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
     vuln_bridges_rel_path = "test-diana/vuln_bridges.geojson"
     file_path = f"{root_source}/{vuln_bridges_rel_path}"
@@ -53,24 +57,40 @@ if __name__ == "__main__":
     print(f'Len of containers: {len(containers_coordinates_geometry)}')
     print(f'Len of vulnerable bridges: {len(bridgesHandler.get_bridges_coordinates())}')
     # Enrich with bridges data
-    closest_bridges_distances = VulnerableBridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
-        bridges_locations_as_linestrings=bridgesHandler.get_bridges_coordinates_geometry(),
-        containers_locations_as_points=containers_coordinates_geometry)
+    closest_bridges_distances, closest_bridges_ids, closest_bridges_coordinates, closest_bridges_wkts = VulnerableBridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
+        bridges_locations_as_linestrings=bridges_coordinates_geometry,
+        containers_locations_as_points=containers_coordinates_geometry,
+        bridges_ids=bridgesHandler.get_bridges_ids(),
+        bridges_coordinates=bridgesHandler.get_bridges_coordinates()
+    )
 
     clustering.add_column(column_name="closest_bridge_distance", values=closest_bridges_distances)
+    clustering.add_column(column_name="closest_bridge_id", values=closest_bridges_ids)
+    clustering.add_column(column_name="closest_bridge_coordinates", values=closest_bridges_coordinates)
+    clustering.add_column(column_name="closest_bridge_linestring_wkt", values=closest_bridges_wkts)
+    
+
+    decosDataHandler = DecosDataHandler(spark, az_tenant_id, db_host, db_name, db_port=5432)
+
     # Enrich with decos data
-    # TODO fix the date to correspond with clustering
-    query = "SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '2024-02-17' AND datum_object_tm >= '2024-02-17'"
+    date = datetime.today().strftime('%Y-%m-%d')
+    print(f'Date: {date}')
+    query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date}' AND datum_object_tm >= '{date}'"
     decosDataHandler.run(query)
     query_result_df = decosDataHandler.get_query_result_df()
     decosDataHandler.process_query_result()
-    permit_distances, closest_permits = DecosDataHandler.calculate_distances_to_closest_permits(
+
+    permit_distances, closest_permits, closest_permits_coordinates = decosDataHandler.calculate_distances_to_closest_permits(
         permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
         permits_ids=decosDataHandler.get_permits_ids(),
-        containers_locations_as_points=containers_coordinates_geometry)
+        permits_coordinates=decosDataHandler.get_permits_coordinates(),
+        containers_locations_as_points=containers_coordinates_geometry
+    )
 
     clustering.add_column(column_name="closest_permit_distance", values=permit_distances)
     clustering.add_column(column_name="closest_permit_id", values=closest_permits)
+    clustering.add_column(column_name="closest_permit_coordinates", values=closest_permits_coordinates)
+    
     # Enrich with score
 
     scores = [
@@ -79,6 +99,20 @@ if __name__ == "__main__":
         ]
     clustering.add_column(column_name="score", values=scores)
 
-    display(clustering.df_joined)"""
+    display(clustering.df_joined)
 
-    sparkSession.stop()
+    # - From here on, it's WIP -
+
+    # Gather data to visualize
+    vulnerable_bridges = wkt_loads(closest_bridges_wkts)
+    permit_locations = [Point(x,y) for x,y in closest_permits_coordinates]
+    detections = containers_coordinates_geometry
+    current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    name = f'{current_datetime}-map'
+    path = "/Volumes/dpcv_dev/default/landingzone/test-diana/visualizations/"
+
+    utils_visualization.generate_map(
+        dataframe=clustering.df_joined,
+        name=name,
+        path=path,
+    )
