@@ -21,18 +21,7 @@ ENV PATH=/root/.local/bin:$PATH
 
 RUN python3 -m pip install --upgrade pip
 
-# RUN pip3 install pipx \
-#     && pipx ensurepath \
-
-# RUN pipx install poetry \
-#     && pipx inject poetry poetry-plugin-export
-
 WORKDIR /usr/src
-
-# COPY poetry.lock .
-
-# RUN poetry export --without-hashes --format=requirements.txt > requirements.txt \
-#     && pip3 install -r requirements.txt
 
 COPY requirements_on_edge.txt .
 
@@ -41,7 +30,7 @@ RUN python3 -m pip install --no-deps git+https://github.com/Computer-Vision-Team
 
 RUN python3 -m pip install -r requirements_on_edge.txt
 
-COPY model_artifacts/oor_model model_artifacts
+# COPY model_artifacts/oor_model model_artifacts
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
 COPY config.yml config.yml
 
