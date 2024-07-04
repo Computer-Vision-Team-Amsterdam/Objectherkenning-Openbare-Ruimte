@@ -29,6 +29,7 @@ torch = { version = "^2.2.1", source="torch"}
 torchaudio = { version = "^2.2.1", source="torch"}
 torchvision = { version = "^0.17.1", source="torch"}
 ultralytics = "^8.1.35"
+setuptools = "^70.2.0"
 
 [[tool.poetry.source]]
 name = "torch"
