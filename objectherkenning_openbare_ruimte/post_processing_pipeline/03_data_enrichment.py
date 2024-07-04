@@ -111,21 +111,20 @@ if __name__ == "__main__":
 
     # # - From here on, it's WIP -
 
-    # # Gather data to visualize
-    # vulnerable_bridges = wkt_loads(closest_bridges_wkts)
-    # permit_locations = [Point(x,y) for x,y in closest_permits_coordinates]
-    # detections = containers_coordinates_geometry
-    # current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    # name = f'{current_datetime}-map'
-    # path = "/Volumes/dpcv_dev/default/landingzone/test-diana/visualizations/"
+    # Gather data to visualize
+    vulnerable_bridges = wkt_loads(closest_bridges_wkts)
+    permit_locations = [Point(x,y) for x,y in closest_permits_coordinates]
+    detections = containers_coordinates_geometry
+    current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    name = f'{current_datetime}-map'
+    path = f"/Volumes/dpcv_dev/default/landingzone/Luna/visualizations/{date_to_query}"
 
-    # utils_visualization.generate_map(
-    #     dataframe=clustering.df_joined,
-    #     name=name,
-    #     path=path,
-    # )
+    utils_visualization.generate_map(
+        dataframe=clustering.df_joined,
+        name=name,
+        path=path,
+    )
 
-    # "id, detection_id, object_class, object_lat, object_lon, distance_closest_bridge,closest_bridge_id, distance_closest_permit, closest_permit_id, closest_permit_lat,closest_permit_lon, score, status"
 
     clustering.df_joined = clustering.df_joined.select(["detection_id", "object_class", "gps_lat", "gps_lon", "closest_bridge_distance", "closest_bridge_id", "closest_permit_distance", "closest_permit_id", "closest_permit_coordinates", "score"])
 
@@ -149,16 +148,6 @@ if __name__ == "__main__":
         .withColumn("closest_permit_lon", F.col("closest_permit_lon").cast("float"))
         .withColumn("score", F.col("score").cast("float"))
     )
-
-    column_types = clustering.df_joined.dtypes
-
-    # Print all columns with their data types
-    for column, dtype in column_types:
-        print(f"Column: {column}, Type: {dtype}")
-
-           
-    display(clustering.df_joined)
-
 
     # Store data in silver_object_per_day 
     clustering.df_joined.write.mode('append').saveAsTable(f'{clustering.catalog}.oor.silver_objects_per_day')

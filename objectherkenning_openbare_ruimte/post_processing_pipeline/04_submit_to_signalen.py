@@ -72,11 +72,11 @@ if __name__ == "__main__":
       successful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.gold_signal_notifications')
       print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
    else:
-      print("No rows were successfully processed and appended to gold_signal_notifications.")
+      print("Appended 0 rows to gold_signal_notifications.")
 
    if unsuccessful_notifications:
       unsuccessful_df = spark.createDataFrame(unsuccessful_notifications, schema=top_scores_df.schema)
-      display(unsuccessful_df)
+      print(f"{unsuccessful_df.count()} unsuccessful notifications.")
 
    signalHandler.update_status(table_name="silver_objects_per_day") 
    
