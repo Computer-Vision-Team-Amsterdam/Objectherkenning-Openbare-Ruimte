@@ -63,8 +63,10 @@ class Clustering:
             col("dm.width"),
             col("dm.height"),
             col("dm.confidence"),
-            col("fm.gps_lat"),
-            col("fm.gps_lon"),
+            #col("fm.gps_lat"),
+            #col("fm.gps_lon"),
+            col("fm.gps_lat").cast("float"),
+            col("fm.gps_lon").cast("float"),
         ]
 
         joined_df = joined_df.select(columns)
@@ -78,6 +80,7 @@ class Clustering:
 
         # Convert the list of Row objects into a list of tuples
         containers_coordinates = [(row["gps_lat"], row["gps_lon"]) for row in rows]
+        #containers_coordinates = [(float(row["gps_lat"]), float(row["gps_lon"])) for row in rows]
 
         return containers_coordinates
 
@@ -139,10 +142,7 @@ class Clustering:
     def cluster_and_select_images(self, distance=10):
         # Cluster the points based on distance
         epsilon = distance / MS_PER_RAD  # radius of the neighborhood
-        print(f"Epsilon: {epsilon}")
         self._cluster_points(eps=epsilon)
-        print("DF_JOINED after _cluster_points")
-        display(self.df_joined)  # noqa: F405
 
         # Calculate the mean confidence for each cluster
         window_spec = Window.partitionBy("tracking_id")
@@ -170,6 +170,3 @@ class Clustering:
         # Update container coordinates after clustering
         self._containers_coordinates = self._extract_containers_coordinates()
         self._containers_coordinates_geometry = self._convert_coordinates_to_point()
-
-        print("Final df_joined with clustered detections:")
-        display(self.df_joined)

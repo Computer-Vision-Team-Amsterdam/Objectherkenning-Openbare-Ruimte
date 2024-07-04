@@ -2,7 +2,7 @@ import pandas as pd
 from difflib import get_close_matches
 import requests
 import re
-from typing import List
+from typing import List, Tuple
 import json
 from shapely.geometry import Point
 import numpy as np
@@ -225,9 +225,11 @@ class DecosDataHandler(ReferenceDatabaseConnector):
     def get_quarantine_df(self):
         return self._quarantine_df
     
-    def calculate_distances_to_closest_permits(permits_locations_as_points: List[Point], permits_ids: str, containers_locations_as_points: List[Point]):
+    def calculate_distances_to_closest_permits(self, permits_locations_as_points: List[Point], permits_ids: List[str], permits_coordinates: List[Tuple[float, float]], containers_locations_as_points: List[Point]):
         permit_distances = []
-        closest_permits = [] # TODO rename this!
+        closest_permits = []
+        closest_permits_coordinates = []
+
         for container_location in containers_locations_as_points:
             closest_permit_distances = []
             for permit_location in permits_locations_as_points:
@@ -235,14 +237,14 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                     permit_dist = geopy.distance.distance(container_location.coords, permit_location.coords).meters
                 except:
                     permit_dist = 0
-                    print("Error occured:")
+                    print("Error occurred:")
                     print(f"Container location: {container_location}, {container_location.coords}")
                     print(f"Permit location: {permit_location}, {permit_location.coords}")
                 closest_permit_distances.append(permit_dist)
-            permit_distances.append(np.amin(closest_permit_distances))
-            closest_permits.append(permits_ids[np.argmin(closest_permit_distances)])
 
-            # otherwise spark complains about float64 not being supported
-            permit_distances = [float(p) for p in permit_distances]
+            min_distance_idx = np.argmin(closest_permit_distances)
+            permit_distances.append(float(closest_permit_distances[min_distance_idx]))
+            closest_permits.append(permits_ids[min_distance_idx])
+            closest_permits_coordinates.append(permits_coordinates[min_distance_idx])
 
-        return permit_distances, closest_permits
+        return permit_distances, closest_permits, closest_permits_coordinates
