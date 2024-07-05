@@ -232,21 +232,25 @@ class DataDetection:
         )
 
     @log_execution_time
-    def _load_and_resize(self, image_full_path):
+    def _load_and_resize_WIP(self, image_full_path):
+        # TODO:
+        # - shrink factor for pyvips can only be a multiple of 2
+        # - pyvips shrinking is block shrinking, can cause artefacts
+        # - first pyvips shrink by 2 and then opencv / other method for refining?
         if self.shrink_factor is None:
             shrink_factors = (
-                self.output_image_size[0] / self.input_image_size[0],
-                self.output_image_size[1] / self.input_image_size[1],
+                self.input_image_size[0] / self.output_image_size[0],
+                self.input_image_size[1] / self.output_image_size[1],
             )
             if shrink_factors[0] != shrink_factors[1]:
                 raise ValueError(
                     "Invalid output_image_size dimensions: aspect ratio should be preserved"
                 )
             if shrink_factors[0] != int(shrink_factors[0]):
-                self.shrink_factor = None
+                self.shrink_factor = 1
                 self.resize_backend = "opencv"
                 logger.debug(
-                    f"Non-integer shrink factor {self.input_image_size} -> {self.output_image_size}."
+                    f"Non-integer shrink factor {shrink_factors[0]} for {self.input_image_size} -> {self.output_image_size}."
                     f" Using {self.resize_backend} for loading and resizing images. This may reduce performance."
                 )
             else:
@@ -261,9 +265,14 @@ class DataDetection:
                 str(image_full_path), access="sequential", shrink=self.shrink_factor
             )
             return image.numpy()[:, :, ::-1]
-        elif self.shrink_factor == "opencv":
+        elif self.resize_backend == "opencv":
             image = cv2.imread(str(image_full_path))
             return cv2.resize(image, self.output_image_size)
+
+    @log_execution_time
+    def _load_and_resize(self, image_full_path):
+        image = cv2.imread(str(image_full_path))
+        return cv2.resize(image, self.output_image_size)
 
     @log_execution_time
     def _defisheye(self, image):
