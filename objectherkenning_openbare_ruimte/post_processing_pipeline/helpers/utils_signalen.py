@@ -385,7 +385,6 @@ class SignalHandler:
             },
             "incident_date_start": date_now.strftime("%Y-%m-%d %H:%M"),
         }
-
         if bag_address:
             location_json = {
                 "location": {
@@ -396,13 +395,16 @@ class SignalHandler:
                     "address": {
                         "openbare_ruimte": bag_address[0],
                         "huisnummer": bag_address[1],
-                        "postcode": bag_address[2],
                         "woonplaats": "Amsterdam",
                     },
                 }
             }
-
+            # Only add 'postcode' if bag_address[2] is not None
+            if bag_address[2] is not None:
+                location_json["location"]["address"]["postcode"] = bag_address[2]    
             json_to_send.update(location_json)
+
+ 
 
         return json_to_send
     
