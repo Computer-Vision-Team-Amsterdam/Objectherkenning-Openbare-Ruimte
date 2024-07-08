@@ -50,7 +50,8 @@ if __name__ == "__main__":
     containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
 
     # Setup bridges data
-    root_source = f"abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
+    env = "ont" if clustering.catalog == "dpcv_dev" else "prd"
+    root_source = f"abfss://landingzone@stlandingdpcv{env}weu01.dfs.core.windows.net"
     vuln_bridges_rel_path = "vuln_bridges.geojson"
     file_path = f"{root_source}/{vuln_bridges_rel_path}"
     bridgesHandler = VulnerableBridgesHandler(spark, file_path)
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     detections = containers_coordinates_geometry
     current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     name = f'{current_datetime}-map'
-    path = f"/Volumes/dpcv_dev/default/landingzone/Luna/visualizations/{date_to_query}"
+    path = f"/Volumes/{clustering.catalog}/default/landingzone/Luna/visualizations/{date_to_query}"
 
     utils_visualization.generate_map(
         dataframe=clustering.df_joined,

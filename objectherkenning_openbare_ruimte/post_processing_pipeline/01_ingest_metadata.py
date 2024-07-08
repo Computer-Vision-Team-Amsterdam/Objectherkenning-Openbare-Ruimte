@@ -14,6 +14,7 @@ class DataLoader:
         self.spark = spark
         self.catalog = get_catalog_name(spark)
         self.schema = "oor"
+        self.env = "ont" if self.catalog == "dpcv_dev" else "prd"
 
         self.frame_metadata_table = (
             f"{self.catalog}.{self.schema}.bronze_frame_metadata"
@@ -22,7 +23,7 @@ class DataLoader:
             f"{self.catalog}.{self.schema}.bronze_detection_metadata"
         )
         self.root_source = (
-            "abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net/Luna"
+            f"abfss://landingzone@stlandingdpcv{self.env}weu01.dfs.core.windows.net/Luna"
         )
         self.checkpoint_frames = f"{self.root_source}/checkpoints/_checkpoint_frames"
         self.checkpoint_detections = (
