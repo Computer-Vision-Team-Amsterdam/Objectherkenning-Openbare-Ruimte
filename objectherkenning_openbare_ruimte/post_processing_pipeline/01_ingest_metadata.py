@@ -85,7 +85,7 @@ class DataLoader:
             .option("cloudFiles.inferColumnTypes", "true")
             .option(
                 "cloudFiles.schemaHints",
-                "timestamp double, imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, code_version string, gps_lat string, gps_lon string, gps_date string",
+                "timestamp double, imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, code_version string, gps_lat string, gps_lon string, gps_date string, gps_time timestamp",
             )
             .option("cloudFiles.schemaEvolutionMode", "none")
             .load(source)
