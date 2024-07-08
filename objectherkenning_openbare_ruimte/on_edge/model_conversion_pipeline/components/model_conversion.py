@@ -13,7 +13,7 @@ logger = logging.getLogger("model_conversion_pipeline")
 def _convert_model_to_trt(
     model_path: Union[str, os.PathLike], image_size: Tuple[int, int], batch: int = 1
 ) -> str:
-    if psutil.virtual_memory().total > 16 * 1.073742e9:
+    if psutil.virtual_memory().total > 8.0 * 1.073742e9:
         workspace = 4.0
     else:
         workspace = 2.0
