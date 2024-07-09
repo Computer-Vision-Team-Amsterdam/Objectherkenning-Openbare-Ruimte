@@ -45,6 +45,11 @@ def main():
     ########## SETUP ##########
     # Setup clustering
     clustering = Clustering(spark=sparkSession)
+
+    if clustering.detection_metadata.count() or clustering.frame_metadata.count() == 0:
+        print("03: Missing or incomplete data to run clustering. Stopping execution.")
+        return
+    
     clustering.cluster_and_select_images()
     containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
 
