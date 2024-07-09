@@ -48,11 +48,6 @@ def main():
     clustering.cluster_and_select_images()
     containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
 
-    if len(containers_coordinates_geometry) == 0:
-        print("03: No containers found. Stopping execution.")
-        return
-
-
     # Setup bridges data
     env = "ont" if clustering.catalog == "dpcv_dev" else "prd"
     root_source = f"abfss://landingzone@stlandingdpcv{env}weu01.dfs.core.windows.net"
