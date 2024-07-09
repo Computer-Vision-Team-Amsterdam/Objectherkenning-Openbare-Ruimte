@@ -46,7 +46,7 @@ def main():
     # Setup clustering
     clustering = Clustering(spark=sparkSession)
 
-    if clustering.detection_metadata.count() or clustering.frame_metadata.count() == 0:
+    if clustering.detection_metadata.count() == 0 or clustering.frame_metadata.count() == 0:
         print("03: Missing or incomplete data to run clustering. Stopping execution.")
         return
     
