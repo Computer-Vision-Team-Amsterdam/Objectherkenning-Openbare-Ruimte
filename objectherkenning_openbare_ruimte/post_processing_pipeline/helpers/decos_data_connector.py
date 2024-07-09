@@ -69,9 +69,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         # Store rows where permit_lat and permit_lon are null as quarantine data
         self._quarantine_df = self.query_result_df[self.query_result_df['permit_lat'].isnull() | self.query_result_df['permit_lon'].isnull()]
         print(f"{len(self._quarantine_df)} container permits with invalid coordinates.")
-
         
-
         self._permits_coordinates = self._extract_permits_coordinates()  
         self._permits_coordinates_geometry = self._convert_coordinates_to_point()
 
@@ -118,7 +116,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         X+  X, one or more times
         """
 
-        regex = "(\D+)\s+(\d+)\s?(.*)\s+(\d{4}\s*?[A-z]{2})"
+        regex = "(\D+)\s+(\d+)\s?(\S*)\s+(\d{4}\s*?[A-z]{2})?"
         return re.findall(regex, raw_address)
     
     def convert_address_to_coordinates(self, address):
@@ -132,14 +130,12 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             split_dutch_address = self.split_dutch_street_address(address)
             if split_dutch_address:
                 street_and_number = split_dutch_address[0][0] + " " + split_dutch_address[0][1]
-                print(f"Street and number: {street_and_number}")
             else:
                 print(f"Warning: Unable to split Dutch street address using regex: {address}")
                 street_and_number = address
 
             with requests.get(bag_url + street_and_number) as response:
                 results = json.loads(response.content)["results"]
-                print(f"Response content: {json.loads(response.content)}")
                 for result in results:
                     if "centroid" in result:
                         bag_coords_lon_and_lat = result["centroid"]

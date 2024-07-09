@@ -121,7 +121,7 @@ def main():
     detections = containers_coordinates_geometry
     current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     name = f'{current_datetime}-map'
-    path = f"/Volumes/{clustering.catalog}/default/landingzone/Luna/visualizations/{date_to_query}"
+    path = f"/Volumes/{clustering.catalog}/default/landingzone/Luna/visualizations/{date_to_query}/"
 
     utils_visualization.generate_map(
         dataframe=clustering.df_joined,

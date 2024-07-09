@@ -32,7 +32,7 @@ def main():
       LON = entry["object_lon"]
       detection_id = entry["detection_id"]
 
-      image_upload_path = signalHandler.get_image_upload_path(detection_id=detection_id,date_of_notification=date_of_notification)
+      image_upload_path = signalHandler.get_image_upload_path(detection_id=detection_id)
 
       try:
          # Check if image exists
