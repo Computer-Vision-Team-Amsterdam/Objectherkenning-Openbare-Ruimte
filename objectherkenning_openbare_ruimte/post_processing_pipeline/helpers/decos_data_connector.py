@@ -57,15 +57,20 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         # Add new columns for lat lon coordinates of permits
         self.query_result_df = self.add_permit_coordinates_columns(self.query_result_df, addresses)  
 
+        display(self.query_result_df)
+
         # Store rows where permit_lat and permit_lon are non null as healthy data
         self._healthy_df = self.query_result_df[self.query_result_df['permit_lat'].notnull() & self.query_result_df['permit_lon'].notnull()]
         
         print(f"{len(self._healthy_df)} container permits with valid coordinates.")
+        if len(self._healthy_df) == 0:
+            raise ValueError("No permit coordinates could be converted from addresses.")
 
         # Store rows where permit_lat and permit_lon are null as quarantine data
         self._quarantine_df = self.query_result_df[self.query_result_df['permit_lat'].isnull() | self.query_result_df['permit_lon'].isnull()]
         print(f"{len(self._quarantine_df)} container permits with invalid coordinates.")
 
+        
 
         self._permits_coordinates = self._extract_permits_coordinates()  
         self._permits_coordinates_geometry = self._convert_coordinates_to_point()
@@ -127,12 +132,14 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             split_dutch_address = self.split_dutch_street_address(address)
             if split_dutch_address:
                 street_and_number = split_dutch_address[0][0] + " " + split_dutch_address[0][1]
+                print(f"Street and number: {street_and_number}")
             else:
                 print(f"Warning: Unable to split Dutch street address using regex: {address}")
                 street_and_number = address
 
             with requests.get(bag_url + street_and_number) as response:
                 results = json.loads(response.content)["results"]
+                print(f"Response content: {json.loads(response.content)}")
                 for result in results:
                     if "centroid" in result:
                         bag_coords_lon_and_lat = result["centroid"]

@@ -91,76 +91,74 @@ def main():
     query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"
     print(f"Querying the database for date {date_to_query}...")
     decosDataHandler.run(query)
-    decosDataHandler.process_query_result()
+    decosDataHandler.process_query_result() 
 
+    permit_distances, closest_permits, closest_permits_coordinates = decosDataHandler.calculate_distances_to_closest_permits(
+        permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
+        permits_ids=decosDataHandler.get_permits_ids(),
+        permits_coordinates=decosDataHandler.get_permits_coordinates(),
+        containers_locations_as_points=containers_coordinates_geometry
+    )
+
+    clustering.add_column(column_name="closest_permit_distance", values=permit_distances)
+    clustering.add_column(column_name="closest_permit_id", values=closest_permits)
+    clustering.add_column(column_name="closest_permit_coordinates", values=closest_permits_coordinates)
     
+    # Enrich with score
 
-    # permit_distances, closest_permits, closest_permits_coordinates = decosDataHandler.calculate_distances_to_closest_permits(
-    #     permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
-    #     permits_ids=decosDataHandler.get_permits_ids(),
-    #     permits_coordinates=decosDataHandler.get_permits_coordinates(),
-    #     containers_locations_as_points=containers_coordinates_geometry
-    # )
-
-    # clustering.add_column(column_name="closest_permit_distance", values=permit_distances)
-    # clustering.add_column(column_name="closest_permit_id", values=closest_permits)
-    # clustering.add_column(column_name="closest_permit_coordinates", values=closest_permits_coordinates)
-    
-    # # Enrich with score
-
-    # scores = [
-    #         float(calculate_score(closest_bridges_distances[idx], permit_distances[idx]))
-    #         for idx in range(len(clustering.get_containers_coordinates()))
-    #     ]
-    # clustering.add_column(column_name="score", values=scores)
+    scores = [
+            float(calculate_score(closest_bridges_distances[idx], permit_distances[idx]))
+            for idx in range(len(clustering.get_containers_coordinates()))
+        ]
+    clustering.add_column(column_name="score", values=scores)
 
 
-    # # # - From here on, it's WIP -
+    # # - From here on, it's WIP -
 
-    # # Gather data to visualize
-    # vulnerable_bridges = wkt_loads(closest_bridges_wkts)
-    # permit_locations = [Point(x,y) for x,y in closest_permits_coordinates]
-    # detections = containers_coordinates_geometry
-    # current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    # name = f'{current_datetime}-map'
-    # path = f"/Volumes/{clustering.catalog}/default/landingzone/Luna/visualizations/{date_to_query}"
+    # Gather data to visualize
+    vulnerable_bridges = wkt_loads(closest_bridges_wkts)
+    permit_locations = [Point(x,y) for x,y in closest_permits_coordinates]
+    detections = containers_coordinates_geometry
+    current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    name = f'{current_datetime}-map'
+    path = f"/Volumes/{clustering.catalog}/default/landingzone/Luna/visualizations/{date_to_query}"
 
-    # utils_visualization.generate_map(
-    #     dataframe=clustering.df_joined,
-    #     name=name,
-    #     path=path,
-    # )
+    utils_visualization.generate_map(
+        dataframe=clustering.df_joined,
+        name=name,
+        path=path,
+    )
 
 
-    # clustering.df_joined = clustering.df_joined.select(["detection_id", "object_class", "gps_lat", "gps_lon", "closest_bridge_distance", "closest_bridge_id", "closest_permit_distance", "closest_permit_id", "closest_permit_coordinates", "score"])
+    clustering.df_joined = clustering.df_joined.select(["detection_id", "object_class", "gps_lat", "gps_lon", "closest_bridge_distance", "closest_bridge_id", "closest_permit_distance", "closest_permit_id", "closest_permit_coordinates", "score"])
 
-    # clustering.df_joined = clustering.df_joined.withColumnRenamed("gps_lat", "object_lat").withColumnRenamed("gps_lon", "object_lon").withColumnRenamed("closest_bridge_distance", "distance_closest_bridge").withColumnRenamed("closest_permit_distance", "distance_closest_permit")
+    clustering.df_joined = clustering.df_joined.withColumnRenamed("gps_lat", "object_lat").withColumnRenamed("gps_lon", "object_lon").withColumnRenamed("closest_bridge_distance", "distance_closest_bridge").withColumnRenamed("closest_permit_distance", "distance_closest_permit")
 
-    # clustering.df_joined = clustering.df_joined.withColumn("closest_permit_lat", F.col("closest_permit_coordinates._1"))
-    # clustering.df_joined = clustering.df_joined.withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2"))
-    # clustering.df_joined =clustering.df_joined.withColumn("status", F.lit("Pending"))
+    clustering.df_joined = clustering.df_joined.withColumn("closest_permit_lat", F.col("closest_permit_coordinates._1"))
+    clustering.df_joined = clustering.df_joined.withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2"))
+    clustering.df_joined =clustering.df_joined.withColumn("status", F.lit("Pending"))
 
-    # clustering.df_joined = clustering.df_joined.drop("closest_permit_coordinates")
+    clustering.df_joined = clustering.df_joined.drop("closest_permit_coordinates")
 
-    # clustering.df_joined = (
-    #     clustering.df_joined
-    #     .withColumn("detection_id", F.col("detection_id").cast("int"))
-    #     .withColumn("object_lat", F.col("object_lat").cast("string"))
-    #     .withColumn("object_lon", F.col("object_lon").cast("string"))
-    #     .withColumn("distance_closest_bridge", F.col("distance_closest_bridge").cast("float"))
-    #     .withColumn("closest_bridge_id", F.col("closest_bridge_id").cast("string"))
-    #     .withColumn("distance_closest_permit", F.col("distance_closest_permit").cast("float"))
-    #     .withColumn("closest_permit_lat", F.col("closest_permit_lat").cast("float"))
-    #     .withColumn("closest_permit_lon", F.col("closest_permit_lon").cast("float"))
-    #     .withColumn("score", F.col("score").cast("float"))
-    # )
+    clustering.df_joined = (
+        clustering.df_joined
+        .withColumn("detection_id", F.col("detection_id").cast("int"))
+        .withColumn("object_lat", F.col("object_lat").cast("string"))
+        .withColumn("object_lon", F.col("object_lon").cast("string"))
+        .withColumn("distance_closest_bridge", F.col("distance_closest_bridge").cast("float"))
+        .withColumn("closest_bridge_id", F.col("closest_bridge_id").cast("string"))
+        .withColumn("distance_closest_permit", F.col("distance_closest_permit").cast("float"))
+        .withColumn("closest_permit_lat", F.col("closest_permit_lat").cast("float"))
+        .withColumn("closest_permit_lon", F.col("closest_permit_lon").cast("float"))
+        .withColumn("score", F.col("score").cast("float"))
+    )
 
-    # # Store data in silver_object_per_day 
-    # clustering.df_joined.write.mode('append').saveAsTable(f'{clustering.catalog}.oor.silver_objects_per_day')
-    # print(f"03: Appended {clustering.df_joined.count()} rows to silver_objects_per_day.")
+    # Store data in silver_object_per_day 
+    clustering.df_joined.write.mode('append').saveAsTable(f'{clustering.catalog}.oor.silver_objects_per_day')
+    print(f"03: Appended {clustering.df_joined.count()} rows to silver_objects_per_day.")
 
-    # update_silver_status(catalog_name=clustering.catalog, table_name="silver_frame_metadata")
-    # update_silver_status(catalog_name=clustering.catalog, table_name="silver_detection_metadata")
+    update_silver_status(catalog_name=clustering.catalog, table_name="silver_frame_metadata")
+    update_silver_status(catalog_name=clustering.catalog, table_name="silver_detection_metadata")
 
 
 if __name__ == "__main__":
