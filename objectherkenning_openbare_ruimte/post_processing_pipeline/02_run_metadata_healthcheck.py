@@ -4,6 +4,7 @@ from pyspark.sql import SparkSession
 
 class MetadataHealthChecker:
     def __init__(self, spark):
+        self.spark = spark
         self.catalog = get_catalog_name(spark)
         # load bronze metadata that is pending
         self.bronze_frame_metadata = self.load_bronze_metadata(table_name="bronze_frame_metadata")
@@ -21,7 +22,7 @@ class MetadataHealthChecker:
 
     def load_bronze_metadata(self, table_name):
         query = f"SELECT * FROM {self.catalog}.oor.{table_name} WHERE status='Pending'"
-        return spark.sql(query)
+        return self.spark.sql(query)
 
 
     def process_and_save_frame_metadata(self):
@@ -74,7 +75,7 @@ class MetadataHealthChecker:
         UPDATE {self.catalog}.oor.{table_name} SET status = 'Processed' WHERE status = 'Pending'
         """
         # Execute the update query
-        spark.sql(update_query)
+        self.spark.sql(update_query)
         print(f"02: Updated 'Pending' status to 'Processed' in {self.catalog}.oor.{table_name}.")
 
 if __name__ == "__main__":
