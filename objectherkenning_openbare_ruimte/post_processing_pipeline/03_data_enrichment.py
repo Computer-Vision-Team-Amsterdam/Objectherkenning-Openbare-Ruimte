@@ -16,8 +16,6 @@ from pyspark.sql.types import StringType, DoubleType, ArrayType
 from shapely.geometry import Point
 import ast
 from shapely.wkt import loads as wkt_loads
-import sys
-
 
 from datetime import datetime
 from helpers.clustering_detections import Clustering  # noqa: E402
@@ -42,8 +40,7 @@ def update_silver_status(catalog_name, table_name):
     spark.sql(update_query)
     print(f"02: Updated 'Pending' status to 'Processed' in {catalog_name}.oor.{table_name}.")
 
-
-if __name__ == "__main__":
+def main():
     sparkSession = SparkSession.builder.appName("DataEnrichment").getOrCreate()
     ########## SETUP ##########
     # Setup clustering
@@ -53,7 +50,7 @@ if __name__ == "__main__":
 
     if len(containers_coordinates_geometry) == 0:
         print("03: No containers found. Stopping execution.")
-        sys.exit()
+        return
 
 
     # Setup bridges data
@@ -164,3 +161,7 @@ if __name__ == "__main__":
 
     # update_silver_status(catalog_name=clustering.catalog, table_name="silver_frame_metadata")
     # update_silver_status(catalog_name=clustering.catalog, table_name="silver_detection_metadata")
+
+
+if __name__ == "__main__":
+    main()
