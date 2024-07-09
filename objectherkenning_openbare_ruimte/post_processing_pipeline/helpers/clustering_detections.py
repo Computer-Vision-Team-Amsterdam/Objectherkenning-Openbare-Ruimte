@@ -26,10 +26,6 @@ class Clustering:
         self.frame_metadata = self.spark.sql(query_frame_metadata)
         print(f"03: Loaded {self.frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_frame_metadata.")
 
-        if self.detection_metadata.count() or self.frame_metadata.count() == 0:
-            print("03: Missing or incomplete data to run clustering. Stopping execution.")
-            return
-
         self.df_joined = self._join_frame_and_detection_metadata()
 
         self._containers_coordinates = self._extract_containers_coordinates()
