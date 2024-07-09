@@ -1,6 +1,7 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()
 
+import sys
 from datetime import datetime
 from helpers.utils_signalen import SignalHandler
 from helpers.databricks_workspace import get_catalog_name
@@ -30,7 +31,12 @@ from pyspark.sql import functions as F
 if __name__ == "__main__":
    sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
    signalHandler = SignalHandler(sparkSession)
-   top_scores_df = signalHandler.get_top_pending_records(table_name="silver_objects_per_day", limit=10)  
+   top_scores_df = signalHandler.get_top_pending_records(table_name="silver_objects_per_day", limit=10)
+
+   if top_scores_df.count() == 0:
+        print("04: No data found for creating notifications. Stopping execution.")
+        sys.exit()  
+        
    print(f"04: Loaded {top_scores_df.count()} rows with top 10 scores from {signalHandler.catalog_name}.oor.silver_objects_per_day.")
 
    date_of_notification = datetime.today().strftime('%Y-%m-%d')

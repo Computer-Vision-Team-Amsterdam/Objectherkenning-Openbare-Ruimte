@@ -16,7 +16,6 @@ class MetadataHealthChecker:
         print(f"02: Loaded {self.bronze_detection_metadata.count()} 'Pending' rows from {self.catalog}.oor.bronze_detection_metadata.")
 
         self.process_and_save_detection_metadata()
-        # update bronze metadata status to processed
         self.update_bronze_status(table_name="bronze_detection_metadata")
 
 
