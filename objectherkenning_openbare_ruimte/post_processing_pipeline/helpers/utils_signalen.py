@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from databricks.sdk.runtime import *
 import json
 import requests
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pyspark.sql import SparkSession
 
@@ -409,13 +410,12 @@ class SignalHandler:
         return json_to_send
     
 
-    def get_image_upload_path(self, detection_id, date_of_notification):
+    def get_image_upload_path(self, detection_id):
         """
         Fetches the image name based on the detection_id and constructs the path for uploading the image.
         
         Parameters:
         detection_id (int): The id of the detection.
-        date_of_notification (str): The date of notification.
         
         Returns:
         str: The constructed image upload path.
@@ -432,8 +432,22 @@ class SignalHandler:
         # Extract the image name from the result
         image_basename = image_name_result_df.collect()[0]['image_name']
 
+        fetch_date_of_image_upload = f"""
+                                  SELECT {self.catalog_name}.oor.silver_frame_metadata.gps_date
+                                  FROM {self.catalog_name}.oor.silver_frame_metadata
+                                  WHERE {self.catalog_name}.oor.silver_frame_metadata.image_name = {image_basename}
+                                   """
+        date_of_image_upload_df = spark.sql(fetch_date_of_image_upload)
+        date_of_image_upload_dmy = date_of_image_upload_df.collect()[0]["gps_date"]
+
+        # Convert to datetime object
+        date_obj = datetime.strptime(date_str, '%d/%m/%Y')
+
+        # Format the datetime object to the desired format
+        date_of_image_upload_ymd = date_obj.strftime('%Y-%m-%d')
+        
         # Construct the path to the image to be uploaded to Signalen
-        image_upload_path = f'/Volumes/{self.catalog_name}/default/landingzone/Luna/images/{date_of_notification}/{image_basename}'
+        image_upload_path = f'/Volumes/{self.catalog_name}/default/landingzone/Luna/images/{date_of_image_upload_ymd}/{image_basename}'
 
         return image_upload_path
 

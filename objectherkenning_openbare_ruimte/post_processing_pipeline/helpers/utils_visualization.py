@@ -1,3 +1,4 @@
+import os
 import folium
 from databricks.sdk.runtime import *
 from shapely.geometry import Point, LineString
@@ -29,6 +30,9 @@ def generate_map(
     :param name: custom name for the map. If not passed, name is created based on what the map contains.
     :param colors: colors to be assigned to each cluster
     """
+
+    os.makedirs(path, exist_ok=True)
+
     # Amsterdam coordinates
     latitude = 52.377956
     longitude = 4.897070
