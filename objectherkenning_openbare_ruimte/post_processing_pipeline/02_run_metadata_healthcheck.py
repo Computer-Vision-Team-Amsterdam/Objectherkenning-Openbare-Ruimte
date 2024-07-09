@@ -44,11 +44,29 @@ class MetadataHealthChecker:
 
     def process_and_save_detection_metadata(self):
 
-        # Do not check anything for now, but we should implement the logic here
-        valid_metadata = self.bronze_detection_metadata
-        #display(valid_metadata)
+        # Detection metadata corresponding to healthy frame metadata is healthy
+        valid_metadata_query = f"""
+                        SELECT {self.catalog}.oor.bronze_detection_metadata.*
+                        FROM {self.catalog}.oor.bronze_detection_metadata
+                        INNER JOIN {self.catalog}.oor.silver_frame_metadata ON {self.catalog}.oor.bronze_detection_metadata.image_name = {self.catalog}.oor.silver_frame_metadata.image_name
+                        """
+        valid_metadata = self.spark.sql(valid_metadata_query)
+
+        # Detection metadata corresponding to unhealthy frame metadata is unhealthy
+        invalid_metadata_query = f"""
+                        SELECT {self.catalog}.oor.bronze_detection_metadata.*
+                        FROM {self.catalog}.oor.bronze_detection_metadata
+                        INNER JOIN {self.catalog}.oor.silver_frame_metadata_quarantine ON {self.catalog}.oor.bronze_detection_metadata.image_name = {self.catalog}.oor.silver_frame_metadata.image_name_quarantine
+                        """
+
+        invalid_metadata = self.spark.sql(invalid_metadata_query)
+        print("02: Processed detection metadata.")
+
         valid_metadata.write.mode('append').saveAsTable(f'{self.catalog}.oor.silver_detection_metadata')
         print(f"02: Appended {valid_metadata.count()} rows to silver_detection_metadata.")
+
+        invalid_metadata.write.mode('append').saveAsTable(f'{self.catalog}.oor.silver_detection_metadata_quarantine')
+        print(f"02: Appended {invalid_metadata.count()} rows to silver_detection_metadata_quarantine.")
 
         
     def update_bronze_status(self, table_name):
