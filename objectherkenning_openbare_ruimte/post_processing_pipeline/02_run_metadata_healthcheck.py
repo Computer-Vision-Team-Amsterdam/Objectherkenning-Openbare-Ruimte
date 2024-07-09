@@ -56,7 +56,7 @@ class MetadataHealthChecker:
         invalid_metadata_query = f"""
                         SELECT {self.catalog}.oor.bronze_detection_metadata.*
                         FROM {self.catalog}.oor.bronze_detection_metadata
-                        INNER JOIN {self.catalog}.oor.silver_frame_metadata_quarantine ON {self.catalog}.oor.bronze_detection_metadata.image_name = {self.catalog}.oor.silver_frame_metadata.image_name_quarantine
+                        INNER JOIN {self.catalog}.oor.silver_frame_metadata_quarantine ON {self.catalog}.oor.bronze_detection_metadata.image_name = {self.catalog}.oor.silver_frame_metadata_quarantine.image_name
                         """
 
         invalid_metadata = self.spark.sql(invalid_metadata_query)
