@@ -89,6 +89,7 @@ class SignalHandler:
 
         self.catalog_name = get_catalog_name(spark)
         self.verify_ssl = False if self.catalog_name == "dpcv_dev" else True
+        self.verify_ssl = False
         self.spark = spark
 
     def get_signal(self, sig_id: str) -> Any:
