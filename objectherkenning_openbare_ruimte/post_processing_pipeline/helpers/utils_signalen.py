@@ -43,7 +43,8 @@ class SignalConnectionConfigurer:
 
         self.spark = spark
 
-        environment = get_databricks_environment(self.spark)
+        #environment = get_databricks_environment(self.spark)
+        environment = "Ontwikkel"
         if environment == "Productie":
             self.access_token_url = "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
             self.base_url = "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
