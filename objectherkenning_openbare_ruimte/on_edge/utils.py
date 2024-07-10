@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import time
 from functools import wraps
 
@@ -42,7 +43,7 @@ def log_execution_time(func):
 
 def move_file(file_path, output_file_path):
     try:
-        os.rename(file_path, output_file_path)
+        shutil.move(file_path, output_file_path)
         logger.info(f"{file_path} has been moved to {output_file_path}.")
     except FileNotFoundError:
         logger.error(f"{file_path} does not exist.")

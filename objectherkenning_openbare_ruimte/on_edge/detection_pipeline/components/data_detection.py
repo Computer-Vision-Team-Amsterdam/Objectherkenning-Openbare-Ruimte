@@ -449,9 +449,9 @@ class DataDetection:
                         move_file(image_full_path, image_destination_full_path)
                         images_moved_count += 1
             metadata_csv_destination_file_path = (
-                self.training_mode_destination_path / metadata_csv_file_path.name
+                self.training_mode_destination_path / csv_path.name
             )
-            move_file(metadata_csv_file_path, metadata_csv_destination_file_path)
+            move_file(csv_path, metadata_csv_destination_file_path)
             logger.info(
                 f"Moved {images_moved_count} images from {metadata_csv_file_path}"
             )
