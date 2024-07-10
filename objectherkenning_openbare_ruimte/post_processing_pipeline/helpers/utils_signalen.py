@@ -242,7 +242,7 @@ class SignalHandler:
         Text we send when creating a notification.
         """
         return (
-            "Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
+            "E2E TEST: Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
             "bouwkeet gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
             "adres betreft een schatting van het dichtstbijzijnde adres bij de containerlocatie, er is geen "
             "informatie bekend in hoeverre dit het adres is van de containereigenaar."

@@ -30,8 +30,8 @@ def main():
    # Convert to a list of row objects that are iterable
    for entry in top_scores_df.collect():
 
-      LAT = entry["object_lat"]
-      LON = entry["object_lon"]
+      LAT = float(entry["object_lat"])
+      LON = float(entry["object_lon"])
       detection_id = entry["detection_id"]
 
       image_upload_path = signalHandler.get_image_upload_path(detection_id=detection_id)
