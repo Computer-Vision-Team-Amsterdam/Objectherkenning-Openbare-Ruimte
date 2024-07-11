@@ -59,9 +59,9 @@ def generate_map(
     
     # Function to determine the marker color based on the score
     def get_marker_color(score):
-        if score < 0.50:
+        if score < 0.40:
             return "green"
-        elif 0.50 <= score < 0.75:
+        elif 0.4 <= score < 1:
             return "yellow"
         else:
             return "red"
