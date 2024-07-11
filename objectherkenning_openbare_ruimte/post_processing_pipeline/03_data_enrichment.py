@@ -42,9 +42,12 @@ def update_silver_status(catalog_name, table_name):
 
 def main():
     sparkSession = SparkSession.builder.appName("DataEnrichment").getOrCreate()
+
     ########## SETUP ##########
     # Setup clustering
     clustering = Clustering(spark=sparkSession)
+    clustering.filter_by_confidence_score(0.7)
+    clustering.filter_by_bounding_box_size(0.003)
 
     if clustering.detection_metadata.count() == 0 or clustering.frame_metadata.count() == 0:
         print("03: Missing or incomplete data to run clustering. Stopping execution.")

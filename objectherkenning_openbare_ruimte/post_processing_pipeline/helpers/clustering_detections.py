@@ -27,14 +27,25 @@ class Clustering:
         print(f"03: Loaded {self.frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_frame_metadata.")
 
         self.df_joined = self._join_frame_and_detection_metadata()
+        self._containers_coordinates = None
+        self._containers_coordinates_geometry = None
 
-        self._containers_coordinates = self._extract_containers_coordinates()
-        self._containers_coordinates_geometry = self._convert_coordinates_to_point()
+    def filter_by_confidence_score(self, min_conf_score: float):
+        self.df_joined = self.df_joined.where(col("confidence") > min_conf_score)
+
+    def filter_by_bounding_box_size(self, min_bbox_size: float):
+        # Calculate area for each image
+        self.df_joined = self.df_joined.withColumn("area", col("width") * col("height"))
+        self.df_joined = self.df_joined.where(col("area") > min_bbox_size)
 
     def get_containers_coordinates(self):
+        if not self._containers_coordinates:
+            self._containers_coordinates = self._extract_containers_coordinates()
         return self._containers_coordinates
 
     def get_containers_coordinates_geometry(self):
+        if not self._containers_coordinates_geometry:
+            self._containers_coordinates_geometry = self._convert_coordinates_to_point()
         return self._containers_coordinates_geometry
 
     def _filter_objects_by_date(self, date):
@@ -78,10 +89,8 @@ class Clustering:
         return joined_df
 
     def _extract_containers_coordinates(self):
-
         # Collect the DataFrame rows as a list of Row objects
         rows = self.df_joined.select("gps_lat", "gps_lon").collect()
-
         # Convert the list of Row objects into a list of tuples
         containers_coordinates = [(row["gps_lat"], row["gps_lon"]) for row in rows]
         #containers_coordinates = [(float(row["gps_lat"]), float(row["gps_lon"])) for row in rows]
@@ -92,8 +101,9 @@ class Clustering:
         """
         We need the containers coordinates as Point to perform distance calculations
         """
+        temp = self.get_containers_coordinates()
         containers_coordinates_geometry = [
-            Point(location) for location in self._containers_coordinates
+            Point(location) for location in self.get_containers_coordinates()
         ]
         return containers_coordinates_geometry
 
@@ -133,7 +143,7 @@ class Clustering:
         min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
         """
 
-        coordinates = np.array(self._containers_coordinates)
+        coordinates = np.array(self.get_containers_coordinates())
 
         db = DBSCAN(
             eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
@@ -158,9 +168,6 @@ class Clustering:
         self.df_joined = self.df_joined.filter(
             col("confidence") >= col("mean_confidence")
         )
-
-        # Calculate area for each image
-        self.df_joined = self.df_joined.withColumn("area", col("width") * col("height"))
 
         # Select the image with the largest area within each cluster
         window_spec_area = Window.partitionBy("tracking_id").orderBy(col("area").desc())
