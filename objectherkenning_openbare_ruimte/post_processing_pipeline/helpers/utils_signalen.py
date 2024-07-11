@@ -43,8 +43,7 @@ class SignalConnectionConfigurer:
 
         self.spark = spark
 
-        #environment = get_databricks_environment(self.spark)
-        environment = "Ontwikkel"
+        environment = get_databricks_environment(self.spark)
         if environment == "Productie":
             self.access_token_url = "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
             self.base_url = "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
@@ -89,7 +88,6 @@ class SignalHandler:
 
         self.catalog_name = get_catalog_name(spark)
         self.verify_ssl = False if self.catalog_name == "dpcv_dev" else True
-        self.verify_ssl = False
         self.spark = spark
 
     def get_signal(self, sig_id: str) -> Any:
@@ -242,7 +240,7 @@ class SignalHandler:
         Text we send when creating a notification.
         """
         return (
-            "E2E TEST: Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
+            "Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
             "bouwkeet gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
             "adres betreft een schatting van het dichtstbijzijnde adres bij de containerlocatie, er is geen "
             "informatie bekend in hoeverre dit het adres is van de containereigenaar."
