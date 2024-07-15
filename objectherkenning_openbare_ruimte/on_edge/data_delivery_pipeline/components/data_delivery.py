@@ -137,14 +137,27 @@ class DataDelivery:
             images_delivered = 0
             for row in reader:
                 image_file_name = get_img_name_from_csv_row(csv_path, row)
-                row_detection_metadata_rows = self._deliver_image_and_prepare_metadata(
-                    image_file_name, detections_path, iot_handler
+                image_full_path = detections_path / image_file_name
+                detection_metadata_full_path = detections_path / pathlib.Path(
+                    f"{image_full_path.stem}.txt"
                 )
-                detection_metadata_rows.extend(row_detection_metadata_rows)
-                filtered_frame_metadata_rows.append(
-                    [image_file_name] + row + self.model_and_code_version
-                )
-                images_delivered += len(row_detection_metadata_rows)
+
+                if os.path.isfile(image_full_path) and os.path.isfile(
+                    detection_metadata_full_path
+                ):
+                    row_detection_metadata_rows = (
+                        self._deliver_image_and_prepare_metadata(
+                            image_file_name,
+                            image_full_path,
+                            detection_metadata_full_path,
+                            iot_handler,
+                        )
+                    )
+                    detection_metadata_rows.extend(row_detection_metadata_rows)
+                    filtered_frame_metadata_rows.append(
+                        [image_file_name] + row + self.model_and_code_version
+                    )
+                    images_delivered += 1
 
             if images_delivered:
                 self.save_csv_file(
@@ -153,6 +166,10 @@ class DataDelivery:
                 upload_destination_path = f"frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_only_filtered_rows)}"
                 iot_handler.upload_file(
                     str(file_path_only_filtered_rows), str(upload_destination_path)
+                )
+                upload_destination_path = f"full_frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(frame_metadata_file_path)}"
+                iot_handler.upload_file(
+                    str(frame_metadata_file_path), str(upload_destination_path)
                 )
                 self.save_csv_file(
                     file_path_detection_metadata, detection_metadata_rows
@@ -169,7 +186,7 @@ class DataDelivery:
     @staticmethod
     @log_execution_time
     def _deliver_image_and_prepare_metadata(
-        image_file_name, detections_path, iot_handler
+        image_file_name, image_full_path, detection_metadata_full_path, iot_handler
     ):
         """
         Delivers an image specified by row, and returns the metadata, this will be collected and sent all together
@@ -179,8 +196,10 @@ class DataDelivery:
         ----------
         image_file_name:
             Filename of the image.
-        detections_path:
-            where are the detections located.
+        image_file_name:
+            full path of the image.
+        detection_metadata_full_path:
+            full path where the detections are located.
         iot_handler:
             IoTHandler object to deliver the data.
 
@@ -190,25 +209,16 @@ class DataDelivery:
             Detection metadata information.
 
         """
-        image_full_path = detections_path / image_file_name
-        detection_metadata_full_path = detections_path / pathlib.Path(
-            f"{image_full_path.stem}.txt"
-        )
         detection_metadata_rows = []
 
-        if os.path.isfile(image_full_path) and os.path.isfile(
-            detection_metadata_full_path
-        ):
-            with open(detection_metadata_full_path, "r") as detections_file:
-                for detection_metadata_row in csv.reader(
-                    detections_file, delimiter=" "
-                ):
-                    detection_metadata_rows.append(
-                        [image_file_name] + detection_metadata_row
-                    )
+        with open(detection_metadata_full_path, "r") as detections_file:
+            for detection_metadata_row in csv.reader(detections_file, delimiter=" "):
+                detection_metadata_rows.append(
+                    [image_file_name] + detection_metadata_row
+                )
 
-            upload_destination_path = f"images/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(image_full_path)}"
-            iot_handler.upload_file(str(image_full_path), str(upload_destination_path))
+        upload_destination_path = f"images/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(image_full_path)}"
+        iot_handler.upload_file(str(image_full_path), str(upload_destination_path))
         return detection_metadata_rows
 
     @staticmethod
