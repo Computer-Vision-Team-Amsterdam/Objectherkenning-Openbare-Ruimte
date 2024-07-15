@@ -65,11 +65,13 @@ class DataDelivery:
             root_folder=self.detections_folder
         )
         logger.info(f"Number of CSVs to deliver: {len(metadata_csv_file_paths)}")
-        self._deliver_data(frame_metadata_file_paths=metadata_csv_file_paths)
-        self._delete_processed_data(metadata_csv_file_paths=metadata_csv_file_paths)
+
+        for frame_metadata_file_path in metadata_csv_file_paths:
+            self._deliver_data(frame_metadata_file_path=frame_metadata_file_path)
+            self._delete_processed_data(metadata_csv_file_path=frame_metadata_file_path)
 
     @log_execution_time
-    def _deliver_data(self, frame_metadata_file_paths):
+    def _deliver_data(self, frame_metadata_file_path):
         """
         Using Azure IoT delivers the images and metadata to Azure.
 
@@ -85,20 +87,17 @@ class DataDelivery:
             device_id=self.settings["azure_iot"]["device_id"],
             shared_access_key=self.settings["azure_iot"]["shared_access_key"],
         )
-        for frame_metadata_file_path in frame_metadata_file_paths:
-            try:
-                self._deliver_data_batch(frame_metadata_file_path, iot_handler)
-            except FileNotFoundError as e:
-                logger.error(
-                    f"FileNotFoundError during the delivery of: {frame_metadata_file_path}: {e}"
-                )
-            except Exception as e:
-                logger.error(
-                    f"Exception during the delivery of: {frame_metadata_file_path}: {e}"
-                )
-                self.metadata_csv_file_paths_with_errors.append(
-                    frame_metadata_file_path
-                )
+        try:
+            self._deliver_data_batch(frame_metadata_file_path, iot_handler)
+        except FileNotFoundError as e:
+            logger.error(
+                f"FileNotFoundError during the delivery of: {frame_metadata_file_path}: {e}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Exception during the delivery of: {frame_metadata_file_path}: {e}"
+            )
+            self.metadata_csv_file_paths_with_errors.append(frame_metadata_file_path)
 
     @log_execution_time
     def _deliver_data_batch(
@@ -224,7 +223,7 @@ class DataDelivery:
             csv_writer.writerows(data)
 
     @log_execution_time
-    def _delete_processed_data(self, metadata_csv_file_paths):
+    def _delete_processed_data(self, metadata_csv_file_path):
         """
         Deletes the data that has been delivered to Azure.
 
@@ -234,9 +233,7 @@ class DataDelivery:
             CSV files containing the metadata of the pictures,
             it's used to keep track of which files need to be delivered.
         """
-        for metadata_csv_file_path in list(
-            set(metadata_csv_file_paths) - set(self.metadata_csv_file_paths_with_errors)
-        ):
+        if metadata_csv_file_path not in self.metadata_csv_file_paths_with_errors:
             (
                 csv_path,
                 relative_path,
