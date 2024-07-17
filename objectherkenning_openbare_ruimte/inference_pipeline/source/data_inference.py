@@ -2,7 +2,7 @@ import logging
 import os
 import secrets
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
@@ -26,6 +26,11 @@ class DataInference:
         inference_params: Dict,
         target_classes: List,
         sensitive_classes: List,
+        output_image_size: Tuple[int, int],
+        save_detections: bool,
+        save_labels: bool,
+        defisheye_flag: bool,
+        defisheye_params: Dict,
         batch_size: int = 1,
     ):
         """
@@ -47,9 +52,17 @@ class DataInference:
         logger.debug(f"Project_path: {self.inference_folder}")
 
         self.model = YOLO(model=self.pretrained_model_path, task="detect")
-        self.roi = self.mapx = self.mapy = None
+
         self.target_classes = target_classes
         self.sensitive_classes = sensitive_classes
+        self.output_image_size = output_image_size
+        self.save_detections = save_detections
+        self.save_labels = save_labels
+
+        self.defisheye_flag = defisheye_flag
+        self.defisheye_params = defisheye_params
+        self.mapx = self.mapy = None
+
         self.batch_size = batch_size
 
         # Predefined colors for 5 categories
@@ -71,75 +84,89 @@ class DataInference:
             predefined_colors,
         )
 
-    def run_pipeline_prelabeling(self):
-        """
-        Runs the detection pipeline for pre-labeling or evaluation:
-            - find the images to detect;
-            - detects everything.
-        """
-        logger.debug(
-            f"Running detection pipeline (prelabeling) on {self.images_folder}.."
-        )
-        videos_and_frames = self._find_image_paths_and_group_by_videoname(
-            root_folder=self.images_folder
-        )
-        logger.debug(
-            f"Number of images to detect: {sum(len(frames) for frames in videos_and_frames.values())}"
-        )
-        self._detect_all_objects(videos_and_frames=videos_and_frames)
-
     def run_pipeline(self):
         """
         Runs the detection pipeline:
             - find the images to detect;
-            - detects and tracks containers.
+            - detects everything;
+            - stores labels if required;
+            - stores images if required, with
+              - sensitive classes blurred;
+              - target classes bounding boxes drawn;
         """
-        logger.debug(f"Running container detection pipeline on {self.images_folder}..")
-        videos_and_frames = self._find_image_paths_and_group_by_videoname(
+        logger.debug(f"Running detection pipeline on {self.images_folder}..")
+        folders_and_frames = self._find_image_paths_and_group_by_folder(
             root_folder=self.images_folder
         )
         logger.debug(
-            f"Number of images to detect: {sum(len(frames) for frames in videos_and_frames.values())}"
+            f"Number of images to detect: {sum(len(frames) for frames in folders_and_frames.values())}"
         )
-        self._detect_target_classes(videos_and_frames=videos_and_frames)
+        self._detect(folders_and_frames=folders_and_frames)
 
-    def _detect_target_classes(self, videos_and_frames: Dict[str, List[str]]):
+    def _detect(self, folders_and_frames: Dict[str, List[str]]):
         results = self._process_batches(
             self.model,
-            videos_and_frames,
+            folders_and_frames,
             batch_size=self.batch_size,
-            is_prelabeling=False,
         )
         logger.debug(results)
 
-    def _detect_all_objects(self, videos_and_frames: Dict[str, List[str]]):
-        results = self._process_batches(
-            self.model,
-            videos_and_frames,
-            batch_size=self.batch_size,
-            is_prelabeling=True,
-        )
-        logger.debug(results)
+    def _load_and_defisheye_image(self, image_path):
+        image = cv2.resize(cv2.imread(str(image_path)), self.output_image_size)
+        if self.defisheye_flag:
+            image = self._defisheye(image)
+        return image
 
-    def _process_batches(
-        self, model, videos_and_frames, batch_size, is_prelabeling=False
-    ):
-        for video_name, images_paths in videos_and_frames.items():
-            self.inference_params["source"] = images_paths
+    def _defisheye(self, image):
+        if self.mapx is None or self.mapy is None:
+            old_w, old_h = self.defisheye_params["input_image_size"]
+            new_h, new_w = image.shape[:2]
+
+            cam_mtx = np.array(self.defisheye_params["camera_matrix"])
+            cam_mtx[0, :] = cam_mtx[0, :] * (float(new_w) / float(old_w))
+            cam_mtx[1, :] = cam_mtx[1, :] * (float(new_h) / float(old_h))
+
+            logger.debug(f"Defisheye: {(old_w, old_h)} -> ({(new_w, new_h)})")
+            logger.debug(f"Scaled camera matrix:\n{cam_mtx}")
+
+            newcameramtx, _ = cv2.getOptimalNewCameraMatrix(
+                cam_mtx,
+                np.array(self.defisheye_params["distortion_params"]),
+                (new_w, new_h),
+                0,
+                (new_w, new_h),
+            )
+            self.mapx, self.mapy = cv2.initUndistortRectifyMap(
+                cam_mtx,
+                np.array(self.defisheye_params["distortion_params"]),
+                None,
+                newcameramtx,
+                (new_w, new_h),
+                5,
+            )
+
+        # undistort
+        img_dst = cv2.remap(image, self.mapx, self.mapy, cv2.INTER_LINEAR)
+
+        return img_dst
+
+    def _process_batches(self, model, folders_and_frames, batch_size):
+        for folder_name, images in folders_and_frames.items():
+            images_paths = [os.path.join(folder_name, image) for image in images]
             processed_images = 0
             for i in range(0, len(images_paths), batch_size):
                 try:
                     batch_images = [
-                        image_path for image_path in images_paths[i : i + batch_size]
+                        self._load_and_defisheye_image(image_path)
+                        for image_path in images_paths[i : i + batch_size]
                     ]
                     self.inference_params["source"] = batch_images
-                    self.inference_params["name"] = video_name + "_batch_"
+                    self.inference_params["name"] = folder_name
                     batch_results = model(**self.inference_params)
                     torch.cuda.empty_cache()  # Clear unused memory
-                    if is_prelabeling:
-                        self._process_results_objects(batch_results)
-                    else:
-                        self._process_results_target_classes(batch_results)
+                    self._process_results(
+                        batch_results, images_paths[i : i + batch_size]
+                    )
                     processed_images += len(batch_images)
                 except RuntimeError as e:
                     if "out of memory" in str(e):
@@ -162,15 +189,16 @@ class DataInference:
                         raise e
             logger.debug(f"Number of images processed: {processed_images}")
 
-    def _process_results_target_classes(self, model_results: Results):
+    def _process_results(self, model_results: Results, images_paths: List):
 
-        for r in model_results:
+        for r, image_path in zip(model_results, images_paths):
             result = r.cpu()
             boxes = result.boxes.numpy()
-            image_path = result.path  # Path of the input image
-            image_name = os.path.basename(image_path)
 
-            logger.debug(f"=== IMAGE NAME: {image_name} ===")
+            image_name = os.path.basename(image_path)
+            subfolder = os.path.relpath(os.path.dirname(image_path), self.images_folder)
+
+            logger.debug(f"=== IMAGE: {subfolder}/{image_name} ===")
 
             target_idxs = np.where(np.in1d(boxes.cls, self.target_classes))[0]
             if len(target_idxs) == 0:  # Nothing to do!
@@ -197,62 +225,28 @@ class DataInference:
             )
 
             # Save image
-            images_dir = os.path.join(self.inference_folder, "processed_images")
-            os.makedirs(images_dir, exist_ok=True)
-            save_path = os.path.join(images_dir, image_name)
-            cv2.imwrite(save_path, image)
+            if self.save_detections:
+                images_dir = os.path.join(
+                    self.inference_folder, "detected_images", subfolder
+                )
+                os.makedirs(images_dir, exist_ok=True)
+                save_path = os.path.join(images_dir, image_name)
+                cv2.imwrite(save_path, image)
+                logger.debug("=== SAVED IMAGE ===")
 
             # Save annotation
-            annotation_str = self._get_annotion_string_from_boxes(boxes[target_idxs])
-            labels_dir = os.path.join(self.inference_folder, "processed_labels")
-            os.makedirs(labels_dir, exist_ok=True)
-            annotation_path = os.path.join(
-                labels_dir, f"{os.path.splitext(image_name)[0]}.txt"
-            )
-            with open(annotation_path, "w") as f:
-                f.write(annotation_str)
-
-            logger.debug("=== SAVED IMAGE ===")
-
-    def _process_results_objects(self, model_results: Results):
-
-        for r in model_results:
-            result = r.cpu()
-            boxes = result.boxes.numpy()
-            image = result.orig_img.copy()
-
-            # Get categories for each bounding box
-            categories = [int(box.cls) for box in boxes]
-
-            # Draw annotation boxes
-            target_bounding_boxes = boxes.xyxy
-            image = blurring_tools.draw_bounding_boxes(
-                image, target_bounding_boxes, categories, self.category_colors
-            )
-
-            # Save image
-            images_dir = os.path.join(
-                self.inference_folder, "processed_images_prelabeling"
-            )
-            os.makedirs(images_dir, exist_ok=True)
-            image_path = result.path  # Path of the input image
-            image_name = os.path.basename(image_path)
-            save_path = os.path.join(images_dir, image_name)
-            cv2.imwrite(save_path, image)
-
-            # Save annotation
-            annotation_str = self._get_annotion_string_from_boxes(boxes)
-            labels_dir = os.path.join(
-                self.inference_folder, "processed_labels_prelabeling"
-            )
-            os.makedirs(labels_dir, exist_ok=True)
-            annotation_path = os.path.join(
-                labels_dir, f"{os.path.splitext(image_name)[0]}.txt"
-            )
-            with open(annotation_path, "w") as f:
-                f.write(annotation_str)
-
-            logger.debug("=== SAVED IMAGE ===")
+            if self.save_labels:
+                annotation_str = self._get_annotion_string_from_boxes(boxes)
+                labels_dir = os.path.join(
+                    self.inference_folder, "detected_labels", subfolder
+                )
+                os.makedirs(labels_dir, exist_ok=True)
+                annotation_path = os.path.join(
+                    labels_dir, f"{os.path.splitext(image_name)[0]}.txt"
+                )
+                with open(annotation_path, "w") as f:
+                    f.write(annotation_str)
+                logger.debug("=== SAVED LABELS ===")
 
     @staticmethod
     def _get_annotion_string_from_boxes(boxes: Boxes) -> str:
@@ -269,21 +263,13 @@ class DataInference:
         return "\n".join(annotation_lines)
 
     @staticmethod
-    def _find_image_paths_and_group_by_videoname(root_folder):
-        videos_and_frames = {}
+    def _find_image_paths_and_group_by_folder(root_folder):
+        folders_and_frames = {}
         for foldername, subfolders, filenames in os.walk(root_folder):
             for filename in filenames:
                 if any(filename.endswith(ext) for ext in IMG_FORMATS):
-                    try:
-                        video_name, _ = os.path.basename(filename).rsplit("_", 1)
-                    except ValueError as e:
-                        logger.debug(f"=== ValueError: {e} ===")
-                        logger.debug(f"Filename: {filename}")
-                        video_name = os.path.basename(filename)
-                        logger.debug(f"Video name: {video_name}")
-                    image_path = os.path.join(foldername, filename)
-                    if video_name not in videos_and_frames:
-                        videos_and_frames[video_name] = [image_path]
+                    if foldername not in folders_and_frames:
+                        folders_and_frames[foldername] = [filename]
                     else:
-                        videos_and_frames[video_name].append(image_path)
-        return videos_and_frames
+                        folders_and_frames[foldername].append(filename)
+        return folders_and_frames

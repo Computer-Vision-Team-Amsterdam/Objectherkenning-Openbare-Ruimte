@@ -178,7 +178,7 @@ poetry.lock
 /*.md
 #/.*
 
-
+.git
 /local_test_data
 /weights
 /yolov5/runs
@@ -190,3 +190,4 @@ poetry.lock
 /experiments
 /datasets
 /notebooks
+/local

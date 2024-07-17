@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 
@@ -16,6 +16,12 @@ class AMLExperimentDetailsSpec(SettingsSpecModel):
     ai_instrumentation_key: str = None
 
 
+class DistortionCorrectionParameters(SettingsSpecModel):
+    camera_matrix: List[List[float]]
+    distortion_params: List[List[float]]
+    input_image_size: Tuple[int, int]
+
+
 class InferenceModelParameters(SettingsSpecModel):
     batch_size: int = 1
     img_size: int = 640
@@ -29,7 +35,13 @@ class InferencePipelineSpec(SettingsSpecModel):
     detection_params: InferenceModelParameters
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
-    prelabeling_flag: bool = False
+    target_classes: List[int]
+    sensitive_classes: List[int]
+    output_image_size: Tuple[int, int]
+    save_detection_images: bool
+    save_detection_labels: bool
+    defisheye_flag: bool
+    defisheye_params: DistortionCorrectionParameters
 
 
 class LoggingSpec(SettingsSpecModel):

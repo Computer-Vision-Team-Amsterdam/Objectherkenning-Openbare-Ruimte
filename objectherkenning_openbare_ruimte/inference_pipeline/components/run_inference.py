@@ -49,7 +49,6 @@ def run_inference(
     pretrained_model_path = os.path.join(model_weights, model_name)
     detection_params = settings["inference_pipeline"]["detection_params"]
     batch_size = settings["inference_pipeline"]["detection_params"]["batch_size"]
-    prelabeling_flag = settings["inference_pipeline"]["prelabeling_flag"]
 
     params = {
         "imgsz": detection_params.get("img_size", 640),
@@ -66,12 +65,14 @@ def run_inference(
         model_name=model_name,
         pretrained_model_path=pretrained_model_path,
         inference_params=params,
-        target_classes=[2, 3, 4],
-        sensitive_classes=[0, 1],
+        target_classes=settings["inference_pipeline"]["target_classes"],
+        sensitive_classes=settings["inference_pipeline"]["sensitive_classes"],
+        output_image_size=settings["inference_pipeline"]["output_image_size"],
+        save_detections=settings["inference_pipeline"]["save_detection_images"],
+        save_labels=settings["inference_pipeline"]["save_detection_labels"],
+        defisheye_flag=settings["inference_pipeline"]["defisheye_flag"],
+        defisheye_params=settings["inference_pipeline"]["defisheye_params"],
         batch_size=batch_size,
     )
 
-    if prelabeling_flag:
-        inference_pipeline.run_pipeline_prelabeling()
-    else:
-        inference_pipeline.run_pipeline()
+    inference_pipeline.run_pipeline()
