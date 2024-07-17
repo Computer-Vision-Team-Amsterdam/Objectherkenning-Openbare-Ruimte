@@ -19,7 +19,7 @@ settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
 azure_logging_configurer.setup_oor_logging()
 aml_experiment_settings = settings["aml_experiment_details"]
-logger = logging.getLogger("inference_pipeline")
+logger = logging.getLogger("run_inference")
 
 from azure.ai.ml.constants import AssetTypes  # noqa: E402
 from mldesigner import Input, Output, command_component  # noqa: E402

@@ -13,7 +13,7 @@ from ultralytics.engine.results import Boxes, Results
 
 from objectherkenning_openbare_ruimte.inference_pipeline.source import blurring_tools
 
-logger = logging.getLogger("inference_pipeline")
+logger = logging.getLogger(__name__)
 
 
 class DataInference:
