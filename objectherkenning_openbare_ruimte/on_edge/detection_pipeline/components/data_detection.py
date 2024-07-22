@@ -223,7 +223,6 @@ class DataDetection:
         relative_path = csv_path.relative_to(self.images_folder)
         images_path = self.images_folder / relative_path.parent
         detections_path = pathlib.Path(self.detections_folder) / relative_path.parent
-
         return (
             csv_path,
             relative_path,
@@ -443,13 +442,20 @@ class DataDetection:
                     image_file_name = get_img_name_from_csv_row(csv_path, row)
                     image_full_path = images_path / image_file_name
                     if os.path.isfile(image_full_path):
-                        image_destination_full_path = (
-                            self.training_mode_destination_path / image_file_name
+                        image_subfolder_and_name = os.path.relpath(
+                            image_full_path, self.images_folder
+                        )
+                        image_destination_full_path = os.path.join(
+                            self.training_mode_destination_path,
+                            image_subfolder_and_name,
                         )
                         move_file(image_full_path, image_destination_full_path)
                         images_moved_count += 1
-            metadata_csv_destination_file_path = (
-                self.training_mode_destination_path / csv_path.name
+            metadata_csv_subfolder_and_name = os.path.relpath(
+                csv_path, self.images_folder
+            )
+            metadata_csv_destination_file_path = os.path.join(
+                self.training_mode_destination_path, metadata_csv_subfolder_and_name
             )
             move_file(csv_path, metadata_csv_destination_file_path)
             logger.info(

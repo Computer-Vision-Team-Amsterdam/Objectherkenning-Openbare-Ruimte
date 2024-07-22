@@ -7,8 +7,8 @@ aml_experiment_details:
   src_dir: "."
 
 azure_iot:
-  # hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
-  hostname: "iothub-oor-prd-weu-ggi-01.azure-devices.net"
+  hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
+  # hostname: "iothub-oor-prd-weu-ggi-01.azure-devices.net"
   device_id: "Luna"
   shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
 
@@ -41,7 +41,7 @@ detection_pipeline:
     save_img_flag: False
     save_txt_flag: False
     save_conf_flag: False
-  model_name: "yolov8m_1280.pt"
+  model_name: "yolov8m_1280_v2_600_best.pt"
   pretrained_model_path: "/model_artifacts"
   defisheye_flag: True
   defisheye_params:
@@ -53,7 +53,7 @@ detection_pipeline:
   input_image_size: [3840, 2160]
   output_image_size: [1280, 720]
   sleep_time: 30
-  training_mode: False
+  training_mode: True
   training_mode_destination_path: "/training_mode"
 
 data_sampling:
@@ -106,7 +106,7 @@ training_pipeline:
     project_rel_path: "model"
 
 logging:
-  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
+  loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations",
                  "performance_monitoring", "model_conversion_pipeline", "detection_pipeline", "data_delivery_pipeline"]
   basic_config:

@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import socket
 from datetime import datetime
 from time import sleep
@@ -6,6 +7,7 @@ from time import sleep
 import psutil
 import torch
 
+from objectherkenning_openbare_ruimte.on_edge.utils import count_files_in_folder_tree
 from objectherkenning_openbare_ruimte.settings.luna_logging import setup_luna_logging
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
@@ -42,6 +44,10 @@ if __name__ == "__main__":
     logging_file_path = f"{settings['logging']['luna_logs_dir']}/performance_monitoring/{datetime.now()}.txt"
     setup_luna_logging(settings["logging"], logging_file_path)
     logger = logging.getLogger("performance_monitoring")
+    images_folder = pathlib.Path(settings["detection_pipeline"]["images_path"])
+    detections_folder = pathlib.Path(settings["detection_pipeline"]["detections_path"])
+    metadata_folder = pathlib.Path(settings["data_delivery_pipeline"]["metadata_path"])
+
     logger.info("Performance monitor is running. It will start providing updates soon.")
     first_loop = True
     while True:
@@ -53,5 +59,14 @@ if __name__ == "__main__":
         cpu_load = psutil.cpu_percent()
         logger.info(
             f"system_status: [internet: {internet()}, cpu: {cpu_load}, ram: {ram_load}, gpu: {gpu_status}]"
+        )
+        logger.info(
+            f"folder_status: ["
+            f"CSVs in images folder: {count_files_in_folder_tree(images_folder, 'csv')}, "
+            f"JPGs in images folder: {count_files_in_folder_tree(images_folder, 'jpg')}, "
+            f"CSVs in detections folder: {count_files_in_folder_tree(detections_folder, 'csv')}, "
+            f"JPGs in detections folder: {count_files_in_folder_tree(detections_folder, 'jpg')}, "
+            f"CSVs in metadata folder: {count_files_in_folder_tree(metadata_folder, 'csv')}"
+            f"]"
         )
         sleep(30.0)
