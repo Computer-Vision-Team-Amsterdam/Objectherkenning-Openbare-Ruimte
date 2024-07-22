@@ -52,6 +52,9 @@ def training_pipeline():
         type="uri_folder", mode="rw_mount", path=model_weights_path
     )
 
+    # train_model_step.environment_variables = {"WANDB_API_KEY": settings["training_pipeline"]["inputs"]["wandb_api_key"],
+    #                                          "WANDB_MODE": settings["training_pipeline"]["inputs"]["wandb_mode"]}
+
     project_path = os.path.join(project_datastore_path, project_rel_path)
     train_model_step.outputs.project_path = Output(
         type="uri_folder", mode="rw_mount", path=project_path

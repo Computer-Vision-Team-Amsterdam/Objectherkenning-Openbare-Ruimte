@@ -1,10 +1,14 @@
 import os
 import sys
 
+import mlflow
 import yaml
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
 from ultralytics import YOLO
+
+# import wandb
+# from wandb.integration.ultralytics import add_wandb_callback
 
 sys.path.append("../../..")
 
@@ -54,6 +58,12 @@ def train_model(
     project_path:
         Location where to store the outputs of the model.
     """
+
+    # run = wandb.init(project="Training sweep - YOLOv8", job_type="training")
+    # print(run.settings.mode)
+
+    mlflow.autolog()
+
     n_classes = settings["training_pipeline"]["model_parameters"]["n_classes"]
     name_classes = settings["training_pipeline"]["model_parameters"]["name_classes"]
     data = dict(
@@ -74,6 +84,9 @@ def train_model(
 
     model = YOLO(model=pretrained_model_path, task="detect")
 
+    # Add W&B Callback for Ultralytics
+    # add_wandb_callback(model, enable_model_checkpointing=True)
+
     # Prepare dynamic parameters for training
     train_params = {
         "data": yaml_path,
@@ -86,3 +99,6 @@ def train_model(
 
     # Train the model
     model.train(**train_params)
+
+    # Finalize the W&B run
+    # run.finish()

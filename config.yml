@@ -3,13 +3,13 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 26
+  env_version: 39
   src_dir: "."
 
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
   device_id: "test-diana"
-  shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
+  shared_access_key: "SHARED_ACCESS_KEY_IOT"
 
 convert_dataset:
   input_old_datastore: "old_datastore"
@@ -19,10 +19,10 @@ convert_dataset:
 convert_annotations:
   input_datastore_name: annotations_conversion_old
   output_datastore_name: annotations_conversion_new
-  final_datastore_name: converted_new_dataset_oor
+  final_datastore_name: converted_data_2407_10_15
   categories_file: categories.json
   separate_labels: True
-  label_folder: prelabeling_new_dataset_oor/labels
+  label_folder: prelabeled-data-2407-10-15/labels
 
 data_delivery_pipeline:
   images_path: "/raw_frames"
@@ -63,27 +63,30 @@ frame_extraction:
 
 training_pipeline:
   model_parameters:
-    img_size: 1024
-    batch: -1
-    epochs: 100
-    patience: 25
-    n_classes: 3
-    name_classes: ["person", "license plate", "container"]
+    img_size: 1280
+    batch: 0.70
+    epochs: 10
+    patience: 150
+    n_classes: 5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
   inputs:
-    datastore_path: "first_training_dataset_oor"
-    training_data_rel_path: "first-training-dataset-oor"
+    datastore_path: "first_official_training_dataset_oor"
+    training_data_rel_path: "processed-merged-batches-first-official-training-dataset-oor"
     model_weights_rel_path: "model"
-    model_name: "yolov8m.pt"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    wandb_api_key: "3913776b1d82ae9f4f08090917114a0ad61ecfcf"
+    wandb_mode: "online"
   outputs:
-    project_datastore_path: "first_training_dataset_oor"
+    project_datastore_path: "first_official_training_dataset_oor"
     project_rel_path: "model"
 
 logging:
-  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
+  loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"
+  ai_instrumentation_key: ""

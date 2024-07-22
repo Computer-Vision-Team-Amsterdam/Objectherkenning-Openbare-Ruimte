@@ -89,6 +89,7 @@ class TrainingModelParameters(SettingsSpecModel):
     patience: int = 25
     n_classes: int = 3
     name_classes: List[str] = ["person", "license plate", "container"]
+    rect: bool = True
 
 
 class TrainingPipelineSpec(SettingsSpecModel):
