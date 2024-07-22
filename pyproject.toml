@@ -11,7 +11,7 @@ authors = [
 
 [tool.poetry.dependencies]
 python = "~3.8"
-aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.1.0" }
+aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  branch = "hotfix/logger" }
 azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-storage-blob = {version = "^12.19.0", source = "PyPI"}
