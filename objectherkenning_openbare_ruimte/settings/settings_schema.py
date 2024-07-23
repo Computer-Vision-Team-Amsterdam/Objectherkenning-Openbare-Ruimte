@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel
 
@@ -84,7 +84,7 @@ class LoggingSpec(SettingsSpecModel):
 
 class TrainingModelParameters(SettingsSpecModel):
     img_size: int = 1024
-    batch: int = -1
+    batch: Union[float, int] = -1
     epochs: int = 100
     patience: int = 25
     n_classes: int = 3

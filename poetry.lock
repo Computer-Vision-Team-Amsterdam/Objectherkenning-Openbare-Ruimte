@@ -3431,13 +3431,13 @@ files = [
 
 [[package]]
 name = "ultralytics"
-version = "8.2.48"
+version = "8.2.63"
 description = "Ultralytics YOLOv8 for SOTA object detection, multi-object tracking, instance segmentation, pose estimation and image classification."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "ultralytics-8.2.48-py3-none-any.whl", hash = "sha256:3471aed97d07f4a5689ac55f98d6475289904b0d4746ebdce0f401ea7cf523a2"},
-    {file = "ultralytics-8.2.48.tar.gz", hash = "sha256:a9836231ae55c3b76a7b3abd3fc49e29e99f3980dc0da8f64535199428a287cb"},
+    {file = "ultralytics-8.2.63-py3-none-any.whl", hash = "sha256:4cb4d973de5827df4f555c8975f45b4b9e3d0297fc2a165cf11262aab0b98c74"},
+    {file = "ultralytics-8.2.63.tar.gz", hash = "sha256:8984cab03b3939188ea43149fe12e95d24374c0c2723b18a4bc7641141bbe25b"},
 ]
 
 [package.dependencies]
@@ -3458,7 +3458,7 @@ tqdm = ">=4.64.0"
 ultralytics-thop = ">=2.0.0"
 
 [package.extras]
-dev = ["coverage[toml]", "ipython", "mkdocs (>=1.6.0)", "mkdocs-jupyter", "mkdocs-material (>=9.5.9)", "mkdocs-redirects", "mkdocs-ultralytics-plugin (>=0.0.48)", "mkdocstrings[python]", "pytest", "pytest-cov"]
+dev = ["coverage[toml]", "ipython", "mkdocs (>=1.6.0)", "mkdocs-jupyter", "mkdocs-material (>=9.5.9)", "mkdocs-redirects", "mkdocs-ultralytics-plugin (>=0.0.49)", "mkdocstrings[python]", "pytest", "pytest-cov"]
 explorer = ["duckdb (<=0.9.2)", "lancedb", "streamlit"]
 export = ["coremltools (>=7.0)", "flatbuffers (>=23.5.26,<100)", "h5py (!=3.11.0)", "keras", "numpy (==1.23.5)", "onnx (>=1.12.0)", "openvino (>=2024.0.0)", "tensorflow (>=2.0.0)", "tensorflowjs (>=3.9.0)"]
 extra = ["albumentations (>=1.4.6)", "hub-sdk (>=0.0.8)", "ipython", "pycocotools (>=2.0.7)"]

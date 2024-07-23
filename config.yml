@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 39
+  env_version: 41
   src_dir: "."
 
 azure_iot:
@@ -64,8 +64,8 @@ frame_extraction:
 training_pipeline:
   model_parameters:
     img_size: 1280
-    batch: 0.70
-    epochs: 10
+    batch: 0.85
+    epochs: 100
     patience: 150
     n_classes: 5
     name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
