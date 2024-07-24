@@ -61,7 +61,7 @@ def log_execution_time(func):
         result = func(*args, **kwargs)
         end_time = time.time()
         duration = end_time - start_time
-        logger.info(f"Finished {func.__name__} in {duration:.4f} seconds.")
+        logger.debug(f"Finished {func.__name__} in {duration:.4f} seconds.")
         return result
 
     return wrapper
