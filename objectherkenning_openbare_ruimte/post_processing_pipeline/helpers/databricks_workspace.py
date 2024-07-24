@@ -15,11 +15,11 @@ def get_databricks_environment(spark: SparkSession):
         return None
 
     environment_tag = next((tag for tag in tags_json if tag.get("key") == "environment"), None)
-
     if environment_tag:
         environment = environment_tag.get("value")
         return environment   
-    return None 
+    else:
+        raise ValueError("Databricks environment is not set.")
 
 def get_catalog_name(spark: SparkSession):
     """
@@ -27,23 +27,8 @@ def get_catalog_name(spark: SparkSession):
     """
 
     environment = get_databricks_environment(spark)
-    if environment is None:
-        raise ValueError("Databricks environment is not set.")
     if environment == "Ontwikkel":
         catalog_name = "dpcv_dev"
-    elif environment == "Productie":
-        catalog_name = "dpcv_prd"
-   
-    return catalog_name  
-
-
-def get_storage_account(spark: SparkSession):
-
-    environment = get_databricks_environment(spark)
-    if environment is None:
-        raise ValueError("Databricks environment is not set.")
-    if environment == "Ontwikkel":
-        storage_account_path = "dpcv_dev"
     elif environment == "Productie":
         catalog_name = "dpcv_prd"
    

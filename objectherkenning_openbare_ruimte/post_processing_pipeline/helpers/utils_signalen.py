@@ -88,6 +88,7 @@ class SignalHandler:
 
         self.catalog_name = get_catalog_name(spark)
         self.verify_ssl = False if self.catalog_name == "dpcv_dev" else True
+        self.verify_ssl = True
         self.spark = spark
 
     def get_signal(self, sig_id: str) -> Any:
@@ -233,6 +234,7 @@ class SignalHandler:
     def post_signal_with_image_attachment(self, json_content: Any, filename: str):
         signal_id = self.post_signal(json_content=json_content)
         self.image_upload(filename=filename, sig_id=signal_id)
+        return signal_id
 
     @staticmethod
     def get_signal_description() -> str:
@@ -479,3 +481,14 @@ class SignalHandler:
         # Execute the update query
         self.spark.sql(update_query)
         print(f"04: Updated 'Pending' status to 'Processed' in {self.catalog_name}.oor.{table_name}.")   
+
+    def get_pending_signalen_notifications(self):
+        query_signalen_notifications = f"SELECT * FROM {self.catalog}.{self.schema}.gold_signal_notifications WHERE status='Pending'"
+        signalen_notifications = self.spark.sql(query_signalen_notifications)   
+        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog}.{self.schema}.gold_signal_notifications.")
+        return signalen_notifications  
+    
+    def get_signalen_feedback(self):
+        query_signalen_feedback = f"SELECT * FROM {self.catalog}.{self.schema}.bronze_signal_notifications_feedback"
+        signalen_feedback = self.spark.sql(query_signalen_feedback)   
+        return signalen_feedback  
