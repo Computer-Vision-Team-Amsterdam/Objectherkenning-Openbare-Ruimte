@@ -35,13 +35,13 @@ if __name__ == "__main__":
             "training_mode_destination_path"
         ],
     )
+    logger.info(
+        f"Running the detection pipeline on {settings['detection_pipeline']['images_path']}.."
+    )
     while True:
         try:
-            logger.info(
-                f"Running the detection pipeline on {settings['detection_pipeline']['images_path']}.."
-            )
             detection_pipeline.run_pipeline()
         except Exception as e:
-            logger.info(f"Exception occurred in container detection: {e}")
-            logger.debug(traceback.format_exc())
+            logger.error(f"Exception occurred in container detection: {e}")
+            logger.error(traceback.format_exc())
         time.sleep(settings["detection_pipeline"]["sleep_time"])

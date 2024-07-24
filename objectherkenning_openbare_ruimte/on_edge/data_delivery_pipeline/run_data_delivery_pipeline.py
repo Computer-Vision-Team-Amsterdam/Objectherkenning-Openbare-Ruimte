@@ -20,14 +20,15 @@ if __name__ == "__main__":
         detections_folder=settings["data_delivery_pipeline"]["detections_path"],
         metadata_folder=settings["data_delivery_pipeline"]["metadata_path"],
     )
+    logger.info(
+        f"Running data delivery pipeline on {settings['data_delivery_pipeline']['detections_path']}.."
+    )
     while True:
         try:
-            logger.info(
-                f"Running data delivery pipeline on {settings['data_delivery_pipeline']['detections_path']}.."
-            )
             data_delivery_pipeline.run_pipeline()
         except Exception:
             logger.error(
                 f"Exception occurred in data delivery pipeline: {traceback.format_exc()}"
             )
+            logger.error(traceback.format_exc())
         time.sleep(settings["data_delivery_pipeline"]["sleep_time"])

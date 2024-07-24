@@ -60,7 +60,7 @@ class DataDelivery:
             - delivers the data to Azure;
             - deletes the delivered data.
         """
-        logger.info(f"Running delivery pipeline on {self.detections_folder}..")
+        logger.debug(f"Running delivery pipeline on {self.detections_folder}..")
         metadata_csv_file_paths = get_frame_metadata_csv_file_paths(
             root_folder=self.detections_folder
         )
@@ -89,6 +89,10 @@ class DataDelivery:
         )
         try:
             self._deliver_data_batch(frame_metadata_file_path, iot_handler)
+            if frame_metadata_file_path in self.metadata_csv_file_paths_with_errors:
+                self.metadata_csv_file_paths_with_errors.remove(
+                    frame_metadata_file_path
+                )
         except FileNotFoundError as e:
             logger.error(
                 f"FileNotFoundError during the delivery of: {frame_metadata_file_path}: {e}"
@@ -167,10 +171,12 @@ class DataDelivery:
                 iot_handler.upload_file(
                     str(file_path_only_filtered_rows), str(upload_destination_path)
                 )
+
                 upload_destination_path = f"full_frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(frame_metadata_file_path)}"
                 iot_handler.upload_file(
                     str(frame_metadata_file_path), str(upload_destination_path)
                 )
+
                 self.save_csv_file(
                     file_path_detection_metadata, detection_metadata_rows
                 )

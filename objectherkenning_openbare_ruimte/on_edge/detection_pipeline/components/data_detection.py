@@ -102,7 +102,7 @@ class DataDetection:
             - detects containers;
             - deletes the raw images.
         """
-        logger.info(f"Running container detection pipeline on {self.images_folder}..")
+        logger.debug(f"Running container detection pipeline on {self.images_folder}..")
         metadata_csv_file_paths = get_frame_metadata_csv_file_paths(
             root_folder=self.images_folder
         )
@@ -156,6 +156,10 @@ class DataDetection:
                     f"Processed {processed_images_count} images from {metadata_csv_file_path}, "
                     f"detected {target_objects_detected_count} containers."
                 )
+                if metadata_csv_file_path in self.metadata_csv_file_paths_with_errors:
+                    self.metadata_csv_file_paths_with_errors.remove(
+                        metadata_csv_file_path
+                    )
             except Exception as e:
                 logger.error(
                     f"Exception during the detection of: {metadata_csv_file_path}: {e}"
@@ -166,7 +170,7 @@ class DataDetection:
     def _detect_and_blur_image(
         self, image_file_name, image_full_path, csv_path, detections_path
     ):
-        logger.info(f"Detecting and blurring: {image_file_name}")
+        logger.debug(f"Detecting and blurring: {image_file_name}")
         image = self._load_and_resize(image_full_path)
         if self.defisheye_flag:
             image = self._defisheye(image)
@@ -459,5 +463,5 @@ class DataDetection:
             )
             move_file(csv_path, metadata_csv_destination_file_path)
             logger.info(
-                f"Moved {images_moved_count} images from {metadata_csv_file_path}"
+                f"Training mode on: Moved {images_moved_count} images from {metadata_csv_file_path}"
             )
