@@ -40,6 +40,7 @@ def main():
 
       image_upload_path = signalHandler.get_image_upload_path(detection_id=detection_id)
       entry_dict = entry.asDict()
+      entry_dict.pop('processed_at', None)
       try:
          # Check if image exists
          dbutils.fs.head(image_upload_path)
