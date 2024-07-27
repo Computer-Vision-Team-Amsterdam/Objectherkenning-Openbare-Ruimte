@@ -13,6 +13,10 @@ requests.packages.urllib3.disable_warnings()
 def main():
    sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
    signalHandler = SignalHandler(sparkSession)
+
+   
+   gold_signal_notifications = sparkSession.table(f"{signalHandler.catalog_name}.oor.gold_signale_notifications")
+        
    top_scores_df= signalHandler.get_top_pending_records(table_name="silver_objects_per_day", limit=10)
 
    if top_scores_df.count() == 0:
@@ -58,7 +62,7 @@ def main():
             unsuccessful_notifications.append(updated_failed_entry)
    
    if successful_notifications:
-      successful_df = spark.createDataFrame(successful_notifications, schema=top_scores_df_with_date.schema) 
+      successful_df = spark.createDataFrame(successful_notifications, schema=gold_signal_notifications.schema) 
       successful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.gold_signal_notifications')
       print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
    else:
