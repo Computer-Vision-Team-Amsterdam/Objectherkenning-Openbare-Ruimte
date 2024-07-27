@@ -6,6 +6,8 @@ from helpers.utils_signalen import SignalHandler
 from helpers.databricks_workspace import get_catalog_name
 from pyspark.sql import SparkSession, Row
 from pyspark.sql import functions as F
+from pyspark.sql.types import StructType, StructField
+
 import requests
 requests.packages.urllib3.disable_warnings() 
 
