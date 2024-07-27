@@ -66,7 +66,7 @@ def main():
       break      
    
    if successful_notifications:
-      successful_df = spark.createDataFrame(successful_notifications, schema=gold_signal_notifications.schema) 
+      successful_df = spark.createDataFrame(successful_notifications) 
       successful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.gold_signal_notifications')
       print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
    else:
