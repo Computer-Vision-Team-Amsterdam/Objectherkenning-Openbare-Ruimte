@@ -35,26 +35,28 @@ def main():
       detection_id = entry["detection_id"]
 
       image_upload_path = signalHandler.get_image_upload_path(detection_id=detection_id)
-
+      entry_dict = entry.asDict()
       try:
          # Check if image exists
          dbutils.fs.head(image_upload_path)
          notification_json = SignalHandler.fill_incident_details(incident_date=date_of_notification, lon=LON, lat=LAT,)
          id = signalHandler.post_signal_with_image_attachment(json_content=notification_json, filename=image_upload_path)
          print(f"Created signal {id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n" )
-         #entry_dict = entry.asDict()
          #entry_dict['signal_id'] = id
          entry['signal_id'] = id
-         #updated_entry = Row(**entry_dict)         
-         successful_notifications.append(entry)
+         updated_entry = Row(**entry_dict)         
+         successful_notifications.append(updated_entry)
       except Exception as e:
+
+         entry_dict.pop('notification_date', None)  #
+         updated_failed_entry = Row(**entry_dict)
          if 'java.io.FileNotFoundException' in str(e):
             print(f"Image not found: {image_upload_path}. Skip creating notification...\n\n")
-            unsuccessful_notifications.append(entry)
+            unsuccessful_notifications.append(updated_failed_entry)
 
          else:
             print(f"An error occurred: {e}\n\n")
-            unsuccessful_notifications.append(entry)
+            unsuccessful_notifications.append(updated_failed_entry)
    
    if successful_notifications:
       successful_df = spark.createDataFrame(successful_notifications, schema=top_scores_df.schema) 
