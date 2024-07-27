@@ -15,7 +15,7 @@ def main():
    signalHandler = SignalHandler(sparkSession)
 
    
-   gold_signal_notifications = sparkSession.table(f"{signalHandler.catalog_name}.oor.gold_signale_notifications")
+   gold_signal_notifications = sparkSession.table(f"{signalHandler.catalog_name}.oor.gold_signal_notifications")
         
    top_scores_df= signalHandler.get_top_pending_records(table_name="silver_objects_per_day", limit=10)
 
