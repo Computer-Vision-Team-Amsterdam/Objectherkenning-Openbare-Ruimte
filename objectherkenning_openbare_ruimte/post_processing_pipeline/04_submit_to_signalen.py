@@ -74,7 +74,7 @@ def main():
       print("Appended 0 rows to gold_signal_notifications.")
    
    if unsuccessful_notifications:
-      modified_schema = StructType([field for field in top_scored_df.schema if field.name != 'processed_at'])
+      modified_schema = StructType([field for field in top_scores_df.schema if field.name != 'processed_at'])
       unsuccessful_df = spark.createDataFrame(unsuccessful_notifications, schema=modified_schema)
       print(f"{unsuccessful_df.count()} unsuccessful notifications.")
       unsuccessful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.silver_objects_per_day_quarantine')
