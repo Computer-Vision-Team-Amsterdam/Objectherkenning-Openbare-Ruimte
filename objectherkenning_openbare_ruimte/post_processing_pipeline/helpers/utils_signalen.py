@@ -12,6 +12,10 @@ from pyspark.sql import SparkSession
 
 from .databricks_workspace import get_databricks_environment, get_catalog_name
 
+# Read the job process time from the first task's output
+job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = 0, debugValue=0)
+print(job_process_time)
+
 class SignalConnectionConfigurer:
     """
     Manages connection details for signal operations based on environment.
@@ -488,7 +492,7 @@ class SignalHandler:
     def update_status(self, table_name):
         # Update the status of the rows where status is 'Pending'
         update_query = f"""
-        UPDATE {self.catalog_name}.oor.{table_name} SET status = 'Processed' WHERE status = 'Pending'
+        UPDATE {self.catalog_name}.oor.{table_name} SET status = 'Processed', processed_at = '{job_process_time}' WHERE status = 'Pending'
         """
         # Execute the update query
         self.spark.sql(update_query)

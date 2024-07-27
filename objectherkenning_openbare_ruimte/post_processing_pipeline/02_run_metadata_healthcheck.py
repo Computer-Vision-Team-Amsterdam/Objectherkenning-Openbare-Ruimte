@@ -80,7 +80,7 @@ class MetadataHealthChecker:
         # Update the status of the rows where status is 'Pending'
         update_query = f"""
         UPDATE {self.catalog}.oor.{table_name} SET status = 'Processed',
-        processed_at = {job_process_time} WHERE status = 'Pending'
+        processed_at = '{job_process_time}' WHERE status = 'Pending'
         """
         # Execute the update query
         self.spark.sql(update_query)

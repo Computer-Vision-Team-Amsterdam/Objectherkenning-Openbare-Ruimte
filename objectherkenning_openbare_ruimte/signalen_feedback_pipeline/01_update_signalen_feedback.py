@@ -54,12 +54,6 @@ if __name__ == "__main__":
          table_entry = ("123", status, text, user, formatted_date, formatted_date)
          #table_entry = (entry["signal_id"], status, text, user, status_update_time)
          signalen_feedback_entries.append(table_entry)
-         signalen_feedback_entries.append(table_entry)
-         signalen_feedback_entries.append(table_entry)
-         signalen_feedback_entries.append(table_entry)
-         signalen_feedback_entries.append(table_entry)
-
-
 
 
    

@@ -20,6 +20,10 @@ from shapely.wkt import loads as wkt_loads
 from datetime import datetime
 from helpers.clustering_detections import Clustering  # noqa: E402
 
+# Read the job process time from the first task's output
+job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = 0, debugValue=0)
+print(job_process_time)
+
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
     """
     Calculate score for bridge and permit distance;
@@ -34,7 +38,7 @@ def calculate_score(bridge_distance: float, permit_distance: float) -> float:
 def update_silver_status(catalog_name, table_name):
     # Update the status of the rows where status is 'Pending'
     update_query = f"""
-    UPDATE {catalog_name}.oor.{table_name} SET status = 'Processed' WHERE status = 'Pending'
+    UPDATE {catalog_name}.oor.{table_name} SET status = 'Processed', processed_at = '{job_process_time}' WHERE status = 'Pending'
     """
     # Execute the update query
     spark.sql(update_query)
