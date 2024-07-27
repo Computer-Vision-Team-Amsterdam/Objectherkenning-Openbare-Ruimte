@@ -1,6 +1,6 @@
 import json
 from pyspark.sql import SparkSession
-
+from datetime import datetime
 
 def get_databricks_environment(spark: SparkSession):
     """
@@ -32,4 +32,7 @@ def get_catalog_name(spark: SparkSession):
     elif environment == "Productie":
         catalog_name = "dpcv_prd"
    
-    return catalog_name  
+    return catalog_name 
+
+def set_job_process_time():  
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S')

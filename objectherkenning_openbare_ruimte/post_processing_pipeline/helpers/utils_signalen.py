@@ -90,6 +90,7 @@ class SignalHandler:
         self.verify_ssl = False if self.catalog_name == "dpcv_dev" else True
         self.verify_ssl = True
         self.spark = spark
+        self.schema = "oor"
 
     def get_signal(self, sig_id: str) -> Any:
         """
@@ -461,6 +462,17 @@ class SignalHandler:
         """
         results = self.spark.sql(select_query)
         return results 
+    
+    def get_top_pending_records_no_sql(self, table_name, limit=10):
+        table_full_name = f"{self.catalog_name}.oor.{table_name}"
+        results = (
+            self.spark.table(table_full_name)
+            .filter((self.spark.col("status") == "Pending") & (self.spark.col("object_class") == 2))
+            .orderBy(self.spark.col("score").desc())
+            .limit(limit)
+        )
+        return results
+
 
     def fake_get_top_pending_records(self, table_name, limit=10):
         # Select all rows where status is 'Pending', sort by score in descending order, and limit the results to the top 10
@@ -488,7 +500,13 @@ class SignalHandler:
         print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog}.{self.schema}.gold_signal_notifications.")
         return signalen_notifications  
     
+    def get_pending_signalen_notifications_no_sql(self):
+        table_name = f"{self.catalog}.{self.schema}.gold_signal_notifications"
+        signalen_notifications = self.spark.table(table_name).filter("status = 'Pending'")
+        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog}.{self.schema}.gold_signal_notifications.")
+        return signalen_notifications
+
     def get_signalen_feedback(self):
-        query_signalen_feedback = f"SELECT * FROM {self.catalog}.{self.schema}.bronze_signal_notifications_feedback"
+        query_signalen_feedback = f"SELECT * FROM {self.catalog_name}.{self.schema}.bronze_signal_notifications_feedback"
         signalen_feedback = self.spark.sql(query_signalen_feedback)   
         return signalen_feedback  

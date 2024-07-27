@@ -2,8 +2,7 @@
 dbutils.library.restartPython()
 
 import tempfile  # noqa: E402
-
-from helpers.databricks_workspace import get_catalog_name  # noqa: E402
+from helpers.databricks_workspace import get_catalog_name, set_job_process_time # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 from pyspark.sql.functions import col, lit  # noqa: E402
 
@@ -15,6 +14,7 @@ class DataLoader:
         self.catalog = get_catalog_name(spark)
         self.schema = "oor"
         self.env = "ont" if self.catalog == "dpcv_dev" else "prd"
+        self.job_process_time = set_job_process_time()
 
         self.frame_metadata_table = (
             f"{self.catalog}.{self.schema}.bronze_frame_metadata"
@@ -72,7 +72,6 @@ class DataLoader:
             checkpoint_path=self.checkpoint_detections,
             target=self.detection_metadata_table,
         )
-
 
     def _load_new_frame_metadata(
         self, source: str, path_table_schema: str, format: str
@@ -141,5 +140,8 @@ if __name__ == "__main__":
     dataLoader = DataLoader(sparkSession)
     dataLoader.ingest_frame_metadata()
     dataLoader.ingest_detection_metadata()
+    print(dataLoader.job_process_time)
+    dbutils.jobs.taskValues.set(key = 'job_process_time', value = dataLoader.job_process_time)
+
 
     # TODO: delete file at path_table_schema
