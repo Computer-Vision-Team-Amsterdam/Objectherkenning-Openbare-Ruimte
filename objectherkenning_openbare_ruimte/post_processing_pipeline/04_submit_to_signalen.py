@@ -66,7 +66,9 @@ def main():
       break      
    
    if successful_notifications:
-      successful_df = spark.createDataFrame(successful_notifications) 
+      # Remove 'processed_at' field from schema
+      modified_schema = StructType([field for field in gold_signal_notifications.schema if field.name != 'processed_at'])
+      successful_df = spark.createDataFrame(successful_notifications, schema=modified_schema) 
       successful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.gold_signal_notifications')
       print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
    else:
