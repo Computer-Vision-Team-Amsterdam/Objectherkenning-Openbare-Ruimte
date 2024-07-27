@@ -3,7 +3,7 @@ from helpers.databricks_workspace import get_catalog_name
 from pyspark.sql import SparkSession
 
 # Read the job process time from the first task's output
-job_process_time = dbutils.jobs.taskValues.get(taskKey = "Get_job_process_time", key = "job_process_time", default = 0, debugValue=0)
+job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = 0, debugValue=0)
 print(job_process_time)
 
 # Use the job process time in your logic
@@ -80,7 +80,7 @@ class MetadataHealthChecker:
         # Update the status of the rows where status is 'Pending'
         update_query = f"""
         UPDATE {self.catalog}.oor.{table_name} SET status = 'Processed',
-        processed_at = '{job_process_time}' WHERE status = 'Pending'
+        processed_at = {job_process_time} WHERE status = 'Pending'
         """
         # Execute the update query
         self.spark.sql(update_query)
