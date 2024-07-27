@@ -13,7 +13,7 @@ requests.packages.urllib3.disable_warnings()
 def main():
    sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
    signalHandler = SignalHandler(sparkSession)
-   top_scores_df = signalHandler.get_top_pending_records(table_name="silver_objects_per_day", limit=10)
+   top_scores_df= signalHandler.get_top_pending_records(table_name="silver_objects_per_day", limit=10)
 
    if top_scores_df.count() == 0:
         print("04: No data found for creating notifications. Stopping execution.")
@@ -22,13 +22,13 @@ def main():
    print(f"04: Loaded {top_scores_df.count()} rows with top 10 scores from {signalHandler.catalog_name}.oor.silver_objects_per_day.")
 
    date_of_notification = datetime.today().strftime('%Y-%m-%d')
-   top_scores_df = top_scores_df.withColumn("notification_date", F.to_date(F.lit(date_of_notification)))
+   top_scores_df_with_date = top_scores_df.withColumn("notification_date", F.to_date(F.lit(date_of_notification)))
 
    successful_notifications = []
    unsuccessful_notifications = []
 
    # Convert to a list of row objects that are iterable
-   for entry in top_scores_df.collect():
+   for entry in top_scores_df_with_date.collect():
 
       LAT = float(entry["object_lat"])
       LON = float(entry["object_lon"])
@@ -59,7 +59,7 @@ def main():
             unsuccessful_notifications.append(updated_failed_entry)
    
    if successful_notifications:
-      successful_df = spark.createDataFrame(successful_notifications, schema=top_scores_df.schema) 
+      successful_df = spark.createDataFrame(successful_notifications, schema=top_scores_df_with_date.schema) 
       successful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.gold_signal_notifications')
       print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
    else:
