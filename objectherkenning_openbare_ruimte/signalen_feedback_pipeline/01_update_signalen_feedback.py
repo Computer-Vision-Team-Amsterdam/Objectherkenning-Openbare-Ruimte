@@ -7,7 +7,8 @@ sys.path.append('..')
 from datetime import datetime
 from pyspark.sql.types import StructType
 from post_processing_pipeline.helpers.utils_signalen import SignalHandler
-from post_processing_pipeline.helpers.databricks_workspace import get_catalog_name
+from post_processing_pipeline.helpers.databricks_workspace import get_catalog_name, set_job_process_time
+from post_processing_pipeline.helpers.table_manager import TableManager
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 import requests
@@ -18,9 +19,13 @@ requests.packages.urllib3.disable_warnings()
 
 # {'text': 'Morgen word alles opgeruimd en afgehandeld.', 'user': 'p.herrebrugh@amsterdam.nl', 'state': 'o', 'state_display': 'Afgehandeld', 'target_api': None, 'extra_properties': None, 'send_email': True, 'created_at': '2024-07-18T12:54:06.659573+02:00', 'email_override': None}
 
+   
+
 if __name__ == "__main__":
    sparkSession = SparkSession.builder.appName("SignalFeedback").getOrCreate()
    signalHandler = SignalHandler(sparkSession)
+   tableManager = TableManager(sparkSession, catalog=signalHandler.catalog_name)
+   job_process_time = set_job_process_time()
 
    signalen_feedback_entries = []
    # for entry in signalHandler.get_pending_signalen_notifications().collect():
@@ -51,7 +56,7 @@ if __name__ == "__main__":
                )
                         
          #print(f"{formatted_date} is type {type(formatted_date)}" )
-         table_entry = ("123", status, text, user, formatted_date, formatted_date)
+         table_entry = ("123", status, text, user, formatted_date, job_process_time)
          #table_entry = (entry["signal_id"], status, text, user, status_update_time)
          signalen_feedback_entries.append(table_entry)
 
@@ -63,4 +68,5 @@ if __name__ == "__main__":
    signalen_feedback_df = spark.createDataFrame(signalen_feedback_entries, filtered_schema) 
    display(signalen_feedback_df)
    signalen_feedback_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.bronze_signal_notifications_feedback')
+   tableManager.update_status(table_name="gold_signal_notifications", job_process_time=job_process_time)
    
