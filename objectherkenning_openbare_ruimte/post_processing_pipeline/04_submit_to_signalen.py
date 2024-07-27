@@ -42,8 +42,7 @@ def main():
          notification_json = SignalHandler.fill_incident_details(incident_date=date_of_notification, lon=LON, lat=LAT,)
          id = signalHandler.post_signal_with_image_attachment(json_content=notification_json, filename=image_upload_path)
          print(f"Created signal {id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n" )
-         #entry_dict['signal_id'] = id
-         entry['signal_id'] = id
+         entry_dict['signal_id'] = id
          updated_entry = Row(**entry_dict)         
          successful_notifications.append(updated_entry)
       except Exception as e:
