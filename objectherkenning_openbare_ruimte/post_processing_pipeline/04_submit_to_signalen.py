@@ -52,7 +52,6 @@ def main():
          entry_dict['signal_id'] = id
          updated_entry = Row(**entry_dict)         
          successful_notifications.append(updated_entry)
-         print(updated_entry)
       except Exception as e:
 
          entry_dict.pop('notification_date', None)  #
@@ -64,8 +63,6 @@ def main():
          else:
             print(f"An error occurred: {e}\n\n")
             unsuccessful_notifications.append(updated_failed_entry)
-
-      break      
    
    if successful_notifications:
       # Remove 'processed_at' field from schema
