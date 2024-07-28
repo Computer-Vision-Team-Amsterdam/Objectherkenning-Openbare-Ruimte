@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 41
+  env_version: 47
   src_dir: "."
 
 azure_iot:
@@ -65,8 +65,34 @@ training_pipeline:
   model_parameters:
     img_size: 1280
     batch: 0.85
+    epochs: 500
+    patience: 75
+    n_classes: 5
+    cos_lr: True
+    dropout: 0.0
+    seed: 111
+    box: 7.893
+    cls: 7.881
+    dfl: 5.767
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  inputs:
+    datastore_path: "first_official_training_dataset_oor"
+    training_data_rel_path: "processed-merged-batches-first-official-training-dataset-oor"
+    model_weights_rel_path: "model"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    wandb_api_key: "3913776b1d82ae9f4f08090917114a0ad61ecfcf"
+    wandb_mode: "online"
+  outputs:
+    project_datastore_path: "first_official_training_dataset_oor"
+    project_rel_path: "model"
+
+sweep_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
     epochs: 100
-    patience: 150
+    patience: 100
     n_classes: 5
     name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
     rect: False
