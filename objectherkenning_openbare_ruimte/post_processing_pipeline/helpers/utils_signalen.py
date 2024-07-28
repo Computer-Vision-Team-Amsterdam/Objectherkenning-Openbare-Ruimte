@@ -499,15 +499,15 @@ class SignalHandler:
         print(f"04: Updated 'Pending' status to 'Processed' in {self.catalog_name}.oor.{table_name}.")   
 
     def get_pending_signalen_notifications(self):
-        query_signalen_notifications = f"SELECT * FROM {self.catalog}.{self.schema}.gold_signal_notifications WHERE status='Pending'"
+        query_signalen_notifications = f"SELECT * FROM {self.catalog_name}.{self.schema}.gold_signal_notifications WHERE status='Pending'"
         signalen_notifications = self.spark.sql(query_signalen_notifications)   
-        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog}.{self.schema}.gold_signal_notifications.")
+        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications.")
         return signalen_notifications  
     
     def get_pending_signalen_notifications_no_sql(self):
-        table_name = f"{self.catalog}.{self.schema}.gold_signal_notifications"
+        table_name = f"{self.catalog_name}.{self.schema}.gold_signal_notifications"
         signalen_notifications = self.spark.table(table_name).filter("status = 'Pending'")
-        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog}.{self.schema}.gold_signal_notifications.")
+        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications.")
         return signalen_notifications
 
     def get_signalen_feedback(self):

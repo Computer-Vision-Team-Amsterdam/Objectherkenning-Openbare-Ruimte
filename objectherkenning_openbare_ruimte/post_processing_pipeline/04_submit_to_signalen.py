@@ -43,6 +43,7 @@ def main():
       image_upload_path = signalHandler.get_image_upload_path(detection_id=detection_id)
       entry_dict = entry.asDict()
       entry_dict.pop('processed_at', None)
+      entry_dict.pop('id', None)
       try:
          # Check if image exists
          dbutils.fs.head(image_upload_path)
@@ -66,7 +67,7 @@ def main():
    
    if successful_notifications:
       # Remove 'processed_at' field from schema
-      modified_schema = StructType([field for field in gold_signal_notifications.schema if field.name != 'processed_at'])
+      modified_schema = StructType([field for field in gold_signal_notifications.schema if field.name not in {'id', 'processed_at'}])
       successful_df = spark.createDataFrame(successful_notifications, schema=modified_schema) 
       successful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.gold_signal_notifications')
       print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
@@ -74,7 +75,7 @@ def main():
       print("Appended 0 rows to gold_signal_notifications.")
    
    if unsuccessful_notifications:
-      modified_schema = StructType([field for field in top_scores_df.schema if field.name != 'processed_at'])
+      modified_schema = StructType([field for field in top_scores_df.schema if field.name not in { 'id', 'processed_at'}])
       unsuccessful_df = spark.createDataFrame(unsuccessful_notifications, schema=modified_schema)
       print(f"{unsuccessful_df.count()} unsuccessful notifications.")
       unsuccessful_df.write.mode('append').saveAsTable(f'{signalHandler.catalog_name}.oor.silver_objects_per_day_quarantine')
