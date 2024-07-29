@@ -25,14 +25,6 @@ logger = logging.getLogger("data_delivery_pipeline")
 
 class DataDelivery:
     def __init__(self):
-        """
-        Parameters
-        ----------
-        detections_folder
-            Folder containing the blurred images with containers detected
-        metadata_folder
-            Temporary folder containing the metadata files in csv format before uploading it to Azure
-        """
         self.settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
         self.detections_folder = self.settings["data_delivery_pipeline"][
             "detections_path"
