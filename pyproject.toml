@@ -28,7 +28,8 @@ pydantic = {version = "^1.8.2", source = "PyPI"}
 torch = { version = "^2.2.1", source="torch"}
 torchaudio = { version = "^2.2.1", source="torch"}
 torchvision = { version = "^0.17.1", source="torch"}
-ultralytics = "^8.1.35"
+ultralytics = {version = "^8.1.35", source = "PyPI"}
+setuptools = {version = "^72.0.0", source = "PyPI"}
 
 [[tool.poetry.source]]
 name = "torch"
