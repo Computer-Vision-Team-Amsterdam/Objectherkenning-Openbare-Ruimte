@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: cpu-blurring-model2
   env_name: oor-environment
-  env_version: 2
+  env_version: 47
   src_dir: "."
 
 azure_iot:
