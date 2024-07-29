@@ -1,9 +1,11 @@
+import csv
 import logging
 import os
 import pathlib
 import shutil
 import time
 from functools import wraps
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -77,3 +79,13 @@ def move_file(file_path, output_file_path):
     except Exception as e:
         logger.error(f"Failed to move file '{file_path}': {str(e)}")
         raise Exception(f"Failed to move file '{file_path}': {e}")
+
+
+def save_csv_file(file_path: str, data: List[List[str]]):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    with open(file_path, "w", newline="") as output_file:
+        csv_writer = csv.writer(output_file)
+        csv_writer.writerows(data)

@@ -17,24 +17,7 @@ if __name__ == "__main__":
     setup_luna_logging(settings["logging"], logging_file_path)
     logger = logging.getLogger("detection_pipeline")
     logger.info("Building the detection pipeline..")
-    detection_pipeline = DataDetection(
-        images_folder=settings["detection_pipeline"]["images_path"],
-        detections_folder=settings["detection_pipeline"]["detections_path"],
-        model_name=settings["detection_pipeline"]["model_name"],
-        pretrained_model_path=settings["detection_pipeline"]["pretrained_model_path"],
-        wait_for_model_timeout=settings["detection_pipeline"]["sleep_time"],
-        input_image_size=settings["detection_pipeline"]["input_image_size"],
-        output_image_size=settings["detection_pipeline"]["output_image_size"],
-        inference_params=settings["detection_pipeline"]["inference_params"],
-        defisheye_flag=settings["detection_pipeline"]["defisheye_flag"],
-        defisheye_params=settings["detection_pipeline"]["defisheye_params"],
-        target_classes=settings["detection_pipeline"]["target_classes"],
-        sensitive_classes=settings["detection_pipeline"]["sensitive_classes"],
-        training_mode=settings["detection_pipeline"]["training_mode"],
-        training_mode_destination_path=settings["detection_pipeline"][
-            "training_mode_destination_path"
-        ],
-    )
+    detection_pipeline = DataDetection()
     logger.info(
         f"Running the detection pipeline on {settings['detection_pipeline']['images_path']}.."
     )

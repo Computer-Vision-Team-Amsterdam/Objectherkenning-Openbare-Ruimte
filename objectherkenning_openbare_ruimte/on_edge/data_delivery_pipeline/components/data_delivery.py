@@ -14,6 +14,7 @@ from objectherkenning_openbare_ruimte.on_edge.utils import (
     get_frame_metadata_csv_file_paths,
     get_img_name_from_csv_row,
     log_execution_time,
+    save_csv_file,
 )
 from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
@@ -23,7 +24,7 @@ logger = logging.getLogger("data_delivery_pipeline")
 
 
 class DataDelivery:
-    def __init__(self, detections_folder: str, metadata_folder: str):
+    def __init__(self):
         """
         Parameters
         ----------
@@ -32,9 +33,11 @@ class DataDelivery:
         metadata_folder
             Temporary folder containing the metadata files in csv format before uploading it to Azure
         """
-        self.detections_folder = detections_folder
-        self.metadata_folder = metadata_folder
         self.settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
+        self.detections_folder = self.settings["data_delivery_pipeline"][
+            "detections_path"
+        ]
+        self.metadata_folder = self.settings["data_delivery_pipeline"]["metadata_path"]
         self.metadata_csv_file_paths_with_errors: List[str] = []
         self.model_and_code_version = [
             self.settings["detection_pipeline"]["model_name"],
@@ -117,9 +120,9 @@ class DataDelivery:
         """
         (
             csv_path,
-            relative_path,
+            _,
             detections_path,
-            path_only_filtered_rows,
+            _,
             file_path_only_filtered_rows,
             file_path_detection_metadata,
         ) = self._calculate_all_paths(metadata_csv_file_path=frame_metadata_file_path)
@@ -164,7 +167,7 @@ class DataDelivery:
                     images_delivered += 1
 
             if images_delivered:
-                self.save_csv_file(
+                save_csv_file(
                     file_path_only_filtered_rows, filtered_frame_metadata_rows
                 )
                 upload_destination_path = f"frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_only_filtered_rows)}"
@@ -177,9 +180,7 @@ class DataDelivery:
                     str(frame_metadata_file_path), str(upload_destination_path)
                 )
 
-                self.save_csv_file(
-                    file_path_detection_metadata, detection_metadata_rows
-                )
+                save_csv_file(file_path_detection_metadata, detection_metadata_rows)
                 upload_destination_path = f"detection_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_only_filtered_rows)}"
                 iot_handler.upload_file(
                     str(file_path_detection_metadata), str(upload_destination_path)
@@ -227,17 +228,6 @@ class DataDelivery:
         iot_handler.upload_file(str(image_full_path), str(upload_destination_path))
         return detection_metadata_rows
 
-    @staticmethod
-    @log_execution_time
-    def save_csv_file(file_path: str, data: List[List[str]]):
-        directory = os.path.dirname(file_path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        with open(file_path, "w", newline="") as output_file:
-            csv_writer = csv.writer(output_file)
-            csv_writer.writerows(data)
-
     @log_execution_time
     def _delete_processed_data(self, metadata_csv_file_path):
         """
@@ -252,9 +242,9 @@ class DataDelivery:
         if metadata_csv_file_path not in self.metadata_csv_file_paths_with_errors:
             (
                 csv_path,
-                relative_path,
+                _,
                 detections_path,
-                path_only_filtered_rows,
+                _,
                 file_path_only_filtered_rows,
                 file_path_detection_metadata,
             ) = self._calculate_all_paths(metadata_csv_file_path=metadata_csv_file_path)

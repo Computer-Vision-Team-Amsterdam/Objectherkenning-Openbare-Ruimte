@@ -13,8 +13,6 @@ from objectherkenning_openbare_ruimte.settings.settings import (
     ObjectherkenningOpenbareRuimteSettings,
 )
 
-# from jtop import jtop
-
 
 def internet(host="8.8.8.8", port=53, timeout=3):
     """
@@ -31,14 +29,6 @@ def internet(host="8.8.8.8", port=53, timeout=3):
         return False
 
 
-# def jetson():
-#     with jtop() as jetson:
-#         if jetson.ok():
-#             logger.info(jetson.stats)
-#         else:
-#             logger.error("Jetson not OK")
-
-
 if __name__ == "__main__":
     settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
     logging_file_path = f"{settings['logging']['luna_logs_dir']}/performance_monitoring/{datetime.now()}.txt"
@@ -49,20 +39,20 @@ if __name__ == "__main__":
     metadata_folder = pathlib.Path(settings["data_delivery_pipeline"]["metadata_path"])
 
     logger.info("Performance monitor is running. It will start providing updates soon.")
-    first_loop = True
     while True:
-        if torch.cuda.is_available():
-            gpu_status = torch.cuda.get_device_name()
-        else:
-            gpu_status = "GPU not available"
+        gpu_device_name = (
+            torch.cuda.get_device_name()
+            if torch.cuda.is_available()
+            else "GPU not available"
+        )
         ram_load = psutil.virtual_memory().percent
         cpu_load = psutil.cpu_percent()
         logger.info(
-            f"system_status: [internet: {internet()}, cpu: {cpu_load}, ram: {ram_load}, gpu: {gpu_status}]"
+            f"system_status: [internet: {internet()}, cpu: {cpu_load}, ram: {ram_load}, gpu_device_name: {gpu_device_name}]"
         )
         logger.info(
             f"folder_status: ["
-            f"CSVs in images folder: {count_files_in_folder_tree(images_folder, 'csv')}, "
+            f"CSVs in images folder: {count_files_in_folder_tree(images_folder, 'csv') - 2}, "
             f"JPGs in images folder: {count_files_in_folder_tree(images_folder, 'jpg')}, "
             f"CSVs in detections folder: {count_files_in_folder_tree(detections_folder, 'csv')}, "
             f"JPGs in detections folder: {count_files_in_folder_tree(detections_folder, 'jpg')}, "
