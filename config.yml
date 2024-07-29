@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 37
+  env_version: 47
   src_dir: "."
 
 inference_pipeline:
