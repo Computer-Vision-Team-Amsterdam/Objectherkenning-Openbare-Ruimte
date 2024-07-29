@@ -1,12 +1,11 @@
 import tempfile  # noqa: E402
 import os
-from .databricks_workspace import set_job_process_time # noqa: E402
 from pyspark.sql.functions import col, lit  # noqa: E402
 
 class DataLoader:
 
     def __init__(self, spark, catalog, schema, root_source, ckpt_frames_relative_path,
-                 ckpt_detections_relative_path):
+                 ckpt_detections_relative_path, job_process_time):
         self.spark = spark
         self.catalog = catalog
         self.schema = schema
@@ -20,7 +19,7 @@ class DataLoader:
             f"{self.catalog}.{self.schema}.bronze_detection_metadata"
         )
         self.temp_files = []
-        self.job_process_time = set_job_process_time()
+        self.job_process_time = job_process_time
         
     def _get_schema_path(self, table_name):
         """

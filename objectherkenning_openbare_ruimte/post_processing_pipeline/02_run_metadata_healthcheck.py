@@ -88,5 +88,5 @@ class MetadataHealthChecker:
 
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("MetadataHealthChecker").getOrCreate()
-    metadataHealthChecker = MetadataHealthChecker(sparkSession)
+    #metadataHealthChecker = MetadataHealthChecker(sparkSession)
     

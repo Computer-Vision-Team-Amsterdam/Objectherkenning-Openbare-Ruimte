@@ -1,7 +1,7 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()
 
-from helpers.databricks_workspace import get_databricks_environment # noqa: E402
+from helpers.databricks_workspace import get_databricks_environment, get_job_process_time # noqa: E402
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import load_settings
 from helpers.data_ingestion import DataLoader
 
@@ -26,4 +26,5 @@ if __name__ == "__main__":
         schema=settings["schema"],
         root_source=settings["storage_account_root_path"],
         ckpt_frames_relative_path=settings["ckpt_frames_relative_path"],
-        ckpt_detections_relative_path=settings["ckpt_detections_relative_path"] )
+        ckpt_detections_relative_path=settings["ckpt_detections_relative_path"],
+        job_process_time=get_job_process_time(is_first_pipeline_step=True) )
