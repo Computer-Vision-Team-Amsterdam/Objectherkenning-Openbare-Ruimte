@@ -1,147 +1,29 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()
 
-import tempfile  # noqa: E402
-from helpers.databricks_workspace import get_catalog_name, set_job_process_time # noqa: E402
+from helpers.databricks_workspace import get_databricks_environment # noqa: E402
+from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import load_settings
+from helpers.data_ingestion import DataLoader
+
 from pyspark.sql import SparkSession  # noqa: E402
-from pyspark.sql.functions import col, lit  # noqa: E402
 
+def run_ingest_metadata_step(sparkSesssion, catalog, schema, root_source, ckpt_frames_relative_path, ckpt_detections_relative_path):
+    dataLoader = DataLoader(sparkSesssion, catalog, schema, root_source, ckpt_frames_relative_path, ckpt_detections_relative_path)
+    dataLoader.ingest_frame_metadata()
+    dataLoader.ingest_detection_metadata()
+    dbutils.jobs.taskValues.set(key = 'job_process_time', value = dataLoader.job_process_time)
 
-class DataLoader:
-
-    def __init__(self, spark):
-        self.spark = spark
-        self.catalog = get_catalog_name(spark)
-        self.schema = "oor"
-        self.env = "ont" if self.catalog == "dpcv_dev" else "prd"
-        self.job_process_time = set_job_process_time()
-
-        self.frame_metadata_table = (
-            f"{self.catalog}.{self.schema}.bronze_frame_metadata"
-        )
-        self.detection_metadata_table = (
-            f"{self.catalog}.{self.schema}.bronze_detection_metadata"
-        )
-        self.root_source = (
-            f"abfss://landingzone@stlandingdpcv{self.env}weu01.dfs.core.windows.net/Luna"
-        )
-        self.checkpoint_frames = f"{self.root_source}/checkpoints/_checkpoint_frames"
-        self.checkpoint_detections = (
-            f"{self.root_source}/checkpoints/_checkpoint_detections"
-        )
-
-    def _get_schema_path(self, table_name):
-        """
-        Retrieves the schema of the specified table and saves it to a temporary file.
-
-        Parameters:
-            table_name (str): The name of the table.
-
-        Returns:
-            str: The path to the temporary file containing the schema JSON.
-        """
-        # Retrieve the schema of the specified table
-        existing_table_schema = self.spark.table(table_name).schema
-        schema_json = existing_table_schema.json()
-
-        # Save the JSON schema to a temporary file
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
-            temp_file.write(schema_json)
-            path_table_schema = temp_file.name
-
-        return path_table_schema
-
-    def ingest_frame_metadata(self):
-
-        source = f"{self.root_source}/frame_metadata"
-        path_table_schema = self._get_schema_path(self.frame_metadata_table)
-        df = self._load_new_frame_metadata(source, path_table_schema=path_table_schema, format="csv")
-        print("01: Loaded frame metadata.")
-        self._store_new_data(df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table)
-
-    def ingest_detection_metadata(self):
-
-        source = f"{self.root_source}/detection_metadata"
-        path_table_schema = self._get_schema_path(self.detection_metadata_table)
-        df = self._load_new_detection_metadata(
-            source, path_table_schema=path_table_schema, format="csv"
-        )
-        print("01: Loaded detection metadata.")
-        self._store_new_data(
-            df,
-            checkpoint_path=self.checkpoint_detections,
-            target=self.detection_metadata_table,
-        )
-
-    def _load_new_frame_metadata(
-        self, source: str, path_table_schema: str, format: str
-    ):
-
-        bronze_df_frame = (
-            self.spark.readStream.format("cloudFiles")
-            .option("cloudFiles.format", format)
-            .option("cloudFiles.schemaLocation", path_table_schema)
-            .option("cloudFiles.inferColumnTypes", "true")
-            .option(
-                "cloudFiles.schemaHints",
-                "timestamp double, imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, code_version string, gps_lat string, gps_lon string, gps_date string, gps_time timestamp",
-            )
-            .option("cloudFiles.schemaEvolutionMode", "none")
-            .load(source)
-            .withColumnRenamed("pylon://0_frame_counter", "pylon0_frame_counter")
-            .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
-            .withColumn("pylon0_frame_timestamp", col("pylon0_frame_timestamp").cast("double"))
-            .withColumn("gps_timestamp", col("gps_timestamp").cast("double"))
-            .withColumn("gps_internal_timestamp", col("gps_internal_timestamp").cast("double"))
-            .withColumn("status", lit("Pending"))
-        )
-
-        return bronze_df_frame
-
-    def _load_new_detection_metadata(
-        self, source: str, path_table_schema: str, format: str
-    ):
-        bronze_df_detection = (
-            self.spark.readStream.format("cloudFiles")
-            .option("cloudFiles.format", format)
-            .option("cloudFiles.schemaLocation", path_table_schema)
-            .option("cloudFiles.inferColumnTypes", "true")
-            .option(
-                "cloudFiles.schemaHints",
-                "x_center float, y_center float, width float, height float, confidence float, tracking_id int",
-            )
-            .option("cloudFiles.schemaEvolutionMode", "none")
-            .load(source)
-            .withColumn("status", lit("Pending"))
-        )
-
-        return bronze_df_detection
-
-    # availableNow = process all files that have been added before the time when this query ran. Used with batch processing
-    def _store_new_data(self, df, checkpoint_path, target):
-        stream_query = (
-            df.writeStream.option("checkpointLocation", checkpoint_path)
-            .trigger(availableNow=True)
-            .toTable(target))
-            
-
-        query_progress = stream_query.awaitTermination(60) 
-    
-        # Get number of rows processed
-        if query_progress:
-            rows_processed = stream_query.lastProgress["numInputRows"]
-            print(f"01: Stored {rows_processed} new rows into {target}.")
-        else:
-            print("01: Query did not terminate properly.")
-
+    # Cleanup temporary files
+    dataLoader.cleanup_temp_files()
 
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
-    dataLoader = DataLoader(sparkSession)
-    dataLoader.ingest_frame_metadata()
-    dataLoader.ingest_detection_metadata()
-    print(dataLoader.job_process_time)
-    dbutils.jobs.taskValues.set(key = 'job_process_time', value = dataLoader.job_process_time)
-
-
-    # TODO: delete file at path_table_schema.
+    databricks_environment = get_databricks_environment(sparkSession)
+    settings = load_settings("../../config.yml")["databricks_pipelines"][f"{databricks_environment}"]
+    run_ingest_metadata_step(
+        sparkSesssion=sparkSession,
+        catalog=settings["catalog"],
+        schema=settings["schema"],
+        root_source=settings["storage_account_root_path"],
+        ckpt_frames_relative_path=settings["ckpt_frames_relative_path"],
+        ckpt_detections_relative_path=settings["ckpt_detections_relative_path"] )
