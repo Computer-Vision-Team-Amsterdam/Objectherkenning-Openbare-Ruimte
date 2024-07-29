@@ -144,4 +144,4 @@ if __name__ == "__main__":
     dbutils.jobs.taskValues.set(key = 'job_process_time', value = dataLoader.job_process_time)
 
 
-    # TODO: delete file at path_table_schema
+    # TODO: delete file at path_table_schema.
