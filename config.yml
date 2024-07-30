@@ -17,6 +17,8 @@ databricks_pipelines:
       catalog: "dpcv_prd"
       schema: "oor"
       storage_account_root_path: "abfss://landingzone@stlandingdpcvprdweu01.dfs.core.windows.net/Luna"
+      ckpt_frames_relative_path: checkpoints/_checkpoint_frames
+      ckpt_detections_relative_path: checkpoints/_checkpoint_detections
       reference_database:
         host: "prd-bbn1-01-dbhost.postgres.database.azure.com"
         name: "mdbdataservices"
