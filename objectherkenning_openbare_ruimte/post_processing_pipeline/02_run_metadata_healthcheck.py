@@ -57,18 +57,16 @@ class MetadataHealthChecker:
                         SELECT {self.catalog}.oor.bronze_detection_metadata.*
                         FROM {self.catalog}.oor.bronze_detection_metadata
                         INNER JOIN {self.catalog}.oor.silver_frame_metadata ON {self.catalog}.oor.bronze_detection_metadata.image_name = {self.catalog}.oor.silver_frame_metadata.image_name
-        
+                        WHERE {self.catalog}.oor.bronze_detection_metadata.status = 'Pending'
                         """
-
-        # TEMP FIX FOR THE RUN 30 JULY                 
-        #valid_metadata = self.spark.sql(valid_metadata_query)
-        valid_metadata = self.bronze_detection_metadata
+        valid_metadata = self.spark.sql(valid_metadata_query)
 
         # Detection metadata corresponding to unhealthy frame metadata is unhealthy
         invalid_metadata_query = f"""
                         SELECT {self.catalog}.oor.bronze_detection_metadata.*
                         FROM {self.catalog}.oor.bronze_detection_metadata
                         INNER JOIN {self.catalog}.oor.silver_frame_metadata_quarantine ON {self.catalog}.oor.bronze_detection_metadata.image_name = {self.catalog}.oor.silver_frame_metadata_quarantine.image_name
+                        WHERE {self.catalog}.oor.bronze_detection_metadata.status = 'Pending'
                         """
 
         invalid_metadata = self.spark.sql(invalid_metadata_query)
