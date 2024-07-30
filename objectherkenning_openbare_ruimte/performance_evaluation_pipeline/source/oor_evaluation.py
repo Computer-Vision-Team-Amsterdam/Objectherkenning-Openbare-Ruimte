@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 from pycocotools.coco import COCO
 
@@ -12,6 +12,9 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.cu
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (  # noqa: E402
     BoxSize,
     ObjectClass,
+)
+from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.per_image_stats import (  # noqa: E402
+    EvaluateImageWise,
 )
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.per_pixel_stats import (  # noqa: E402
     EvaluatePixelWise,
@@ -31,7 +34,7 @@ def tba_evaluation(
     results_file: str = "tba_results.md",
     hide_progress: bool = False,
     upper_half: bool = False,
-):
+) -> Dict[str, Dict[str, float]]:
     evaluator = EvaluatePixelWise(
         ground_truth_path=ground_truth_folder,
         predictions_path=prediction_folder,
@@ -48,6 +51,27 @@ def tba_evaluation(
             results=tba_results, markdown_output_path=results_file
         )
     return tba_results
+
+
+def per_image_evaluation(
+    ground_truth_folder: str,
+    prediction_folder: str,
+    image_shape: Tuple[int, int] = (3840, 2160),
+    object_classes: Iterable[ObjectClass] = [
+        ObjectClass.person,
+        ObjectClass.license_plate,
+    ],
+    single_size_only: bool = False,
+) -> Dict[str, Dict[str, float]]:
+    evaluator = EvaluateImageWise(
+        ground_truth_path=ground_truth_folder,
+        predictions_path=prediction_folder,
+        image_shape=image_shape,
+    )
+    per_image_results = evaluator.collect_results_per_class_and_size(
+        classes=object_classes, single_size_only=single_size_only
+    )
+    return per_image_results
 
 
 def coco_evaluation(
