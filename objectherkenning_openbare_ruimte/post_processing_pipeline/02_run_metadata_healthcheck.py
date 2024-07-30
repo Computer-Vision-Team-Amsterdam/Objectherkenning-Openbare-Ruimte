@@ -1,12 +1,13 @@
+# this fixes the caching issues, reimports all modules
+dbutils.library.restartPython()
+
 from pyspark.sql.functions import col
 from helpers.databricks_workspace import get_catalog_name
 from pyspark.sql import SparkSession
 
 # Read the job process time from the first task's output
-job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = 0, debugValue=0)
-print(job_process_time)
-
-# Use the job process time in your logic
+# job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = 0, debugValue=0)
+job_process_time = "2024-07-30 13:00:00"
 print(f"Job process time: {job_process_time}")
 
 class MetadataHealthChecker:
@@ -88,5 +89,5 @@ class MetadataHealthChecker:
 
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("MetadataHealthChecker").getOrCreate()
-    #metadataHealthChecker = MetadataHealthChecker(sparkSession)
+    metadataHealthChecker = MetadataHealthChecker(sparkSession)
     

@@ -51,7 +51,7 @@ def generate_map(
     # Add the "priority_id" column
     dataframe_with_priority = dataframe.withColumn("priority_id", row_number().over(window_spec))
 
-    display(dataframe_with_priority)
+    #display(dataframe_with_priority)
 
     # Function to find the closest point on a linestring to a given point
     def closest_point_on_linestring(point, linestring):
@@ -75,7 +75,7 @@ def generate_map(
         detection_image_name = row['image_name']
         detection_date = row['detection_date']
         formatted_detection_date = datetime.strptime("15/03/2024", "%d/%m/%Y").strftime("%Y-%m-%d")
-        print(formatted_detection_date)
+        #print(formatted_detection_date)
         detection_priority_id = row['priority_id']
         detection_score = row['score']
         vulnerable_bridge = wkt_loads(row['closest_bridge_linestring_wkt'])
@@ -155,5 +155,4 @@ def generate_map(
     print(f"Map is saved at {name}")
     full_path = path + name + '.html'
     print(f'Saving at {full_path}')
-    print(Map)
     Map.save(full_path)

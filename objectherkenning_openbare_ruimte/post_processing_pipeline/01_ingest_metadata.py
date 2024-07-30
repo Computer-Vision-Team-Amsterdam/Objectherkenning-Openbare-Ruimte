@@ -7,8 +7,8 @@ from helpers.data_ingestion import DataLoader
 
 from pyspark.sql import SparkSession  # noqa: E402
 
-def run_ingest_metadata_step(sparkSesssion, catalog, schema, root_source, ckpt_frames_relative_path, ckpt_detections_relative_path):
-    dataLoader = DataLoader(sparkSesssion, catalog, schema, root_source, ckpt_frames_relative_path, ckpt_detections_relative_path)
+def run_ingest_metadata_step(sparkSesssion, catalog, schema, root_source, ckpt_frames_relative_path, ckpt_detections_relative_path, job_process_time):
+    dataLoader = DataLoader(sparkSesssion, catalog, schema, root_source, ckpt_frames_relative_path, ckpt_detections_relative_path, job_process_time)
     dataLoader.ingest_frame_metadata()
     dataLoader.ingest_detection_metadata()
     dbutils.jobs.taskValues.set(key = 'job_process_time', value = dataLoader.job_process_time)
@@ -27,4 +27,4 @@ if __name__ == "__main__":
         root_source=settings["storage_account_root_path"],
         ckpt_frames_relative_path=settings["ckpt_frames_relative_path"],
         ckpt_detections_relative_path=settings["ckpt_detections_relative_path"],
-        job_process_time=get_job_process_time(is_first_pipeline_step=True) )
+        job_process_time="2024-07-30 13:00:00")

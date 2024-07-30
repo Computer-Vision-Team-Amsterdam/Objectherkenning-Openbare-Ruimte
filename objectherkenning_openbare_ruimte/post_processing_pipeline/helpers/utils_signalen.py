@@ -487,7 +487,9 @@ class SignalHandler:
     # TODO refactor this into a separate class which handles common table operations
     def update_status(self, table_name):
         
-        job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = 0, debugValue=0)
+        # job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = # "job_process_time", default = 0, debugValue=0)
+        job_process_time = "2024-07-30 13:00:00"
+        print(f"Job process time: {job_process_time}")
         # Update the status of the rows where status is 'Pending'
         update_query = f"""
         UPDATE {self.catalog_name}.oor.{table_name} SET status = 'Processed', processed_at = '{job_process_time}' WHERE status = 'Pending'
