@@ -24,34 +24,17 @@ class SignalConnectionConfigurer:
     This token is then used to authenticate subsequent API
     requests by including it in the Authorization header.
 
-    Example usage (to be executed in a Databricks workspace):
-
-        signalConnectionConfigurer = SignalConnectionConfigurer()
-        access_token = signalConnectionConfigurer.get_access_token()
-        base_url = signalConnectionConfigurer.get_base_url()
-
     # Use these details to authenticate the requests to the correct API endpoint.
         signalHandler = SignalHandler(base_url, access_token)
 
     """
 
-    def __init__(self, spark: SparkSession):
-        self._client_id = "sia-cvt"
-        self._client_secret_name = None
-        self.access_token_url = None
-        self.base_url = None
-
+    def __init__(self, spark: SparkSession, client_id, client_secret_name, access_token_url, base_url):
         self.spark = spark
-
-        environment = get_databricks_environment(self.spark)
-        if environment == "Productie":
-            self.access_token_url = "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
-            self.base_url = "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
-            self.client_secret_name = "sia-password-prd"
-        elif environment == "Ontwikkel":
-            self.access_token_url = "https://acc.iam.amsterdam.nl/auth/realms/datapunt-ad-acc/protocol/openid-connect/token"
-            self.base_url = "https://api.acc.meldingen.amsterdam.nl/signals/v1/private/signals"
-            self.client_secret_name = "sia-password-acc"
+        self._client_id = "sia-cvt"
+        self._client_secret_name = client_secret_name
+        self.access_token_url = access_token_url
+        self.base_url = base_url
 
     def get_base_url(self):
         return self.base_url
@@ -60,7 +43,7 @@ class SignalConnectionConfigurer:
         return self._client_id
 
     def _get_client_secret(self):
-        return dbutils.secrets.get(scope="keyvault", key=self.client_secret_name)
+        return dbutils.secrets.get(scope="keyvault", key=self._client_secret_name)
 
     def get_access_token(self) -> Any:
         payload = {
@@ -78,19 +61,19 @@ class SignalConnectionConfigurer:
 
 class SignalHandler:
 
-    def __init__(self, spark):
+    def __init__(self, spark, catalog, schema, client_id, client_secret_name, access_token_url, base_url):
+
+        self.spark = spark
+        self.catalog_name = catalog
+        self.schema = schema
 
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
-        signalConnectionConfigurer = SignalConnectionConfigurer(spark)
+        signalConnectionConfigurer = SignalConnectionConfigurer(spark, client_id, client_secret_name, access_token_url, base_url)
         self.base_url: str = signalConnectionConfigurer.get_base_url()
         access_token = signalConnectionConfigurer.get_access_token()
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}
-
-        self.catalog_name = get_catalog_name(spark)
-        self.verify_ssl = False if self.catalog_name == "dpcv_dev" else True
         self.verify_ssl = True
-        self.spark = spark
-        self.schema = "oor"
+      
 
     def get_signal(self, sig_id: str) -> Any:
         """
@@ -451,6 +434,59 @@ class SignalHandler:
 
         return image_upload_path
 
+
+    def process_notifications(self, top_scores_df):
+        date_of_notification = datetime.today().strftime('%Y-%m-%d')
+        top_scores_df_with_date = top_scores_df.withColumn("notification_date", to_date(lit(date_of_notification)))
+
+        successful_notifications = []
+        unsuccessful_notifications = []
+
+        for entry in top_scores_df_with_date.collect():
+            LAT = float(entry["object_lat"])
+            LON = float(entry["object_lon"])
+            detection_id = entry["detection_id"]
+
+            image_upload_path = self.get_image_upload_path(detection_id=detection_id)
+            entry_dict = entry.asDict()
+            entry_dict.pop('processed_at', None)
+            entry_dict.pop('id', None)
+
+            try:
+                dbutils.fs.head(image_upload_path)
+                notification_json = self.fill_incident_details(incident_date=date_of_notification, lon=LON, lat=LAT)
+                signal_id = self.post_signal_with_image_attachment(json_content=notification_json, filename=image_upload_path)
+                print(f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n")
+                entry_dict['signal_id'] = signal_id
+                updated_entry = Row(**entry_dict)
+                successful_notifications.append(updated_entry)
+            except Exception as e:
+                entry_dict.pop('notification_date', None)
+                updated_failed_entry = Row(**entry_dict)
+                if 'java.io.FileNotFoundException' in str(e):
+                    print(f"Image not found: {image_upload_path}. Skip creating notification...\n\n")
+                else:
+                    print(f"An error occurred: {e}\n\n")
+                unsuccessful_notifications.append(updated_failed_entry)
+
+        return successful_notifications, unsuccessful_notifications
+
+    def save_notifications(self, successful_notifications, unsuccessful_notifications):
+        gold_signal_notifications = self.sparkSession.table(f"{self.catalog_name}.oor.gold_signal_notifications")
+        if successful_notifications:
+            modified_schema = StructType([field for field in gold_signal_notifications.schema if field.name not in {'id', 'processed_at'}])
+            successful_df = self.sparkSession.createDataFrame(successful_notifications, schema=modified_schema)
+            successful_df.write.mode('append').saveAsTable(f'{self.catalog_name}.oor.gold_signal_notifications')
+            print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
+        else:
+            print("Appended 0 rows to gold_signal_notifications.")
+
+        if unsuccessful_notifications:
+            modified_schema = StructType([field for field in successful_notifications.schema if field.name not in {'id', 'processed_at'}])
+            unsuccessful_df = self.sparkSession.createDataFrame(unsuccessful_notifications, schema=modified_schema)
+            print(f"{unsuccessful_df.count()} unsuccessful notifications.")
+            unsuccessful_df.write.mode('append').saveAsTable(f'{self.catalog_name}.oor.silver_objects_per_day_quarantine')
+            print(f"04: Appended {len(unsuccessful_notifications)} rows to silver_objects_per_day_quarantine.")
    
     def get_top_pending_records(self, table_name, limit=10):
         # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
@@ -472,17 +508,6 @@ class SignalHandler:
             .limit(limit)
         )
         return results
-
-
-    def fake_get_top_pending_records(self, table_name, limit=10):
-        # Select all rows where status is 'Pending', sort by score in descending order, and limit the results to the top 10
-        select_query = f"""
-        SELECT * FROM {self.catalog_name}.oor.{table_name}
-        LIMIT {limit}
-        """
-        results = self.spark.sql(select_query)
-        return results 
-
 
     # TODO refactor this into a separate class which handles common table operations
     def update_status(self, table_name):

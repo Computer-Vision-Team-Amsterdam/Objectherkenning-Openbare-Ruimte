@@ -11,6 +11,7 @@ databricks_pipelines:
       signalen:  
         access_token_url: "https://acc.iam.amsterdam.nl/auth/realms/datapunt-ad-acc/protocol/openid-connect/token"
         base_url: "https://api.acc.meldingen.amsterdam.nl/signals/v1/private/signals"
+        client_id: "sia-cvt"
         client_secret_name: "sia-password-acc"
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"    
     Productie: 
@@ -25,6 +26,7 @@ databricks_pipelines:
       signalen:  
         access_token_url: "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
         base_url: "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
+        client_id: "sia-cvt"
         client_secret_name: "sia-password-prd"
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"    
     job_process_time:
