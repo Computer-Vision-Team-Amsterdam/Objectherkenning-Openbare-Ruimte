@@ -6,10 +6,7 @@ from helpers.utils_signalen import SignalHandler
 from helpers.databricks_workspace import get_catalog_name
 from helpers.databricks_workspace import get_databricks_environment, get_job_process_time # noqa: E402
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import load_settings
-
-from pyspark.sql import SparkSession, Row
-from pyspark.sql import functions as F
-from pyspark.sql.types import StructType, StructField
+from pyspark.sql import SparkSession
 
 def run_submit_to_signalen_step(sparkSession, catalog, schema, client_id, client_secret_name, access_token_url, base_url):
     # Initialize SignalHandler
