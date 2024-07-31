@@ -33,8 +33,6 @@ COPY poetry.lock .
 RUN pip install --upgrade setuptools \
     && pip3 install --upgrade setuptools
 
-#RUN pip install --upgrade "ray[tune]"
-
 # Initialize Conda, activate environment and install poetry packages
 RUN /opt/miniconda/bin/conda init bash && \
     . /opt/miniconda/etc/profile.d/conda.sh && \

@@ -14,7 +14,6 @@ from objectherkenning_openbare_ruimte.training_pipeline.components.train_model i
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
-
 from aml_interface.aml_interface import AMLInterface  # noqa: E402
 
 
