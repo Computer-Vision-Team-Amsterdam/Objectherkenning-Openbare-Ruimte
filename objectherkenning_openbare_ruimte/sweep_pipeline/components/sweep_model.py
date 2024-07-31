@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -61,10 +62,6 @@ def sweep_model(
     # Make sure mlflow is disabled
     ultralytics_settings.update({"mlflow": False, "runs_dir": project_path})
 
-    # wandb.init(job_type="training", config_exclude_keys=["project"])
-
-    # mlflow.autolog()
-
     n_classes = settings["sweep_pipeline"]["model_parameters"]["n_classes"]
     name_classes = settings["sweep_pipeline"]["model_parameters"]["name_classes"]
     data = dict(
@@ -82,8 +79,8 @@ def sweep_model(
     model_name = settings["sweep_pipeline"]["inputs"]["model_name"]
     pretrained_model_path = os.path.join(model_weights, model_name)
     model_parameters = settings["sweep_pipeline"]["model_parameters"]
+    sweep_trials = settings["sweep_pipeline"]["sweep_trials"]
 
-    # Prepare dynamic parameters for training
     train_params = {
         "data": yaml_path,
         "epochs": model_parameters.get("epochs", 100),
@@ -93,20 +90,17 @@ def sweep_model(
         "batch": model_parameters.get("batch", -1),
     }
 
+    def extract_parameter_keys(sweep_config):
+        return sweep_config["parameters"].keys()
+
+    def load_sweep_configuration(json_file):
+        with open(json_file, "r") as file:
+            config = json.load(file)
+        return config
+
     # 2: Define the search space
-    sweep_configuration = {
-        "method": "random",
-        "metric": {"goal": "maximize", "name": "metrics/mAP50(B)"},
-        "parameters": {
-            "patience": {"distribution": "q_uniform", "max": 100, "min": 25, "q": 25},
-            "cos_lr": {"values": [False, True]},
-            "dropout": {"values": [0.0, 0.2, 0.4, 0.6, 0.8]},
-            "seed": {"values": [42, 111]},
-            "box": {"distribution": "uniform", "max": 10, "min": 0.5},
-            "cls": {"distribution": "uniform", "max": 10, "min": 0.5},
-            "dfl": {"distribution": "uniform", "max": 10, "min": 0.5},
-        },
-    }
+    config_file = settings["sweep_pipeline"]["inputs"]["sweep_config"]
+    sweep_configuration = load_sweep_configuration(config_file)
 
     # 3: Start the sweep
     sweep_id = wandb.sweep(sweep=sweep_configuration)
@@ -115,19 +109,15 @@ def sweep_model(
         with wandb.init(job_type="training"):
             config = wandb.config
 
-            # Update train_params with the dynamic parameters from wandb.config
+            # Extract parameter keys from the sweep configuration
+            parameter_keys = extract_parameter_keys(sweep_configuration)
             dynamic_params = {
-                "patience": config.patience,
-                "cos_lr": config.cos_lr,
-                "dropout": config.dropout,
-                "seed": config.seed,
-                "box": config.box,
-                "cls": config.cls,
-                "dfl": config.dfl,
+                key: value for key, value in config.items() if key in parameter_keys
             }
             train_params.update(dynamic_params)
 
             model = YOLO(model=pretrained_model_path, task="detect")
+
             add_wandb_callback(
                 model,
                 enable_model_checkpointing=False,
@@ -137,4 +127,4 @@ def sweep_model(
             )
             model.train(**train_params)
 
-    wandb.agent(sweep_id, function=train, count=25)
+    wandb.agent(sweep_id, function=train, count=sweep_trials)

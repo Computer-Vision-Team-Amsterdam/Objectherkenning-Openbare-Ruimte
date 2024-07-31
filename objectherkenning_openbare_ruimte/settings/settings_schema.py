@@ -116,6 +116,7 @@ class SweepModelParameters(SettingsSpecModel):
 
 class SweepPipelineSpec(SettingsSpecModel):
     model_parameters: SweepModelParameters
+    sweep_trials: int = 1
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
 

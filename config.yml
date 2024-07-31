@@ -96,6 +96,7 @@ sweep_pipeline:
     n_classes: 5
     name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
     rect: False
+  sweep_trials: 10
   inputs:
     datastore_path: "first_official_training_dataset_oor"
     training_data_rel_path: "processed-merged-batches-first-official-training-dataset-oor"
@@ -103,6 +104,7 @@ sweep_pipeline:
     model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
     wandb_api_key: "3913776b1d82ae9f4f08090917114a0ad61ecfcf"
     wandb_mode: "online"
+    sweep_config: "sweep_config.json" # needs to be in the same directory as model_weights_rel_path
   outputs:
     project_datastore_path: "first_official_training_dataset_oor"
     project_rel_path: "model"

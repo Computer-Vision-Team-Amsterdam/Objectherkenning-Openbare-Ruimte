@@ -65,8 +65,6 @@ def train_model(
 
     wandb.init(job_type="training", config_exclude_keys=["project"])
 
-    # mlflow.autolog()
-
     n_classes = settings["training_pipeline"]["model_parameters"]["n_classes"]
     name_classes = settings["training_pipeline"]["model_parameters"]["name_classes"]
     data = dict(
