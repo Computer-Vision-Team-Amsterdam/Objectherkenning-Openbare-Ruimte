@@ -1,23 +1,21 @@
 import os
+
 import folium
-from databricks.sdk.runtime import *
-from shapely.geometry import Point, LineString
-from shapely.ops import nearest_points
-from shapely.wkt import loads
-from IPython.display import display, IFrame
-from shapely.wkt import loads as wkt_loads
-from pyspark.sql import SparkSession
-from pyspark.sql.window import Window
-from pyspark.sql.functions import col, row_number
+from databricks.sdk.runtime import *  # noqa: F403, F401
 from folium.plugins import BeautifyIcon
-from datetime import datetime
+from pyspark.sql.functions import col, row_number
+from pyspark.sql.window import Window
+from shapely.geometry import Point
+from shapely.ops import nearest_points
+from shapely.wkt import loads as wkt_loads
+
 
 def generate_map(
     dataframe,
-    trajectory = None,
-    name = None,
-    path = None,
-    colors = None,
+    trajectory=None,
+    name=None,
+    path=None,
+    colors=None,
 ) -> None:
     """
     This method generates an HTML page with a map containing a path line and randomly chosen points on the line
@@ -26,7 +24,7 @@ def generate_map(
     :param vulnerable_bridges: list of line string coordinates.
     :param permit_locations: list of point coordinates.
     :param trajectory: list of coordinates that define the path.
-    :param detections: model predictions dict (with information about file names and coordinates).
+    :param detections: model predictions dict (with information about r names and coordinates).
     :param name: custom name for the map. If not passed, name is created based on what the map contains.
     :param colors: colors to be assigned to each cluster
     """
@@ -40,23 +38,31 @@ def generate_map(
     # create empty map zoomed on Amsterdam
     Map = folium.Map(location=[latitude, longitude], zoom_start=12)
 
-    vulnerable_bridges_group = folium.FeatureGroup(name="Vulnerable bridges").add_to(Map)
-    closest_bridges_group = folium.FeatureGroup(name="Distances to closest bridge").add_to(Map)
-    closest_permit_group = folium.FeatureGroup(name="Distances to closest permit").add_to(Map)
+    vulnerable_bridges_group = folium.FeatureGroup(name="Vulnerable bridges").add_to(
+        Map
+    )
+    closest_bridges_group = folium.FeatureGroup(
+        name="Distances to closest bridge"
+    ).add_to(Map)
+    closest_permit_group = folium.FeatureGroup(
+        name="Distances to closest permit"
+    ).add_to(Map)
 
     # Add priority_id column for visualization
     # Define the window specification
     window_spec = Window.orderBy(col("score").desc())
 
     # Add the "priority_id" column
-    dataframe_with_priority = dataframe.withColumn("priority_id", row_number().over(window_spec))
+    dataframe_with_priority = dataframe.withColumn(
+        "priority_id", row_number().over(window_spec)
+    )
 
-    #display(dataframe_with_priority)
+    # display(dataframe_with_priority)
 
     # Function to find the closest point on a linestring to a given point
     def closest_point_on_linestring(point, linestring):
         return nearest_points(point, linestring)[1]
-    
+
     # Function to determine the marker color based on the score
     def get_marker_color(score):
         if score < 0.40:
@@ -72,18 +78,17 @@ def generate_map(
     # Iterate over each row in the DataFrame
     for row in dataframe_with_priority.toLocalIterator():
         # Extract data from the row
-        detection = Point(row['gps_lat'], row['gps_lon'])
-        detection_id = row['detection_id']
-        detection_image_name = row['image_name']
-        detection_date = row['detection_date']
-        formatted_detection_date = datetime.strptime("15/03/2024", "%d/%m/%Y").strftime("%Y-%m-%d")
-        #print(formatted_detection_date)
-        detection_priority_id = row['priority_id']
-        detection_score = row['score']
-        vulnerable_bridge = wkt_loads(row['closest_bridge_linestring_wkt'])
-        closest_bridge_id = row['closest_bridge_id']
-        permit_location = Point(row['closest_permit_coordinates'][0], row['closest_permit_coordinates'][1])
-        closest_permit_id = row['closest_permit_id']
+        detection = Point(row["gps_lat"], row["gps_lon"])
+        detection_id = row["detection_id"]
+        detection_image_name = row["image_name"]
+        detection_priority_id = row["priority_id"]
+        detection_score = row["score"]
+        vulnerable_bridge = wkt_loads(row["closest_bridge_linestring_wkt"])
+        closest_bridge_id = row["closest_bridge_id"]
+        permit_location = Point(
+            row["closest_permit_coordinates"][0], row["closest_permit_coordinates"][1]
+        )
+        closest_permit_id = row["closest_permit_id"]
 
         # Determine marker color based on the score
         marker_color = get_marker_color(detection_score)
@@ -93,9 +98,9 @@ def generate_map(
             icon="arrow-down",
             icon_shape="marker",
             number=str(detection_priority_id),
-            border_color= "#000000",
+            border_color="#000000",
             background_color=marker_color,
-            text_color="#000000"
+            text_color="#000000",
         )
 
         '''# Path for the image
@@ -114,9 +119,9 @@ def generate_map(
         folium.Marker(
             location=[detection.x, detection.y],
             color=marker_color,
-            popup=f'Detection ID: {detection_id}<br>'
-            f'Image Name: {detection_image_name}<br>',
-            #popup=popup,
+            popup=f"Detection ID: {detection_id}<br>"
+            f"Image Name: {detection_image_name}<br>",
+            # popup=popup,
             radius=5,
             icon=detection_icon,
         ).add_to(Map)
@@ -128,7 +133,7 @@ def generate_map(
             color="yellow",
             weight=5,
             opacity=0.8,
-            tooltip=f'Bridge ID: {closest_bridge_id}'
+            tooltip=f"Bridge ID: {closest_bridge_id}",
         ).add_to(vulnerable_bridges_group)
 
         # Add closest container permit
@@ -137,24 +142,34 @@ def generate_map(
             color="red",
             radius=5,
             weight=2,
-            tooltip=f'Permit ID: {closest_permit_id}'
+            tooltip=f"Permit ID: {closest_permit_id}",
         ).add_to(Map)
 
         # Add distances between container and closest vulnerable bridge
         point_on_bridge = closest_point_on_linestring(detection, vulnerable_bridge)
-        #distance = detection.distance(point_on_bridge)
-        polyline_coords = [(detection.x, detection.y), (point_on_bridge.x, point_on_bridge.y)]
-        folium.PolyLine(polyline_coords, color="blue", weight=5, opacity=0.8).add_to(closest_bridges_group)
+        # distance = detection.distance(point_on_bridge)
+        polyline_coords = [
+            (detection.x, detection.y),
+            (point_on_bridge.x, point_on_bridge.y),
+        ]
+        folium.PolyLine(polyline_coords, color="blue", weight=5, opacity=0.8).add_to(
+            closest_bridges_group
+        )
 
         # Add distances between container and closest permit
-        #distance = detection.distance(permit_location)
-        polyline_coords = [(detection.x, detection.y), (permit_location.x, permit_location.y)]
-        folium.PolyLine(polyline_coords, color="green", weight=5, opacity=0.8).add_to(closest_permit_group)
+        # distance = detection.distance(permit_location)
+        polyline_coords = [
+            (detection.x, detection.y),
+            (permit_location.x, permit_location.y),
+        ]
+        folium.PolyLine(polyline_coords, color="green", weight=5, opacity=0.8).add_to(
+            closest_permit_group
+        )
 
     folium.LayerControl().add_to(Map)
 
     # create name for the map
     print(f"Map is saved at {name}")
-    full_path = path + name + '.html'
-    print(f'Saving at {full_path}')
+    full_path = path + name + ".html"
+    print(f"Saving at {full_path}")
     Map.save(full_path)

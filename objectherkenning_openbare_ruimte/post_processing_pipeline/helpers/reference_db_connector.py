@@ -1,8 +1,10 @@
-from abc import ABC, abstractmethod
 import json
 import subprocess
+from abc import ABC, abstractmethod
+
 import psycopg2
-from databricks.sdk.runtime import *
+from databricks.sdk.runtime import *  # noqa: F403
+
 
 class ReferenceDatabaseConnector(ABC):
 
@@ -13,16 +15,27 @@ class ReferenceDatabaseConnector(ABC):
         self.db_name = db_name
         self.db_port = db_port
 
-        self.az_login_username = dbutils.secrets.get(scope=self.db_scope, key="app-reg-refdb-id")
-        self.az_login_password = dbutils.secrets.get(scope=self.db_scope, key="app-reg-refdb-key")
+        self.az_login_username = dbutils.secrets.get(  # noqa: F405
+            scope=self.db_scope, key="app-reg-refdb-id"
+        )
+        self.az_login_password = dbutils.secrets.get(  # noqa: F405
+            scope=self.db_scope, key="app-reg-refdb-key"
+        )
         self.spn_refDb_username = "cvision_databricks"
         self.spn_refDb_password = None
-        self._query_result_df = None # set in run_query()
+        self._query_result_df = None  # set in run_query()
 
     def azure_login(self):
         command = [
-            "az", "login", "--service-principal", "-u", self.az_login_username, 
-            "-p", self.az_login_password, "-t", self.az_tenant_id
+            "az",
+            "login",
+            "--service-principal",
+            "-u",
+            self.az_login_username,
+            "-p",
+            self.az_login_password,
+            "-t",
+            self.az_tenant_id,
         ]
         subprocess.check_call(command)
 
@@ -44,11 +57,6 @@ class ReferenceDatabaseConnector(ABC):
         except psycopg2.Error as e:
             print(f"Database connection error: {e}")
             return None
-        
-    @abstractmethod
-    def run_query(self, conn, query):
-        pass
-
 
     @abstractmethod
     def create_dataframe(self, rows, colnames):

@@ -1,19 +1,14 @@
-import requests
 import json
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
-from databricks.sdk.runtime import *
-import json
-import requests
-from datetime import datetime
 from typing import Any, Dict, List, Optional
-from pyspark.sql import SparkSession
-from pyspark.sql import functions as F
-from pyspark.sql.types import StructType, StructField
-from pyspark.sql import Row
 
-from .databricks_workspace import get_databricks_environment, get_catalog_name
+import requests
+from databricks.sdk.runtime import *  # noqa: F403
+from pyspark.sql import Row, SparkSession
+from pyspark.sql import functions as F
+from pyspark.sql.types import StructType
+
 
 class SignalConnectionConfigurer:
     """
@@ -32,7 +27,14 @@ class SignalConnectionConfigurer:
 
     """
 
-    def __init__(self, spark: SparkSession, client_id, client_secret_name, access_token_url, base_url):
+    def __init__(
+        self,
+        spark: SparkSession,
+        client_id,
+        client_secret_name,
+        access_token_url,
+        base_url,
+    ):
         self.spark = spark
         self._client_id = "sia-cvt"
         self._client_secret_name = client_secret_name
@@ -46,7 +48,9 @@ class SignalConnectionConfigurer:
         return self._client_id
 
     def _get_client_secret(self):
-        return dbutils.secrets.get(scope="keyvault", key=self._client_secret_name)
+        return dbutils.secrets.get(  # noqa: F405
+            scope="keyvault", key=self._client_secret_name
+        )  # noqa: F405
 
     def get_access_token(self) -> Any:
         payload = {
@@ -64,19 +68,29 @@ class SignalConnectionConfigurer:
 
 class SignalHandler:
 
-    def __init__(self, spark, catalog, schema, client_id, client_secret_name, access_token_url, base_url):
+    def __init__(
+        self,
+        spark,
+        catalog,
+        schema,
+        client_id,
+        client_secret_name,
+        access_token_url,
+        base_url,
+    ):
 
         self.spark = spark
         self.catalog_name = catalog
         self.schema = schema
 
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
-        signalConnectionConfigurer = SignalConnectionConfigurer(spark, client_id, client_secret_name, access_token_url, base_url)
-        self.base_url: str = signalConnectionConfigurer.get_base_url()
+        signalConnectionConfigurer = SignalConnectionConfigurer(
+            spark, client_id, client_secret_name, access_token_url, base_url
+        )
+        self.base_url: str = signalConnectionConfigurer.get_base_url()  # type: ignore
         access_token = signalConnectionConfigurer.get_access_token()
-        self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}
+        self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}  # type: ignore
         self.verify_ssl = True
-      
 
     def get_signal(self, sig_id: str) -> Any:
         """
@@ -88,7 +102,7 @@ class SignalHandler:
         ----------
         sig_id : str
             The ID of the signal to be retrieved.
-            
+
         Returns
         -------
         Any
@@ -100,7 +114,9 @@ class SignalHandler:
             If the server responds with a status code other than 200 (OK),
             an HTTPError will be raised with the response status and message.
         """
-        response = requests.get(self.base_url + f"/{sig_id}", headers=self.headers, verify=self.verify_ssl)
+        response = requests.get(
+            self.base_url + f"/{sig_id}", headers=self.headers, verify=self.verify_ssl
+        )
 
         if response.status_code == 200:
             print("The server successfully performed the GET request.")
@@ -110,28 +126,35 @@ class SignalHandler:
 
     def post_signal(self, json_content: Any) -> Any:
         """
-          Sends a POST request to create a new signal with the provided JSON content.
+        Sends a POST request to create a new signal with the provided JSON content.
 
-          Parameters
-          ----------
-          json_content : Any
-              The JSON content to be sent in the body of the POST request.
+        Parameters
+        ----------
+        json_content : Any
+            The JSON content to be sent in the body of the POST request.
 
-          Returns
-          -------
-          Any
-              The ID of the created signal if the request is successful.
+        Returns
+        -------
+        Any
+            The ID of the created signal if the request is successful.
 
-          Raises
-          ------
-          HTTPError
-              If the server responds with a status code other than 201 (Created),
-              an HTTPError will be raised with the response status and message.
-          """
-        response = requests.post(self.base_url, json=json_content, headers=self.headers, verify=self.verify_ssl)
+        Raises
+        ------
+        HTTPError
+            If the server responds with a status code other than 201 (Created),
+            an HTTPError will be raised with the response status and message.
+        """
+        response = requests.post(
+            self.base_url,
+            json=json_content,
+            headers=self.headers,
+            verify=self.verify_ssl,
+        )
 
         if response.status_code == 201:
-            print("The server successfully performed the POST request and created an incident.")
+            print(
+                "The server successfully performed the POST request and created an incident."
+            )
             return response.json()["id"]
         else:
             return response.raise_for_status()
@@ -151,7 +174,7 @@ class SignalHandler:
             The ID of the signal to be updated.
         text_note : str
             The text note to be added to the signal.
- 
+
         Returns
         -------
         Any
@@ -166,7 +189,10 @@ class SignalHandler:
         json_content = {"notes": [{"text": text_note}]}
 
         response = requests.patch(
-            self.base_url + f"/{sig_id}", json=json_content, headers=self.headers, verify=self.verify_ssl
+            self.base_url + f"/{sig_id}",
+            json=json_content,
+            headers=self.headers,
+            verify=self.verify_ssl,
         )
 
         if response.status_code == 200:
@@ -188,7 +214,7 @@ class SignalHandler:
             The path to the image file to be uploaded.
         sig_id : str
             The ID of the signal to which the image file will be attached.
-  
+
         Returns
         -------
         Any
@@ -209,11 +235,16 @@ class SignalHandler:
         files = {"file": (filename, open(filename, "rb"))}
 
         response = requests.post(
-            self.base_url + f"/{sig_id}/attachments/", files=files, headers=self.headers, verify=self.verify_ssl
+            self.base_url + f"/{sig_id}/attachments/",
+            files=files,
+            headers=self.headers,
+            verify=self.verify_ssl,
         )
 
         if response.status_code == 201:
-            print("The server successfully performed the POST request and uploaded an image.")
+            print(
+                "The server successfully performed the POST request and uploaded an image."
+            )
             return response.json()
         else:
             return response.raise_for_status()
@@ -236,7 +267,9 @@ class SignalHandler:
         )
 
     @staticmethod
-    def get_text_general_instruction_note(permit_distance: str, bridge_distance: str) -> str:
+    def get_text_general_instruction_note(
+        permit_distance: str, bridge_distance: str
+    ) -> str:
         """
         Text we send when editing a notification by adding a note.
         """
@@ -275,7 +308,6 @@ class SignalHandler:
 
     @staticmethod
     def fill_incident_details(incident_date: str, lon: float, lat: float) -> Any:
-
         """
         Fills in the details of an incident and returns a JSON object representing the incident.
 
@@ -302,7 +334,9 @@ class SignalHandler:
         json_to_send = _fill_incident_details(incident_date, lat_lon)
         """
 
-        def _get_bag_address_in_range(longitude: float, latitude: float,  max_building_search_radius=50) -> List[Optional[str]]:
+        def _get_bag_address_in_range(
+            longitude: float, latitude: float, max_building_search_radius=50
+        ) -> List[Optional[str]]:
             """
             Retrieves the nearest building information in BAG for a given location point within a specified search radius.
 
@@ -345,13 +379,20 @@ class SignalHandler:
                 if response_content["count"] > 0:
                     # Get first element
                     first_element = json.loads(response.content)["results"][0]
-                    return [first_element["openbare_ruimte"]["_display"], first_element["huisnummer"],
-                            first_element["postcode"]]
+                    return [
+                        first_element["openbare_ruimte"]["_display"],
+                        first_element["huisnummer"],
+                        first_element["postcode"],
+                    ]
                 else:
-                    print(f"No BAG address in the range of {max_building_search_radius} found.")
+                    print(
+                        f"No BAG address in the range of {max_building_search_radius} found."
+                    )
                     return []
             else:
-                print(f"Failed to get address from BAG, status code {response.status_code}.")
+                print(
+                    f"Failed to get address from BAG, status code {response.status_code}."
+                )
                 return []
 
         date_now = datetime.strptime(incident_date, "%Y-%m-%d").date()
@@ -367,7 +408,7 @@ class SignalHandler:
             },
             "category": {
                 "sub_category": "/signals/v1/public/terms/categories/overlast-in-de-openbare-ruimte/"
-                                "sub_categories/hinderlijk-geplaatst-object"
+                "sub_categories/hinderlijk-geplaatst-object"
             },
             "reporter": {"email": "cvt@amsterdam.nl"},
             "priority": {
@@ -391,56 +432,54 @@ class SignalHandler:
             }
             # Only add 'postcode' if bag_address[2] is not None
             if bag_address[2] is not None:
-                location_json["location"]["address"]["postcode"] = bag_address[2]    
+                location_json["location"]["address"]["postcode"] = bag_address[2]  # type: ignore
             json_to_send.update(location_json)
 
- 
-
         return json_to_send
-    
 
     def get_image_upload_path(self, detection_id):
         """
         Fetches the image name based on the detection_id and constructs the path for uploading the image.
-        
+
         Parameters:
         detection_id (int): The id of the detection.
-        
+
         Returns:
         str: The constructed image upload path.
         """
-        
+
         # Fetch the image name based on the detection_id
         fetch_image_name_query = f"""
                                 SELECT {self.catalog_name}.oor.silver_detection_metadata.image_name
                                 FROM {self.catalog_name}.oor.silver_detection_metadata
                                 WHERE {self.catalog_name}.oor.silver_detection_metadata.id = {detection_id}
                                 """
-        image_name_result_df = spark.sql(fetch_image_name_query)
+        image_name_result_df = spark.sql(fetch_image_name_query)  # noqa: F405
 
         # Extract the image name from the result
-        image_basename = image_name_result_df.collect()[0]['image_name']
+        image_basename = image_name_result_df.collect()[0]["image_name"]
 
         fetch_date_of_image_upload = f"""SELECT {self.catalog_name}.oor.silver_frame_metadata.gps_date FROM {self.catalog_name}.oor.silver_frame_metadata WHERE {self.catalog_name}.oor.silver_frame_metadata.image_name = '{image_basename}'"""
 
-        date_of_image_upload_df = spark.sql(fetch_date_of_image_upload)
+        date_of_image_upload_df = spark.sql(fetch_date_of_image_upload)  # noqa: F405
         date_of_image_upload_dmy = date_of_image_upload_df.collect()[0]["gps_date"]
 
         # Convert to datetime object
-        date_obj = datetime.strptime(date_of_image_upload_dmy, '%d/%m/%Y')
+        date_obj = datetime.strptime(date_of_image_upload_dmy, "%d/%m/%Y")
 
         # Format the datetime object to the desired format
-        date_of_image_upload_ymd = date_obj.strftime('%Y-%m-%d')
-        
+        date_of_image_upload_ymd = date_obj.strftime("%Y-%m-%d")
+
         # Construct the path to the image to be uploaded to Signalen
-        image_upload_path = f'/Volumes/{self.catalog_name}/default/landingzone/Luna/images/{date_of_image_upload_ymd}/{image_basename}'
+        image_upload_path = f"/Volumes/{self.catalog_name}/default/landingzone/Luna/images/{date_of_image_upload_ymd}/{image_basename}"
 
         return image_upload_path
 
-
     def process_notifications(self, top_scores_df):
-        date_of_notification = datetime.today().strftime('%Y-%m-%d')
-        top_scores_df_with_date = top_scores_df.withColumn("notification_date", F.to_date(F.lit(date_of_notification)))
+        date_of_notification = datetime.today().strftime("%Y-%m-%d")
+        top_scores_df_with_date = top_scores_df.withColumn(
+            "notification_date", F.to_date(F.lit(date_of_notification))
+        )
 
         successful_notifications = []
         unsuccessful_notifications = []
@@ -452,22 +491,30 @@ class SignalHandler:
 
             image_upload_path = self.get_image_upload_path(detection_id=detection_id)
             entry_dict = entry.asDict()
-            entry_dict.pop('processed_at', None)
-            entry_dict.pop('id', None)
+            entry_dict.pop("processed_at", None)
+            entry_dict.pop("id", None)
 
             try:
-                dbutils.fs.head(image_upload_path)
-                notification_json = self.fill_incident_details(incident_date=date_of_notification, lon=LON, lat=LAT)
-                signal_id = self.post_signal_with_image_attachment(json_content=notification_json, filename=image_upload_path)
-                print(f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n")
-                entry_dict['signal_id'] = signal_id
+                dbutils.fs.head(image_upload_path)  # noqa: F405
+                notification_json = self.fill_incident_details(
+                    incident_date=date_of_notification, lon=LON, lat=LAT
+                )
+                signal_id = self.post_signal_with_image_attachment(
+                    json_content=notification_json, filename=image_upload_path
+                )
+                print(
+                    f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
+                )
+                entry_dict["signal_id"] = signal_id
                 updated_entry = Row(**entry_dict)
                 successful_notifications.append(updated_entry)
             except Exception as e:
-                entry_dict.pop('notification_date', None)
+                entry_dict.pop("notification_date", None)
                 updated_failed_entry = Row(**entry_dict)
-                if 'java.io.FileNotFoundException' in str(e):
-                    print(f"Image not found: {image_upload_path}. Skip creating notification...\n\n")
+                if "java.io.FileNotFoundException" in str(e):
+                    print(
+                        f"Image not found: {image_upload_path}. Skip creating notification...\n\n"
+                    )
                 else:
                     print(f"An error occurred: {e}\n\n")
                 unsuccessful_notifications.append(updated_failed_entry)
@@ -475,22 +522,48 @@ class SignalHandler:
         return successful_notifications, unsuccessful_notifications
 
     def save_notifications(self, successful_notifications, unsuccessful_notifications):
-        gold_signal_notifications = self.spark.table(f"{self.catalog_name}.oor.gold_signal_notifications")
+        gold_signal_notifications = self.spark.table(
+            f"{self.catalog_name}.oor.gold_signal_notifications"
+        )
         if successful_notifications:
-            modified_schema = StructType([field for field in gold_signal_notifications.schema if field.name not in {'id', 'processed_at'}])
-            successful_df = self.spark.createDataFrame(successful_notifications, schema=modified_schema)
-            successful_df.write.mode('append').saveAsTable(f'{self.catalog_name}.oor.gold_signal_notifications')
-            print(f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications.")
+            modified_schema = StructType(
+                [
+                    field
+                    for field in gold_signal_notifications.schema
+                    if field.name not in {"id", "processed_at"}
+                ]
+            )
+            successful_df = self.spark.createDataFrame(
+                successful_notifications, schema=modified_schema
+            )
+            successful_df.write.mode("append").saveAsTable(
+                f"{self.catalog_name}.oor.gold_signal_notifications"
+            )
+            print(
+                f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications."
+            )
         else:
             print("Appended 0 rows to gold_signal_notifications.")
 
         if unsuccessful_notifications:
-            modified_schema = StructType([field for field in successful_notifications.schema if field.name not in {'id', 'processed_at'}])
-            unsuccessful_df = self.spark.createDataFrame(unsuccessful_notifications, schema=modified_schema)
+            modified_schema = StructType(
+                [
+                    field
+                    for field in successful_notifications.schema
+                    if field.name not in {"id", "processed_at"}
+                ]
+            )
+            unsuccessful_df = self.spark.createDataFrame(
+                unsuccessful_notifications, schema=modified_schema
+            )
             print(f"{unsuccessful_df.count()} unsuccessful notifications.")
-            unsuccessful_df.write.mode('append').saveAsTable(f'{self.catalog_name}.oor.silver_objects_per_day_quarantine')
-            print(f"04: Appended {len(unsuccessful_notifications)} rows to silver_objects_per_day_quarantine.")
-   
+            unsuccessful_df.write.mode("append").saveAsTable(
+                f"{self.catalog_name}.oor.silver_objects_per_day_quarantine"
+            )
+            print(
+                f"04: Appended {len(unsuccessful_notifications)} rows to silver_objects_per_day_quarantine."
+            )
+
     def get_top_pending_records(self, table_name, limit=10):
         # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
         select_query = f"""
@@ -500,13 +573,16 @@ class SignalHandler:
         LIMIT {limit}
         """
         results = self.spark.sql(select_query)
-        return results 
-    
+        return results
+
     def get_top_pending_records_no_sql(self, table_name, limit=10):
         table_full_name = f"{self.catalog_name}.oor.{table_name}"
         results = (
             self.spark.table(table_full_name)
-            .filter((self.spark.col("status") == "Pending") & (self.spark.col("object_class") == 2))
+            .filter(
+                (self.spark.col("status") == "Pending")
+                & (self.spark.col("object_class") == 2)
+            )
             .orderBy(self.spark.col("score").desc())
             .limit(limit)
         )
@@ -514,7 +590,7 @@ class SignalHandler:
 
     # TODO refactor this into a separate class which handles common table operations
     def update_status(self, table_name):
-        
+
         # job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = # "job_process_time", default = 0, debugValue=0)
         job_process_time = "2024-07-30 13:00:00"
         print(f"Job process time: {job_process_time}")
@@ -524,21 +600,29 @@ class SignalHandler:
         """
         # Execute the update query
         self.spark.sql(update_query)
-        print(f"04: Updated 'Pending' status to 'Processed' in {self.catalog_name}.oor.{table_name}.")   
+        print(
+            f"04: Updated 'Pending' status to 'Processed' in {self.catalog_name}.oor.{table_name}."
+        )
 
     def get_pending_signalen_notifications(self):
         query_signalen_notifications = f"SELECT * FROM {self.catalog_name}.{self.schema}.gold_signal_notifications WHERE status='Pending'"
-        signalen_notifications = self.spark.sql(query_signalen_notifications)   
-        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications.")
-        return signalen_notifications  
-    
+        signalen_notifications = self.spark.sql(query_signalen_notifications)
+        print(
+            f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications."
+        )
+        return signalen_notifications
+
     def get_pending_signalen_notifications_no_sql(self):
         table_name = f"{self.catalog_name}.{self.schema}.gold_signal_notifications"
-        signalen_notifications = self.spark.table(table_name).filter("status = 'Pending'")
-        print(f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications.")
+        signalen_notifications = self.spark.table(table_name).filter(
+            "status = 'Pending'"
+        )
+        print(
+            f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications."
+        )
         return signalen_notifications
 
     def get_signalen_feedback(self):
         query_signalen_feedback = f"SELECT * FROM {self.catalog_name}.{self.schema}.bronze_signal_notifications_feedback"
-        signalen_feedback = self.spark.sql(query_signalen_feedback)   
-        return signalen_feedback  
+        signalen_feedback = self.spark.sql(query_signalen_feedback)
+        return signalen_feedback

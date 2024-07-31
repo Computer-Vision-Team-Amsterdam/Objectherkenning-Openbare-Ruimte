@@ -1,17 +1,29 @@
-import tempfile  # noqa: E402
 import os
-from pyspark.sql.functions import col, lit  # noqa: E402
+import tempfile
+
+from pyspark.sql.functions import col, lit
+
 
 class DataLoader:
 
-    def __init__(self, spark, catalog, schema, root_source, ckpt_frames_relative_path,
-                 ckpt_detections_relative_path, job_process_time):
+    def __init__(
+        self,
+        spark,
+        catalog,
+        schema,
+        root_source,
+        ckpt_frames_relative_path,
+        ckpt_detections_relative_path,
+        job_process_time,
+    ):
         self.spark = spark
         self.catalog = catalog
         self.schema = schema
         self.root_source = root_source
         self.checkpoint_frames = f"{self.root_source}/{ckpt_frames_relative_path}"
-        self.checkpoint_detections = f"{self.root_source}/{ckpt_detections_relative_path}"
+        self.checkpoint_detections = (
+            f"{self.root_source}/{ckpt_detections_relative_path}"
+        )
         self.frame_metadata_table = (
             f"{self.catalog}.{self.schema}.bronze_frame_metadata"
         )
@@ -20,7 +32,7 @@ class DataLoader:
         )
         self.temp_files = []
         self.job_process_time = job_process_time
-        
+
     def _get_schema_path(self, table_name):
         """
         Retrieves the schema of the specified table and saves it to a temporary file.
@@ -47,9 +59,13 @@ class DataLoader:
 
         source = f"{self.root_source}/frame_metadata"
         path_table_schema = self._get_schema_path(self.frame_metadata_table)
-        df = self._load_new_frame_metadata(source, path_table_schema=path_table_schema, format="csv")
+        df = self._load_new_frame_metadata(
+            source, path_table_schema=path_table_schema, format="csv"
+        )
         print("01: Loaded frame metadata.")
-        self._store_new_data(df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table)
+        self._store_new_data(
+            df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table
+        )
 
     def ingest_detection_metadata(self):
 
@@ -82,9 +98,13 @@ class DataLoader:
             .load(source)
             .withColumnRenamed("pylon://0_frame_counter", "pylon0_frame_counter")
             .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
-            .withColumn("pylon0_frame_timestamp", col("pylon0_frame_timestamp").cast("double"))
+            .withColumn(
+                "pylon0_frame_timestamp", col("pylon0_frame_timestamp").cast("double")
+            )
             .withColumn("gps_timestamp", col("gps_timestamp").cast("double"))
-            .withColumn("gps_internal_timestamp", col("gps_internal_timestamp").cast("double"))
+            .withColumn(
+                "gps_internal_timestamp", col("gps_internal_timestamp").cast("double")
+            )
             .withColumn("status", lit("Pending"))
         )
 
@@ -114,11 +134,11 @@ class DataLoader:
         stream_query = (
             df.writeStream.option("checkpointLocation", checkpoint_path)
             .trigger(availableNow=True)
-            .toTable(target))
-            
+            .toTable(target)
+        )
 
-        query_progress = stream_query.awaitTermination(60) 
-    
+        query_progress = stream_query.awaitTermination(60)
+
         # Get number of rows processed
         if query_progress:
             rows_processed = stream_query.lastProgress["numInputRows"]
@@ -133,4 +153,4 @@ class DataLoader:
         for temp_file in self.temp_files:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
-                print(f"01: Deleted temporary file: {temp_file}")     
+                print(f"01: Deleted temporary file: {temp_file}")

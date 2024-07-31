@@ -1,5 +1,5 @@
 import numpy as np
-from databricks.sdk.runtime import display, sqlContext
+from databricks.sdk.runtime import sqlContext
 from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_number
 from shapely.geometry import Point
@@ -20,11 +20,15 @@ class Clustering:
         self.schema = "oor"
         query_detection_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_detection_metadata WHERE status='Pending'"
         self.detection_metadata = self.spark.sql(query_detection_metadata)
-        print(f"03: Loaded {self.detection_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_detection_metadata.")
+        print(
+            f"03: Loaded {self.detection_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_detection_metadata."
+        )
 
         query_frame_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_frame_metadata WHERE status='Pending'"
         self.frame_metadata = self.spark.sql(query_frame_metadata)
-        print(f"03: Loaded {self.frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_frame_metadata.")
+        print(
+            f"03: Loaded {self.frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_frame_metadata."
+        )
 
         self.df_joined = self._join_frame_and_detection_metadata()
         self._containers_coordinates = None
@@ -78,8 +82,8 @@ class Clustering:
             col("dm.width"),
             col("dm.height"),
             col("dm.confidence"),
-            #col("fm.gps_lat"),
-            #col("fm.gps_lon"),
+            # col("fm.gps_lat"),
+            # col("fm.gps_lon"),
             col("fm.gps_lat").cast("float"),
             col("fm.gps_lon").cast("float"),
         ]
@@ -93,7 +97,7 @@ class Clustering:
         rows = self.df_joined.select("gps_lat", "gps_lon").collect()
         # Convert the list of Row objects into a list of tuples
         containers_coordinates = [(row["gps_lat"], row["gps_lon"]) for row in rows]
-        #containers_coordinates = [(float(row["gps_lat"]), float(row["gps_lon"])) for row in rows]
+        # containers_coordinates = [(float(row["gps_lat"]), float(row["gps_lon"])) for row in rows]
 
         return containers_coordinates
 
@@ -101,7 +105,6 @@ class Clustering:
         """
         We need the containers coordinates as Point to perform distance calculations
         """
-        temp = self.get_containers_coordinates()
         containers_coordinates_geometry = [
             Point(location) for location in self.get_containers_coordinates()
         ]
