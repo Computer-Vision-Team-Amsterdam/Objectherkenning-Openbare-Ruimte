@@ -4,7 +4,7 @@ version = "0.1.3"
 
 [tool.poetry]
 name = "objectherkenning_openbare_ruimte"
-version = "0.1.3"
+version = "0.1.4"
 description = "Objectherkenning Openbare Ruimte is a project about recognising objects from public space images."
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
@@ -15,7 +15,7 @@ authors = [
 
 [tool.poetry.dependencies]
 python = "~3.8"
-aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.1.0" }
+aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.1.1" }
 azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 azure-iot-device = {version = "^2.13.0", source = "PyPI"}
 azure-storage-blob = {version = "^12.19.0", source = "PyPI"}
