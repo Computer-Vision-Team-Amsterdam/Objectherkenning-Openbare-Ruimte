@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from typing import Any, Dict
 
 import wandb
 import yaml
@@ -90,19 +91,19 @@ def sweep_model(
         "batch": model_parameters.get("batch", -1),
     }
 
-    def extract_parameter_keys(sweep_config):
+    def extract_parameter_keys(sweep_config: Dict[str, Any]) -> Any:
         return sweep_config["parameters"].keys()
 
-    def load_sweep_configuration(json_file):
+    def load_sweep_configuration(json_file: str) -> Dict[str, Any]:
         with open(json_file, "r") as file:
             config = json.load(file)
         return config
 
-    # 2: Define the search space
+    # Define the search space
     config_file = settings["sweep_pipeline"]["inputs"]["sweep_config"]
     sweep_configuration = load_sweep_configuration(config_file)
 
-    # 3: Start the sweep
+    # Start the sweep
     sweep_id = wandb.sweep(sweep=sweep_configuration)
 
     def train():
