@@ -283,7 +283,7 @@ class DataDetection:
         if self.defisheye_flag:
             image.defisheye(defisheye_params=self.defisheye_params)
 
-        self.inference_params["source"] = image
+        self.inference_params["source"] = image.image
         self.inference_params["name"] = csv_path.stem
         detection_results = self.model(**self.inference_params)
         torch.cuda.empty_cache()

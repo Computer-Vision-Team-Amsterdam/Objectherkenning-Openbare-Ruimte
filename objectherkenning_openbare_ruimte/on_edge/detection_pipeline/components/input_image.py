@@ -8,10 +8,10 @@ logger = logging.getLogger("image")
 
 
 class InputImage:
+    mapxy = []
+
     def __init__(self, image_full_path: str):
         self.image = cv2.imread(str(image_full_path))
-        self.mapx = None
-        self.mapy = None
 
     def resize(self, output_image_size: List):
         """Resizes the image
@@ -34,7 +34,7 @@ class InputImage:
                 distortion_params: [[-0.24083, 0.10647, 0.00083113, 0.0001802, -0.025874]]
                 input_image_size: [3840, 2160]
         """
-        if self.mapx is None or self.mapy is None:
+        if len(self.mapxy) < 2:
             old_w, old_h = defisheye_params["input_image_size"]
             new_h, new_w = self.image.shape[:2]
 
@@ -52,7 +52,7 @@ class InputImage:
                 0,
                 (new_w, new_h),
             )
-            self.mapx, self.mapy = cv2.initUndistortRectifyMap(
+            self.mapxy[0], self.mapxy[1] = cv2.initUndistortRectifyMap(
                 cam_mtx,
                 np.array(defisheye_params["distortion_params"]),
                 None,
@@ -61,4 +61,6 @@ class InputImage:
                 5,
             )
 
-        self.image = cv2.remap(self.image, self.mapx, self.mapy, cv2.INTER_LINEAR)
+        self.image = cv2.remap(
+            self.image, self.mapxy[0], self.mapxy[1], cv2.INTER_LINEAR
+        )
