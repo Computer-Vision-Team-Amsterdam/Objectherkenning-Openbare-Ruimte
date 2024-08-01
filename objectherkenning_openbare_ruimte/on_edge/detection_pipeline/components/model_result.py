@@ -40,26 +40,22 @@ class ModelResult:
         target_bounding_boxes = self.boxes[target_idxs].xyxy
         self.draw_bounding_boxes(target_bounding_boxes)
 
-        self.save_image(image_detection_path, image_file_name)
-        self.save_annotation_path(target_idxs, image_detection_path, image_file_name)
+        self.save_result(target_idxs, image_detection_path, image_file_name)
 
         return True
 
-    def save_image(self, image_detection_path, image_file_name):
+    def save_result(self, target_idxs, image_detection_path, image_file_name):
         pathlib.Path(image_detection_path).mkdir(parents=True, exist_ok=True)
-        logger.debug(f"Folder path: {image_detection_path}")
         result_full_path = os.path.join(image_detection_path, image_file_name)
-        logger.debug(f"Save path: {result_full_path}")
-        cv2.imwrite(result_full_path, self.image)
-        logger.debug("Saved image.")
-
-    def save_annotation_path(self, target_idxs, image_detection_path, image_file_name):
         annotation_str = self._get_annotation_string_from_boxes(self.boxes[target_idxs])
         annotation_path = os.path.join(
             image_detection_path, f"{image_file_name.stem}.txt"
         )
+        logger.debug(f"Folder path: {image_detection_path}, {annotation_path}")
+        cv2.imwrite(result_full_path, self.image)
         with open(annotation_path, "w") as f:
             f.write(annotation_str)
+        logger.debug("Saved result from model.")
 
     def _get_annotation_string_from_boxes(self) -> str:
         annotation_lines = []

@@ -8,7 +8,7 @@ logger = logging.getLogger("image")
 
 
 class InputImage:
-    mapxy = []
+    mapxy = [None, None]
 
     def __init__(self, image_full_path: str):
         self.image = cv2.imread(str(image_full_path))
@@ -34,7 +34,7 @@ class InputImage:
                 distortion_params: [[-0.24083, 0.10647, 0.00083113, 0.0001802, -0.025874]]
                 input_image_size: [3840, 2160]
         """
-        if len(self.mapxy) < 2:
+        if self.mapxy[0] is None and self.mapxy[1] is None:
             old_w, old_h = defisheye_params["input_image_size"]
             new_h, new_w = self.image.shape[:2]
 
