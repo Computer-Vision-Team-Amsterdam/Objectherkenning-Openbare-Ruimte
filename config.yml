@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 25
+  env_version: 26
   src_dir: "."
 
 azure_iot:
