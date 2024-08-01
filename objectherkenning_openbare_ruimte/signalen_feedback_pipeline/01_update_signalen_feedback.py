@@ -7,7 +7,7 @@ sys.path.append('..')
 from datetime import datetime
 from pyspark.sql.types import StructType
 from post_processing_pipeline.helpers.utils_signalen import SignalHandler
-from post_processing_pipeline.helpers.databricks_workspace import get_catalog_name, set_job_process_time
+from post_processing_pipeline.helpers.databricks_workspace import get_catalog_name
 from post_processing_pipeline.helpers.table_manager import TableManager
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
@@ -25,7 +25,7 @@ if __name__ == "__main__":
    sparkSession = SparkSession.builder.appName("SignalFeedback").getOrCreate()
    signalHandler = SignalHandler(sparkSession)
    tableManager = TableManager(sparkSession, catalog=signalHandler.catalog_name)
-   job_process_time = set_job_process_time()
+   job_process_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
    job_process_time = datetime.fromisoformat(job_process_time)
 
    signalen_feedback_entries = []

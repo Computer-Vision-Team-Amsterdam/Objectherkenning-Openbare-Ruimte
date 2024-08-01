@@ -27,4 +27,4 @@ if __name__ == "__main__":
         root_source=settings["storage_account_root_path"],
         ckpt_frames_relative_path=settings["ckpt_frames_relative_path"],
         ckpt_detections_relative_path=settings["ckpt_detections_relative_path"],
-        job_process_time="2024-07-30 13:00:00")
+        job_process_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

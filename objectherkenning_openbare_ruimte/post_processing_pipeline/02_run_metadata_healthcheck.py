@@ -6,7 +6,7 @@ from helpers.databricks_workspace import get_catalog_name
 from pyspark.sql import SparkSession
 
 # Read the job process time from the first task's output
-# job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = 0, debugValue=0)
+job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = datetime.now().strftime("%Y-%m-%d %H:%M:%S"), debugValue=0)
 
 def run_metadata_healthcheck_step(sparkSession, catalog, schema, job_process_time):
     metadataHealthChecker = MetadataHealthChecker(sparkSession, catalog, schema, job_process_time)
@@ -19,6 +19,6 @@ if __name__ == "__main__":
         sparkSession=sparkSession,
         catalog=settings["catalog"],
         schema=settings["schema"],
-        job_process_time="2024-07-30 13:00:00"
+        job_process_time=job_process_time
     )
     
