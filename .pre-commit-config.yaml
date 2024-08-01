@@ -20,6 +20,7 @@ repos:
         entry: poetry run safety check --file
         language: system
         verbose: true
+        files: pyproject\.toml|requirements
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:
