@@ -61,9 +61,9 @@ def get_job_process_time(is_first_pipeline_step):
             )
             return custom_job_process_time
     else:
-        if job_process_time_settings["auto"] == "false":
+        if job_process_time_settings["auto"] == "true":
             raise ValueError(
-                "Running pipeline step by step requires setting auto:true and custom_job_process_time to a valid YYYY-MM-DD HH:MM:SS"
+                "Running pipeline step by step requires setting auto:false and custom_job_process_time to a valid YYYY-MM-DD HH:MM:SS"
             )
         else:
             custom_job_process_time = job_process_time_settings[

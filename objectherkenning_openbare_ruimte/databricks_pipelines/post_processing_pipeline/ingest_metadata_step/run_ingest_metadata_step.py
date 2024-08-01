@@ -1,8 +1,10 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
-from pyspark.sql import SparkSession  # noqa: E402
 import os  # noqa: E402
+
+from pyspark.sql import SparkSession  # noqa: E402
+
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
 )
@@ -12,6 +14,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
+
 
 def run_ingest_metadata_step(
     sparkSesssion,
@@ -45,7 +48,9 @@ def run_ingest_metadata_step(
 
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd()))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+    )
     config_file_path = os.path.join(project_root, "config.yml")
     databricks_environment = get_databricks_environment(sparkSession)
     settings = load_settings(config_file_path)["databricks_pipelines"][
