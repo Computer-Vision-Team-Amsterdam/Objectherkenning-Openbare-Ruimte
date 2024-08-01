@@ -6,20 +6,29 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
+import os  # noqa: E402
 from datetime import datetime  # noqa: E402
 
-from helpers import utils_visualization  # noqa: E402
-from helpers.clustering_detections import Clustering  # noqa: E402
-from helpers.decos_data_connector import DecosDataHandler  # noqa: E402
-from helpers.vulnerable_bridges_handler import VulnerableBridgesHandler  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
 
-from objectherkenning_openbare_ruimte.post_processing_pipeline.databricks_workspace import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
 )
-from objectherkenning_openbare_ruimte.post_processing_pipeline.table_manager import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
     TableManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
+    utils_visualization,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.clustering_detections import (  # noqa: E402
+    Clustering,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (  # noqa: E402
+    DecosDataHandler,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.vulnerable_bridges_handler import (  # noqa: E402
+    VulnerableBridgesHandler,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -31,7 +40,6 @@ def run_data_enrichment_step(
     catalog,
     schema,
     root_source,
-    device_id,
     vuln_bridges_relative_path,
     az_tenant_id,
     db_host,
@@ -211,7 +219,11 @@ def calculate_score(bridge_distance: float, permit_distance: float) -> float:
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("DataEnrichment").getOrCreate()
     databricks_environment = get_databricks_environment(sparkSession)
-    settings = load_settings("../../config.yml")["databricks_pipelines"][
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+    )
+    config_file_path = os.path.join(project_root, "config.yml")
+    settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
     run_data_enrichment_step(
@@ -219,7 +231,6 @@ if __name__ == "__main__":
         catalog=settings["catalog"],
         schema=settings["schema"],
         root_source=settings["storage_account_root_path"],
-        device_id=settings["device_id"],
         vuln_bridges_relative_path=settings["vuln_bridges_relative_path"],
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
