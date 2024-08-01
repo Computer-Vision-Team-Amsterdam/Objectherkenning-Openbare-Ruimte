@@ -52,10 +52,7 @@ class DataDetection:
 
         self._check_model_availability(settings["detection_pipeline"]["sleep_time"])
 
-        self.input_image_size = settings["detection_pipeline"]["input_image_size"]
         self.output_image_size = settings["detection_pipeline"]["output_image_size"]
-        self.shrink_factor = None
-        self.resize_backend = "pyvips"
         inference_params = settings["detection_pipeline"]["inference_params"]
         self.inference_params = {
             "imgsz": inference_params.get("img_size", 640),

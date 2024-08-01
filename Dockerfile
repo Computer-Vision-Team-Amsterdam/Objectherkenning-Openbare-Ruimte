@@ -12,7 +12,6 @@ RUN apt-get update  \
     nano \
     python3-dev \
     build-essential \
-    libvips-dev \
     && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
