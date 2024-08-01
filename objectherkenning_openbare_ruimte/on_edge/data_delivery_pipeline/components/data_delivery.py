@@ -173,7 +173,7 @@ class DataDelivery:
                 )
 
                 save_csv_file(file_path_detection_metadata, detection_metadata_rows)
-                upload_destination_path = f"detection_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_only_filtered_rows)}"
+                upload_destination_path = f"detection_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_detection_metadata)}"
                 iot_handler.upload_file(
                     str(file_path_detection_metadata), str(upload_destination_path)
                 )

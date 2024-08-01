@@ -50,8 +50,6 @@ class DataDetection:
         self.defisheye_flag = settings["detection_pipeline"]["defisheye_flag"]
         self.defisheye_params = settings["detection_pipeline"]["defisheye_params"]
 
-        self._check_model_availability(settings["detection_pipeline"]["sleep_time"])
-
         self.output_image_size = settings["detection_pipeline"]["output_image_size"]
         inference_params = settings["detection_pipeline"]["inference_params"]
         self.inference_params = {
@@ -66,7 +64,9 @@ class DataDetection:
         self.pretrained_model_path = os.path.join(
             settings["detection_pipeline"]["pretrained_model_path"], self.model_name
         )
-        self.model = YOLO(model=self.pretrained_model_path, task="detect")
+        self.model = self._instantiate_model(
+            settings["detection_pipeline"]["sleep_time"]
+        )
         self.target_classes = settings["detection_pipeline"]["target_classes"]
         self.sensitive_classes = settings["detection_pipeline"]["sensitive_classes"]
 
@@ -77,7 +77,24 @@ class DataDetection:
         logger.info(f"Yolo model: {self.model_name}")
         logger.info(f"Project_path: {self.detections_folder}")
 
-    def _check_model_availability(self, sleep_time: int):
+    def _instantiate_model(self, sleep_time: int):
+        """Checks if the model is available and creates the model object.
+
+        Parameters
+        ----------
+        sleep_time : int
+            How long to wait if it's not available.
+
+        Returns
+        -------
+        YOLO
+            Model object
+
+        Raises
+        ------
+        FileNotFoundError
+            In case the model is not found.
+        """
         if self.pretrained_model_path.endswith(".engine"):
             while not os.path.isfile(self.pretrained_model_path):
                 logger.info(
@@ -86,6 +103,7 @@ class DataDetection:
                 time.sleep(sleep_time)
         elif not os.path.isfile(self.pretrained_model_path):
             raise FileNotFoundError(f"Model not found: {self.pretrained_model_path}")
+        return YOLO(model=self.pretrained_model_path, task="detect")
 
     @log_execution_time
     def run_pipeline(self):
