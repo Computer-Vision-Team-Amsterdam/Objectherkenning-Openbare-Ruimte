@@ -588,22 +588,6 @@ class SignalHandler:
         )
         return results
 
-    # TODO refactor this into a separate class which handles common table operations
-    def update_status(self, table_name):
-
-        # job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = # "job_process_time", default = 0, debugValue=0)
-        job_process_time = "2024-07-30 13:00:00"
-        print(f"Job process time: {job_process_time}")
-        # Update the status of the rows where status is 'Pending'
-        update_query = f"""
-        UPDATE {self.catalog_name}.oor.{table_name} SET status = 'Processed', processed_at = '{job_process_time}' WHERE status = 'Pending'
-        """
-        # Execute the update query
-        self.spark.sql(update_query)
-        print(
-            f"04: Updated 'Pending' status to 'Processed' in {self.catalog_name}.oor.{table_name}."
-        )
-
     def get_pending_signalen_notifications(self):
         query_signalen_notifications = f"SELECT * FROM {self.catalog_name}.{self.schema}.gold_signal_notifications WHERE status='Pending'"
         signalen_notifications = self.spark.sql(query_signalen_notifications)

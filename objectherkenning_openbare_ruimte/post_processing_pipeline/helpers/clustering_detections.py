@@ -5,19 +5,17 @@ from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_nu
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 
-from .databricks_workspace import get_catalog_name
-
 MS_PER_RAD = 6371008.8  # Earth radius in meters
 MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are a cluster of their own.
 
 
 class Clustering:
 
-    def __init__(self, spark: SparkSession):
+    def __init__(self, spark: SparkSession, catalog, schema):
 
         self.spark = spark
-        self.catalog = get_catalog_name(spark=spark)
-        self.schema = "oor"
+        self.catalog = catalog
+        self.schema = schema
         query_detection_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_detection_metadata WHERE status='Pending'"
         self.detection_metadata = self.spark.sql(query_detection_metadata)
         print(
@@ -184,3 +182,15 @@ class Clustering:
         # Update container coordinates after clustering
         self._containers_coordinates = self._extract_containers_coordinates()
         self._containers_coordinates_geometry = self._convert_coordinates_to_point()
+
+    def setup(self):
+        self.filter_by_confidence_score(0.7)
+        self.filter_by_bounding_box_size(0.003)
+
+        if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
+            print(
+                "03: Missing or incomplete data to run clustering. Stopping execution."
+            )
+            return
+
+        self.cluster_and_select_images()

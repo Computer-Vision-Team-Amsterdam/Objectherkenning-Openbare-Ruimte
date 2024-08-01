@@ -4,16 +4,17 @@ from pyspark.sql import SparkSession
 
 
 class TableManager:
-    def __init__(self, spark: SparkSession, catalog: str):
+    def __init__(self, spark: SparkSession, catalog: str, schema: str):
         self.spark = spark
         self.catalog = catalog
+        self.schema = schema
 
     def update_status(
         self, table_name: str, job_process_time: datetime, exclude_ids=[]
     ):
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
-        FROM {self.catalog}.oor.{table_name}
+        FROM {self.catalog}.{self.schema}.{table_name}
         WHERE status = 'Pending'
         """
         total_pending_before = self.spark.sql(count_pending_query).collect()[0][
@@ -21,7 +22,7 @@ class TableManager:
         ]
 
         update_query = f"""
-        UPDATE {self.catalog}.oor.{table_name}
+        UPDATE {self.catalog}.{self.schema}.{table_name}
         SET status = 'Processed', processed_at = '{job_process_time}'
         WHERE status = 'Pending'
         """
@@ -37,5 +38,5 @@ class TableManager:
         updated_rows = total_pending_before - total_pending_after
 
         print(
-            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.oor.{table_name}, {total_pending_after} rows remained 'Pending'."
+            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
         )

@@ -2,9 +2,11 @@ databricks_pipelines:
     Ontwikkel:
       catalog: "dpcv_dev"
       schema: "oor"
-      storage_account_root_path: "abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net/Luna"
+      storage_account_root_path: "abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
+      device_id: "Luna"
       ckpt_frames_relative_path: checkpoints/_checkpoint_frames
       ckpt_detections_relative_path: checkpoints/_checkpoint_detections
+      vuln_bridges_relative_path: "vuln_bridges.geojson"
       reference_database:
         host: "dev-bbn1-01-dbhost.postgres.database.azure.com"
         name: "mdbdataservices"
@@ -17,9 +19,11 @@ databricks_pipelines:
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
-      storage_account_root_path: "abfss://landingzone@stlandingdpcvprdweu01.dfs.core.windows.net/Luna"
+      storage_account_root_path: "abfss://landingzone@stlandingdpcvprdweu01.dfs.core.windows.net"
+      device_id: "Luna"
       ckpt_frames_relative_path: checkpoints/_checkpoint_frames
       ckpt_detections_relative_path: checkpoints/_checkpoint_detections
+      vuln_bridges_relative_path: "vuln_bridges.geojson"
       reference_database:
         host: "prd-bbn1-01-dbhost.postgres.database.azure.com"
         name: "mdbdataservices"

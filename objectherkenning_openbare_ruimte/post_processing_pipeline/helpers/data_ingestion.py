@@ -12,6 +12,7 @@ class DataLoader:
         catalog,
         schema,
         root_source,
+        device_id,
         ckpt_frames_relative_path,
         ckpt_detections_relative_path,
         job_process_time,
@@ -20,9 +21,12 @@ class DataLoader:
         self.catalog = catalog
         self.schema = schema
         self.root_source = root_source
-        self.checkpoint_frames = f"{self.root_source}/{ckpt_frames_relative_path}"
+        self.device_id = device_id
+        self.checkpoint_frames = (
+            f"{self.root_source}/{self.device_id}/{ckpt_frames_relative_path}"
+        )
         self.checkpoint_detections = (
-            f"{self.root_source}/{ckpt_detections_relative_path}"
+            f"{self.root_source}/{self.device_id}/{ckpt_detections_relative_path}"
         )
         self.frame_metadata_table = (
             f"{self.catalog}.{self.schema}.bronze_frame_metadata"
@@ -57,7 +61,7 @@ class DataLoader:
 
     def ingest_frame_metadata(self):
 
-        source = f"{self.root_source}/frame_metadata"
+        source = f"{self.root_source}/{self.device_id}/frame_metadata"
         path_table_schema = self._get_schema_path(self.frame_metadata_table)
         df = self._load_new_frame_metadata(
             source, path_table_schema=path_table_schema, format="csv"
@@ -69,7 +73,7 @@ class DataLoader:
 
     def ingest_detection_metadata(self):
 
-        source = f"{self.root_source}/detection_metadata"
+        source = f"{self.root_source}/{self.device_id}/detection_metadata"
         path_table_schema = self._get_schema_path(self.detection_metadata_table)
         df = self._load_new_detection_metadata(
             source, path_table_schema=path_table_schema, format="csv"
