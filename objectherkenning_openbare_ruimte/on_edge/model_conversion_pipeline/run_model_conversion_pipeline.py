@@ -11,7 +11,7 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 if __name__ == "__main__":
     settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
-    logging_file_path = f"{settings['logging']['luna_logs_dir']}/model_conversion_pipeline/{datetime.now()}.txt"
+    logging_file_path = f"{settings['logging']['luna_logs_dir']}/model_conversion_pipeline/{datetime.now().strftime('%y%m%d-%H%M%S')}.txt"
     setup_luna_logging(settings["logging"], logging_file_path)
     logger = logging.getLogger("model_conversion_pipeline")
 

@@ -31,7 +31,7 @@ def internet(host="8.8.8.8", port=53, timeout=3):
 
 if __name__ == "__main__":
     settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
-    logging_file_path = f"{settings['logging']['luna_logs_dir']}/performance_monitoring/{datetime.now()}.txt"
+    logging_file_path = f"{settings['logging']['luna_logs_dir']}/performance_monitoring/{datetime.now().strftime('%y%m%d-%H%M%S')}.txt"
     setup_luna_logging(settings["logging"], logging_file_path)
     logger = logging.getLogger("performance_monitoring")
     images_folder = pathlib.Path(settings["detection_pipeline"]["images_path"])

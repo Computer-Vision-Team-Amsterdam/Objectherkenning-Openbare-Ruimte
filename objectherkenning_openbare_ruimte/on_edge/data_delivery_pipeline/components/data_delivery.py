@@ -3,7 +3,6 @@ import logging
 import os
 import pathlib
 from datetime import datetime
-from typing import List
 
 from cvtoolkit.helpers.file_helpers import delete_file
 
@@ -30,7 +29,7 @@ class DataDelivery:
             "detections_path"
         ]
         self.metadata_folder = self.settings["data_delivery_pipeline"]["metadata_path"]
-        self.metadata_csv_file_paths_with_errors: List[str] = []
+        self.metadata_csv_file_paths_with_errors = []
         self.model_and_code_version = [
             self.settings["detection_pipeline"]["model_name"],
             self.settings["data_delivery_pipeline"]["ml_model_id"],

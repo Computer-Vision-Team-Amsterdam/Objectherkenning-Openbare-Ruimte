@@ -13,7 +13,7 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 if __name__ == "__main__":
     settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
-    logging_file_path = f"{settings['logging']['luna_logs_dir']}/detection_pipeline/{datetime.now()}.txt"
+    logging_file_path = f"{settings['logging']['luna_logs_dir']}/detection_pipeline/{datetime.now().strftime('%y%m%d-%H%M%S')}.txt"
     setup_luna_logging(settings["logging"], logging_file_path)
     logger = logging.getLogger("detection_pipeline")
     logger.info("Building the detection pipeline..")

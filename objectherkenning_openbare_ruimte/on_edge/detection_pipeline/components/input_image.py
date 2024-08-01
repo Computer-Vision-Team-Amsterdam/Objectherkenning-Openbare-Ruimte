@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List
+from typing import Dict, Tuple
 
 import cv2
 import numpy as np
@@ -13,7 +13,7 @@ class InputImage:
     def __init__(self, image_full_path: str):
         self.image = cv2.imread(str(image_full_path))
 
-    def resize(self, output_image_size: List):
+    def resize(self, output_image_size: Tuple[int, int]):
         """Resizes the image
 
         Parameters

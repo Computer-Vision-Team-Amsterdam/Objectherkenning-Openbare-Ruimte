@@ -255,7 +255,7 @@ class ModelResult:
             x_max = min(img_width, x_max + box_padding)
             y_max = min(img_height, y_max + box_padding)
 
-            # print(f"Cropping: {(x_min, y_min)} -> {(x_max, y_max)}")
+            logger.debug(f"Cropping: {(x_min, y_min)} -> {(x_max, y_max)}")
             if not fill_bg:
                 cropped_images.append(self.image[y_min:y_max, x_min:x_max].copy())
             else:
