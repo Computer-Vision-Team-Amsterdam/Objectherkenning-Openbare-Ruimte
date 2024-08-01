@@ -19,6 +19,7 @@ repos:
         name: safety
         entry: poetry run safety check --file
         language: system
+        verbose: true
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:
