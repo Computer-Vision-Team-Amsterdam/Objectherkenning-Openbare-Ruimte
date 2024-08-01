@@ -5,6 +5,8 @@
 
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # noqa
+from datetime import datetime
+
 
 from helpers.decos_data_connector import DecosDataHandler
 from helpers.vulnerable_bridges_handler import VulnerableBridgesHandler

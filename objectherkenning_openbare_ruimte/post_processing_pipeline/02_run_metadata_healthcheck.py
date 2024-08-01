@@ -1,5 +1,6 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()
+from datetime import datetime
 
 from pyspark.sql.functions import col
 from helpers.databricks_workspace import get_catalog_name
