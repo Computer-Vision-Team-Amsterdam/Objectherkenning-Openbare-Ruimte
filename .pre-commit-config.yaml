@@ -17,9 +17,8 @@ repos:
     hooks:
       - id: safety
         name: safety
-        entry: poetry run safety check --full-report
+        entry: poetry run safety check --file
         language: system
-        types: [ python ]
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:

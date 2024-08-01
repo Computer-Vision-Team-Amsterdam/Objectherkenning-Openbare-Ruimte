@@ -1,4 +1,3 @@
-import logging
 import os
 from datetime import datetime
 from typing import Any, Dict
@@ -30,6 +29,5 @@ def setup_luna_logging(logging_cfg: Dict[str, Any], logging_file_path: str):
     with open(logging_file_path, "w") as f:
         f.write(f"Starting logging: {datetime.now()}")
 
-    logging.basicConfig(**logging_cfg["basic_config"])
     azure_logging_configurer = AzureLoggingConfigurer(logging_cfg, __name__)
     azure_logging_configurer.setup_oor_logging()

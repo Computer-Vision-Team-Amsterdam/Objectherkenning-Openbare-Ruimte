@@ -29,12 +29,12 @@ pre-commit = {version = "^3.2.0", source = "PyPI"}
 py360convert-modified = {version = "^1.0.1", source = "PyPI"}
 pydantic = {version = "^1.8.2", source = "PyPI"}
 pynvml = {version = "^11.5.0", source = "PyPI"}
-setuptools = {"^70.2.0", source = "PyPI"}
+setuptools = {version = "^70.2.0", source = "PyPI"}
 torch = {version = "^2.2.1", source="torch"}
 torchaudio = {version = "^2.2.1", source="torch"}
 torchvision = {version = "^0.17.1", source="torch"}
-ultralytics = {"^8.1.35", source = "PyPI"}
-urllib3 = {"1.26.19", source = "PyPI"}
+ultralytics = {version = "^8.1.35", source = "PyPI"}
+urllib3 = {version = "1.26.19", source = "PyPI"}
 
 [[tool.poetry.source]]
 name = "torch"
@@ -42,12 +42,11 @@ url = "https://download.pytorch.org/whl/cu118"
 priority = "explicit"
 
 [tool.poetry.dev-dependencies]
-aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.1.0" }
 azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 geopandas = {version = "~0.13.2", source = "PyPI"}
 pytest = {version = "^7.0.1", source = "PyPI" }
 pytest-cov = {version = "^4.0.0", source = "PyPI" }
-safety = {"^3.2.4", source = "PyPI"}
+safety = {version = "^3.2.4", source = "PyPI"}
 
 [tool.isort]
 profile = "black"
