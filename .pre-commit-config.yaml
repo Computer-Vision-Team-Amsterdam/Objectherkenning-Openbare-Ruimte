@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: safety
         name: safety
-        entry: poetry run safety check --file
+        entry: poetry run safety scan
         language: system
         verbose: true
         files: pyproject.toml
