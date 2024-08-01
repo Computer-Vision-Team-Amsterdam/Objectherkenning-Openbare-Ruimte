@@ -6,7 +6,7 @@ from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 
 MS_PER_RAD = 6371008.8  # Earth radius in meters
-MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are a cluster of their own.
+MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are a cluster of their own
 
 
 class Clustering:
