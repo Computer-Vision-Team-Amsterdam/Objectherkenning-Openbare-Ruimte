@@ -30,7 +30,6 @@ RUN python3 -m pip install --no-deps git+https://github.com/Computer-Vision-Team
 
 RUN python3 -m pip install -r requirements_on_edge.txt
 
-# COPY model_artifacts/oor_model model_artifacts
 COPY objectherkenning_openbare_ruimte objectherkenning_openbare_ruimte
 COPY config.yml config.yml
 
