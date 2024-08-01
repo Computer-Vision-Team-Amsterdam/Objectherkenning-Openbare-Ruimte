@@ -523,7 +523,10 @@ class SignalHandler:
 
     def save_notifications(self, successful_notifications, unsuccessful_notifications):
         gold_signal_notifications = self.spark.table(
-            f"{self.catalog_name}.oor.gold_signal_notifications"
+            f"{self.catalog_name}.{self.schema}.gold_signal_notifications"
+        )
+        silver_objects_per_day_quarantine = self.spark.table(
+            f"{self.catalog_name}.{self.schema}.silver_objects_per_day_quarantine"
         )
         if successful_notifications:
             modified_schema = StructType(
@@ -549,7 +552,7 @@ class SignalHandler:
             modified_schema = StructType(
                 [
                     field
-                    for field in successful_notifications.schema
+                    for field in silver_objects_per_day_quarantine.schema
                     if field.name not in {"id", "processed_at"}
                 ]
             )
