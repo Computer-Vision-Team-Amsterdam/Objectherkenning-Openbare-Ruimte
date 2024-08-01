@@ -1,18 +1,20 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
-import sys  # noqa: E402
 
-sys.path.append("..")
-
+import os  # noqa: E402
 from datetime import datetime  # noqa: E402
 
-from helpers.databricks_workspace import get_databricks_environment  # noqa: E402
-from post_processing_pipeline.helpers.utils_signalen import SignalHandler  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 from pyspark.sql.types import StructType  # noqa: E402
 
-from objectherkenning_openbare_ruimte.post_processing_pipeline.table_manager import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
+    get_databricks_environment,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
     TableManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
+    SignalHandler,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -107,7 +109,11 @@ def run_update_signalen_feedback_step(
 if __name__ == "__main__":
     sparkSession = SparkSession.builder.appName("SignalenFeedback").getOrCreate()
     databricks_environment = get_databricks_environment(sparkSession)
-    settings = load_settings("../../config.yml")["databricks_pipelines"][
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+    )
+    config_file_path = os.path.join(project_root, "config.yml")
+    settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
     run_update_signalen_feedback_step(
