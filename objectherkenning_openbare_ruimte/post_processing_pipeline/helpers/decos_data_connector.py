@@ -9,7 +9,6 @@ import pandas as pd
 import requests
 from shapely.geometry import Point
 
-from .databricks_workspace import get_catalog_name
 from .reference_db_connector import ReferenceDatabaseConnector
 
 
@@ -18,7 +17,6 @@ class DecosDataHandler(ReferenceDatabaseConnector):
     def __init__(self, spark, az_tenant_id, db_host, db_name, db_port):
         super().__init__(az_tenant_id, db_host, db_name, db_port)
         self.spark = spark
-        self.catalog_name = get_catalog_name(self.spark)
         self.query_result_df = None
 
     def is_container_permit(self, objects):

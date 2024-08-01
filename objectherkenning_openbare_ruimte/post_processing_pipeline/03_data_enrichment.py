@@ -43,7 +43,6 @@ def run_data_enrichment_step(
     bridgesHandler = VulnerableBridgesHandler(
         spark=sparkSession,
         root_source=root_source,
-        device_id=device_id,
         vuln_bridges_relative_path=vuln_bridges_relative_path,
     )
     bridges_coordinates_geometry = bridgesHandler.get_bridges_coordinates_geometry()
@@ -57,7 +56,7 @@ def run_data_enrichment_step(
         db_port=5432,
     )
 
-    tableManager = TableManager(spark=SparkSession, catalog=catalog, schema=schema)
+    tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
 
     print(
         f"03: Number of containers: {len(containers_coordinates_geometry)}. Number of vulnerable bridges: {len(bridgesHandler.get_bridges_coordinates())}."

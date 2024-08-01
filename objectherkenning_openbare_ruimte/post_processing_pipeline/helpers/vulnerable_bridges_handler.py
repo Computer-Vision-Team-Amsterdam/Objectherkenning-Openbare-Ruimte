@@ -11,10 +11,10 @@ from tqdm import tqdm
 
 class VulnerableBridgesHandler:
     def __init__(
-        self, spark: SparkSession, root_source, device_id, vuln_bridges_relative_path
+        self, spark: SparkSession, root_source, vuln_bridges_relative_path
     ):
         self.spark = spark
-        self.file_path = f"{root_source}/{device_id}/{vuln_bridges_relative_path}"
+        self.file_path = f"{root_source}/{vuln_bridges_relative_path}"
         self._bridges_coordinates: List[List[List[float]]] = []
         self._bridges_ids: List[int] = []
         self._parse_bridges_coordinates()
