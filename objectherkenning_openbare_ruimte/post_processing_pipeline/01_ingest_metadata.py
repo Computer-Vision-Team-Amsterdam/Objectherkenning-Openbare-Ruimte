@@ -2,7 +2,6 @@
 dbutils.library.restartPython()
 
 from datetime import datetime
-
 from helpers.databricks_workspace import get_databricks_environment, get_job_process_time # noqa: E402
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import load_settings
 from helpers.data_ingestion import DataLoader

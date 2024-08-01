@@ -476,6 +476,7 @@ class SignalHandler:
 
     def save_notifications(self, successful_notifications, unsuccessful_notifications):
         gold_signal_notifications = self.spark.table(f"{self.catalog_name}.oor.gold_signal_notifications")
+        silver_objects_per_day_quarantine = self.spark.table(f"{self.catalog_name}.oor.silver_objects_per_day_quarantine")
         if successful_notifications:
             modified_schema = StructType([field for field in gold_signal_notifications.schema if field.name not in {'id', 'processed_at'}])
             successful_df = self.spark.createDataFrame(successful_notifications, schema=modified_schema)
@@ -485,7 +486,7 @@ class SignalHandler:
             print("Appended 0 rows to gold_signal_notifications.")
 
         if unsuccessful_notifications:
-            modified_schema = StructType([field for field in successful_notifications.schema if field.name not in {'id', 'processed_at'}])
+            modified_schema = StructType([field for field in silver_objects_per_day_quarantine.schema if field.name not in {'id', 'processed_at'}])
             unsuccessful_df = self.spark.createDataFrame(unsuccessful_notifications, schema=modified_schema)
             print(f"{unsuccessful_df.count()} unsuccessful notifications.")
             unsuccessful_df.write.mode('append').saveAsTable(f'{self.catalog_name}.oor.silver_objects_per_day_quarantine')
@@ -515,7 +516,7 @@ class SignalHandler:
     # TODO refactor this into a separate class which handles common table operations
     def update_status(self, table_name):
         
-        job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = datetime.now().strftime("%Y-%m-%d %H:%M:%S"), debugValue=0)
+        job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = datetime.now().strftime("%Y-%m-%d %H:%M:%S"), debugValue=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         # Update the status of the rows where status is 'Pending'
         update_query = f"""
         UPDATE {self.catalog_name}.oor.{table_name} SET status = 'Processed', processed_at = '{job_process_time}' WHERE status = 'Pending'

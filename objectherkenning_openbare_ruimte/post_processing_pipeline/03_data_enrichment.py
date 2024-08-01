@@ -23,7 +23,7 @@ from datetime import datetime
 from helpers.clustering_detections import Clustering  # noqa: E402
 
 # Read the job process time from the first task's output
-job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = datetime.now().strftime("%Y-%m-%d %H:%M:%S"), debugValue=0)
+job_process_time = dbutils.jobs.taskValues.get(taskKey = "data-ingestion", key = "job_process_time", default = datetime.now().strftime("%Y-%m-%d %H:%M:%S"), debugValue=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
     """
