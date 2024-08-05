@@ -37,6 +37,9 @@ if __name__ == "__main__":
     images_folder = pathlib.Path(settings["detection_pipeline"]["images_path"])
     detections_folder = pathlib.Path(settings["detection_pipeline"]["detections_path"])
     metadata_folder = pathlib.Path(settings["data_delivery_pipeline"]["metadata_path"])
+    sleep_time = (
+        settings["logging"]["sleep_time"] if settings["logging"]["sleep_time"] else 30
+    )
 
     logger.info("Performance monitor is running. It will start providing updates soon.")
     while True:
@@ -59,4 +62,4 @@ if __name__ == "__main__":
             f"CSVs in metadata folder: {count_files_in_folder_tree(metadata_folder, 'csv')}"
             f"]"
         )
-        sleep(30.0)
+        sleep(sleep_time)

@@ -114,6 +114,7 @@ class LoggingSpec(SettingsSpecModel):
     }
     ai_instrumentation_key: str = ""
     luna_logs_dir: str = ""
+    sleep_time: int = None
 
 
 class TrainingModelParameters(SettingsSpecModel):
