@@ -30,12 +30,10 @@ class ContainersDetectedMapGenerator:
             Minimum size of detection, by default 0.003
         """
         self.folder_name = date_of_the_ride
-        self.frame_metadata_folder = f"frame_metadata/{self.folder_name}"  # Replace with the path to your frame metadata folder
-        self.full_frame_metadata_folder = f"full_frame_metadata/{self.folder_name}"  # Replace with the path to your frame metadata folder
-        self.detection_metadata_folder = f"detection_metadata/{self.folder_name}"  # Replace with the path to your detection metadata folder
-        self.images_folder = (
-            f"images/{self.folder_name}"  # Replace with the path to your images folder
-        )
+        self.frame_metadata_folder = f"frame_metadata/{self.folder_name}"
+        self.full_frame_metadata_folder = f"full_frame_metadata/{self.folder_name}"
+        self.detection_metadata_folder = f"detection_metadata/{self.folder_name}"
+        self.images_folder = f"images/{self.folder_name}"
         self.confidence_threshold = confidence_threshold
         self.size_of_detection_threshold = size_of_detection_threshold
 
