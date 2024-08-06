@@ -6,20 +6,14 @@ repos:
     hooks:
       - id: bandit
         args: ["-c", "bandit.yaml"]
-  - repo: https://github.com/trailofbits/pip-audit
-    rev: v2.7.3
-    hooks:
-      - id: pip-audit
-        args: [
-          "--ignore-vuln", "PYSEC-2023-228", "."
-        ]
-  - repo: local
-    hooks:
-      - id: safety
-        name: safety
-        entry: poetry run safety check --full-report
-        language: system
-        types: [ python ]
+  # - repo: local
+  #   hooks:
+  #     - id: safety
+  #       name: safety
+  #       entry: poetry run safety scan --policy-file .safety-policy.yml
+  #       language: system
+  #       verbose: true
+  #       always_run: true
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:

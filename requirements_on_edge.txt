@@ -1,0 +1,8 @@
+aml-interface @ git+https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git@ee5280d945607f36ed1af113d3248f228db36a9c ; python_version >= "3.8" and python_version < "3.9"
+azure-core==1.30.2 ; python_version >= "3.8" and python_version < "3.9"
+azure-iot-device==2.13.0 ; python_version >= "3.8" and python_version < "3.9"
+azure-storage-blob==12.20.0 ; python_version >= "3.8" and python_version < "3.9"
+# jetson-stats~=4.2 ; python_version >= "3.8" and python_version < "3.9"
+numpy~=1.23 ; python_version >= "3.8" and python_version < "3.9"
+psutil~=5.9 ; python_version >= "3.8" and python_version < "3.9"
+pydantic~=1.10 ; python_version >= "3.8" and python_version < "3.9"
