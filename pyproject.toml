@@ -32,10 +32,8 @@ pydantic = {version = "^1.8.2", source = "PyPI"}
 torch = { version = "^2.2.1", source="torch"}
 torchaudio = { version = "^2.2.1", source="torch"}
 torchvision = { version = "^0.17.1", source="torch"}
-ultralytics = "<8.2.62"
+ultralytics = "^8.2.76"
 setuptools = "^70.2.0"
-mlflow-skinny = "^2.14.3"
-azureml-mlflow = "^1.56.0"
 wandb = "^0.17.5"
 
 [[tool.poetry.source]]

@@ -1,7 +1,7 @@
 customer: ""
 
 aml_experiment_details:
-  compute_name: oor-testing
+  compute_name: cheap-cpu-andrea
   env_name: oor-environment
   env_version: 47
   src_dir: "."
@@ -9,7 +9,7 @@ aml_experiment_details:
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
   device_id: "test-diana"
-  shared_access_key: "SHARED_ACCESS_KEY_IOT"
+  shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
 
 convert_dataset:
   input_old_datastore: "old_datastore"
@@ -19,10 +19,10 @@ convert_dataset:
 convert_annotations:
   input_datastore_name: annotations_conversion_old
   output_datastore_name: annotations_conversion_new
-  final_datastore_name: converted_data_2407_10_15
+  final_datastore_name: converted_data_240729_240805
   categories_file: categories.json
   separate_labels: True
-  label_folder: prelabeled-data-2407-10-15/labels
+  label_folder: new_data_240729_240805/labels
 
 data_delivery_pipeline:
   images_path: "/raw_frames"
@@ -66,25 +66,25 @@ training_pipeline:
     img_size: 1280
     batch: 0.85
     epochs: 500
-    patience: 75
+    patience: 100
     n_classes: 5
     cos_lr: True
     dropout: 0.0
-    seed: 111
-    box: 7.893
-    cls: 7.881
-    dfl: 5.767
+    seed: 0
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
     name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
     rect: False
   inputs:
-    datastore_path: "first_official_training_dataset_oor"
-    training_data_rel_path: "processed-merged-batches-first-official-training-dataset-oor"
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
     model_weights_rel_path: "model"
     model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
     wandb_api_key: "3913776b1d82ae9f4f08090917114a0ad61ecfcf"
     wandb_mode: "online"
   outputs:
-    project_datastore_path: "first_official_training_dataset_oor"
+    project_datastore_path: "dataset_oor_v2_0"
     project_rel_path: "model"
 
 sweep_pipeline:
@@ -96,17 +96,17 @@ sweep_pipeline:
     n_classes: 5
     name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
     rect: False
-  sweep_trials: 10
+  sweep_trials: 30
   inputs:
-    datastore_path: "first_official_training_dataset_oor"
-    training_data_rel_path: "processed-merged-batches-first-official-training-dataset-oor"
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
     model_weights_rel_path: "model"
     model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
     wandb_api_key: "3913776b1d82ae9f4f08090917114a0ad61ecfcf"
     wandb_mode: "online"
     sweep_config: "sweep_config.json" # needs to be in the same directory as model_weights_rel_path
   outputs:
-    project_datastore_path: "first_official_training_dataset_oor"
+    project_datastore_path: "dataset_oor_v2_0"
     project_rel_path: "model"
 
 logging:
