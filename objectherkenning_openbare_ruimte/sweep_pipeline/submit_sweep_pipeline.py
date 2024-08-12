@@ -52,8 +52,8 @@ def sweep_pipeline():
     )
 
     sweep_model_step.environment_variables = {
-        "WANDB_API_KEY": settings["sweep_pipeline"]["inputs"]["wandb_api_key"],
-        "WANDB_MODE": settings["sweep_pipeline"]["inputs"]["wandb_mode"],
+        "WANDB_API_KEY": settings["wandb"]["api_key"],
+        "WANDB_MODE": settings["wandb"]["mode"],
     }
 
     project_path = os.path.join(project_datastore_path, project_rel_path)

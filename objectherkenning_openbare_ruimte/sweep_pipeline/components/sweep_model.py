@@ -60,8 +60,7 @@ def sweep_model(
         Location where to store the outputs of the model.
     """
 
-    # Make sure mlflow is disabled
-    ultralytics_settings.update({"mlflow": False, "runs_dir": project_path})
+    ultralytics_settings.update({"runs_dir": project_path})
 
     n_classes = settings["sweep_pipeline"]["model_parameters"]["n_classes"]
     name_classes = settings["sweep_pipeline"]["model_parameters"]["name_classes"]

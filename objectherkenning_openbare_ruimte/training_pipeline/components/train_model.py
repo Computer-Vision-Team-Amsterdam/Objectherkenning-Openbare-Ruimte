@@ -58,9 +58,7 @@ def train_model(
         Location where to store the outputs of the model.
     """
 
-    # Make sure mlflow is disabled
-    ultralytics_settings.update({"mlflow": False, "runs_dir": project_path})
-
+    ultralytics_settings.update({"runs_dir": project_path})
     wandb.init(job_type="training", config_exclude_keys=["project"])
 
     n_classes = settings["training_pipeline"]["model_parameters"]["n_classes"]

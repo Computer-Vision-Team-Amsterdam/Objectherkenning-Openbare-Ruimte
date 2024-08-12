@@ -121,6 +121,11 @@ class SweepPipelineSpec(SettingsSpecModel):
     outputs: Dict[str, str] = None
 
 
+class WandbSpec(SettingsSpecModel):
+    api_key: str
+    mode: str = "disabled"
+
+
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     class Config:
         extra = "forbid"
@@ -137,3 +142,4 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     logging: LoggingSpec = LoggingSpec()
     training_pipeline: TrainingPipelineSpec = None
     sweep_pipeline: SweepPipelineSpec = None
+    wandb: WandbSpec = None
