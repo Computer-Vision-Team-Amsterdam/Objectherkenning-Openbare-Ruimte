@@ -10,8 +10,9 @@ RUN apt -y update \
         libsm6 \
         libxext6 \
         libpq-dev \
-        python3-venv \
-        python3-pip \
+    && apt -y remove \
+        python3-setuptools \
+        python-setuptools \
     && apt upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
