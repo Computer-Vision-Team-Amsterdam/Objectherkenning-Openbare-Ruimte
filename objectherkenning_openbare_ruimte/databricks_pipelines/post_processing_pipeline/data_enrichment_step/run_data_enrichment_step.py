@@ -61,7 +61,7 @@ def run_data_enrichment_step(
 
     # Setup permit data
     decosDataHandler = DecosDataHandler(
-        spark=SparkSession,
+        spark=sparkSession,
         az_tenant_id=az_tenant_id,
         db_host=db_host,
         db_name=db_name,
@@ -99,7 +99,7 @@ def run_data_enrichment_step(
 
     # Enrich with decos data
     date_to_query = datetime.today().strftime("%Y-%m-%d")
-    query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"
+    query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
     print(f"Querying the database for date {date_to_query}...")
     decosDataHandler.run(query)
     decosDataHandler.process_query_result()

@@ -40,7 +40,7 @@ def run_submit_to_signalen_step(
         base_url,
     )
 
-    tableManager = TableManager(spark=SparkSession, catalog=catalog, schema=schema)
+    tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
 
     # Get top pending records
     top_scores_df = signalHandler.get_top_pending_records(
