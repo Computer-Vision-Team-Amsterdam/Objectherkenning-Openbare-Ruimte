@@ -1,5 +1,3 @@
-# bandit: skip=B608
-
 from datetime import datetime
 
 from pyspark.sql import SparkSession
