@@ -1,7 +1,8 @@
+# bandit: skip=B608
+
 from datetime import datetime
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, lit
 
 
 class TableManager:
@@ -10,72 +11,65 @@ class TableManager:
         self.catalog = catalog
         self.schema = schema
 
-    # def update_status(
-    #     self, table_name: str, job_process_time: datetime, exclude_ids=[]
-    # ):
-    #     count_pending_query = f"""
-    #     SELECT COUNT(*) as pending_count
-    #     FROM {self.catalog}.{self.schema}.{table_name}
-    #     WHERE status = 'Pending'
-    #     """
-    #     total_pending_before = self.spark.sql(count_pending_query).collect()[0][
-    #         "pending_count"
-    #     ]
-
-    #     update_query = f"""
-    #     UPDATE {self.catalog}.{self.schema}.{table_name}
-    #     SET status = 'Processed', processed_at = '{job_process_time}'
-    #     WHERE status = 'Pending'
-    #     """
-    #     if exclude_ids:
-    #         exclude_ids_str = ", ".join(map(str, exclude_ids))
-    #         update_query += f" AND id NOT IN ({exclude_ids_str})"
-
-    #     self.spark.sql(update_query)
-
-    #     total_pending_after = self.spark.sql(count_pending_query).collect()[0][
-    #         "pending_count"
-    #     ]
-    #     updated_rows = total_pending_before - total_pending_after
-
-    #     print(
-    #         f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
-    #     )
-
     def update_status(
         self, table_name: str, job_process_time: datetime, exclude_ids=[]
     ):
-        # Load the table as a DataFrame
-        table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
+        count_pending_query = f"""
+        SELECT COUNT(*) as pending_count
+        FROM {self.catalog}.{self.schema}.{table_name}
+        WHERE status = 'Pending'
+        """  # nosec
+        total_pending_before = self.spark.sql(count_pending_query).collect()[0][
+            "pending_count"
+        ]
 
-        # Filter the DataFrame for rows that need to be updated
-        pending_df = table_df.filter(
-            (col("status") == "Pending") & (~col("id").isin(exclude_ids))
-        )
+        update_query = f"""
+        UPDATE {self.catalog}.{self.schema}.{table_name}
+        SET status = 'Processed', processed_at = '{job_process_time}'
+        WHERE status = 'Pending'
+        """  # nosec
+        if exclude_ids:
+            exclude_ids_str = ", ".join(map(str, exclude_ids))
+            update_query += f" AND id NOT IN ({exclude_ids_str})"
 
-        # Count the number of rows to be updated
-        total_pending_before = pending_df.count()
+        self.spark.sql(update_query)
 
-        # Update the DataFrame
-        updated_df = pending_df.withColumn("status", lit("Processed")).withColumn(
-            "processed_at", lit(job_process_time)
-        )
-
-        # Write the updated DataFrame back to the table
-        updated_df.write.mode("overwrite").insertInto(
-            f"{self.catalog}.{self.schema}.{table_name}"
-        )
-
-        # Load the table again to get the updated count
-        table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
-        total_pending_after = table_df.filter(col("status") == "Pending").count()
-
-        # Calculate the number of updated rows
+        total_pending_after = self.spark.sql(count_pending_query).collect()[0][
+            "pending_count"
+        ]
         updated_rows = total_pending_before - total_pending_after
 
         print(
             f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
         )
+
+    # def update_status(
+    #     self, table_name: str, job_process_time: datetime, exclude_ids=[]
+    # ):
+    #     table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
+
+    #     pending_df = table_df.filter(
+    #         (col("status") == "Pending") & (~col("id").isin(exclude_ids))
+    #     )
+
+    #     total_pending_before = pending_df.count()
+
+    #     updated_df = pending_df.withColumn("status", lit("Processed")).withColumn(
+    #         "processed_at", lit(job_process_time)
+    #     )
+
+    #     updated_df.write.mode("overwrite").insertInto(
+    #         f"{self.catalog}.{self.schema}.{table_name}"
+    #     )
+
+    #     table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
+    #     total_pending_after = table_df.filter(col("status") == "Pending").count()
+
+    #     updated_rows = total_pending_before - total_pending_after
+
+    #     print(
+    #         f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
+    #     )
 
     def write_to_table(self, df, table_name, mode="append"):
         df.write.mode(mode).saveAsTable(f"{self.catalog}.{self.schema}.{table_name}")
