@@ -43,7 +43,7 @@ class TableManager:
 
     def write_to_table(self, df, table_name, mode="append"):
         df.write.mode(mode).saveAsTable(f"{self.catalog}.{self.schema}.{table_name}")
-        print(f"02: Appended {df.count()} rows to {table_name}.")    
+        print(f"Appended {df.count()} rows to {table_name}.")    
 
     @staticmethod
     def compare_dataframes(df1, df2, df1_name, df2_name):
