@@ -67,9 +67,7 @@ class VulnerableBridgesHandler:
         filtered_df = sparkDataFrame.filter(sparkDataFrame.geometry.isNotNull())
 
         # Iterate through each feature in the DataFrame
-        for feature_id, feature in enumerate(
-            tqdm(filtered_df.collect(), desc="Parsing the bridges information")
-        ):
+        for feature_id, feature in enumerate(filtered_df.collect()):
             bridge_coords = []
             if feature["geometry"]["coordinates"]:
                 for _, coords in enumerate(feature["geometry"]["coordinates"][0]):
