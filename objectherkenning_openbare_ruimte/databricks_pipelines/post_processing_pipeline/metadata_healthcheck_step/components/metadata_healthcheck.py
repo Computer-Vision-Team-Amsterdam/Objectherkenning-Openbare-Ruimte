@@ -1,4 +1,5 @@
 from pyspark.sql.functions import col
+import pyspark.sql.functions as F
 
 
 class MetadataHealthChecker:
@@ -15,7 +16,7 @@ class MetadataHealthChecker:
         )
         return df
 
-    def process_and_save_frame_metadata(self, bronze_frame_metadata):
+    def process_frame_metadata(self, bronze_frame_metadata):
 
         # Minimal check, we should implement more logic here
         valid_metadata = bronze_frame_metadata.filter(
@@ -34,52 +35,24 @@ class MetadataHealthChecker:
 
         print("02: Processed frame metadata.")
 
-        valid_metadata.write.mode("append").saveAsTable(
-            f"{self.catalog}.{self.schema}.silver_frame_metadata"
-        )
-        print(
-            f"02: Appended {valid_metadata.count()} rows to {self.catalog}.{self.schema}.silver_frame_metadata."
-        )
+        return valid_metadata, invalid_metadata
 
-        invalid_metadata.write.mode("append").saveAsTable(
-            f"{self.catalog}.{self.schema}.silver_frame_metadata_quarantine"
-        )
-        print(
-            f"02: Appended {invalid_metadata.count()} rows to {self.catalog}.{self.schema}.silver_frame_metadata_quarantine."
-        )
 
-    def process_and_save_detection_metadata(self):
+    def process_detection_metadata(self, bronze_detection_metadata):
+        
+        bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
+        silver_frame_metadata = self.spark.table(f"{self.catalog}.{self.schema}.silver_frame_metadata").alias("silver_frame")
+        valid_metadata = (bronze_detection_metadata
+                            .join(silver_frame_metadata, F.col("bronze_detection.image_name") == F.col("silver_frame.image_name"))
+                            .filter(F.col("bronze_detection.status") == 'Pending')
+                            .select("bronze_detection.*")) 
 
-        # Detection metadata corresponding to healthy frame metadata is healthy
-        valid_metadata_query = f"""
-                        SELECT {self.catalog}.{self.schema}.bronze_detection_metadata.*
-                        FROM {self.catalog}.{self.schema}.bronze_detection_metadata
-                        INNER JOIN {self.catalog}.{self.schema}.silver_frame_metadata ON {self.catalog}.{self.schema}.bronze_detection_metadata.image_name = {self.catalog}.{self.schema}.silver_frame_metadata.image_name
-                        WHERE {self.catalog}.{self.schema}.bronze_detection_metadata.status = 'Pending'
-                        """
-        valid_metadata = self.spark.sql(valid_metadata_query)
-
-        # Detection metadata corresponding to unhealthy frame metadata is unhealthy
-        invalid_metadata_query = f"""
-                        SELECT {self.catalog}.{self.schema}.bronze_detection_metadata.*
-                        FROM {self.catalog}.{self.schema}.bronze_detection_metadata
-                        INNER JOIN {self.catalog}.{self.schema}.silver_frame_metadata_quarantine ON {self.catalog}.{self.schema}.bronze_detection_metadata.image_name = {self.catalog}.{self.schema}.silver_frame_metadata_quarantine.image_name
-                        WHERE {self.catalog}.{self.schema}.bronze_detection_metadata.status = 'Pending'
-                        """
-
-        invalid_metadata = self.spark.sql(invalid_metadata_query)
+        silver_frame_metadata_quarantine = self.spark.table(f"{self.catalog}.{self.schema}.silver_frame_metadata_quarantine").alias("quarantine_frame")
+        invalid_metadata = (bronze_detection_metadata
+                            .join(silver_frame_metadata_quarantine, F.col("bronze_detection.image_name") == F.col("quarantine_frame.image_name"))
+                            .filter(F.col("bronze_detection.status") == 'Pending')
+                            .select("bronze_detection.*")) 
+        
         print("02: Processed detection metadata.")
-
-        valid_metadata.write.mode("append").saveAsTable(
-            f"{self.catalog}.{self.schema}.silver_detection_metadata"
-        )
-        print(
-            f"02: Appended {valid_metadata.count()} rows to silver_detection_metadata."
-        )
-
-        invalid_metadata.write.mode("append").saveAsTable(
-            f"{self.catalog}.{self.schema}.silver_detection_metadata_quarantine"
-        )
-        print(
-            f"02: Appended {invalid_metadata.count()} rows to silver_detection_metadata_quarantine."
-        )
+                    
+        return valid_metadata, invalid_metadata
