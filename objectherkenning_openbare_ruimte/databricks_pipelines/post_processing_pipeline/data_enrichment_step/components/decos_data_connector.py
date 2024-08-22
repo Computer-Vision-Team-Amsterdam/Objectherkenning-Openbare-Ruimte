@@ -161,7 +161,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 )
                 street_and_number = address
 
-            with requests.get(bag_url + street_and_number) as response:
+            with requests.get(bag_url + street_and_number, timeout=60) as response:
                 results = json.loads(response.content)["results"]
                 for result in results:
                     if "centroid" in result:
@@ -194,26 +194,6 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         df["permit_lat"] = latitudes
         df["permit_lon"] = longitudes
         return df
-
-    def write_quarantine_df_to_table(self, df):
-        """
-        Write rows with null permit_lat or permit_lon to the 'quarantine' table in Databricks.
-
-        Args:
-        df (DataFrame): Input DataFrame containing the data.
-        """
-        # Write the filtered DataFrame to the 'quarantine' table in Databricks
-        # quarantine_df.write.format("delta").mode("overwrite").saveAsTable("{env}.oor.{table_name_quarantine}")
-
-    def write_healthy_df_to_table(self, healthy_df):
-        """
-        Write rows with non-null permit_lat and permit_lon to the 'good' table in Databricks.
-
-        Args:
-        df (DataFrame): Input DataFrame containing the data.
-        """
-        # Write the filtered DataFrame to the 'good' table in Databricks
-        # healthy_df.write.format("delta").mode("overwrite").saveAsTable("{env}.oor.{table_name}")
 
     def _extract_permits_coordinates(self):
         # -----> for spark dataframes
