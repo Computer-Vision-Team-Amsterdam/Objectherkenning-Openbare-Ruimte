@@ -149,9 +149,9 @@ def run_data_enrichment_step(
     )
 )
 
-    clustering.df_joined = clustering.df_joined.withColumn("closest_permit_lat", F.col("closest_permit_coordinates._1")
-        .withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2")
-        .withColumn("status", F.lit("Pending")
+    clustering.df_joined = (clustering.df_joined.withColumn("closest_permit_lat", F.col("closest_permit_coordinates._1"))
+        .withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2"))
+        .withColumn("status", F.lit("Pending"))
         .drop("closest_permit_coordinates"))
  
 
