@@ -8,6 +8,9 @@ from pyspark.sql import SparkSession  # noqa: E402
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
+    TableManager,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.metadata_healthcheck_step.components.metadata_healthcheck import (  # noqa: E402
     MetadataHealthChecker,
 )
@@ -17,7 +20,20 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_metadata_healthcheck_step(sparkSession, catalog, schema, job_process_time):
-    MetadataHealthChecker(sparkSession, catalog, schema, job_process_time)
+    metadataHealthCheker = MetadataHealthChecker(sparkSession, catalog, schema, job_process_time)
+    tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
+
+    bronze_frame_metadata_df = metadataHealthCheker.load_bronze_metadata(table_name="bronze_frame_metadata")
+    metadataHealthCheker.process_and_save_frame_metadata(bronze_frame_metadata=bronze_frame_metadata_df)
+    tableManager.update_status(
+        table_name="bronze_frame_metadata", job_process_time=job_process_time
+    )
+
+    _ = metadataHealthCheker.load_bronze_metadata(table_name="bronze_detection_metadata")
+    metadataHealthCheker.process_and_save_detection_metadata()
+    tableManager.update_status(table_name="bronze_detection_metadata", job_process_time=job_process_time)
+
+
 
 
 if __name__ == "__main__":
