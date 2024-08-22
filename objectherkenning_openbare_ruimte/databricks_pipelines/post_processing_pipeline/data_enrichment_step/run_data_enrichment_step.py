@@ -71,7 +71,7 @@ def run_data_enrichment_step(
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
 
     print(
-        f"03: Number of containers: {len(containers_coordinates_geometry)}. Number of vulnerable bridges: {len(bridgesHandler.get_bridges_coordinates())}."
+        f"03: Number of containers: {len(containers_coordinates_geometry)}."
     )
     # Enrich with bridges data
     (
@@ -86,16 +86,12 @@ def run_data_enrichment_step(
         bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
     )
 
-    clustering.add_column(
-        column_name="closest_bridge_distance", values=closest_bridges_distances
-    )
-    clustering.add_column(column_name="closest_bridge_id", values=closest_bridges_ids)
-    clustering.add_column(
-        column_name="closest_bridge_coordinates", values=closest_bridges_coordinates
-    )
-    clustering.add_column(
-        column_name="closest_bridge_linestring_wkt", values=closest_bridges_wkts
-    )
+    clustering.add_columns({
+        "closest_bridge_distance": closest_bridges_distances,
+        "closest_bridge_id": closest_bridges_ids,
+        "closest_bridge_coordinates": closest_bridges_coordinates,
+        "closest_bridge_linestring_wkt": closest_bridges_wkts
+    })
 
     # Enrich with decos data
     date_to_query = datetime.today().strftime("%Y-%m-%d")
@@ -113,13 +109,11 @@ def run_data_enrichment_step(
         )
     )
 
-    clustering.add_column(
-        column_name="closest_permit_distance", values=permit_distances
-    )
-    clustering.add_column(column_name="closest_permit_id", values=closest_permits)
-    clustering.add_column(
-        column_name="closest_permit_coordinates", values=closest_permits_coordinates
-    )
+    clustering.add_columns({
+        "closest_permit_distance": permit_distances,
+        "closest_permit_id": closest_permits,
+        "closest_permit_coordinates": closest_permits_coordinates
+    })
 
     # Enrich with score
     scores = [
@@ -139,37 +133,27 @@ def run_data_enrichment_step(
         path=path,
     )
 
-    clustering.df_joined = clustering.df_joined.select(
-        [
-            "detection_id",
-            "object_class",
-            "gps_lat",
-            "gps_lon",
-            "closest_bridge_distance",
-            "closest_bridge_id",
-            "closest_permit_distance",
-            "closest_permit_id",
-            "closest_permit_coordinates",
-            "score",
-        ]
-    )
-
     clustering.df_joined = (
-        clustering.df_joined.withColumnRenamed("gps_lat", "object_lat")
-        .withColumnRenamed("gps_lon", "object_lon")
-        .withColumnRenamed("closest_bridge_distance", "distance_closest_bridge")
-        .withColumnRenamed("closest_permit_distance", "distance_closest_permit")
+    clustering.df_joined
+    .select(
+        col("detection_id"),
+        col("object_class"),
+        col("gps_lat").alias("object_lat"),
+        col("gps_lon").alias("object_lon"),
+        col("closest_bridge_distance").alias("distance_closest_bridge"),
+        col("closest_bridge_id"),
+        col("closest_permit_distance").alias("distance_closest_permit"),
+        col("closest_permit_id"),
+        col("closest_permit_coordinates"),
+        col("score")
     )
+)
 
-    clustering.df_joined = clustering.df_joined.withColumn(
-        "closest_permit_lat", F.col("closest_permit_coordinates._1")
-    )
-    clustering.df_joined = clustering.df_joined.withColumn(
-        "closest_permit_lon", F.col("closest_permit_coordinates._2")
-    )
-    clustering.df_joined = clustering.df_joined.withColumn("status", F.lit("Pending"))
-
-    clustering.df_joined = clustering.df_joined.drop("closest_permit_coordinates")
+    clustering.df_joined = clustering.df_joined.withColumn("closest_permit_lat", F.col("closest_permit_coordinates._1")
+        .withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2")
+        .withColumn("status", F.lit("Pending")
+        .drop("closest_permit_coordinates"))
+ 
 
     clustering.df_joined = (
         clustering.df_joined.withColumn(
@@ -189,12 +173,8 @@ def run_data_enrichment_step(
         .withColumn("score", F.col("score").cast("float"))
     )
 
-    # Store data in silver_object_per_day
-    clustering.df_joined.write.mode("append").saveAsTable(
-        f"{clustering.catalog}.oor.silver_objects_per_day"
-    )
-    print(
-        f"03: Appended {clustering.df_joined.count()} rows to silver_objects_per_day."
+    tableManager.write_to_table(
+        clustering.df_joined, table_name="silver_objects_per_day"
     )
     tableManager.update_status(
         table_name="silver_frame_metadata", job_process_time=job_process_time
@@ -202,7 +182,6 @@ def run_data_enrichment_step(
     tableManager.update_status(
         table_name="silver_detection_metadata", job_process_time=job_process_time
     )
-
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
     """

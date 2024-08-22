@@ -134,6 +134,10 @@ class Clustering:
             b, self.df_joined.row_idx == b.row_idx
         ).drop("row_idx")
 
+    def add_columns(self, columns_dict):
+        for column_name, values in columns_dict.items():
+            self.add_column(column_name, values)
+
     def _cluster_points(self, eps, min_samples=MIN_SAMPLES):
         """
         Cluster points in a DataFrame using DBSCAN.
