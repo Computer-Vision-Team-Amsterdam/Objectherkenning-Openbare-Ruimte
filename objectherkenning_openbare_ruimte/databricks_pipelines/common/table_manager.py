@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lit
 
 
 class TableManager:
@@ -9,32 +10,67 @@ class TableManager:
         self.catalog = catalog
         self.schema = schema
 
+    # def update_status(
+    #     self, table_name: str, job_process_time: datetime, exclude_ids=[]
+    # ):
+    #     count_pending_query = f"""
+    #     SELECT COUNT(*) as pending_count
+    #     FROM {self.catalog}.{self.schema}.{table_name}
+    #     WHERE status = 'Pending'
+    #     """
+    #     total_pending_before = self.spark.sql(count_pending_query).collect()[0][
+    #         "pending_count"
+    #     ]
+
+    #     update_query = f"""
+    #     UPDATE {self.catalog}.{self.schema}.{table_name}
+    #     SET status = 'Processed', processed_at = '{job_process_time}'
+    #     WHERE status = 'Pending'
+    #     """
+    #     if exclude_ids:
+    #         exclude_ids_str = ", ".join(map(str, exclude_ids))
+    #         update_query += f" AND id NOT IN ({exclude_ids_str})"
+
+    #     self.spark.sql(update_query)
+
+    #     total_pending_after = self.spark.sql(count_pending_query).collect()[0][
+    #         "pending_count"
+    #     ]
+    #     updated_rows = total_pending_before - total_pending_after
+
+    #     print(
+    #         f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
+    #     )
+
     def update_status(
         self, table_name: str, job_process_time: datetime, exclude_ids=[]
     ):
-        count_pending_query = f"""
-        SELECT COUNT(*) as pending_count
-        FROM {self.catalog}.{self.schema}.{table_name}
-        WHERE status = 'Pending'
-        """
-        total_pending_before = self.spark.sql(count_pending_query).collect()[0][
-            "pending_count"
-        ]
+        # Load the table as a DataFrame
+        table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
 
-        update_query = f"""
-        UPDATE {self.catalog}.{self.schema}.{table_name}
-        SET status = 'Processed', processed_at = '{job_process_time}'
-        WHERE status = 'Pending'
-        """
-        if exclude_ids:
-            exclude_ids_str = ", ".join(map(str, exclude_ids))
-            update_query += f" AND id NOT IN ({exclude_ids_str})"
+        # Filter the DataFrame for rows that need to be updated
+        pending_df = table_df.filter(
+            (col("status") == "Pending") & (~col("id").isin(exclude_ids))
+        )
 
-        self.spark.sql(update_query)
+        # Count the number of rows to be updated
+        total_pending_before = pending_df.count()
 
-        total_pending_after = self.spark.sql(count_pending_query).collect()[0][
-            "pending_count"
-        ]
+        # Update the DataFrame
+        updated_df = pending_df.withColumn("status", lit("Processed")).withColumn(
+            "processed_at", lit(job_process_time)
+        )
+
+        # Write the updated DataFrame back to the table
+        updated_df.write.mode("overwrite").insertInto(
+            f"{self.catalog}.{self.schema}.{table_name}"
+        )
+
+        # Load the table again to get the updated count
+        table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
+        total_pending_after = table_df.filter(col("status") == "Pending").count()
+
+        # Calculate the number of updated rows
         updated_rows = total_pending_before - total_pending_after
 
         print(
@@ -43,12 +79,12 @@ class TableManager:
 
     def write_to_table(self, df, table_name, mode="append"):
         df.write.mode(mode).saveAsTable(f"{self.catalog}.{self.schema}.{table_name}")
-        print(f"Appended {df.count()} rows to {table_name}.")    
+        print(f"Appended {df.count()} rows to {table_name}.")
 
     @staticmethod
     def compare_dataframes(df1, df2, df1_name, df2_name):
         print(f"Comparing dataframes {df1_name} and {df2_name}.")
-        print(50*"-")    
+        print(50 * "-")
 
         same_count = df1.count() == df2.count()
         print(f"Same number of rows: {same_count}")
@@ -70,4 +106,4 @@ class TableManager:
             df1.printSchema()
             print(f"Schema of {df2_name}:")
             df2.printSchema()
-        print(50*"-")       
+        print(50 * "-")
