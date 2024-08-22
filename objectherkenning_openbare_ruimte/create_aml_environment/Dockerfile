@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04:20240709.v1 AS base-image
+FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS base-image
 
 # Upgrade and install system libraries
 RUN apt -y update \
@@ -10,6 +10,8 @@ RUN apt -y update \
         libsm6 \
         libxext6 \
         libpq-dev \
+        python3-venv \
+        python3-pip \
     && apt upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 

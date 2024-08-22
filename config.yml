@@ -3,13 +3,13 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 48
+  env_version: 50
   src_dir: "."
 
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
   device_id: "Luna"
-  shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
+  shared_access_key: "SHARED_ACCESS_KEY_IOT"
 
 convert_dataset:
   input_old_datastore: "old_datastore"
@@ -27,8 +27,8 @@ convert_annotations:
 data_delivery_pipeline:
   detections_path: "/detections"
   metadata_path: "/temp_metadata"
-  ml_model_id: "{ML_MODEL_ID}"
-  project_version: "{PROJECT_VERSION}"
+  ml_model_id: "ML_MODEL_ID"
+  project_version: "PROJECT_VERSION"
   sleep_time: 30
 
 detection_pipeline:
@@ -112,5 +112,5 @@ logging:
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: "{AI_INSTRUMENTATION_KEY}"
+  ai_instrumentation_key: "AI_INSTRUMENTATION_KEY"
   luna_logs_dir: "/cvt_logs"
