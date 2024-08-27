@@ -219,5 +219,8 @@ if __name__ == "__main__":
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
-        job_process_time=get_job_process_time(is_first_pipeline_step=False),
+        job_process_time=get_job_process_time(
+            settings["databricks_pipelines"]["job_process_time"],
+            is_first_pipeline_step=False,
+        ),
     )

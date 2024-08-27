@@ -90,5 +90,8 @@ if __name__ == "__main__":
         client_secret_name=settings["signalen"]["client_secret_name"],
         access_token_url=settings["signalen"]["access_token_url"],
         base_url=settings["signalen"]["base_url"],
-        job_process_time=get_job_process_time(is_first_pipeline_step=False),
+        job_process_time=get_job_process_time(
+            settings["databricks_pipelines"]["job_process_time"],
+            is_first_pipeline_step=False,
+        ),
     )

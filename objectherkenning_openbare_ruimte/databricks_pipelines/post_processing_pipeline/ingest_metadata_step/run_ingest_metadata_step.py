@@ -65,5 +65,8 @@ if __name__ == "__main__":
         device_id=settings["device_id"],
         ckpt_frames_relative_path=settings["ckpt_frames_relative_path"],
         ckpt_detections_relative_path=settings["ckpt_detections_relative_path"],
-        job_process_time=get_job_process_time(is_first_pipeline_step=True),
+        job_process_time=get_job_process_time(
+            settings["databricks_pipelines"]["job_process_time"],
+            is_first_pipeline_step=True,
+        ),
     )

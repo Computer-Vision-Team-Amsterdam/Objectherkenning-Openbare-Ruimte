@@ -75,5 +75,8 @@ if __name__ == "__main__":
         sparkSession=sparkSession,
         catalog=settings["catalog"],
         schema=settings["schema"],
-        job_process_time=get_job_process_time(is_first_pipeline_step=False),
+        job_process_time=get_job_process_time(
+            settings["databricks_pipelines"]["job_process_time"],
+            is_first_pipeline_step=False,
+        ),
     )

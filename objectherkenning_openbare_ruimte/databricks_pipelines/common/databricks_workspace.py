@@ -3,10 +3,6 @@ from datetime import datetime
 
 from pyspark.sql import SparkSession
 
-from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
-    load_settings,
-)
-
 
 def get_databricks_environment(spark: SparkSession):
     """
@@ -44,11 +40,8 @@ def get_catalog_name(spark: SparkSession):
     return catalog_name
 
 
-def get_job_process_time(is_first_pipeline_step):
+def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
     if is_first_pipeline_step:
-        job_process_time_settings = load_settings("../../../config.yml")[
-            "databricks_pipelines"
-        ]["job_process_time"]
         if job_process_time_settings["auto"] == "true":
             return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         else:
