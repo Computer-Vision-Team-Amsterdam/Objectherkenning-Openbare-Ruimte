@@ -40,7 +40,7 @@ def run_ingest_metadata_step(
     dataLoader.ingest_frame_metadata()
     dataLoader.ingest_detection_metadata()
     dbutils.jobs.taskValues.set(  # type: ignore[name-defined] # noqa: F821
-        key="job_process_time", value=dataLoader.job_process_time
+        key="job_process_time", value=dataLoader.job_process_time.iso_format()
     )
 
     # Cleanup temporary files
