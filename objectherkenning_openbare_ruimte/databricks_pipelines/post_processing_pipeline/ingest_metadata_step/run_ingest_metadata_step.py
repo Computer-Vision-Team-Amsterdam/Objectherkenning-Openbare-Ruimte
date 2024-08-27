@@ -7,6 +7,7 @@ from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
+    get_job_process_time,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.ingest_metadata_step.components.data_ingestion import (  # noqa: E402
     DataLoader,
@@ -64,5 +65,5 @@ if __name__ == "__main__":
         device_id=settings["device_id"],
         ckpt_frames_relative_path=settings["ckpt_frames_relative_path"],
         ckpt_detections_relative_path=settings["ckpt_detections_relative_path"],
-        job_process_time="2024-07-30 13:00:00",
+        job_process_time=get_job_process_time(is_first_pipeline_step=True),
     )

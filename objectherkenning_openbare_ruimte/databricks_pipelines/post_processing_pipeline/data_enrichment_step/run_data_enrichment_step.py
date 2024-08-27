@@ -15,6 +15,7 @@ from pyspark.sql.functions import col  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
+    get_job_process_time,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
     TableManager,
@@ -71,9 +72,7 @@ def run_data_enrichment_step(
 
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
 
-    print(
-        f"03: Number of containers: {len(containers_coordinates_geometry)}."
-    )
+    print(f"03: Number of containers: {len(containers_coordinates_geometry)}.")
     # Enrich with bridges data
     (
         closest_bridges_distances,
@@ -87,12 +86,14 @@ def run_data_enrichment_step(
         bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
     )
 
-    clustering.add_columns({
-        "closest_bridge_distance": closest_bridges_distances,
-        "closest_bridge_id": closest_bridges_ids,
-        "closest_bridge_coordinates": closest_bridges_coordinates,
-        "closest_bridge_linestring_wkt": closest_bridges_wkts
-    })
+    clustering.add_columns(
+        {
+            "closest_bridge_distance": closest_bridges_distances,
+            "closest_bridge_id": closest_bridges_ids,
+            "closest_bridge_coordinates": closest_bridges_coordinates,
+            "closest_bridge_linestring_wkt": closest_bridges_wkts,
+        }
+    )
 
     # Enrich with decos data
     date_to_query = datetime.today().strftime("%Y-%m-%d")
@@ -110,11 +111,13 @@ def run_data_enrichment_step(
         )
     )
 
-    clustering.add_columns({
-        "closest_permit_distance": permit_distances,
-        "closest_permit_id": closest_permits,
-        "closest_permit_coordinates": closest_permits_coordinates
-    })
+    clustering.add_columns(
+        {
+            "closest_permit_distance": permit_distances,
+            "closest_permit_id": closest_permits,
+            "closest_permit_coordinates": closest_permits_coordinates,
+        }
+    )
 
     # Enrich with score
     scores = [
@@ -134,9 +137,7 @@ def run_data_enrichment_step(
         path=path,
     )
 
-    clustering.df_joined = (
-    clustering.df_joined
-    .select(
+    clustering.df_joined = clustering.df_joined.select(
         col("detection_id"),
         col("object_class"),
         col("gps_lat").alias("object_lat"),
@@ -146,15 +147,17 @@ def run_data_enrichment_step(
         col("closest_permit_distance").alias("distance_closest_permit"),
         col("closest_permit_id"),
         col("closest_permit_coordinates"),
-        col("score")
+        col("score"),
     )
-)
 
-    clustering.df_joined = (clustering.df_joined.withColumn("closest_permit_lat", F.col("closest_permit_coordinates._1"))
+    clustering.df_joined = (
+        clustering.df_joined.withColumn(
+            "closest_permit_lat", F.col("closest_permit_coordinates._1")
+        )
         .withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2"))
         .withColumn("status", F.lit("Pending"))
-        .drop("closest_permit_coordinates"))
- 
+        .drop("closest_permit_coordinates")
+    )
 
     clustering.df_joined = (
         clustering.df_joined.withColumn(
@@ -183,6 +186,7 @@ def run_data_enrichment_step(
     tableManager.update_status(
         table_name="silver_detection_metadata", job_process_time=job_process_time
     )
+
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
     """
@@ -215,5 +219,5 @@ if __name__ == "__main__":
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
-        job_process_time="2024-07-30 13:00:00",
+        job_process_time=get_job_process_time(is_first_pipeline_step=False),
     )
