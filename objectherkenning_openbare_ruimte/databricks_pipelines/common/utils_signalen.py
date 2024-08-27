@@ -58,7 +58,7 @@ class SignalConnectionConfigurer:
             "client_secret": self._get_client_secret(),
             "grant_type": "client_credentials",
         }
-        response = requests.post(self.access_token_url, data=payload)
+        response = requests.post(self.access_token_url, data=payload, timeout=60)
         if response.status_code == 200:
             print("The server successfully answered the access token request.")
             return response.json()["access_token"]
@@ -115,7 +115,10 @@ class SignalHandler:
             an HTTPError will be raised with the response status and message.
         """
         response = requests.get(
-            self.base_url + f"/{sig_id}", headers=self.headers, verify=self.verify_ssl
+            self.base_url + f"/{sig_id}",
+            headers=self.headers,
+            verify=self.verify_ssl,
+            timeout=60,
         )
 
         if response.status_code == 200:
@@ -149,6 +152,7 @@ class SignalHandler:
             json=json_content,
             headers=self.headers,
             verify=self.verify_ssl,
+            timeout=60,
         )
 
         if response.status_code == 201:
@@ -193,6 +197,7 @@ class SignalHandler:
             json=json_content,
             headers=self.headers,
             verify=self.verify_ssl,
+            timeout=60,
         )
 
         if response.status_code == 200:
@@ -239,6 +244,7 @@ class SignalHandler:
             files=files,
             headers=self.headers,
             verify=self.verify_ssl,
+            timeout=60,
         )
 
         if response.status_code == 201:
@@ -373,7 +379,7 @@ class SignalHandler:
                 f"{max_building_search_radius}&srid=4326&detailed=1"
             )
 
-            response = requests.get(bag_url)
+            response = requests.get(bag_url, timeout=60)
             if response.status_code == 200:
                 response_content = json.loads(response.content)
                 if response_content["count"] > 0:
@@ -453,13 +459,13 @@ class SignalHandler:
                                 SELECT {self.catalog_name}.oor.silver_detection_metadata.image_name
                                 FROM {self.catalog_name}.oor.silver_detection_metadata
                                 WHERE {self.catalog_name}.oor.silver_detection_metadata.id = {detection_id}
-                                """
+                                """  # nosec
         image_name_result_df = spark.sql(fetch_image_name_query)  # noqa: F405
 
         # Extract the image name from the result
         image_basename = image_name_result_df.collect()[0]["image_name"]
 
-        fetch_date_of_image_upload = f"""SELECT {self.catalog_name}.oor.silver_frame_metadata.gps_date FROM {self.catalog_name}.oor.silver_frame_metadata WHERE {self.catalog_name}.oor.silver_frame_metadata.image_name = '{image_basename}'"""
+        fetch_date_of_image_upload = f"""SELECT {self.catalog_name}.oor.silver_frame_metadata.gps_date FROM {self.catalog_name}.oor.silver_frame_metadata WHERE {self.catalog_name}.oor.silver_frame_metadata.image_name = '{image_basename}'"""  # nosec
 
         date_of_image_upload_df = spark.sql(fetch_date_of_image_upload)  # noqa: F405
         date_of_image_upload_dmy = date_of_image_upload_df.collect()[0]["gps_date"]
@@ -567,14 +573,14 @@ class SignalHandler:
                 f"04: Appended {len(unsuccessful_notifications)} rows to silver_objects_per_day_quarantine."
             )
 
-    def get_top_pending_records(self, table_name, limit=10):
+    def get_top_pending_records(self, table_name, limit=20):
         # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
         select_query = f"""
         SELECT * FROM {self.catalog_name}.oor.{table_name}
         WHERE status = 'Pending' AND object_class = 2
         ORDER BY score DESC
         LIMIT {limit}
-        """
+        """  # nosec
         results = self.spark.sql(select_query)
         return results
 
@@ -592,7 +598,7 @@ class SignalHandler:
         return results
 
     def get_pending_signalen_notifications(self):
-        query_signalen_notifications = f"SELECT * FROM {self.catalog_name}.{self.schema}.gold_signal_notifications WHERE status='Pending'"
+        query_signalen_notifications = f"SELECT * FROM {self.catalog_name}.{self.schema}.gold_signal_notifications WHERE status='Pending'"  # nosec
         signalen_notifications = self.spark.sql(query_signalen_notifications)
         print(
             f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications."
@@ -610,6 +616,6 @@ class SignalHandler:
         return signalen_notifications
 
     def get_signalen_feedback(self):
-        query_signalen_feedback = f"SELECT * FROM {self.catalog_name}.{self.schema}.bronze_signal_notifications_feedback"
+        query_signalen_feedback = f"SELECT * FROM {self.catalog_name}.{self.schema}.bronze_signal_notifications_feedback"  # nosec
         signalen_feedback = self.spark.sql(query_signalen_feedback)
         return signalen_feedback

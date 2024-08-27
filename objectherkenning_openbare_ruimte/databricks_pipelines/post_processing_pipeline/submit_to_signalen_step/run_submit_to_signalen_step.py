@@ -45,7 +45,7 @@ def run_submit_to_signalen_step(
 
     # Get top pending records
     top_scores_df = signalHandler.get_top_pending_records(
-        table_name="silver_objects_per_day", limit=10
+        table_name="silver_objects_per_day", limit=20
     )
 
     # Check if there are records to process
