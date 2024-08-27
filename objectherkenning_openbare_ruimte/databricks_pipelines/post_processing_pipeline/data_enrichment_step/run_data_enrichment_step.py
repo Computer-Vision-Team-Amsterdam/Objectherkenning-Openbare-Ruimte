@@ -210,6 +210,10 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
+    job_process_time_settings = load_settings(config_file_path)["databricks_pipelines"][
+        "job_process_time"
+    ]
+
     run_data_enrichment_step(
         sparkSession=sparkSession,
         catalog=settings["catalog"],
@@ -220,7 +224,7 @@ if __name__ == "__main__":
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
         job_process_time=get_job_process_time(
-            settings["databricks_pipelines"]["job_process_time"],
+            job_process_time_settings,
             is_first_pipeline_step=False,
         ),
     )

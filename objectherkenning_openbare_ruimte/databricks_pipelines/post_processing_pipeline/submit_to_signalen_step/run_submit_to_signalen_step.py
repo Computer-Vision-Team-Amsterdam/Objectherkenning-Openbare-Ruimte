@@ -82,6 +82,10 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
+    job_process_time_settings = load_settings(config_file_path)["databricks_pipelines"][
+        "job_process_time"
+    ]
+
     run_submit_to_signalen_step(
         sparkSession=sparkSession,
         catalog=settings["catalog"],
@@ -91,7 +95,7 @@ if __name__ == "__main__":
         access_token_url=settings["signalen"]["access_token_url"],
         base_url=settings["signalen"]["base_url"],
         job_process_time=get_job_process_time(
-            settings["databricks_pipelines"]["job_process_time"],
+            job_process_time_settings,
             is_first_pipeline_step=False,
         ),
     )

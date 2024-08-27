@@ -71,12 +71,16 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
+    job_process_time_settings = load_settings(config_file_path)["databricks_pipelines"][
+        "job_process_time"
+    ]
+
     run_metadata_healthcheck_step(
         sparkSession=sparkSession,
         catalog=settings["catalog"],
         schema=settings["schema"],
         job_process_time=get_job_process_time(
-            settings["databricks_pipelines"]["job_process_time"],
+            job_process_time_settings,
             is_first_pipeline_step=False,
         ),
     )
