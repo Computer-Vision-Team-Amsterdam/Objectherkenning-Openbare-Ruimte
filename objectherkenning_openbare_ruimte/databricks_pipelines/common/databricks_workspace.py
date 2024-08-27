@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import SparkSession
 
 
@@ -62,7 +63,7 @@ def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
             custom_job_process_time = job_process_time_settings[
                 "custom_job_process_time"
             ]
-            job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821
+            job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
                 taskKey="data-ingestion",
                 key="job_process_time",
                 default=custom_job_process_time,
