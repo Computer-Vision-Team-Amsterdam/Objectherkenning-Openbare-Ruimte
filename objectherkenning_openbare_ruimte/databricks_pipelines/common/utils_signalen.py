@@ -577,7 +577,7 @@ class SignalHandler:
         # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
         select_query = f"""
         SELECT * FROM {self.catalog_name}.oor.{table_name}
-        WHERE status = 'Pending' AND object_class = 2
+        WHERE status = 'Pending' AND object_class = 2 AND score >= 0.4
         ORDER BY score DESC
         LIMIT {limit}
         """  # nosec
