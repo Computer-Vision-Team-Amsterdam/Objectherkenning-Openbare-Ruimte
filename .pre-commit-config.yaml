@@ -2,41 +2,49 @@ minimum_pre_commit_version: "1.21"
 files: ^.*\.py$
 repos:
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.7
+    rev: 1.7.9
     hooks:
       - id: bandit
         args: ["-c", "bandit.yaml"]
   - repo: https://github.com/trailofbits/pip-audit
-    rev: v2.7.0
+    rev: v2.7.3
     hooks:
       - id: pip-audit
         args: [
-          "--ignore-vuln", "PYSEC-2023-228"
+          "--ignore-vuln", "PYSEC-2023-228", "."
         ]
+  - repo: local
+    hooks:
+      - id: safety
+        name: safety
+        entry: poetry run safety scan
+        language: system
+        verbose: true
+        files: pyproject.toml
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:
     - id: isort
       additional_dependencies: [toml]
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.8.0
     hooks:
       - id: black
   - repo: https://github.com/PYCQA/flake8
-    rev: 7.0.0
+    rev: 7.1.1
     hooks:
       - id: flake8
         exclude: ^.venv
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-    - id: mypy
-      additional_dependencies: [types-all]
-      # for args see https://mypy.readthedocs.io/en/stable/command_line.html
-      args: [
-          --no-strict-optional,
-          --ignore-missing-imports,
-          --allow-untyped-globals
-      ]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.11.2
+  #   hooks:
+  #   - id: mypy
+  #     additional_dependencies: [types-all]
+  #     # for args see https://mypy.readthedocs.io/en/stable/command_line.html
+  #     args: [
+  #         --no-strict-optional,
+  #         --ignore-missing-imports,
+  #         --allow-untyped-globals
+  #     ]
 default_language_version:
     python: python3

@@ -1,13 +1,9 @@
 import logging
-import sys
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, Iterable, Tuple
 
 import numpy as np
 import numpy.typing as npt
 from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
-from tqdm import tqdm
-
-sys.path.append("../../..")
 
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (  # noqa: E402
     BoxSize,
@@ -85,11 +81,9 @@ class EvaluatePixelWise:
         ground_truth_path: str,
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
-        hide_progress: bool = False,
         upper_half: bool = False,
     ):
         self.img_shape = image_shape
-        self.tqdm_disable = True if hide_progress else None
         self.upper_half = upper_half
         img_area = self.img_shape[0] * self.img_shape[1]
         if ground_truth_path.endswith(".json"):
@@ -113,7 +107,6 @@ class EvaluatePixelWise:
         self,
         true_labels: Dict[str, npt.NDArray],
         predicted_labels: Dict[str, npt.NDArray],
-        tqdm_prefix: str = "",
     ):
         """
         Calculates per pixel statistics (tp, tn, fp, fn, precision, recall, f1 score)
@@ -134,9 +127,7 @@ class EvaluatePixelWise:
 
         (img_width, img_height) = self.img_shape
 
-        for image_id in tqdm(
-            true_labels.keys(), desc=tqdm_prefix, unit="img", disable=self.tqdm_disable
-        ):
+        for image_id in true_labels.keys():
             tba_true_mask = generate_binary_mask(
                 true_labels[image_id][:, 1:5],
                 image_width=img_width,
@@ -197,60 +188,11 @@ class EvaluatePixelWise:
                     .get_filtered_labels()
                 )
 
-                tqdm_prefix = f"{target_class.name}, {box_size_name}"
                 results[f"{target_class.name}_{box_size_name}"] = (
                     self._get_per_pixel_statistics(
                         true_labels=true_target_class_size,
                         predicted_labels=predicted_target_class,
-                        tqdm_prefix=tqdm_prefix,
                     )
                 )
 
         return results
-
-    @staticmethod
-    def store_tba_results(
-        results: Union[Dict[str, Dict[str, float]], List[Dict[str, Dict[str, float]]]],
-        model_name: Union[str, List[str]] = "Default",
-        markdown_output_path: str = "tba_results.md",
-    ):
-        """
-        Store information from the results dict into a markdown file.
-        In this case, the recall from the Total Blurred Area is the only interest number.
-
-        Parameters
-        ----------
-        results: dictionary with results
-        markdown_output_path
-
-        Returns
-        -------
-
-        """
-        if not isinstance(results, list):
-            results = [results]
-        if not isinstance(model_name, list):
-            model_name = [model_name] * len(results)
-        elif len(model_name) != len(results):
-            print("Mismatch between 'results' and 'model_name': not the same length.")
-            return
-
-        with open(markdown_output_path, "w") as f:
-            f.write(
-                " Model | Person Small | Person Medium | Person Large | Person ALL |"
-                " License Plate Small |  License Plate Medium  | License Plate Large | Licence Plate ALL |\n"
-            )
-            f.write(
-                "| ----- | ----- | ----- |  ----- | ----- | ----- | ----- | ----- | ----- |\n"
-            )
-            for model, rslt in zip(model_name, results):
-                f.write(
-                    f'| {model} | {rslt["person_small"]["recall"]:.3f} | {rslt["person_medium"]["recall"]:.3f} '
-                    f'| {rslt["person_large"]["recall"]:.3f} | {rslt["person_all"]["recall"]:.3f} '
-                    f'| {rslt["license_plate_small"]["recall"]:.3f} | {rslt["license_plate_medium"]["recall"]:.3f} '
-                    f'| {rslt["license_plate_large"]["recall"]:.3f} | {rslt["license_plate_all"]["recall"]:.3f}\n'
-                )
-            f.write(
-                f"\nThresholds used for these calculations: Person=`{BoxSize.from_objectclass(ObjectClass.person)}`, "
-                f"License Plate=`{BoxSize.from_objectclass(ObjectClass.license_plate)}`."
-            )
