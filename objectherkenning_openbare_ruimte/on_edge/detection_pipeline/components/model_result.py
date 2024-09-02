@@ -6,7 +6,7 @@ from typing import List, Tuple, Union
 import cv2
 import numpy as np
 import numpy.typing as npt
-from ultralytics.engine.results import Results
+from ultralytics.engine.results import Boxes, Results
 
 logger = logging.getLogger("model_result")
 
@@ -57,10 +57,11 @@ class ModelResult:
             f.write(annotation_str)
         logger.debug("Saved result from model.")
 
-    def _get_annotation_string_from_boxes(self) -> str:
+    def _get_annotation_string_from_boxes(boxes: Boxes) -> str:
+        boxes = boxes.cpu()
         annotation_lines = []
 
-        for box in self.boxes:
+        for box in boxes:
             cls = int(box.cls.squeeze())
             conf = float(box.conf.squeeze())
             tracking_id = int(box.id.squeeze()) if box.is_track else -1
