@@ -47,7 +47,7 @@ docker pull multiarch/qemu-user-static
 docker run --rm --privileged multiarch/qemu-user-static:register --reset
 ```
 ```bash
-docker build . --platform linux/arm64 --pull --load -t {IMAGE_NAME} --build-arg ML_MODEL_ID_arg=ML_MODEL_ID --build-arg PROJECT_VERSION_arg=PROJECT_VERSION
+docker build . --network host --platform linux/arm64 --pull --load -t {IMAGE_NAME} --build-arg ML_MODEL_ID_arg=ML_MODEL_ID --build-arg PROJECT_VERSION_arg=PROJECT_VERSION
 docker save -o {PATH}/oor-docker-image.tar {IMAGE_NAME}
 ```
 Remember to replace with the correct values: ML_MODEL_ID, PROJECT_VERSION.
