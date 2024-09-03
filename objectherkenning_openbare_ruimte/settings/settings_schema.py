@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -119,17 +119,46 @@ class LoggingSpec(SettingsSpecModel):
 
 class TrainingModelParameters(SettingsSpecModel):
     img_size: int = 1024
-    batch: int = -1
+    batch: Union[float, int] = -1
     epochs: int = 100
     patience: int = 25
     n_classes: int = 3
+    cos_lr: bool = False
+    dropout: float = 0.0
+    seed: int = 0
+    box: float = 7.5
+    cls: float = 0.5
+    dfl: float = 1.5
     name_classes: List[str] = ["person", "license plate", "container"]
+    rect: bool = False
 
 
 class TrainingPipelineSpec(SettingsSpecModel):
     model_parameters: TrainingModelParameters
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
+
+
+class SweepModelParameters(SettingsSpecModel):
+    img_size: int = 1024
+    batch: Union[float, int] = -1
+    epochs: int = 100
+    patience: int = 25
+    n_classes: int = 3
+    name_classes: List[str] = ["person", "license plate", "container"]
+    rect: bool = False
+
+
+class SweepPipelineSpec(SettingsSpecModel):
+    model_parameters: SweepModelParameters
+    sweep_trials: int = 1
+    inputs: Dict[str, str] = None
+    outputs: Dict[str, str] = None
+
+
+class WandbSpec(SettingsSpecModel):
+    api_key: str
+    mode: str = "disabled"
 
 
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
@@ -148,3 +177,5 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     frame_extraction: FrameExtractionSpec
     logging: LoggingSpec = LoggingSpec()
     training_pipeline: TrainingPipelineSpec = None
+    sweep_pipeline: SweepPipelineSpec = None
+    wandb: WandbSpec = None

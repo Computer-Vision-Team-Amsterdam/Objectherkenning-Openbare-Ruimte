@@ -33,8 +33,9 @@ setuptools = {version = "^70.2.0", source = "PyPI"}
 torch = {version = "^2.2.1", source="torch"}
 torchaudio = {version = "^2.2.1", source="torch"}
 torchvision = {version = "^0.17.1", source="torch"}
-ultralytics = {version = "^8.1.35", source = "PyPI"}
+ultralytics = {version = "^8.2.76", source = "PyPI"}
 urllib3 = {version = "1.26.19", source = "PyPI"}
+wandb = "^0.17.5"
 
 [[tool.poetry.source]]
 name = "torch"

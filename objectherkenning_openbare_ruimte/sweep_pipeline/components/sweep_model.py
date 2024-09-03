@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+from typing import Any, Dict
 
 import wandb
 import yaml
@@ -25,20 +27,20 @@ aml_experiment_settings = settings["aml_experiment_details"]
 
 
 @command_component(
-    name="train_model",
-    display_name="Train a YOLOv8 model.",
+    name="sweep_model",
+    display_name="Perform HP sweep with wandb on a YOLOv8 model.",
     environment=f"azureml:{aml_experiment_settings['env_name']}:{aml_experiment_settings['env_version']}",
     code="../../../",
     is_deterministic=False,
 )
-def train_model(
+def sweep_model(
     mounted_dataset: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
     model_weights: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
     yolo_yaml_path: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
     project_path: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
 ):
     """
-    Pipeline step to train a YOLOv8 model.
+    Pipeline step to perform hyperparameter tuning sweep with wandb on a YOLOv8 model.
 
     Parameters
     ----------
@@ -59,10 +61,9 @@ def train_model(
     """
 
     ultralytics_settings.update({"runs_dir": project_path})
-    wandb.init(job_type="training", config_exclude_keys=["project"])
 
-    n_classes = settings["training_pipeline"]["model_parameters"]["n_classes"]
-    name_classes = settings["training_pipeline"]["model_parameters"]["name_classes"]
+    n_classes = settings["sweep_pipeline"]["model_parameters"]["n_classes"]
+    name_classes = settings["sweep_pipeline"]["model_parameters"]["name_classes"]
     data = dict(
         path=f"{mounted_dataset}",
         train="images/train/",
@@ -75,22 +76,11 @@ def train_model(
     with open(f"{yaml_path}", "w") as outfile:
         yaml.dump(data, outfile, default_flow_style=False)
 
-    model_name = settings["training_pipeline"]["inputs"]["model_name"]
+    model_name = settings["sweep_pipeline"]["inputs"]["model_name"]
     pretrained_model_path = os.path.join(model_weights, model_name)
-    model_parameters = settings["training_pipeline"]["model_parameters"]
+    model_parameters = settings["sweep_pipeline"]["model_parameters"]
+    sweep_trials = settings["sweep_pipeline"]["sweep_trials"]
 
-    model = YOLO(model=pretrained_model_path, task="detect")
-
-    # Add W&B Callback for Ultralytics
-    add_wandb_callback(
-        model,
-        enable_model_checkpointing=False,
-        enable_validation_logging=False,
-        enable_prediction_logging=False,
-        enable_train_validation_logging=False,
-    )
-
-    # Prepare parameters for training
     train_params = {
         "data": yaml_path,
         "epochs": model_parameters.get("epochs", 100),
@@ -98,14 +88,43 @@ def train_model(
         "project": project_path,
         "save_dir": project_path,
         "batch": model_parameters.get("batch", -1),
-        "patience": model_parameters.get("patience", 100),
-        "cos_lr": model_parameters.get("cos_lr", False),
-        "dropout": model_parameters.get("dropout", 0.0),
-        "seed": model_parameters.get("seed", 0),
-        "box": model_parameters.get("box", 7.5),
-        "cls": model_parameters.get("cls", 0.5),
-        "dfl": model_parameters.get("dfl", 1.5),
     }
 
-    # Train the model
-    model.train(**train_params)
+    def extract_parameter_keys(sweep_config: Dict[str, Any]) -> Any:
+        return sweep_config["parameters"].keys()
+
+    def load_sweep_configuration(json_file: str) -> Dict[str, Any]:
+        with open(json_file, "r") as file:
+            config = json.load(file)
+        return config
+
+    # Define the search space
+    config_file = settings["sweep_pipeline"]["inputs"]["sweep_config"]
+    sweep_configuration = load_sweep_configuration(config_file)
+
+    # Start the sweep
+    sweep_id = wandb.sweep(sweep=sweep_configuration)
+
+    def train():
+        with wandb.init(job_type="training"):
+            config = wandb.config
+
+            # Extract parameter keys from the sweep configuration
+            parameter_keys = extract_parameter_keys(sweep_configuration)
+            dynamic_params = {
+                key: value for key, value in config.items() if key in parameter_keys
+            }
+            train_params.update(dynamic_params)
+
+            model = YOLO(model=pretrained_model_path, task="detect")
+
+            add_wandb_callback(
+                model,
+                enable_model_checkpointing=False,
+                enable_validation_logging=False,
+                enable_prediction_logging=False,
+                enable_train_validation_logging=False,
+            )
+            model.train(**train_params)
+
+    wandb.agent(sweep_id, function=train, count=sweep_trials)

@@ -22,7 +22,7 @@ convert_annotations:
   final_datastore_name: converted_new_dataset_oor
   categories_file: categories.json
   separate_labels: True
-  label_folder: prelabeling_new_dataset_oor/labels
+  label_folder: dataset_folder/labels
 
 data_delivery_pipeline:
   detections_path: "/detections"
@@ -89,20 +89,51 @@ frame_extraction:
 
 training_pipeline:
   model_parameters:
-    img_size: 1024
-    batch: -1
-    epochs: 100
-    patience: 25
-    n_classes: 3
-    name_classes: ["person", "license plate", "container"]
+    img_size: 1280
+    batch: 0.85
+    epochs: 500
+    patience: 100
+    n_classes: 5
+    cos_lr: True
+    dropout: 0.0
+    seed: 0
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
   inputs:
-    datastore_path: "first_training_dataset_oor"
-    training_data_rel_path: "first-training-dataset-oor"
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
     model_weights_rel_path: "model"
-    model_name: "yolov8m.pt"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
   outputs:
-    project_datastore_path: "first_training_dataset_oor"
+    project_datastore_path: "dataset_oor_v2_0"
     project_rel_path: "model"
+
+sweep_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 100
+    patience: 100
+    n_classes: 5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  sweep_trials: 30
+  inputs:
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
+    model_weights_rel_path: "model"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    sweep_config: "sweep_config.json"
+  outputs:
+    project_datastore_path: "dataset_oor_v2_0"
+    project_rel_path: "model"
+
+wandb:
+  api_key: ""
+  mode: "online"
 
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
