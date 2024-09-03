@@ -164,8 +164,10 @@ class DataDetection:
                         processed_images_count += 1
                     else:
                         logger.debug(f"Image {image_full_path} not found, skipping.")
-            if target_objects_detected_count:
-                shutil.copyfile(csv_path, os.path.join(detections_path, csv_path.name))
+            logger.debug(
+                f"Copying {csv_path} to {os.path.join(detections_path, csv_path.name)}"
+            )
+            shutil.copyfile(csv_path, os.path.join(detections_path, csv_path.name))
             if metadata_csv_file_path in self.metadata_csv_file_paths_with_errors:
                 self.metadata_csv_file_paths_with_errors.remove(metadata_csv_file_path)
             logger.info(
