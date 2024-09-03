@@ -107,7 +107,7 @@ training_pipeline:
 
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations", "detection_pipeline", "data_delivery_pipeline", "performance_monitoring"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING
