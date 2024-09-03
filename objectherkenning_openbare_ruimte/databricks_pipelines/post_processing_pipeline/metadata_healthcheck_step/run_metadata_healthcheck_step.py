@@ -50,15 +50,44 @@ def run_metadata_healthcheck_step(sparkSession, catalog, schema, job_process_tim
     valid_detection_metadata, invalid_detection_metadata = (
         metadataHealthCheker.process_detection_metadata(bronze_detection_metadata_df)
     )
-    tableManager.write_to_table(
-        valid_detection_metadata, table_name="silver_detection_metadata"
+
+    valid_metadata_query = f"""
+                            SELECT {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata.*
+                            FROM {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata
+                            INNER JOIN {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.silver_frame_metadata ON {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata.image_name = {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.silver_frame_metadata.image_name
+                            WHERE {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata.status = 'Pending'
+                            """  # nosec
+    valid_metadata_sql = metadataHealthCheker.spark.sql(valid_metadata_query)
+    invalid_metadata_query = f"""
+                    SELECT {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata.*
+                    FROM {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata
+                    INNER JOIN {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.silver_frame_metadata_quarantine ON {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata.image_name = {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.silver_frame_metadata_quarantine.image_name
+                    WHERE {metadataHealthCheker.catalog}.{metadataHealthCheker.schema}.bronze_detection_metadata.status = 'Pending'
+                    """  # nosec
+    invalid_metadata_sql = metadataHealthCheker.spark.sql(invalid_metadata_query)
+
+    TableManager.compare_dataframes(
+        valid_detection_metadata,
+        valid_metadata_sql,
+        df1_name="No sql valid",
+        df2_name="With sql valid",
     )
-    tableManager.write_to_table(
-        invalid_detection_metadata, table_name="silver_detection_metadata_quarantine"
+    TableManager.compare_dataframes(
+        invalid_detection_metadata,
+        invalid_metadata_sql,
+        df1_name="No sql invalid",
+        df2_name="With sql invalid",
     )
-    tableManager.update_status(
-        table_name="bronze_detection_metadata", job_process_time=job_process_time
-    )
+
+    # tableManager.write_to_table(
+    #     valid_detection_metadata, table_name="silver_detection_metadata"
+    # )
+    # tableManager.write_to_table(
+    #     invalid_detection_metadata, table_name="silver_detection_metadata_quarantine"
+    # )
+    # tableManager.update_status(
+    #     table_name="bronze_detection_metadata", job_process_time=job_process_time
+    # )
 
 
 if __name__ == "__main__":
