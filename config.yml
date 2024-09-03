@@ -27,8 +27,8 @@ convert_annotations:
 data_delivery_pipeline:
   detections_path: "/detections"
   metadata_path: "/temp_metadata"
-  ml_model_id: "ML_MODEL_ID"
-  project_version: "PROJECT_VERSION"
+  ml_model_id: "{ML_MODEL_ID}"
+  project_version: "{PROJECT_VERSION}"
   sleep_time: 30
 
 detection_pipeline:
