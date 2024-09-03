@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import pathlib
+import re
 import shutil
 import time
 from functools import wraps
@@ -42,9 +43,9 @@ def count_files_in_folder_tree(root_folder: pathlib.Path, file_type: str):
         Count of how many files
     """
     count = 0
-    for foldername, subfolders, filenames in os.walk(root_folder):
+    for _, _, filenames in os.walk(root_folder):
         for filename in filenames:
-            if filename.endswith(file_type):
+            if bool(re.search(r"[0-9]+-D.*\." + f"{file_type}", filename)):
                 count += 1
     return count
 

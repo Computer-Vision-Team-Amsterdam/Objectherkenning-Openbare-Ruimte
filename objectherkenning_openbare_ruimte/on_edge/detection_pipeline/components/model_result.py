@@ -57,6 +57,7 @@ class ModelResult:
             f.write(annotation_str)
         logger.debug("Saved result from model.")
 
+    @staticmethod
     def _get_annotation_string_from_boxes(boxes: Boxes) -> str:
         boxes = boxes.cpu()
         annotation_lines = []
