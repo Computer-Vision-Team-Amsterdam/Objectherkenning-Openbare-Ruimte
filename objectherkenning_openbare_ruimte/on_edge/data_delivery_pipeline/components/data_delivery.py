@@ -46,7 +46,6 @@ class DataDelivery:
             "tracking_id",
         ]
 
-    @log_execution_time
     def run_pipeline(self):
         """
         Runs the data delivery pipeline:

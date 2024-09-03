@@ -2,7 +2,6 @@ import csv
 import logging
 import os
 import pathlib
-import shutil
 import time
 from typing import List
 
@@ -18,6 +17,7 @@ from objectherkenning_openbare_ruimte.on_edge.detection_pipeline.components.mode
     ModelResult,
 )
 from objectherkenning_openbare_ruimte.on_edge.utils import (
+    copy_file,
     get_frame_metadata_csv_file_paths,
     get_img_name_from_csv_row,
     log_execution_time,
@@ -105,7 +105,6 @@ class DataDetection:
             raise FileNotFoundError(f"Model not found: {self.pretrained_model_path}")
         return YOLO(model=self.pretrained_model_path, task="detect")
 
-    @log_execution_time
     def run_pipeline(self):
         """
         Runs the detection pipeline:
@@ -167,7 +166,7 @@ class DataDetection:
             logger.debug(
                 f"Copying {csv_path} to {os.path.join(detections_path, csv_path.name)}"
             )
-            shutil.copyfile(csv_path, os.path.join(detections_path, csv_path.name))
+            copy_file(csv_path, os.path.join(detections_path, csv_path.name))
             if metadata_csv_file_path in self.metadata_csv_file_paths_with_errors:
                 self.metadata_csv_file_paths_with_errors.remove(metadata_csv_file_path)
             logger.info(

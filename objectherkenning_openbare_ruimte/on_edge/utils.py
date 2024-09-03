@@ -81,6 +81,18 @@ def move_file(file_path, output_file_path):
         raise Exception(f"Failed to move file '{file_path}': {e}")
 
 
+def copy_file(file_path, output_file_path):
+    try:
+        os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+        shutil.copyfile(file_path, output_file_path)
+        logger.info(f"{file_path} has been moved to {output_file_path}.")
+    except FileNotFoundError:
+        logger.error(f"{file_path} does not exist.")
+    except Exception as e:
+        logger.error(f"Failed to copy file '{file_path}': {str(e)}")
+        raise Exception(f"Failed to copy file '{file_path}': {e}")
+
+
 def save_csv_file(file_path: str, data: List[List[str]]):
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
