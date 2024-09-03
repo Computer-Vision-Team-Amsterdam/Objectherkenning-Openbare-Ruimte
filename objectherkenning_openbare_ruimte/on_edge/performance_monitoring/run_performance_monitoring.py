@@ -55,7 +55,7 @@ if __name__ == "__main__":
         )
         logger.info(
             f"folder_status: ["
-            f"CSVs in images folder: {count_files_in_folder_tree(images_folder, 'csv') - 2}, "
+            f"CSVs in images folder: {count_files_in_folder_tree(images_folder, 'csv')}, "
             f"JPGs in images folder: {count_files_in_folder_tree(images_folder, 'jpg')}, "
             f"CSVs in detections folder: {count_files_in_folder_tree(detections_folder, 'csv')}, "
             f"JPGs in detections folder: {count_files_in_folder_tree(detections_folder, 'jpg')}, "
