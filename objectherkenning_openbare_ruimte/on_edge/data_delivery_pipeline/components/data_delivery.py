@@ -157,6 +157,11 @@ class DataDelivery:
                     )
                     images_delivered += 1
 
+            upload_destination_path = f"full_frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(frame_metadata_file_path)}"
+            iot_handler.upload_file(
+                str(frame_metadata_file_path), str(upload_destination_path)
+            )
+
             if images_delivered:
                 save_csv_file(
                     file_path_only_filtered_rows, filtered_frame_metadata_rows
@@ -164,11 +169,6 @@ class DataDelivery:
                 upload_destination_path = f"frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(file_path_only_filtered_rows)}"
                 iot_handler.upload_file(
                     str(file_path_only_filtered_rows), str(upload_destination_path)
-                )
-
-                upload_destination_path = f"full_frame_metadata/{datetime.today().strftime('%Y-%m-%d')}/{os.path.basename(frame_metadata_file_path)}"
-                iot_handler.upload_file(
-                    str(frame_metadata_file_path), str(upload_destination_path)
                 )
 
                 save_csv_file(file_path_detection_metadata, detection_metadata_rows)
