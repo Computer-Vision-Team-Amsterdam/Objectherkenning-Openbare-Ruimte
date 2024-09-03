@@ -60,7 +60,7 @@ class EvaluateImageWise:
                 )
 
                 results[f"{target_class.name}_{box_size_name}"] = self._compute_stats(
-                    ground_truth, predictions
+                    ground_truth, predictions, box_size_name
                 )
 
         return results
@@ -69,7 +69,10 @@ class EvaluateImageWise:
         labels = yolo_dataset.get_filtered_labels()
         return set(k for k, v in labels.items() if len(v) > 0)
 
-    def _compute_stats(self, ground_truth: Set, predictions: Set) -> Dict:
+    def _compute_stats(
+        self, ground_truth: Set, predictions: Set, box_size_name: str
+    ) -> Dict:
+        is_all = box_size_name == "all"
         P = len(ground_truth)
         N = len(self.gt_all - ground_truth)
         PP = len(predictions)
@@ -86,9 +89,9 @@ class EvaluateImageWise:
         tnr = tn / N
 
         return {
-            "precision": precision,
+            "precision": precision if is_all else None,
             "recall": recall,
-            "fpr": fpr,
+            "fpr": fpr if is_all else None,
             "fnr": fnr,
-            "tnr": tnr,
+            "tnr": tnr if is_all else None,
         }

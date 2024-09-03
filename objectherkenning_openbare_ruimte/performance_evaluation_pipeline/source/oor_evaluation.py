@@ -200,14 +200,14 @@ class OOREvaluation:
 
 
 def tba_result_to_df(results: Dict[str, Dict[str, Dict[str, float]]]) -> pd.DataFrame:
-    def cat_to_header(cat: str) -> str:
+    def _cat_to_header(cat: str) -> str:
         parts = [p.capitalize().replace("All", "ALL") for p in cat.split(sep="_")]
         return " ".join(parts)
 
     models = list(results.keys())
     categories = list(results[models[0]].keys())
     header = ["Model", "Split"]
-    header.extend([cat_to_header(cat) for cat in categories])
+    header.extend([_cat_to_header(cat) for cat in categories])
 
     df = pd.DataFrame(columns=header)
 
@@ -216,5 +216,36 @@ def tba_result_to_df(results: Dict[str, Dict[str, Dict[str, float]]]) -> pd.Data
         data = [model_name, split]
         data.extend([results[model][cat]["recall"] for cat in categories])
         df.loc[len(df)] = data
+
+    return df
+
+
+def per_image_result_to_df(
+    results: Dict[str, Dict[str, Dict[str, float]]]
+) -> pd.DataFrame:
+
+    models = list(results.keys())
+    categories = list(results[models[0]].keys())
+    header = [
+        "Model",
+        "Split",
+        "Object Class",
+        "Size",
+        "Precision",
+        "Recall",
+        "FPR",
+        "FNR",
+        "TNR",
+    ]
+
+    df = pd.DataFrame(columns=header)
+
+    for model in models:
+        (model_name, split) = model.rsplit(sep="_", maxsplit=1)
+        for cat in categories:
+            (cat_name, size) = cat.rsplit(sep="_", maxsplit=1)
+            data = [model_name, split, cat_name, size]
+            data.extend([val for val in results[model][cat].values()])
+            df.loc[len(df)] = data
 
     return df
