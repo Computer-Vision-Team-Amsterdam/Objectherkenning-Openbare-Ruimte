@@ -62,10 +62,29 @@ def run_submit_to_signalen_step(
         signalHandler.process_notifications(top_scores_df)
     )
 
-    # Save notifications
-    signalHandler.save_notifications(
-        successful_notifications, unsuccessful_notifications
-    )
+    if successful_notifications:
+        modified_schema = tableManager.remove_fields_from_table_schema(
+            table_name="gold_signal_notifications",
+            fields_to_remove={"id", "processed_at"},
+        )
+        successful_df = sparkSession.createDataFrame(
+            successful_notifications, schema=modified_schema
+        )
+        tableManager.write_to_table(
+            df=successful_df, table_name="gold_signal_notifications"
+        )
+
+    if unsuccessful_notifications:
+        modified_schema = tableManager.remove_fields_from_table_schema(
+            table_name="silver_objects_per_day_quarantine",
+            fields_to_remove={"id", "processed_at"},
+        )
+        unsuccessful_df = sparkSession.createDataFrame(
+            unsuccessful_notifications, schema=modified_schema
+        )
+        tableManager.write_to_table(
+            df=unsuccessful_df, table_name="silver_objects_per_day_quarantine"
+        )
 
     tableManager.update_status(
         table_name="silver_objects_per_day", job_process_time=job_process_time

@@ -7,7 +7,6 @@ import requests
 from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import Row, SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import StructType
 
 
 class SignalConnectionConfigurer:
@@ -527,51 +526,51 @@ class SignalHandler:
 
         return successful_notifications, unsuccessful_notifications
 
-    def save_notifications(self, successful_notifications, unsuccessful_notifications):
-        gold_signal_notifications = self.spark.table(
-            f"{self.catalog_name}.{self.schema}.gold_signal_notifications"
-        )
-        silver_objects_per_day_quarantine = self.spark.table(
-            f"{self.catalog_name}.{self.schema}.silver_objects_per_day_quarantine"
-        )
-        if successful_notifications:
-            modified_schema = StructType(
-                [
-                    field
-                    for field in gold_signal_notifications.schema
-                    if field.name not in {"id", "processed_at"}
-                ]
-            )
-            successful_df = self.spark.createDataFrame(
-                successful_notifications, schema=modified_schema
-            )
-            successful_df.write.mode("append").saveAsTable(
-                f"{self.catalog_name}.oor.gold_signal_notifications"
-            )
-            print(
-                f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications."
-            )
-        else:
-            print("Appended 0 rows to gold_signal_notifications.")
+    # def save_notifications(self, successful_notifications, unsuccessful_notifications):
+    #     gold_signal_notifications = self.spark.table(
+    #         f"{self.catalog_name}.{self.schema}.gold_signal_notifications"
+    #     )
+    #     silver_objects_per_day_quarantine = self.spark.table(
+    #         f"{self.catalog_name}.{self.schema}.silver_objects_per_day_quarantine"
+    #     )
+    #     if successful_notifications:
+    #         modified_schema = StructType(
+    #             [
+    #                 field
+    #                 for field in gold_signal_notifications.schema
+    #                 if field.name not in {"id", "processed_at"}
+    #             ]
+    #         )
+    #         successful_df = self.spark.createDataFrame(
+    #             successful_notifications, schema=modified_schema
+    #         )
+    #         successful_df.write.mode("append").saveAsTable(
+    #             f"{self.catalog_name}.oor.gold_signal_notifications"
+    #         )
+    #         print(
+    #             f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications."
+    #         )
+    #     else:
+    #         print("Appended 0 rows to gold_signal_notifications.")
 
-        if unsuccessful_notifications:
-            modified_schema = StructType(
-                [
-                    field
-                    for field in silver_objects_per_day_quarantine.schema
-                    if field.name not in {"id", "processed_at"}
-                ]
-            )
-            unsuccessful_df = self.spark.createDataFrame(
-                unsuccessful_notifications, schema=modified_schema
-            )
-            print(f"{unsuccessful_df.count()} unsuccessful notifications.")
-            unsuccessful_df.write.mode("append").saveAsTable(
-                f"{self.catalog_name}.oor.silver_objects_per_day_quarantine"
-            )
-            print(
-                f"04: Appended {len(unsuccessful_notifications)} rows to silver_objects_per_day_quarantine."
-            )
+    #     if unsuccessful_notifications:
+    #         modified_schema = StructType(
+    #             [
+    #                 field
+    #                 for field in silver_objects_per_day_quarantine.schema
+    #                 if field.name not in {"id", "processed_at"}
+    #             ]
+    #         )
+    #         unsuccessful_df = self.spark.createDataFrame(
+    #             unsuccessful_notifications, schema=modified_schema
+    #         )
+    #         print(f"{unsuccessful_df.count()} unsuccessful notifications.")
+    #         unsuccessful_df.write.mode("append").saveAsTable(
+    #             f"{self.catalog_name}.oor.silver_objects_per_day_quarantine"
+    #         )
+    #         print(
+    #             f"04: Appended {len(unsuccessful_notifications)} rows to silver_objects_per_day_quarantine."
+    #         )
 
     def get_top_pending_records(self, table_name, limit=20):
         # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10

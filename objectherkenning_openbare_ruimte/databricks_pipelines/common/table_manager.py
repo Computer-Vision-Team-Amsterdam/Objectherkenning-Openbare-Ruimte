@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import StructType
 
 
 class TableManager:
@@ -87,15 +88,39 @@ class TableManager:
 
         Parameters:
         ----------
-        table_name : str
-            The name of the table to load.
+        table_name: The name of the table to load.
 
         Returns:
         -------
-        DataFrame
-            A DataFrame containing all rows from the specified table.
+        DataFrame: A DataFrame containing all rows from the specified table.
         """
         return self._load_table(table_name)
+
+    def remove_fields_from_table_schema(
+        self, table_name: str, fields_to_remove: set
+    ) -> StructType:
+        """
+        This method loads the schema of the specified table, removes the fields
+        listed in `fields_to_remove`, and returns the modified schema.
+
+        Parameters:
+        ----------
+        table_name: The name of the table whose schema will be modified.
+        fields_to_remove: A set of field names to be removed from the schema.
+
+        Returns:
+        -------
+        StructType: The modified schema with the specified fields removed.
+
+        """
+        table_schema = self._load_table(table_name=table_name).schema
+
+        # Modify the schema by removing the specified fields
+        modified_schema = StructType(
+            [field for field in table_schema if field.name not in fields_to_remove]
+        )
+
+        return modified_schema
 
     # def update_status(
     #     self, table_name: str, job_process_time: datetime, exclude_ids=[]
