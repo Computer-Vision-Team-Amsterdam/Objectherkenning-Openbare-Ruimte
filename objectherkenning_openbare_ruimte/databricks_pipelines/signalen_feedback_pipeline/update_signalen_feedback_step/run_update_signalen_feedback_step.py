@@ -47,7 +47,9 @@ def run_update_signalen_feedback_step(
 
     signalen_feedback_entries = []
     ids_of_not_updated_status = []
-    for entry in signalHandler.get_pending_signalen_notifications().collect():
+    for entry in TableManager.load_pending_rows_from_table(
+        table_name="gold_signal_notifications"
+    ).collect():
         id = entry["id"]
         signal_status = signalHandler.get_signal(sig_id=entry["signal_id"])["status"]
         if signal_status["state_display"] != "Gemeld":
@@ -77,7 +79,9 @@ def run_update_signalen_feedback_step(
         else:
             ids_of_not_updated_status.append(id)
 
-    signalen_feedback_df = signalHandler.get_signalen_feedback()
+    signalen_feedback_df = TableManager.load_from_table(
+        table_name="bronze_signal_notifications_feedback"
+    )
     filtered_schema = StructType(
         [
             field
