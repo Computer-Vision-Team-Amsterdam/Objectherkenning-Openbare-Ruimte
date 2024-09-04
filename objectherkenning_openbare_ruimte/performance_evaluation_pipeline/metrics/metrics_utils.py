@@ -1,9 +1,8 @@
-import json
-import pathlib
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
+from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
 
 
 class ObjectClass(Enum):
@@ -127,26 +126,14 @@ def generate_binary_mask(
     return mask
 
 
-def predictions_to_coco_json(
-    predictions_folder: str, image_shape: Tuple[int, int], json_file: str
-):
-    annotation_data = []
-    for pred_file in pathlib.Path(predictions_folder).glob("*.txt"):
-        with open(pred_file) as f:
-            for annotation in f.readlines():
-                cat, xn, yn, wn, hn, score = map(float, annotation.strip().split()[0:6])
-                width = wn * image_shape[0]
-                height = hn * image_shape[1]
-                x = (xn * image_shape[0]) - (width / 2)
-                y = (yn * image_shape[1]) - (height / 2)
-                annotation_data.append(
-                    {
-                        "image_id": pred_file.stem,
-                        "category_id": int(cat),
-                        "bbox": [x, y, width, height],
-                        "score": score,
-                    }
-                )
-
-    with open(json_file, "w") as f:
-        f.write(json.dumps(annotation_data))
+def get_target_cls_file_names(
+    annotations_folder: str, target_cls: Union[ObjectClass, None] = None
+) -> List[str]:
+    yolo_dataset = YoloLabelsDataset(
+        folder_path=annotations_folder,
+        image_area=None,
+    )
+    if target_cls:
+        yolo_dataset.filter_by_class(target_cls.value)
+    target_labels = yolo_dataset._filtered_labels
+    return [k for k, v in target_labels.items() if len(v) > 0]

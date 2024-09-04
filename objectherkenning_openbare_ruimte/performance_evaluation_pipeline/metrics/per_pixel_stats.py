@@ -40,7 +40,7 @@ class PixelStats:
         self.tn += np.count_nonzero(np.logical_and(~true_mask, ~predicted_mask))
         self.fn += np.count_nonzero(np.logical_and(true_mask, ~predicted_mask))
 
-    def get_statistics(self):
+    def get_statistics(self, precision: int = 3):
         """
         Return statistics after all masks have been added to the calculation.
 
@@ -51,15 +51,19 @@ class PixelStats:
         -------
 
         """
-        precision = (
-            round(self.tp / (self.tp + self.fp), 3) if self.tp + self.fp > 0 else None
+        prec = (
+            round(self.tp / (self.tp + self.fp), precision)
+            if self.tp + self.fp > 0
+            else None
         )
         recall = (
-            round(self.tp / (self.tp + self.fn), 3) if self.tp + self.fn > 0 else None
+            round(self.tp / (self.tp + self.fn), precision)
+            if self.tp + self.fn > 0
+            else None
         )
         f1_score = (
-            round(2 * precision * recall / (precision + recall), 3)
-            if precision and recall
+            round(2 * prec * recall / (prec + recall), precision)
+            if prec and recall
             else None
         )
 
@@ -68,7 +72,7 @@ class PixelStats:
             "false_positives": self.fp,
             "true_negatives": self.tn,
             "false_negatives:": self.fn,
-            "precision": precision,
+            "precision": prec,
             "recall": recall,
             "f1_score": f1_score,
         }
@@ -82,9 +86,11 @@ class EvaluatePixelWise:
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
         upper_half: bool = False,
+        precision: int = 3,
     ):
         self.img_shape = image_shape
         self.upper_half = upper_half
+        self.precision = precision
         img_area = self.img_shape[0] * self.img_shape[1]
         if ground_truth_path.endswith(".json"):
             self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
@@ -149,7 +155,7 @@ class EvaluatePixelWise:
                 true_mask=tba_true_mask, predicted_mask=tba_pred_mask
             )
 
-        results = pixel_stats.get_statistics()
+        results = pixel_stats.get_statistics(self.precision)
 
         return results
 

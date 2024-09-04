@@ -1,4 +1,4 @@
-__author__ = "tsungyi"
+__author__ = "tsungyi"  # Modified for OOR by Computer Vision Team, Gem. Amsterdam
 
 import copy
 import datetime

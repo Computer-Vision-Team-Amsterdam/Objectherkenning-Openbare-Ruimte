@@ -15,7 +15,9 @@ class EvaluateImageWise:
         ground_truth_path: str,
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
+        precision: int = 3,
     ):
+        self.precision = precision
         img_area = image_shape[0] * image_shape[1]
         if ground_truth_path.endswith(".json"):
             self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
@@ -82,11 +84,11 @@ class EvaluateImageWise:
         tn = len((self.gt_all - ground_truth) & (self.gt_all - predictions))
         fn = len(ground_truth - predictions)
 
-        precision = tp / PP if PP > 0 else None
-        recall = tp / P if P > 0 else None
-        fpr = fp / N
-        fnr = fn / P if P > 0 else None
-        tnr = tn / N
+        precision = round(tp / PP, self.precision) if PP > 0 else None
+        recall = round(tp / P, self.precision) if P > 0 else None
+        fpr = round(fp / N, self.precision)
+        fnr = round(fn / P, self.precision) if P > 0 else None
+        tnr = round(tn / N, self.precision)
 
         return {
             "precision": precision if is_all else None,
