@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 
 
 class TableManager:
@@ -40,6 +40,62 @@ class TableManager:
         print(
             f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
         )
+
+    def _load_table(self, table_name: str) -> DataFrame:
+        """
+        Loads a table from the catalog and schema.
+
+        Parameters:
+        ----------
+        table_name : str
+            The name of the table to load.
+
+        Returns:
+        -------
+        DataFrame
+            A DataFrame containing the rows from the specified table.
+        """
+        full_table_name = f"{self.catalog}.{self.schema}.{table_name}"
+        table_rows = self.spark.table(full_table_name)
+        print(f"01: Loaded {table_rows.count()} rows from {full_table_name}.")
+        return table_rows
+
+    def load_pending_rows_from_table(self, table_name: str) -> DataFrame:
+        """
+        Loads all rows with a 'Pending' status from the specified table in the catalog and schema.
+
+        Parameters:
+        ----------
+        table_name : str
+            The name of the table from which to load 'Pending' rows.
+
+        Returns:
+        -------
+        DataFrame
+            A DataFrame containing the rows with a 'Pending' status from the specified table.
+        """
+        table_rows = self._load_table(table_name)
+        pending_table_rows = table_rows.filter("status = 'Pending'")
+        print(
+            f"01: Filtered to {pending_table_rows.count()} 'Pending' rows from {self.catalog}.{self.schema}.{table_name}."
+        )
+        return pending_table_rows
+
+    def load_from_table(self, table_name: str) -> DataFrame:
+        """
+        Loads all rows from the specified table in the catalog and schema.
+
+        Parameters:
+        ----------
+        table_name : str
+            The name of the table to load.
+
+        Returns:
+        -------
+        DataFrame
+            A DataFrame containing all rows from the specified table.
+        """
+        return self._load_table(table_name)
 
     # def update_status(
     #     self, table_name: str, job_process_time: datetime, exclude_ids=[]
