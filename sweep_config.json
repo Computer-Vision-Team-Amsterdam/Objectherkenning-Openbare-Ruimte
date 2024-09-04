@@ -1,0 +1,46 @@
+{
+    "name": "v2.0 Model Sweep - 100 Epochs",
+    "method": "random",
+    "metric": {
+      "goal": "maximize",
+      "name": "metrics/mAP50-95(B)"
+    },
+    "parameters": {
+      "patience": {
+        "distribution": "q_uniform",
+        "max": 100,
+        "min": 25,
+        "q": 25
+      },
+      "cos_lr": {
+        "values": [false, true]
+      },
+      "dropout": {
+        "values": [0.0, 0.2, 0.4, 0.6, 0.8]
+      },
+      "box": {
+        "distribution": "uniform",
+        "max": 10,
+        "min": 0.5
+      },
+      "cls": {
+        "distribution": "uniform",
+        "max": 10,
+        "min": 0.5
+      },
+      "dfl": {
+        "distribution": "uniform",
+        "max": 10,
+        "min": 0.5
+      },
+      "close_mosaic": {
+        "values": [10, 20, 30, 40, 50]
+      },
+      "imgsz": {
+        "values": [960, 1280]
+      },
+      "lrf": {
+        "values": [0.01, 0.05, 0.1]
+      }
+    }
+}

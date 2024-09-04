@@ -3,12 +3,13 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 26
+  env_version: 48
   src_dir: "."
 
 azure_iot:
   hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
-  device_id: "test-diana"
+  # hostname: "iothub-oor-prd-weu-ggi-01.azure-devices.net"
+  device_id: "Luna"
   shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
 
 convert_dataset:
@@ -22,12 +23,38 @@ convert_annotations:
   final_datastore_name: converted_new_dataset_oor
   categories_file: categories.json
   separate_labels: True
-  label_folder: prelabeling_new_dataset_oor/labels
+  label_folder: dataset_folder/labels
 
 data_delivery_pipeline:
+  detections_path: "/detections"
+  metadata_path: "/temp_metadata"
+  ml_model_id: "{ML_MODEL_ID}"
+  project_version: "{PROJECT_VERSION}"
+  sleep_time: 30
+
+detection_pipeline:
   images_path: "/raw_frames"
-  detections_path: ""
-  frame_metadata_path: "/raw_videos"
+  detections_path: "/detections"
+  inference_params:
+    img_size: 1280
+    conf: 0.4
+    save_img_flag: False
+    save_txt_flag: False
+    save_conf_flag: False
+  model_name: "yolov8m_1280_v2_600_best.pt"
+  pretrained_model_path: "/model_artifacts"
+  defisheye_flag: True
+  defisheye_params:
+    camera_matrix: [[2028, 0, 1954.1], [0, 2029.6, 1055.1], [ 0, 0, 1]]
+    distortion_params: [[-0.24083, 0.10647, 0.00083113, 0.0001802, -0.025874]]
+    input_image_size: [3840, 2160]
+  target_classes: [2]
+  sensitive_classes: [0,1]
+  input_image_size: [3840, 2160]
+  output_image_size: [1280, 720]
+  sleep_time: 30
+  training_mode: True
+  training_mode_destination_path: "/training_mode"
 
 data_sampling:
   inputs:
@@ -63,27 +90,59 @@ frame_extraction:
 
 training_pipeline:
   model_parameters:
-    img_size: 1024
-    batch: -1
-    epochs: 100
-    patience: 25
-    n_classes: 3
-    name_classes: ["person", "license plate", "container"]
+    img_size: 1280
+    batch: 0.85
+    epochs: 500
+    patience: 100
+    n_classes: 5
+    cos_lr: True
+    dropout: 0.0
+    seed: 0
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
   inputs:
-    datastore_path: "first_training_dataset_oor"
-    training_data_rel_path: "first-training-dataset-oor"
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
     model_weights_rel_path: "model"
-    model_name: "yolov8m.pt"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
   outputs:
-    project_datastore_path: "first_training_dataset_oor"
+    project_datastore_path: "dataset_oor_v2_0"
     project_rel_path: "model"
 
+sweep_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 100
+    patience: 100
+    n_classes: 5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  sweep_trials: 30
+  inputs:
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
+    model_weights_rel_path: "model"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    sweep_config: "sweep_config.json"
+  outputs:
+    project_datastore_path: "dataset_oor_v2_0"
+    project_rel_path: "model"
+
+wandb:
+  api_key: ""
+  mode: "online"
+
 logging:
-  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
+  loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
   own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"
+  ai_instrumentation_key: "{AI_INSTRUMENTATION_KEY}"
+  luna_logs_dir: "/cvt_logs"

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -38,9 +38,42 @@ class ConvertAnnotations(SettingsSpecModel):
 
 
 class DataDeliveryPipelineSpec(SettingsSpecModel):
+    detections_path: str
+    metadata_path: str
+    ml_model_id: str
+    project_version: str
+    sleep_time: int
+
+
+class InferenceModelParameters(SettingsSpecModel):
+    img_size: int = 640
+    conf: float = 0.5
+    save_img_flag: bool = False
+    save_txt_flag: bool = False
+    save_conf_flag: bool = False
+
+
+class DefisheyeParameters(SettingsSpecModel):
+    camera_matrix: List[List[float]]
+    distortion_params: List[List[float]]
+    input_image_size: Tuple[int, int]
+
+
+class DetectionPipelineSpec(SettingsSpecModel):
     images_path: str
     detections_path: str
-    frame_metadata_path: str
+    model_name: str
+    pretrained_model_path: str
+    inference_params: InferenceModelParameters
+    defisheye_flag: bool
+    defisheye_params: DefisheyeParameters
+    target_classes: List[int]
+    sensitive_classes: List[int]
+    input_image_size: Tuple[int, int]
+    output_image_size: Tuple[int, int]
+    sleep_time: int
+    training_mode: bool
+    training_mode_destination_path: str
 
 
 class DataSampling(SettingsSpecModel):
@@ -80,21 +113,52 @@ class LoggingSpec(SettingsSpecModel):
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
     ai_instrumentation_key: str = ""
+    luna_logs_dir: str = ""
+    sleep_time: int = None
 
 
 class TrainingModelParameters(SettingsSpecModel):
     img_size: int = 1024
-    batch: int = -1
+    batch: Union[float, int] = -1
     epochs: int = 100
     patience: int = 25
     n_classes: int = 3
+    cos_lr: bool = False
+    dropout: float = 0.0
+    seed: int = 0
+    box: float = 7.5
+    cls: float = 0.5
+    dfl: float = 1.5
     name_classes: List[str] = ["person", "license plate", "container"]
+    rect: bool = False
 
 
 class TrainingPipelineSpec(SettingsSpecModel):
     model_parameters: TrainingModelParameters
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
+
+
+class SweepModelParameters(SettingsSpecModel):
+    img_size: int = 1024
+    batch: Union[float, int] = -1
+    epochs: int = 100
+    patience: int = 25
+    n_classes: int = 3
+    name_classes: List[str] = ["person", "license plate", "container"]
+    rect: bool = False
+
+
+class SweepPipelineSpec(SettingsSpecModel):
+    model_parameters: SweepModelParameters
+    sweep_trials: int = 1
+    inputs: Dict[str, str] = None
+    outputs: Dict[str, str] = None
+
+
+class WandbSpec(SettingsSpecModel):
+    api_key: str
+    mode: str = "disabled"
 
 
 class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
@@ -107,8 +171,11 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
     data_delivery_pipeline: DataDeliveryPipelineSpec
+    detection_pipeline: DetectionPipelineSpec
     data_sampling: DataSampling
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec
     logging: LoggingSpec = LoggingSpec()
     training_pipeline: TrainingPipelineSpec = None
+    sweep_pipeline: SweepPipelineSpec = None
+    wandb: WandbSpec = None
