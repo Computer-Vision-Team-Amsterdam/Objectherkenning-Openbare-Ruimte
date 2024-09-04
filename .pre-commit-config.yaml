@@ -6,13 +6,13 @@ repos:
     hooks:
      - id: bandit
        args: ["-c", "bandit.yaml"]
-  #- repo: https://github.com/trailofbits/pip-audit
-  #  rev: v2.7.3
-  #  hooks:
-  #    - id: pip-audit
-  #      args: [
-  #        "--ignore-vuln", "PYSEC-2023-228"
-  #      ]
+  - repo: https://github.com/trailofbits/pip-audit
+    rev: v2.7.3
+    hooks:
+      - id: pip-audit
+        args: [
+          "--ignore-vuln", "PYSEC-2023-228"
+        ]
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:
