@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel
 
@@ -16,12 +16,6 @@ class AMLExperimentDetailsSpec(SettingsSpecModel):
     ai_instrumentation_key: str = None
 
 
-class AzureIoTSpec(SettingsSpecModel):
-    hostname: str
-    device_id: str
-    shared_access_key: str
-
-
 class ConvertDataset(SettingsSpecModel):
     face_width: int = 1024
     input_old_datastore: str
@@ -35,45 +29,6 @@ class ConvertAnnotations(SettingsSpecModel):
     categories_file: str = "categories.json"
     separate_labels: bool = False
     label_folder: str = None
-
-
-class DataDeliveryPipelineSpec(SettingsSpecModel):
-    detections_path: str
-    metadata_path: str
-    ml_model_id: str
-    project_version: str
-    sleep_time: int
-
-
-class InferenceModelParameters(SettingsSpecModel):
-    img_size: int = 640
-    conf: float = 0.5
-    save_img_flag: bool = False
-    save_txt_flag: bool = False
-    save_conf_flag: bool = False
-
-
-class DefisheyeParameters(SettingsSpecModel):
-    camera_matrix: List[List[float]]
-    distortion_params: List[List[float]]
-    input_image_size: Tuple[int, int]
-
-
-class DetectionPipelineSpec(SettingsSpecModel):
-    images_path: str
-    detections_path: str
-    model_name: str
-    pretrained_model_path: str
-    inference_params: InferenceModelParameters
-    defisheye_flag: bool
-    defisheye_params: DefisheyeParameters
-    target_classes: List[int]
-    sensitive_classes: List[int]
-    input_image_size: Tuple[int, int]
-    output_image_size: Tuple[int, int]
-    sleep_time: int
-    training_mode: bool
-    training_mode_destination_path: str
 
 
 class DataSampling(SettingsSpecModel):
@@ -113,8 +68,6 @@ class LoggingSpec(SettingsSpecModel):
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
     ai_instrumentation_key: str = ""
-    luna_logs_dir: str = ""
-    sleep_time: int = None
 
 
 class TrainingModelParameters(SettingsSpecModel):
@@ -167,11 +120,8 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
 
     customer: str
     aml_experiment_details: AMLExperimentDetailsSpec
-    azure_iot: AzureIoTSpec
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
-    data_delivery_pipeline: DataDeliveryPipelineSpec
-    detection_pipeline: DetectionPipelineSpec
     data_sampling: DataSampling
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec
