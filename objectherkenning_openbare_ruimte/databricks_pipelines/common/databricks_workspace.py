@@ -42,32 +42,27 @@ def get_catalog_name(spark: SparkSession):
 
 
 def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
-    if is_first_pipeline_step:
-        print(f"job process time: {job_process_time_settings}")
-        if job_process_time_settings["auto"] is True:
-            return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # use auto: True when triggering the pipeline as a workflow
+    if job_process_time_settings["auto"] is True:
+        if is_first_pipeline_step:
+            print(f"Using automatic job process time: {current_timestamp}.")
+            return current_timestamp
         else:
-            print(
-                f"Using custom job process time:{ job_process_time_settings['custom_job_process_time']}"
-            )
-            custom_job_process_time = datetime.strptime(
-                job_process_time_settings["custom_job_process_time"],
-                "%Y-%m-%d %H:%M:%S",
-            )
-            return custom_job_process_time
-    else:
-        if job_process_time_settings["auto"] is True:
-            raise ValueError(
-                "Running pipeline step by step requires setting auto:false and custom_job_process_time to a valid YYYY-MM-DD HH:MM:SS"
-            )
-        else:
-            custom_job_process_time = job_process_time_settings[
-                "custom_job_process_time"
-            ]
             job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
                 taskKey="data-ingestion",
                 key="job_process_time",
-                default=custom_job_process_time,
-                debugValue=custom_job_process_time,
+                default=current_timestamp.isoformat(), 
+                debugValue=tcurrent_timestamp.isoformat(),
             )
-            return job_process_time
+            return job_process_time    
+    # use auto: False when triggering the pipeline step by step. Not recommended, can lead to unexpected errors. Option exists for debugging purposes.
+    # Requires setting custom_job_process_time to a valid YYYY-MM-DD HH:MM:SS that has not been used before.
+    else:
+        print(
+                f"Using custom job process time:{ job_process_time_settings['custom_job_process_time']}"
+            )
+        custom_job_process_time = job_process_time_settings[
+                "custom_job_process_time"
+            ]
+        return custom_job_process_time
