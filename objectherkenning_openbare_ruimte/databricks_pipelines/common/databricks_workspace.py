@@ -42,18 +42,18 @@ def get_catalog_name(spark: SparkSession):
 
 
 def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
-    current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_timestamp = datetime.now()
     # use auto: True when triggering the pipeline as a workflow
     if job_process_time_settings["auto"] is True:
         if is_first_pipeline_step:
-            print(f"Using automatic job process time: {current_timestamp}.")
+            print(f"Using automatic job process time: {current_timestamp.strftime("%Y-%m-%d %H:%M:%S")}.")
             return current_timestamp
         else:
             job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
                 taskKey="data-ingestion",
                 key="job_process_time",
                 default=current_timestamp, 
-                debugValue=tcurrent_timestamp,
+                debugValue=current_timestamp,
             )
             return job_process_time    
     # use auto: False when triggering the pipeline step by step. Not recommended, can lead to unexpected errors. Option exists for debugging purposes.
