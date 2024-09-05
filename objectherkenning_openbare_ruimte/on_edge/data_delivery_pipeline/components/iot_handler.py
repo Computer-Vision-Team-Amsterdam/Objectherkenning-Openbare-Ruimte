@@ -1,4 +1,4 @@
-import os
+import logging
 from contextlib import contextmanager
 from typing import Dict
 
@@ -6,9 +6,16 @@ from azure.core.exceptions import AzureError
 from azure.iot.device import IoTHubDeviceClient, Message
 from azure.storage.blob import BlobClient
 
+logger = logging.getLogger("data_delivery_pipeline")
+
 
 class IoTHandler:
-    def __init__(self, hostname: str, device_id: str, shared_access_key: str):
+    def __init__(
+        self,
+        hostname: str,
+        device_id: str,
+        shared_access_key: str = None,
+    ):
         """
         Object that handles the connection with IoT and the delivery of messages and files.
 
@@ -38,7 +45,8 @@ class IoTHandler:
             device_client.send_message(message)
         """
         device_client = IoTHubDeviceClient.create_from_connection_string(
-            self.connection_string
+            self.connection_string,
+            websockets=True,
         )
         try:
             device_client.connect()
@@ -61,33 +69,40 @@ class IoTHandler:
         with self._connect() as device_client:
             device_client.send_message(message)
 
-    def upload_file(self, file_path: str):
+    def upload_file(self, file_source_path: str, file_destination_path: str):
         """
         Uploads a file to Azure IoT.
 
         Parameters
         ----------
-        file_path
+        file_source_path
             Path of the file to upload.
+        file_destination_path
+            Path of where to upload it.
         """
         with self._connect() as device_client:
-            blob_name = os.path.basename(file_path)
-            storage_info = device_client.get_storage_info_for_blob(blob_name)
+            storage_info = device_client.get_storage_info_for_blob(
+                file_destination_path
+            )
 
-            success, result = self._store_blob(storage_info, file_path)
+            success, result = self._store_blob(storage_info, file_source_path)
             if success:
-                print(f"Upload succeeded. Result is: {result}")
+                logger.info(f"Upload succeeded. Result is: {result}")
                 device_client.notify_blob_upload_status(
-                    storage_info["correlationId"], True, 200, "OK: {}".format(file_path)
+                    storage_info["correlationId"],
+                    True,
+                    200,
+                    "OK: {}".format(file_source_path),
                 )
             else:
-                print(f"Upload failed. Exception is: {result}")
+                logger.error(f"Upload failed. Exception is: {result}")
                 device_client.notify_blob_upload_status(
                     storage_info["correlationId"],
                     False,
                     result.status_code,
                     str(result),
                 )
+                raise Exception(result)
 
     @staticmethod
     def _store_blob(blob_info: Dict[str, str], file_name: str):
@@ -109,13 +124,12 @@ class IoTHandler:
                 blob_info["sasToken"],
             )
 
-            print(
+            logger.info(
                 "\nUploading file: {} to Azure Storage as blob: {} in container {}\n".format(
                     file_name, blob_info["blobName"], blob_info["containerName"]
                 )
             )
 
-            # Upload the specified file
             with BlobClient.from_blob_url(sas_url) as blob_client:
                 with open(file_name, "rb") as f:
                     result = blob_client.upload_blob(f, overwrite=True)

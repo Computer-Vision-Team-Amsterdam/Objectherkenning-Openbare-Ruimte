@@ -1,18 +1,26 @@
 FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.8-cudnn8-ubuntu22.04 AS base-image
 
 # Upgrade and install system libraries
-RUN apt-get -y update \
-    && ACCEPT_EULA=Y apt-get upgrade -qq \
-    && apt-get -y install \
+RUN apt -y update \
+    && apt -y install \
+        bsdutils \
         build-essential \
         curl \
         ffmpeg \
         libsm6 \
         libxext6 \
         libpq-dev \
+    && apt -y remove \
+        python3-setuptools \
+        python-setuptools \
+    && apt upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/app
+
+RUN conda update conda \
+    && conda config --add channels conda-forge \
+    && conda config --set channel_priority strict
 
 RUN conda create -n env python=3.8
 RUN echo "source activate env" > ~/.bashrc
@@ -24,6 +32,9 @@ RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml .
 COPY poetry.lock .
+
+RUN pip install --upgrade setuptools \
+    && pip3 install --upgrade setuptools
 
 # Initialize Conda, activate environment and install poetry packages
 RUN /opt/miniconda/bin/conda init bash && \

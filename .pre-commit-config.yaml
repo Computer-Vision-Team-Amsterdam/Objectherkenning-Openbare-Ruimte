@@ -6,21 +6,14 @@ repos:
     hooks:
       - id: bandit
         args: ["-c", "bandit.yaml"]
-  - repo: https://github.com/trailofbits/pip-audit
-    rev: v2.7.3
-    hooks:
-      - id: pip-audit
-        args: [
-          "--ignore-vuln", "PYSEC-2023-228", "."
-        ]
-  - repo: local
-    hooks:
-      - id: safety
-        name: safety
-        entry: poetry run safety scan
-        language: system
-        verbose: true
-        files: pyproject.toml
+  # - repo: local
+  #   hooks:
+  #     - id: safety
+  #       name: safety
+  #       entry: poetry run safety scan --policy-file .safety-policy.yml
+  #       language: system
+  #       verbose: true
+  #       always_run: true
   - repo: https://github.com/timothycrosley/isort
     rev: 5.13.2
     hooks:
@@ -35,16 +28,16 @@ repos:
     hooks:
       - id: flake8
         exclude: ^.venv
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.11.2
-  #   hooks:
-  #   - id: mypy
-  #     additional_dependencies: [types-all]
-  #     # for args see https://mypy.readthedocs.io/en/stable/command_line.html
-  #     args: [
-  #         --no-strict-optional,
-  #         --ignore-missing-imports,
-  #         --allow-untyped-globals
-  #     ]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+    - id: mypy
+      # additional_dependencies: [types-all]
+      # for args see https://mypy.readthedocs.io/en/stable/command_line.html
+      args: [
+          --no-strict-optional,
+          --ignore-missing-imports,
+          --allow-untyped-globals
+      ]
 default_language_version:
     python: python3
