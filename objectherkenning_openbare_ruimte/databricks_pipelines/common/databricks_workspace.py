@@ -44,7 +44,7 @@ def get_catalog_name(spark: SparkSession):
 def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
     if is_first_pipeline_step:
         print(f"job process time: {job_process_time_settings}")
-        if job_process_time_settings["auto"] == "true":
+        if job_process_time_settings["auto"] is True:
             return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         else:
             print(
@@ -56,7 +56,7 @@ def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
             )
             return custom_job_process_time
     else:
-        if job_process_time_settings["auto"] == "true":
+        if job_process_time_settings["auto"] is True:
             raise ValueError(
                 "Running pipeline step by step requires setting auto:false and custom_job_process_time to a valid YYYY-MM-DD HH:MM:SS"
             )
