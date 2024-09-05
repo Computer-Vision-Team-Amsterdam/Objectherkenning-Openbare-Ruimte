@@ -52,8 +52,8 @@ def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
             job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
                 taskKey="data-ingestion",
                 key="job_process_time",
-                default=current_timestamp.isoformat(), 
-                debugValue=tcurrent_timestamp.isoformat(),
+                default=current_timestamp, 
+                debugValue=tcurrent_timestamp,
             )
             return job_process_time    
     # use auto: False when triggering the pipeline step by step. Not recommended, can lead to unexpected errors. Option exists for debugging purposes.
