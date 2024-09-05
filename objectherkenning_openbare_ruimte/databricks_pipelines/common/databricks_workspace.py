@@ -46,7 +46,7 @@ def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
     # use auto: True when triggering the pipeline as a workflow
     if job_process_time_settings["auto"] is True:
         if is_first_pipeline_step:
-            print(f"Using automatic job process time: {current_timestamp.strftime("%Y-%m-%d %H:%M:%S")}.")
+            print(f"Using automatic job process time: {current_timestamp.strftime('%Y-%m-%d %H:%M:%S')}.")
             return current_timestamp
         else:
             job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
