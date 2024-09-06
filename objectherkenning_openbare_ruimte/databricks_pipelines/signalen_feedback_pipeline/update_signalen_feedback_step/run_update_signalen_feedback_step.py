@@ -5,7 +5,6 @@ import os  # noqa: E402
 from datetime import datetime  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
-from pyspark.sql.types import StructType  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
@@ -75,27 +74,18 @@ def run_update_signalen_feedback_step(
         else:
             ids_of_not_updated_status.append(id)
 
-    signalen_feedback_df = tableManager.load_from_table(
-        table_name="bronze_signal_notifications_feedback"
-    )
-    filtered_schema = StructType(
-        [
-            field
-            for field in signalen_feedback_df.schema.fields
-            if field.name not in {"id", "processed_at"}
-        ]
-    )
-    signalen_feedback_df = spark.createDataFrame(  # noqa: F821
-        signalen_feedback_entries, filtered_schema
-    )
-    display(signalen_feedback_df)  # noqa: F821
-    signalen_feedback_df.write.mode("append").saveAsTable(
-        f"{signalHandler.catalog_name}.oor.bronze_signal_notifications_feedback"
-    )
-    print(
-        f"Appended {len(signalen_feedback_entries)} rows to bronze_signal_notifications_feedback."
+    modified_schema = tableManager.remove_fields_from_table_schema(
+        table_name="bronze_signal_notifications_feedback",
+        fields_to_remove={"id", "processed_at"},
     )
 
+    signalen_feedback_df = sparkSession.createDataFrame(  # noqa: F821
+        signalen_feedback_entries, schema=modified_schema
+    )
+
+    tableManager.write_to_table(
+        df=signalen_feedback_df, table_name="bronze_signal_notifications_feedback"
+    )
     tableManager.update_status(
         table_name="gold_signal_notifications",
         job_process_time=job_process_time,
