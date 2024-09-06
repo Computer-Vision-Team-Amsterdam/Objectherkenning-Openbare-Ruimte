@@ -93,7 +93,7 @@ def run_update_signalen_feedback_step(
         f"{signalHandler.catalog_name}.oor.bronze_signal_notifications_feedback"
     )
     print(
-        f"01: Appended {len(signalen_feedback_entries)} rows to bronze_signal_notifications_feedback."
+        f"Appended {len(signalen_feedback_entries)} rows to bronze_signal_notifications_feedback."
     )
 
     tableManager.update_status(

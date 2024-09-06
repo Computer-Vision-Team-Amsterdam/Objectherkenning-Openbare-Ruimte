@@ -13,7 +13,6 @@ class TableManager:
     def update_status(
         self, table_name: str, job_process_time: datetime, exclude_ids=[]
     ):
-        print(f"updating status with job time being {job_process_time}")
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
         FROM {self.catalog}.{self.schema}.{table_name}

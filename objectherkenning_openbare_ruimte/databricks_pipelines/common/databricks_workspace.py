@@ -1,7 +1,6 @@
 import json
 from datetime import datetime
 
-import pytz
 from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import SparkSession
 
@@ -43,7 +42,7 @@ def get_catalog_name(spark: SparkSession):
 
 
 def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
-    current_timestamp = datetime.now(pytz.timezone("Europe/Amsterdam"))
+    current_timestamp = datetime.now()
     # use auto: True when triggering the pipeline as a workflow
     if job_process_time_settings["auto"] is True:
         if is_first_pipeline_step:
