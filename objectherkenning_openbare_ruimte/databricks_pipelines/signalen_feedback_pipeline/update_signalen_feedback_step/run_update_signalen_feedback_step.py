@@ -44,7 +44,6 @@ def run_update_signalen_feedback_step(
     )
 
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
-    job_process_time = datetime.fromisoformat(job_process_time)
 
     signalen_feedback_entries = []
     ids_of_not_updated_status = []
