@@ -51,11 +51,8 @@ def run_update_signalen_feedback_step(
         table_name="gold_signal_notifications"
     ).collect():
         id = entry["id"]
-        print(f"Entry id: {id}")
         signal_status = signalHandler.get_signal(sig_id=entry["signal_id"])["status"]
         if signal_status["state_display"] != "Gemeld":
-            print(f"status is {signal_status['state_display']}")
-            print(f"id is {entry['id']}")
             status, text, user, status_update_time = (
                 signal_status["state_display"],
                 signal_status["text"],
@@ -73,8 +70,6 @@ def run_update_signalen_feedback_step(
                 minute=date_obj.minute,
                 second=date_obj.second,
             )
-            print(type(job_process_time))
-            print(f"job time is: {job_process_time}")
             table_entry = (entry["signal_id"], status, text, user, formatted_date)
             signalen_feedback_entries.append(table_entry)
         else:
@@ -90,8 +85,6 @@ def run_update_signalen_feedback_step(
             if field.name not in {"id", "processed_at"}
         ]
     )
-
-    print(signalen_feedback_entries)
     signalen_feedback_df = spark.createDataFrame(  # noqa: F821
         signalen_feedback_entries, filtered_schema
     )
@@ -103,7 +96,6 @@ def run_update_signalen_feedback_step(
         f"01: Appended {len(signalen_feedback_entries)} rows to bronze_signal_notifications_feedback."
     )
 
-    print(ids_of_not_updated_status)
     tableManager.update_status(
         table_name="gold_signal_notifications",
         job_process_time=job_process_time,
