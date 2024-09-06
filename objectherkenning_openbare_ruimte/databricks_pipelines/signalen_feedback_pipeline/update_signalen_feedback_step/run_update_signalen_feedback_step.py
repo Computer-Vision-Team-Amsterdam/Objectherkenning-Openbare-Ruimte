@@ -79,7 +79,7 @@ def run_update_signalen_feedback_step(
         else:
             ids_of_not_updated_status.append(id)
 
-    signalen_feedback_df = TableManager.load_from_table(
+    signalen_feedback_df = tableManager.load_from_table(
         table_name="bronze_signal_notifications_feedback"
     )
     filtered_schema = StructType(
