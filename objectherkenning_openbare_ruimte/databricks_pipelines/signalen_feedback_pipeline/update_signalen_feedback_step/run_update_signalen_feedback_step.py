@@ -51,6 +51,7 @@ def run_update_signalen_feedback_step(
         table_name="gold_signal_notifications"
     ).collect():
         id = entry["id"]
+        print(f"Entry id: {id}")
         signal_status = signalHandler.get_signal(sig_id=entry["signal_id"])["status"]
         if signal_status["state_display"] != "Gemeld":
             print(f"status is {signal_status['state_display']}")
