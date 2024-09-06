@@ -47,7 +47,7 @@ def run_update_signalen_feedback_step(
 
     signalen_feedback_entries = []
     ids_of_not_updated_status = []
-    for entry in TableManager.load_pending_rows_from_table(
+    for entry in tableManager.load_pending_rows_from_table(
         table_name="gold_signal_notifications"
     ).collect():
         id = entry["id"]
