@@ -9,6 +9,7 @@ from pyspark.sql.types import StructType  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
+    get_job_process_time,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
     TableManager,
@@ -121,6 +122,9 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
+    job_process_time_settings = load_settings(config_file_path)["databricks_pipelines"][
+        "job_process_time"
+    ]
     run_update_signalen_feedback_step(
         sparkSession=sparkSession,
         catalog=settings["catalog"],
@@ -129,5 +133,8 @@ if __name__ == "__main__":
         client_secret_name=settings["signalen"]["client_secret_name"],
         access_token_url=settings["signalen"]["access_token_url"],
         base_url=settings["signalen"]["base_url"],
-        job_process_time="2024-07-30 13:00:00",
+        job_process_time=get_job_process_time(
+            job_process_time_settings,
+            is_first_pipeline_step=True,
+        ),
     )

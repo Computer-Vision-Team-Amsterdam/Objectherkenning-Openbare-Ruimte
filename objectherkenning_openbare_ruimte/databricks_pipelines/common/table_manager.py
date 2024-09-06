@@ -58,7 +58,7 @@ class TableManager:
         """
         full_table_name = f"{self.catalog}.{self.schema}.{table_name}"
         table_rows = self.spark.table(full_table_name)
-        print(f"01: Loaded {table_rows.count()} rows from {full_table_name}.")
+        print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
 
     def load_pending_rows_from_table(self, table_name: str) -> DataFrame:
@@ -78,7 +78,7 @@ class TableManager:
         table_rows = self._load_table(table_name)
         pending_table_rows = table_rows.filter("status = 'Pending'")
         print(
-            f"01: Filtered to {pending_table_rows.count()} 'Pending' rows from {self.catalog}.{self.schema}.{table_name}."
+            f"Filtered to {pending_table_rows.count()} 'Pending' rows from {self.catalog}.{self.schema}.{table_name}."
         )
         return pending_table_rows
 
