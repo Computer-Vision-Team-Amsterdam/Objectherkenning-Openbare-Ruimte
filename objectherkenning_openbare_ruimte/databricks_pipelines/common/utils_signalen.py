@@ -442,6 +442,7 @@ class SignalHandler:
 
         return json_to_send
 
+    # TODO, remove this method from here, duplicated with the one in common/utils.
     def get_image_upload_path(self, detection_id):
         """
         Fetches the image name based on the detection_id and constructs the path for uploading the image.
