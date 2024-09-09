@@ -8,6 +8,10 @@ from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import Row, SparkSession
 from pyspark.sql import functions as F
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
+    get_image_upload_path_from_detection_id,
+)
+
 
 class SignalConnectionConfigurer:
     """
@@ -35,7 +39,7 @@ class SignalConnectionConfigurer:
         base_url,
     ):
         self.spark = spark
-        self._client_id = "sia-cvt"
+        self._client_id = client_id
         self._client_secret_name = client_secret_name
         self.access_token_url = access_token_url
         self.base_url = base_url
@@ -72,6 +76,7 @@ class SignalHandler:
         spark,
         catalog,
         schema,
+        device_id,
         client_id,
         client_secret_name,
         access_token_url,
@@ -79,6 +84,7 @@ class SignalHandler:
     ):
 
         self.spark = spark
+        self.device_id = device_id
         self.catalog_name = catalog
         self.schema = schema
 
@@ -442,45 +448,6 @@ class SignalHandler:
 
         return json_to_send
 
-    # TODO, remove this method from here, duplicated with the one in common/utils.
-    def get_image_upload_path(self, detection_id):
-        """
-        Fetches the image name based on the detection_id and constructs the path for uploading the image.
-
-        Parameters:
-        detection_id (int): The id of the detection.
-
-        Returns:
-        str: The constructed image upload path.
-        """
-
-        # Fetch the image name based on the detection_id
-        fetch_image_name_query = f"""
-                                SELECT {self.catalog_name}.oor.silver_detection_metadata.image_name
-                                FROM {self.catalog_name}.oor.silver_detection_metadata
-                                WHERE {self.catalog_name}.oor.silver_detection_metadata.id = {detection_id}
-                                """  # nosec
-        image_name_result_df = spark.sql(fetch_image_name_query)  # noqa: F405
-
-        # Extract the image name from the result
-        image_basename = image_name_result_df.collect()[0]["image_name"]
-
-        fetch_date_of_image_upload = f"""SELECT {self.catalog_name}.oor.silver_frame_metadata.gps_date FROM {self.catalog_name}.oor.silver_frame_metadata WHERE {self.catalog_name}.oor.silver_frame_metadata.image_name = '{image_basename}'"""  # nosec
-
-        date_of_image_upload_df = spark.sql(fetch_date_of_image_upload)  # noqa: F405
-        date_of_image_upload_dmy = date_of_image_upload_df.collect()[0]["gps_date"]
-
-        # Convert to datetime object
-        date_obj = datetime.strptime(date_of_image_upload_dmy, "%d/%m/%Y")
-
-        # Format the datetime object to the desired format
-        date_of_image_upload_ymd = date_obj.strftime("%Y-%m-%d")
-
-        # Construct the path to the image to be uploaded to Signalen
-        image_upload_path = f"/Volumes/{self.catalog_name}/default/landingzone/Luna/images/{date_of_image_upload_ymd}/{image_basename}"
-
-        return image_upload_path
-
     def process_notifications(self, top_scores_df):
         date_of_notification = datetime.today().strftime("%Y-%m-%d")
         top_scores_df_with_date = top_scores_df.withColumn(
@@ -494,8 +461,13 @@ class SignalHandler:
             LAT = float(entry["object_lat"])
             LON = float(entry["object_lon"])
             detection_id = entry["detection_id"]
-
-            image_upload_path = self.get_image_upload_path(detection_id=detection_id)
+            image_upload_path = get_image_upload_path_from_detection_id(
+                spark=self.spark,
+                catalog=self.catalog_name,
+                schema=self.schema,
+                detection_id=detection_id,
+                device_id=self.device_id,
+            )
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)
             entry_dict.pop("id", None)
@@ -527,52 +499,6 @@ class SignalHandler:
 
         return successful_notifications, unsuccessful_notifications
 
-    # def save_notifications(self, successful_notifications, unsuccessful_notifications):
-    #     gold_signal_notifications = self.spark.table(
-    #         f"{self.catalog_name}.{self.schema}.gold_signal_notifications"
-    #     )
-    #     silver_objects_per_day_quarantine = self.spark.table(
-    #         f"{self.catalog_name}.{self.schema}.silver_objects_per_day_quarantine"
-    #     )
-    #     if successful_notifications:
-    #         modified_schema = StructType(
-    #             [
-    #                 field
-    #                 for field in gold_signal_notifications.schema
-    #                 if field.name not in {"id", "processed_at"}
-    #             ]
-    #         )
-    #         successful_df = self.spark.createDataFrame(
-    #             successful_notifications, schema=modified_schema
-    #         )
-    #         successful_df.write.mode("append").saveAsTable(
-    #             f"{self.catalog_name}.oor.gold_signal_notifications"
-    #         )
-    #         print(
-    #             f"04: Appended {len(successful_notifications)} rows to gold_signal_notifications."
-    #         )
-    #     else:
-    #         print("Appended 0 rows to gold_signal_notifications.")
-
-    #     if unsuccessful_notifications:
-    #         modified_schema = StructType(
-    #             [
-    #                 field
-    #                 for field in silver_objects_per_day_quarantine.schema
-    #                 if field.name not in {"id", "processed_at"}
-    #             ]
-    #         )
-    #         unsuccessful_df = self.spark.createDataFrame(
-    #             unsuccessful_notifications, schema=modified_schema
-    #         )
-    #         print(f"{unsuccessful_df.count()} unsuccessful notifications.")
-    #         unsuccessful_df.write.mode("append").saveAsTable(
-    #             f"{self.catalog_name}.oor.silver_objects_per_day_quarantine"
-    #         )
-    #         print(
-    #             f"04: Appended {len(unsuccessful_notifications)} rows to silver_objects_per_day_quarantine."
-    #         )
-
     def get_top_pending_records(self, table_name, limit=20):
         # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
         select_query = f"""
@@ -596,26 +522,3 @@ class SignalHandler:
             .limit(limit)
         )
         return results
-
-    # def get_pending_signalen_notifications(self):
-    #     query_signalen_notifications = f"SELECT * FROM {self.catalog_name}.{self.schema}.gold_signal_notifications WHERE status='Pending'"  # nosec
-    #     signalen_notifications = self.spark.sql(query_signalen_notifications)
-    #     print(
-    #         f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications."
-    #     )
-    #     return signalen_notifications
-
-    # def get_pending_signalen_notifications_no_sql(self):
-    #     table_name = f"{self.catalog_name}.{self.schema}.gold_signal_notifications"
-    #     signalen_notifications = self.spark.table(table_name).filter(
-    #         "status = 'Pending'"
-    #     )
-    #     print(
-    #         f"01: Loaded {signalen_notifications.count()} 'Pending' rows from {self.catalog_name}.{self.schema}.gold_signal_notifications."
-    #     )
-    #     return signalen_notifications
-
-    # def get_signalen_feedback(self):
-    #     query_signalen_feedback = f"SELECT * FROM {self.catalog_name}.{self.schema}.bronze_signal_notifications_feedback"  # nosec
-    #     signalen_feedback = self.spark.sql(query_signalen_feedback)
-    #     return signalen_feedback
