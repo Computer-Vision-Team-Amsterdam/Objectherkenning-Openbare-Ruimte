@@ -15,7 +15,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager 
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
     delete_file,
-    get_image_upload_path_from_detection_id,
+    get_image_name_from_detection_id,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -31,6 +31,21 @@ def run_delete_images_step(
 ):
     job_date = job_process_time.date()
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
+
+    bronze_frame_metadata_df = tableManager.load_from_table(
+        table_name="bronze_frame_metadata"
+    )
+    filtered_df = bronze_frame_metadata_df.filter(
+        (date_format(col("processed_at"), "yyyy-MM-dd") == job_date)
+    )
+
+    gps_date_value = filtered_df.select("gps_date").first()[0]
+    all_image_names_current_run_list = (
+        filtered_df.select("image_name").rdd.flatMap(lambda x: x).collect()
+    )
+
+    print(f"{len(all_image_names_current_run_list)} images found on {gps_date_value}.")
+
     silver_objects_per_day_df = tableManager.load_from_table(
         table_name="silver_objects_per_day"
     )
@@ -40,16 +55,28 @@ def run_delete_images_step(
         (col("score") > 1)
         & (date_format(col("processed_at"), "yyyy-MM-dd") == job_date)
     )
-    for row in filtered_df.collect():
-        # images could have been uploaded on a different date, the function below accounts for this
-        image_to_delete_full_path = get_image_upload_path_from_detection_id(
-            spark=sparkSession,
-            catalog=catalog,
-            schema=schema,
-            detection_id=row["detection_id"],
-            device_id=device_id,
+
+    detection_ids = (
+        filtered_df.select("detection_id").rdd.flatMap(lambda x: x).collect()
+    )
+    to_keep_image_names_current_run_list = []
+    for detection_id in detection_ids:
+        to_keep_image_name = get_image_name_from_detection_id(
+            sparkSession, catalog, schema, detection_id
         )
-        delete_file(file_path=image_to_delete_full_path)
+        to_keep_image_names_current_run_list.append(to_keep_image_name)
+    print(f"{len(to_keep_image_names_current_run_list)} images to keep.")
+
+    # Substract image names we want to keep from all image names
+    to_delete_image_names_current_run_list = (
+        all_image_names_current_run_list - to_keep_image_names_current_run_list
+    )
+    successful_deletions = 0
+    for img in to_delete_image_names_current_run_list:
+        image_to_delete_full_path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{gps_date_value}/{img}"
+        if delete_file(file_path=image_to_delete_full_path):
+            successful_deletions += 1
+    print(f"{successful_deletions} images successfully deleted.")
 
 
 if __name__ == "__main__":

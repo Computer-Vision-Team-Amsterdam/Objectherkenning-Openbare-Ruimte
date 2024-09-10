@@ -14,13 +14,28 @@ def delete_file(file_path):
         dbutils.fs.ls(file_path)  # type: ignore[name-defined] # noqa: F821, F405
         # if the file exists, remove it
         dbutils.fs.rm(file_path)  # type: ignore[name-defined] # noqa: F821, F405
+        return True
     except Exception as e:
         # Check if the error is due to the file not being found
         if "FileNotFoundException" in str(e):
             print(f"File {file_path} does not exist, so it cannot be removed.")
+            return False
         else:
             # If there’s another type of error, raise it
             raise RuntimeError(f"An unexpected error occurred: {e}")
+
+
+def get_image_name_from_detection_id(spark, catalog, schema, detection_id):
+
+    fetch_image_name_query = f"""
+                            SELECT {catalog}.{schema}.silver_detection_metadata.image_name
+                            FROM {catalog}.{schema}.silver_detection_metadata
+                            WHERE {catalog}.{schema}.silver_detection_metadata.id = {detection_id}
+                            """  # nosec
+    image_name_result_df = spark.sql(fetch_image_name_query)  # noqa: F405
+
+    image_basename = image_name_result_df.collect()[0]["image_name"]
+    return image_basename
 
 
 def get_image_upload_path_from_detection_id(
@@ -37,16 +52,12 @@ def get_image_upload_path_from_detection_id(
     str: The constructed image upload path.
     """
 
-    # Fetch the image name based on the detection_id
-    fetch_image_name_query = f"""
-                            SELECT {catalog}.{schema}.silver_detection_metadata.image_name
-                            FROM {catalog}.{schema}.silver_detection_metadata
-                            WHERE {catalog}.{schema}.silver_detection_metadata.id = {detection_id}
-                            """  # nosec
-    image_name_result_df = spark.sql(fetch_image_name_query)  # noqa: F405
-
-    # Extract the image name from the result
-    image_basename = image_name_result_df.collect()[0]["image_name"]
+    image_basename = get_image_name_from_detection_id(
+        spark=spark,
+        catalog=catalog,
+        schema=schema,
+        detection_id=detection_id,
+    )
 
     fetch_date_of_image_upload = f"""SELECT {catalog}.{schema}.silver_frame_metadata.gps_date FROM {catalog}.{schema}.silver_frame_metadata WHERE {catalog}.{schema}.silver_frame_metadata.image_name = '{image_basename}'"""  # nosec
 
@@ -60,7 +71,6 @@ def get_image_upload_path_from_detection_id(
     date_of_image_upload_ymd = date_obj.strftime("%Y-%m-%d")
 
     # Construct the path to the image to be uploaded to Signalen
-    # TODO replace luna with 'device_id', not sure if to add it as class attribute
     image_upload_path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{date_of_image_upload_ymd}/{image_basename}"
 
     return image_upload_path
