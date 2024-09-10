@@ -44,11 +44,18 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         """
         Process the results of the query.
         """
+
+        def _safe_json_load(x):
+            try:
+                return json.loads(x)
+            except json.JSONDecodeError:
+                return []
+
         print(
             "Processing object permits (filter by object name, convert address to coordinates)..."
         )
         self.query_result_df["objecten"] = self.query_result_df["objecten"].apply(
-            lambda x: json.loads(x) if x else []
+            lambda x: _safe_json_load(x) if x else []
         )
 
         # Only keep rows with permits about containers
