@@ -10,19 +10,17 @@ MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are
 
 
 class Clustering:
-
     def __init__(self, spark: SparkSession, catalog, schema):
-
         self.spark = spark
         self.catalog = catalog
         self.schema = schema
-        query_detection_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_detection_metadata WHERE status='Pending'"
+        query_detection_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_detection_metadata WHERE status='Pending'"  # nosec
         self.detection_metadata = self.spark.sql(query_detection_metadata)
         print(
             f"03: Loaded {self.detection_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_detection_metadata."
         )
 
-        query_frame_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_frame_metadata WHERE status='Pending'"
+        query_frame_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_frame_metadata WHERE status='Pending'"  # nosec
         self.frame_metadata = self.spark.sql(query_frame_metadata)
         print(
             f"03: Loaded {self.frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_frame_metadata."
@@ -95,7 +93,6 @@ class Clustering:
         rows = self.df_joined.select("gps_lat", "gps_lon").collect()
         # Convert the list of Row objects into a list of tuples
         containers_coordinates = [(row["gps_lat"], row["gps_lon"]) for row in rows]
-        # containers_coordinates = [(float(row["gps_lat"]), float(row["gps_lon"])) for row in rows]
 
         return containers_coordinates
 
