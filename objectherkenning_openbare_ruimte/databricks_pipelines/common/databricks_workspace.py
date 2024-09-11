@@ -17,28 +17,11 @@ def get_databricks_environment(spark: SparkSession):
         print(f"Error decoding JSON: {e}")
         return None
 
-    environment_tag = next(
-        (tag for tag in tags_json if tag.get("key") == "environment"), None
-    )
-    if environment_tag:
-        environment = environment_tag.get("value")
-        return environment
-    else:
-        raise ValueError("Databricks environment is not set.")
-
-
-def get_catalog_name(spark: SparkSession):
-    """
-    Sets the catalog name based on the environment retrieved from Databricks cluster tags
-    """
-
-    environment = get_databricks_environment(spark)
-    if environment == "Ontwikkel":
-        catalog_name = "dpcv_dev"
-    elif environment == "Productie":
-        catalog_name = "dpcv_prd"
-
-    return catalog_name
+    for tag in tags_json:
+        if tag.get("key") == "environment":
+            environment = tag.get("value")
+            return environment
+    raise ValueError("Databricks environment is not set.")
 
 
 def get_job_process_time(job_process_time_settings, is_first_pipeline_step):
