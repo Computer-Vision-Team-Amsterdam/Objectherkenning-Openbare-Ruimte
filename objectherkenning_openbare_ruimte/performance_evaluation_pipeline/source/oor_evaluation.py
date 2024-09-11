@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Dict, Iterable, List, Tuple, Union
 
@@ -19,6 +20,8 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.yo
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.run_custom_coco_eval import (  # noqa: E402
     run_custom_coco_eval,
 )
+
+logger = logging.getLogger("performance_evaluation")
 
 DEFAULT_OBJECT_CLASSES = ObjectClass
 DEFAULT_SENSITIVE_CLASSES = [
@@ -61,6 +64,22 @@ class OOREvaluation:
         self.sensitivate_classes = sensitivate_classes
         self.single_size_only = single_size_only
 
+        self.log_stats()
+
+    def log_stats(self) -> None:
+        for split in self.splits:
+            split_name = split if split != "" else "all"
+            gt_folder, pred_folder = self._get_folders_for_split(split)
+            gt_count = len(
+                [name for name in os.listdir(gt_folder) if name.endswith(".txt")]
+            )
+            pred_count = len(
+                [name for name in os.listdir(pred_folder) if name.endswith(".txt")]
+            )
+            logger.info(
+                f"Split: {split_name}, ground truth labels: {gt_count}, prediction labels: {pred_count}"
+            )
+
     def _get_folders_for_split(self, split: str) -> Tuple[str, str]:
         ground_truth_folder = os.path.join(
             self.ground_truth_base_folder, self.gt_annotations_rel_path, split
@@ -76,7 +95,7 @@ class OOREvaluation:
     ) -> Dict[str, Dict[str, Dict[str, float]]]:
         tba_results = dict()
         for split in self.splits:
-            print(
+            logger.info(
                 f"Running TBA evaluation for {self.model_name} / {split if split != '' else 'all'}"
             )
             ground_truth_folder, prediction_folder = self._get_folders_for_split(split)
@@ -96,7 +115,7 @@ class OOREvaluation:
     def per_image_evaluation(self) -> Dict[str, Dict[str, Dict[str, float]]]:
         per_image_results = dict()
         for split in self.splits:
-            print(
+            logger.info(
                 f"Running per-image evaluation for {self.model_name} / {split if split != '' else 'all'}"
             )
             ground_truth_folder, prediction_folder = self._get_folders_for_split(split)
@@ -149,7 +168,7 @@ class OOREvaluation:
             custom_coco_result[key] = dict()
 
             for target_cls_name, target_cls in target_classes.items():
-                print(
+                logger.info(
                     f"Running custom COCO evaluation for {self.model_name} / {split if split != '' else 'all'} / {target_cls_name}"
                 )
                 eval = run_custom_coco_eval(

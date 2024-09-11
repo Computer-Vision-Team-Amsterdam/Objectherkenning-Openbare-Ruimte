@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Dict, List, Tuple
 
 from pycocotools.coco import COCO
@@ -10,6 +11,8 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.me
     BoxSize,
     ObjectClass,
 )
+
+logger = logging.getLogger("performance_evaluation")
 
 
 def run_custom_coco_eval(
@@ -58,7 +61,7 @@ def run_custom_coco_eval(
     height = data["images"][0]["height"]
     width = data["images"][0]["width"]
     if width != predicted_img_shape[0] or height != predicted_img_shape[1]:
-        print(
+        logger.warning(
             f"You're trying to run evaluation on images of size {width} x {height}, "
             "but the coco annotations have been generated from images of size "
             f"{predicted_img_shape[0]} x {predicted_img_shape[1]}."

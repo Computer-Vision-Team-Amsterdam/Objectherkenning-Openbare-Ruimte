@@ -2,11 +2,15 @@ __author__ = "tsungyi"  # Modified for OOR by Computer Vision Team, Gem. Amsterd
 
 import copy
 import datetime
+import logging
 import time
 from collections import defaultdict
 
 import numpy as np
 from pycocotools import mask as maskUtils
+
+logger = logging.getLogger("custom_coco")
+logger.setLevel(logging.INFO)
 
 
 class CustomCOCOeval:
@@ -67,9 +71,9 @@ class CustomCOCOeval:
         :return: None
         """
         if not iouType:
-            print("iouType not specified. use default iouType segm")
+            logger.info("iouType not specified. use default iouType segm")
         if not iouType == "bbox":
-            print("iouType must be `bbox` with this custom version!")
+            logger.error("iouType must be `bbox` with this custom version!")
             return
         self.cocoGt = cocoGt  # ground truth COCO API
         self.cocoDt = cocoDt  # detections COCO API
@@ -137,17 +141,17 @@ class CustomCOCOeval:
         :return: None
         """
         tic = time.time()
-        print("Running per image evaluation...")
+        logger.debug("Running per image evaluation...")
         p = self.params
         # add backward compatibility if useSegm is specified in params
         if p.useSegm is not None:
             p.iouType = "segm" if p.useSegm == 1 else "bbox"
-            print(
+            logger.info(
                 "useSegm (deprecated) is not None. Running {} evaluation".format(
                     p.iouType
                 )
             )
-        print("Evaluate annotation type *{}*".format(p.iouType))
+        logger.debug("Evaluate annotation type *{}*".format(p.iouType))
         p.imgIds = list(np.unique(p.imgIds))
         if p.useCats:
             p.catIds = list(np.unique(p.catIds))
@@ -178,7 +182,7 @@ class CustomCOCOeval:
         ]
         self._paramsEval = copy.deepcopy(self.params)
         toc = time.time()
-        print("DONE (t={:0.2f}s).".format(toc - tic))
+        logger.debug("DONE (t={:0.2f}s).".format(toc - tic))
 
     def computeIoU(self, imgId, catId):
         p = self.params
@@ -353,10 +357,10 @@ class CustomCOCOeval:
         :param p: input params for evaluation
         :return: None
         """
-        print("Accumulating evaluation results...")
+        logger.debug("Accumulating evaluation results...")
         tic = time.time()
         if not self.evalImgs:
-            print("Please run evaluate() first")
+            logger.warning("Please run evaluate() first")
         # allows input customized parameters
         if p is None:
             p = self.params
@@ -461,7 +465,7 @@ class CustomCOCOeval:
             "scores": scores,
         }
         toc = time.time()
-        print("DONE (t={:0.2f}s).".format(toc - tic))
+        logger.debug("DONE (t={:0.2f}s).".format(toc - tic))
 
     def summarize(self, print_summary=True):
         """
@@ -506,7 +510,7 @@ class CustomCOCOeval:
                 mean_s = np.mean(s[s > -1])
             if print_summary:
                 # print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
-                print(iStr.format(titleStr, typeStr, iouStr, areaRng, mean_s))
+                logger.info(iStr.format(titleStr, typeStr, iouStr, areaRng, mean_s))
             return mean_s
 
         def _summarizeDets():
@@ -561,10 +565,12 @@ class CustomCOCOeval:
         if not self.eval:
             raise Exception("Please run accumulate() first")
         if len(self.params.catLbls) != len(self.params.catIds):
-            print("Note: params.catLbls do not match params.catIds")
+            logger.debug("Note: params.catLbls do not match params.catIds")
             self.params.catLbls = self.params.catIds
         self.params.catLbls = map(str, self.params.catLbls)
-        print(f"Summarizing statistics for classes: [{', '.join(self.params.catLbls)}]")
+        logger.debug(
+            f"Summarizing statistics for classes: [{', '.join(self.params.catLbls)}]"
+        )
         iouType = self.params.iouType
         if iouType == "segm" or iouType == "bbox":
             summarize = _summarizeDets

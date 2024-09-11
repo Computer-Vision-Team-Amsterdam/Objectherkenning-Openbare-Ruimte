@@ -1,7 +1,9 @@
+import logging
 import os
 import sys
 
 import pandas as pd
+from aml_interface.azure_logging import AzureLoggingConfigurer
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
 
@@ -23,6 +25,12 @@ config_path = os.path.abspath(
 
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
+
+log_settings = settings["logging"]
+azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
+azure_logging_configurer.setup_oor_logging()
+logger = logging.getLogger("performance_evaluation")
+
 aml_experiment_settings = settings["aml_experiment_details"]
 
 
@@ -45,6 +53,8 @@ def evaluate_model(
     prediction_labels_rel_path = settings["performance_evaluation"][
         "prediction_labels_rel_path"
     ]
+
+    logger.info(f"Running performance evaluation for model: {model_name}")
 
     os.makedirs(output_dir, exist_ok=True)
 
