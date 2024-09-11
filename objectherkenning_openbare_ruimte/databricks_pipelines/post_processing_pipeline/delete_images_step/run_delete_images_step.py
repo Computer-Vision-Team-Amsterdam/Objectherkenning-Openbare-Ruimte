@@ -2,6 +2,7 @@
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import os  # noqa: E402
+from datetime import datetime  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
 from pyspark.sql.functions import col, date_format  # noqa: E402
@@ -73,8 +74,12 @@ def run_delete_images_step(
         - set(to_keep_image_names_current_run_list)
     )
     successful_deletions = 0
+    formatted_gps_date_value = datetime.strptime(gps_date_value, "%Y/%m/%d").strftime(
+        "%Y-%m-%d"
+    )
     for img in to_delete_image_names_current_run_list:
-        image_to_delete_full_path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{gps_date_value.replace('/', '-')}/{img}"
+
+        image_to_delete_full_path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{formatted_gps_date_value}/{img}"
         if delete_file(file_path=image_to_delete_full_path):
             successful_deletions += 1
     print(f"{successful_deletions} images successfully deleted.")
