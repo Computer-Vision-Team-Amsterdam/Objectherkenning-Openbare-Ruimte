@@ -26,7 +26,7 @@ def run_custom_coco_eval(
     ],
     print_summary: bool = True,
     precision: int = 3,
-) -> Dict:
+) -> Dict[str, float]:
     """
     Runs COCO evaluation on the output of YOLO validation
 

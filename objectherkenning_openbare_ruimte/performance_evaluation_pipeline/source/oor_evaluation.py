@@ -33,6 +33,7 @@ class OOREvaluation:
         self,
         ground_truth_base_folder: str,
         predictions_base_folder: str,
+        output_folder: Union[str, None] = None,
         ground_truth_image_shape: Tuple[int, int] = (3840, 2160),
         predictions_image_shape: Tuple[int, int] = (3840, 2160),
         model_name: Union[str, None] = None,
@@ -45,6 +46,7 @@ class OOREvaluation:
     ):
         self.ground_truth_base_folder = ground_truth_base_folder
         self.predictions_base_folder = predictions_base_folder
+        self.output_folder = output_folder
         self.ground_truth_image_shape = ground_truth_image_shape
         self.predictions_image_shape = predictions_image_shape
         self.model_name = (
@@ -91,7 +93,7 @@ class OOREvaluation:
             )
         return tba_results
 
-    def per_image_evaluation(self) -> Dict[str, Dict[str, float]]:
+    def per_image_evaluation(self) -> Dict[str, Dict[str, Dict[str, float]]]:
         per_image_results = dict()
         for split in self.splits:
             print(
@@ -109,29 +111,39 @@ class OOREvaluation:
             )
         return per_image_results
 
-    def coco_evaluation(self) -> Dict[str, Dict[str, float]]:
-        custom_coco_result = dict()
+    def coco_evaluation(self) -> Dict[str, Dict[str, Dict[str, float]]]:
+        custom_coco_result: Dict[str, Dict[str, Dict[str, float]]] = dict()
         target_classes = {"all": [obj_cls.value for obj_cls in self.object_classes]}
         for obj_cls in self.object_classes:
             target_classes[obj_cls.name] = [obj_cls.value]
 
+        if not self.output_folder:
+            gt_output_dir = self.ground_truth_base_folder
+        else:
+            gt_output_dir = self.output_folder
+
         convert_yolo_dataset_to_coco_json(
-            dataset_dir=self.ground_truth_base_folder, splits=self.splits
+            dataset_dir=self.ground_truth_base_folder,
+            splits=self.splits,
+            output_dir=gt_output_dir,
         )
+
+        if not self.output_folder:
+            pred_output_dir = self.predictions_base_folder
+        else:
+            pred_output_dir = self.output_folder
+
         convert_yolo_predictions_to_coco_json(
             predictions_dir=self.predictions_base_folder,
             image_shape=self.ground_truth_image_shape,
             labels_rel_path=self.pred_annotations_rel_path,
             splits=self.splits,
+            output_dir=pred_output_dir,
         )
 
         for split in self.splits:
-            gt_json = os.path.join(
-                self.ground_truth_base_folder, f"coco_gt_{split}.json"
-            )
-            pred_json = os.path.join(
-                self.predictions_base_folder, f"coco_predictions_{split}.json"
-            )
+            gt_json = os.path.join(gt_output_dir, f"coco_gt_{split}.json")
+            pred_json = os.path.join(pred_output_dir, f"coco_predictions_{split}.json")
 
             key = f"{self.model_name}_{split if split != '' else 'all'}"
             custom_coco_result[key] = dict()
@@ -167,7 +179,7 @@ def tba_result_to_df(results: Dict[str, Dict[str, Dict[str, float]]]) -> pd.Data
     for model in models:
         (model_name, split) = model.rsplit(sep="_", maxsplit=1)
         data = [model_name, split]
-        data.extend([results[model][cat]["recall"] for cat in categories])
+        data.extend([str(results[model][cat]["recall"]) for cat in categories])
         df.loc[len(df)] = data
 
     return df
@@ -198,7 +210,7 @@ def per_image_result_to_df(
         for cat in categories:
             (cat_name, size) = cat.rsplit(sep="_", maxsplit=1)
             data = [model_name, split, cat_name, size]
-            data.extend([val for val in results[model][cat].values()])
+            data.extend([str(val) for val in results[model][cat].values()])
             df.loc[len(df)] = data
 
     return df
@@ -219,7 +231,7 @@ def custom_coco_result_to_df(
         (model_name, split) = model.rsplit(sep="_", maxsplit=1)
         for cat in categories:
             data = [model_name, split, cat]
-            data.extend([val for val in results[model][cat].values()])
+            data.extend([str(val) for val in results[model][cat].values()])
             df.loc[len(df)] = data
 
     return df
