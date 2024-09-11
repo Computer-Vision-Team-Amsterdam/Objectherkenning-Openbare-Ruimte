@@ -74,7 +74,7 @@ def run_delete_images_step(
         - set(to_keep_image_names_current_run_list)
     )
     successful_deletions = 0
-    formatted_gps_date_value = datetime.strptime(gps_date_value, "%Y/%m/%d").strftime(
+    formatted_gps_date_value = datetime.strptime(gps_date_value, "%d/%m/%Y").strftime(
         "%Y-%m-%d"
     )
     for img in to_delete_image_names_current_run_list:
