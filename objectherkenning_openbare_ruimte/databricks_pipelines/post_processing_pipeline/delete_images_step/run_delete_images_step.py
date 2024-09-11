@@ -68,8 +68,9 @@ def run_delete_images_step(
     print(f"{len(to_keep_image_names_current_run_list)} images to keep.")
 
     # Substract image names we want to keep from all image names
-    to_delete_image_names_current_run_list = (
-        all_image_names_current_run_list - to_keep_image_names_current_run_list
+    to_delete_image_names_current_run_list = list(
+        set(all_image_names_current_run_list)
+        - set(to_keep_image_names_current_run_list)
     )
     successful_deletions = 0
     for img in to_delete_image_names_current_run_list:
