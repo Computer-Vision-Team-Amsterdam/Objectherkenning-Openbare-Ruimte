@@ -129,8 +129,7 @@ class SignalHandler:
         if response.status_code == 200:
             print("The server successfully performed the GET request.")
             return response.json()
-        else:
-            return response.raise_for_status()
+        return response.raise_for_status()
 
     def post_signal(self, json_content: Any) -> Any:
         """
