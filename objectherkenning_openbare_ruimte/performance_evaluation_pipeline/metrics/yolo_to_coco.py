@@ -84,14 +84,8 @@ def convert_yolo_dataset_to_coco_json(
 
 
 def _convert_dataset_split(image_dir: str, label_dir: str) -> Dict:
-    # Define the COCO dataset dictionary
-    coco_dataset = {
-        "info": {},
-        "licenses": [],
-        "categories": CATEGORIES,
-        "images": [],
-        "annotations": [],
-    }
+    image_list: List[Dict] = []
+    annotation_list: List[Dict] = []
 
     # Loop through the images in the input directory
     for image_file in os.listdir(image_dir):
@@ -108,7 +102,7 @@ def _convert_dataset_split(image_dir: str, label_dir: str) -> Dict:
             "height": height,
             "file_name": image_file,
         }
-        coco_dataset["images"].append(image_dict)
+        image_list.append(image_dict)
 
         # Load the bounding box annotations for the image
         annotation_file = os.path.join(label_dir, f'{image_file.split(".")[0]}.txt')
@@ -124,13 +118,22 @@ def _convert_dataset_split(image_dir: str, label_dir: str) -> Dict:
                 x_min, y_min = int((x - w / 2) * width), int((y - h / 2) * height)
                 x_max, y_max = int((x + w / 2) * width), int((y + h / 2) * height)
                 ann_dict = {
-                    "id": len(coco_dataset["annotations"]),
+                    "id": len(annotation_list),
                     "image_id": image_file.split(".")[0],
                     "category_id": int(cl),
                     "bbox": [x_min, y_min, x_max - x_min, y_max - y_min],
                     "area": (x_max - x_min) * (y_max - y_min),
                     "iscrowd": 0,
                 }
-                coco_dataset["annotations"].append(ann_dict)
+                annotation_list.append(ann_dict)
+
+    # Define the COCO dataset dictionary
+    coco_dataset = {
+        "info": {},
+        "licenses": [],
+        "categories": CATEGORIES,
+        "images": image_list,
+        "annotations": annotation_list,
+    }
 
     return coco_dataset
