@@ -1,7 +1,13 @@
 # Project specific files
 *.jpg
+*.png
 *.mp4
 *.csv
+*.html
+
+local/
+
+config.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -173,5 +179,3 @@ output/
 
 # Mac .DS_Store
 *.DS_Store
-
-config.json
