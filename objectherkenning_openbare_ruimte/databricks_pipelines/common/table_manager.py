@@ -122,34 +122,6 @@ class TableManager:
 
         return modified_schema
 
-    # def update_status(
-    #     self, table_name: str, job_process_time: datetime, exclude_ids=[]
-    # ):
-    #     table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
-
-    #     pending_df = table_df.filter(
-    #         (col("status") == "Pending") & (~col("id").isin(exclude_ids))
-    #     )
-
-    #     total_pending_before = pending_df.count()
-
-    #     updated_df = pending_df.withColumn("status", lit("Processed")).withColumn(
-    #         "processed_at", lit(job_process_time)
-    #     )
-
-    #     updated_df.write.mode("overwrite").insertInto(
-    #         f"{self.catalog}.{self.schema}.{table_name}"
-    #     )
-
-    #     table_df = self.spark.table(f"{self.catalog}.{self.schema}.{table_name}")
-    #     total_pending_after = table_df.filter(col("status") == "Pending").count()
-
-    #     updated_rows = total_pending_before - total_pending_after
-
-    #     print(
-    #         f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
-    #     )
-
     def write_to_table(self, df, table_name, mode="append"):
         df.write.mode(mode).saveAsTable(f"{self.catalog}.{self.schema}.{table_name}")
         print(f"Appended {df.count()} rows to {table_name}.")
