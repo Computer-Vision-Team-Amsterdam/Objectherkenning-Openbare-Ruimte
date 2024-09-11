@@ -29,7 +29,7 @@ def run_delete_images_step(
     device_id,
     job_process_time,
 ):
-    job_date = job_process_time.split(" ")[0]
+    job_date = job_process_time.split("T")[0]
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
 
     bronze_frame_metadata_df = tableManager.load_from_table(
