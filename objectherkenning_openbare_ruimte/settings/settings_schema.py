@@ -76,6 +76,7 @@ class PerformanceEvaluationSpec(SettingsSpecModel):
     model_name: str
     predictions_image_shape: List[int]
     splits: List[str]
+    prediction_labels_rel_path: str = "labels"
 
 
 class TrainingModelParameters(SettingsSpecModel):

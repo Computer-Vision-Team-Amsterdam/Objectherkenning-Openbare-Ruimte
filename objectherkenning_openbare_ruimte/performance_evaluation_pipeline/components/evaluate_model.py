@@ -42,6 +42,9 @@ def evaluate_model(
     predictions_img_shape = settings["performance_evaluation"][
         "predictions_image_shape"
     ]
+    prediction_labels_rel_path = settings["performance_evaluation"][
+        "prediction_labels_rel_path"
+    ]
 
     os.makedirs(output_dir, exist_ok=True)
 
@@ -51,6 +54,7 @@ def evaluate_model(
         output_folder=output_dir,
         predictions_image_shape=predictions_img_shape,
         model_name=model_name,
+        pred_annotations_rel_path=prediction_labels_rel_path,
     )
 
     # Total Blurred Area evaluation

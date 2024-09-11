@@ -62,6 +62,7 @@ performance_evaluation:
   model_name: "yolov8m_1280_v2.1"
   predictions_image_shape: [1280, 720]
   splits: ["train", "val", "test"]
+  prediction_labels_rel_path: "detected_labels"
 
 training_pipeline:
   model_parameters:
