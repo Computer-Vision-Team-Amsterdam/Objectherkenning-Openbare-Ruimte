@@ -1,10 +1,13 @@
 import logging
 import os
+import sys
 
 import pandas as pd
 from aml_interface.azure_logging import AzureLoggingConfigurer
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
+
+sys.path.append("../../..")
 
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.oor_evaluation import (  # noqa: E402
     OOREvaluation,
