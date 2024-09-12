@@ -317,6 +317,68 @@ class SignalHandler:
         )
 
     @staticmethod
+    def get_bag_address_in_range(
+        longitude: float, latitude: float, max_building_search_radius=50
+    ) -> List[Optional[str]]:
+        """
+        Retrieves the nearest building information in BAG for a given location point within a specified search radius.
+
+        Parameters
+        ----------
+        lat : float
+            The latitude coordinate of the location point.
+        lon : float
+            The longitude coordinate of the location point.
+        max_building_search_radius : int, optional
+            The maximum radius (in meters) to search for buildings around the given location point.
+            Default is 50 meters.
+
+        Returns
+        -------
+        List[Optional[str]]
+            A list containing the address details of the nearest building within the specified search radius.
+            The list contains the following elements:
+            - Street name (openbare_ruimte)
+            - House number (huisnummer)
+            - Postcode
+
+        Example
+        --------
+        lat = 52.3702
+        lon = 4.8952
+        _get_bag_address_in_range(lat, lon)
+        ['Dam Square', '1', '1012 JS']
+        """
+        location_point = {"lat": latitude, "lon": longitude}
+        bag_url = (
+            f"https://api.data.amsterdam.nl/bag/v1.1/nummeraanduiding/"
+            f"?format=json&locatie={location_point['lat']},{location_point['lon']},"
+            f"{max_building_search_radius}&srid=4326&detailed=1"
+        )
+
+        response = requests.get(bag_url, timeout=60)
+        if response.status_code == 200:
+            response_content = json.loads(response.content)
+            if response_content["count"] > 0:
+                # Get first element
+                first_element = json.loads(response.content)["results"][0]
+                return [
+                    first_element["openbare_ruimte"]["_display"],
+                    first_element["huisnummer"],
+                    first_element["postcode"],
+                ]
+            else:
+                print(
+                    f"No BAG address in the range of {max_building_search_radius} found."
+                )
+                return []
+        else:
+            print(
+                f"Failed to get address from BAG, status code {response.status_code}."
+            )
+            return []
+
+    @staticmethod
     def fill_incident_details(incident_date: str, lon: float, lat: float) -> Any:
         """
         Fills in the details of an incident and returns a JSON object representing the incident.
@@ -344,69 +406,10 @@ class SignalHandler:
         json_to_send = _fill_incident_details(incident_date, lat_lon)
         """
 
-        def _get_bag_address_in_range(
-            longitude: float, latitude: float, max_building_search_radius=50
-        ) -> List[Optional[str]]:
-            """
-            Retrieves the nearest building information in BAG for a given location point within a specified search radius.
-
-            Parameters
-            ----------
-            lat : float
-                The latitude coordinate of the location point.
-            lon : float
-                The longitude coordinate of the location point.
-            max_building_search_radius : int, optional
-                The maximum radius (in meters) to search for buildings around the given location point.
-                Default is 50 meters.
-
-            Returns
-            -------
-            List[Optional[str]]
-                A list containing the address details of the nearest building within the specified search radius.
-                The list contains the following elements:
-                - Street name (openbare_ruimte)
-                - House number (huisnummer)
-                - Postcode
-
-            Example
-            --------
-            lat = 52.3702
-            lon = 4.8952
-            _get_bag_address_in_range(lat, lon)
-            ['Dam Square', '1', '1012 JS']
-            """
-            location_point = {"lat": latitude, "lon": longitude}
-            bag_url = (
-                f"https://api.data.amsterdam.nl/bag/v1.1/nummeraanduiding/"
-                f"?format=json&locatie={location_point['lat']},{location_point['lon']},"
-                f"{max_building_search_radius}&srid=4326&detailed=1"
-            )
-
-            response = requests.get(bag_url, timeout=60)
-            if response.status_code == 200:
-                response_content = json.loads(response.content)
-                if response_content["count"] > 0:
-                    # Get first element
-                    first_element = json.loads(response.content)["results"][0]
-                    return [
-                        first_element["openbare_ruimte"]["_display"],
-                        first_element["huisnummer"],
-                        first_element["postcode"],
-                    ]
-                else:
-                    print(
-                        f"No BAG address in the range of {max_building_search_radius} found."
-                    )
-                    return []
-            else:
-                print(
-                    f"Failed to get address from BAG, status code {response.status_code}."
-                )
-                return []
-
         date_now = datetime.strptime(incident_date, "%Y-%m-%d").date()
-        bag_address = _get_bag_address_in_range(longitude=lon, latitude=lat)
+        bag_address = SignalHandler.get_bag_address_in_range(
+            longitude=lon, latitude=lat
+        )
 
         json_to_send = {
             "text": SignalHandler.get_signal_description(),
