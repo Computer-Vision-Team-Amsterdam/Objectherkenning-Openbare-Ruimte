@@ -33,7 +33,7 @@ def run_delete_images_step(
     job_date = job_process_time.split("T")[0]
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
 
-    bronze_frame_metadata_df = tableManager.load_from_table(
+    bronze_frame_metadata_df = tableManager.get_table(
         table_name="bronze_frame_metadata"
     )
     filtered_df = bronze_frame_metadata_df.filter(
@@ -47,7 +47,7 @@ def run_delete_images_step(
 
     print(f"{len(all_image_names_current_run_list)} images found on {gps_date_value}.")
 
-    silver_objects_per_day_df = tableManager.load_from_table(
+    silver_objects_per_day_df = tableManager.get_table(
         table_name="silver_objects_per_day"
     )
 
