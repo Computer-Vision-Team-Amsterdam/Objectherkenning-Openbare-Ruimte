@@ -1,42 +1,110 @@
-databricks_pipelines:
-    Ontwikkel:
-      catalog: "dpcv_dev"
-      schema: "oor"
-      storage_account_root_path: "abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
-      device_id: "Luna"
-      ckpt_frames_relative_path: checkpoints/_checkpoint_frames
-      ckpt_detections_relative_path: checkpoints/_checkpoint_detections
-      vuln_bridges_relative_path: "vuln_bridges.geojson"
-      reference_database:
-        host: "dev-bbn1-01-dbhost.postgres.database.azure.com"
-        name: "mdbdataservices"
-      signalen:  
-        access_token_url: "https://acc.iam.amsterdam.nl/auth/realms/datapunt-ad-acc/protocol/openid-connect/token"
-        base_url: "https://api.acc.meldingen.amsterdam.nl/signals/v1/private/signals"
-        client_id: "sia-cvt"
-        client_secret_name: "sia-password-acc"
-      azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"    
-    Productie: 
-      catalog: "dpcv_prd"
-      schema: "oor"
-      storage_account_root_path: "abfss://landingzone@stlandingdpcvprdweu01.dfs.core.windows.net"
-      device_id: "Luna"
-      ckpt_frames_relative_path: checkpoints/_checkpoint_frames
-      ckpt_detections_relative_path: checkpoints/_checkpoint_detections
-      vuln_bridges_relative_path: "vuln_bridges.geojson"
-      reference_database:
-        host: "prd-bbn1-01-dbhost.postgres.database.azure.com"
-        name: "mdbdataservices"
-      signalen:  
-        access_token_url: "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
-        base_url: "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
-        client_id: "sia-cvt"
-        client_secret_name: "sia-password-prd"
-      azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"    
-    job_process_time:
-      auto: true
-      custom_job_process_time: "2024-08-27 10:00:00"
+customer: ""
 
+aml_experiment_details:
+  compute_name: oor-testing
+  env_name: oor-environment
+  env_version: 48
+  src_dir: "."
 
+convert_dataset:
+  input_old_datastore: "old_datastore"
+  output_new_datastore: "new_datastore"
+  face_width: 1024
 
-    
+convert_annotations:
+  input_datastore_name: annotations_conversion_old
+  output_datastore_name: annotations_conversion_new
+  final_datastore_name: converted_new_dataset_oor
+  categories_file: categories.json
+  separate_labels: True
+  label_folder: dataset_folder/labels
+
+data_sampling:
+  inputs:
+    datastore: "oor_velotech"
+    rel_path: "frames/20240329-141802"
+    frame_metadata_rel_path: "frames/metadata"
+    decos_rel_path: "decos"
+  outputs:
+    datastore: "oor_velotech"
+    rel_path: "frames/sample"
+  n_frames: 1500
+  sampling_weight: 1.0
+  decos_radius: 30
+
+distortion_correction:
+  cx: 0.509
+  cy: 0.488
+  k1: -0.241
+  k2: 0.106
+
+frame_extraction:
+  inputs:
+    datastore: "oor_velotech"
+    rel_path: ""
+  outputs:
+    datastore: "oor_velotech"
+    rel_path: "frames"
+    metadata_rel_path: "frames/metadata"
+  log_dir: "logs"
+  exclude_dirs: ["checkboard", "frames", "decos"]  # Do not check for MP4 in these dirs
+  exclude_files: ["D17M02Y2024-H20M50S55"]  # Metadata for this file is invalid
+  fps: 1
+
+training_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 500
+    patience: 100
+    n_classes: 5
+    cos_lr: True
+    dropout: 0.0
+    seed: 0
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  inputs:
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
+    model_weights_rel_path: "model"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+  outputs:
+    project_datastore_path: "dataset_oor_v2_0"
+    project_rel_path: "model"
+
+sweep_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 100
+    patience: 100
+    n_classes: 5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  sweep_trials: 30
+  inputs:
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
+    model_weights_rel_path: "model"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    sweep_config: "sweep_config.json"
+  outputs:
+    project_datastore_path: "dataset_oor_v2_0"
+    project_rel_path: "model"
+
+wandb:
+  api_key: ""
+  mode: "online"
+
+logging:
+  loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
+  basic_config:
+    # log config as arguments to `logging.basicConfig`
+    level: WARNING
+    format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  ai_instrumentation_key: "AI_INSTRUMENTATION_KEY"
