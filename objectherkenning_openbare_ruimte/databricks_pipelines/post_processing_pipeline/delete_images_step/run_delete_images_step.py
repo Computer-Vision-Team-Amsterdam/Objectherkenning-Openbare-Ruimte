@@ -80,7 +80,7 @@ def run_delete_images_step(
     for img in to_delete_image_names_current_run_list:
 
         image_to_delete_full_path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{formatted_gps_date_value}/{img}"
-        if delete_file(file_path=image_to_delete_full_path):
+        if delete_file(databricks_volume_full_path=image_to_delete_full_path):
             successful_deletions += 1
     print(f"{successful_deletions} images successfully deleted.")
 

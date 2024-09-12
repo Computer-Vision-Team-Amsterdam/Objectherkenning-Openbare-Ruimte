@@ -3,12 +3,12 @@ from datetime import datetime
 from databricks.sdk.runtime import *  # noqa: F403
 
 
-def delete_file(file_path):
+def delete_file(databricks_volume_full_path):
     """
     Delete file from storage account.
 
     Parameters:
-    file_path (str): The full path of the file using the volumes. The path should be within the /Volumes/ directory in Databricks.
+    databricks_volume_full_path (str): The full path of the file using the volumes. The path should be within the /Volumes/ directory in Databricks.
 
     """
     try:
@@ -20,7 +20,9 @@ def delete_file(file_path):
     except Exception as e:
         # Check if the error is due to the file not being found
         if "FileNotFoundException" in str(e):
-            print(f"File {file_path} does not exist, so it cannot be removed.")
+            print(
+                f"File {databricks_volume_full_path} does not exist, so it cannot be removed."
+            )
             return False
         else:
             # If there’s another type of error, raise it
