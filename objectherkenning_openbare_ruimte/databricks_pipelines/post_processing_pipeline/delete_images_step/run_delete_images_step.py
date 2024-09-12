@@ -90,7 +90,7 @@ if __name__ == "__main__":
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
-    config_file_path = os.path.join(project_root, "config.yml")
+    config_file_path = os.path.join(project_root, "config_db.yml")
     databricks_environment = get_databricks_environment(sparkSession)
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
