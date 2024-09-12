@@ -111,30 +111,3 @@ class TableManager:
     def write_to_table(self, df, table_name, mode="append"):
         df.write.mode(mode).saveAsTable(f"{self.catalog}.{self.schema}.{table_name}")
         print(f"Appended {df.count()} rows to {table_name}.")
-
-    @staticmethod
-    def compare_dataframes(df1, df2, df1_name, df2_name):
-        print(f"Comparing dataframes {df1_name} and {df2_name}.")
-        print(50 * "-")
-
-        same_count = df1.count() == df2.count()
-        print(f"Same number of rows: {same_count}")
-
-        diff1 = df1.subtract(df2)
-        diff2 = df2.subtract(df1)
-
-        if diff1.count() == 0 and diff2.count() == 0:
-            print("The DataFrames have the same content.")
-        else:
-            print("The DataFrames differ.")
-
-        same_schema = df1.schema == df2.schema
-        if same_schema:
-            print("Same schema.")
-        else:
-            print("\nSchemas differ. Here are the details:")
-            print(f"Schema of {df1_name}:")
-            df1.printSchema()
-            print(f"Schema of {df2_name}:")
-            df2.printSchema()
-        print(50 * "-")
