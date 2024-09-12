@@ -42,7 +42,7 @@ class TableManager:
             f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{table_name}, {total_pending_after} rows remained 'Pending'."
         )
 
-    def _load_table(self, table_name: str) -> DataFrame:
+    def load_from_table(self, table_name: str) -> DataFrame:
         """
         Loads a table from the catalog and schema.
 
@@ -75,26 +75,12 @@ class TableManager:
         DataFrame
             A DataFrame containing the rows with a 'Pending' status from the specified table.
         """
-        table_rows = self._load_table(table_name)
+        table_rows = self.load_from_table(table_name)
         pending_table_rows = table_rows.filter("status = 'Pending'")
         print(
             f"Filtered to {pending_table_rows.count()} 'Pending' rows from {self.catalog}.{self.schema}.{table_name}."
         )
         return pending_table_rows
-
-    def load_from_table(self, table_name: str) -> DataFrame:
-        """
-        Loads all rows from the specified table in the catalog and schema.
-
-        Parameters:
-        ----------
-        table_name: The name of the table to load.
-
-        Returns:
-        -------
-        DataFrame: A DataFrame containing all rows from the specified table.
-        """
-        return self._load_table(table_name)
 
     def remove_fields_from_table_schema(
         self, table_name: str, fields_to_remove: set
@@ -113,7 +99,7 @@ class TableManager:
         StructType: The modified schema with the specified fields removed.
 
         """
-        table_schema = self._load_table(table_name=table_name).schema
+        table_schema = self.load_from_table(table_name=table_name).schema
 
         # Modify the schema by removing the specified fields
         modified_schema = StructType(
