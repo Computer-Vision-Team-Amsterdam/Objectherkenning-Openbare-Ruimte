@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
 
-from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (  # noqa: E402
+from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (
     BoxSize,
     ObjectClass,
     generate_binary_mask,
@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class PixelStats:
+    """
+    This class keeps track of per-pixel statistics for bounding box accuracy.
+    """
 
     def __init__(self):
         self.tp = 0
@@ -22,34 +25,54 @@ class PixelStats:
         self.tn = 0
         self.fn = 0
 
-    def update_statistics_based_on_masks(self, true_mask, predicted_mask):
+    def update_statistics_based_on_masks(
+        self, true_mask: np.ndarray, predicted_mask: np.ndarray
+    ) -> None:
         """
-        Computes statistics for a given pair of binary masks.
+        Updates statistics based on a pair of binary masks for an image, one
+        containing the ground truth and one the predictions.
 
         Parameters
         ----------
-        true_mask numpy array of shape (height, width)
-        predicted_mask numpy array of shape (height, width)
-
-        Returns
-        -------
-
+        true_mask: np.ndarray
+            Binary numpy array of shape (height, width) containing the ground
+            truth annotation, with 'True' values for each pixel within an
+            annotation bounding box.
+        predicted_mask: np.ndarray
+            Binary numpy array of shape (height, width) containing the
+            predictions, with 'True' values for each pixel within an annotation
+            bounding box.
         """
         self.tp += np.count_nonzero(np.logical_and(true_mask, predicted_mask))
         self.fp += np.count_nonzero(np.logical_and(~true_mask, predicted_mask))
         self.tn += np.count_nonzero(np.logical_and(~true_mask, ~predicted_mask))
         self.fn += np.count_nonzero(np.logical_and(true_mask, ~predicted_mask))
 
-    def get_statistics(self, precision: int = 3):
+    def get_statistics(self, precision: int = 3) -> Dict[str, float]:
         """
         Return statistics after all masks have been added to the calculation.
+        Computes precision, recall and f1_score. Also returns the total number
+        of pixels that have been counted as True Positive, False Positive, True
+        Negative, False Negative.
 
-        Computes precision, recall and f1_score only in the end since it is redundant to
-        do this intermediately.
+        Parameters
+        ----------
+        precision: int = 3
+            Rounds precision, recall, and f1_score to the given number of decimals.
 
         Returns
         -------
+        Dictionary with statistics:
 
+            {
+                "true_positives": int,
+                "false_positives": int,
+                "true_negatives": int,
+                "false_negatives:": int,
+                "precision": float,
+                "recall": float,
+                "f1_score": float,
+            }
         """
         prec = (
             round(self.tp / (self.tp + self.fp), precision)
@@ -79,6 +102,35 @@ class PixelStats:
 
 
 class EvaluatePixelWise:
+    """
+    This class is used to run per-pixel evaluation over a dataset of ground
+    truth and prediction labels. For each object class and bounding box size
+    (small, medium, large) it will compute precision, recall, and f1-score based
+    on the per-pixel accuracy of the predictions.
+
+    Parameters
+    ----------
+        ground_truth_path: str
+            Path to ground truth annotations, either as a folder with YOLO .txt
+            annotation files, or as a COCO JSON file.
+        predictions_path: str
+            Path to ground truth annotations, either as a folder with YOLO .txt
+            annotation files, or as a COCO JSON file.
+        image_shape: Tuple[int, int] = (3840, 2160)
+            Shape of the images. Since YOLO .txt annotations contain bounding
+            box dimensions as fraction of the image shape, the pixel dimensions
+            are less important as long as the ratio is preserved. Higher pixel
+            resolution might lead to better precision at the cost of higher
+            computation time.
+            When annotations are provided as COCO JSON, it is important that the
+            shape provided here is equal to the shape in the ground truth
+            annotation JSON.
+        upper_half: bool = False
+            Whether to only consider the upper half of bounding boxes (relevant
+            for people, to make sure the face is blurred).
+        precision: int = 3
+            Round statistics to the given number of decimals.
+    """
 
     def __init__(
         self,
@@ -113,21 +165,34 @@ class EvaluatePixelWise:
         self,
         true_labels: Dict[str, npt.NDArray],
         predicted_labels: Dict[str, npt.NDArray],
-    ):
+    ) -> Dict[str, float]:
         """
-        Calculates per pixel statistics (tp, tn, fp, fn, precision, recall, f1 score)
+        Calculates per pixel statistics (tp, tn, fp, fn, precision, recall, f1
+        score) for the annotations and predictions provided.
 
         Each key in the dict is an image, each value is a ndarray (n_detections, 5)
-        The 6 columns are in the yolo format, i.e. (target_class, x_c, y_c, width, height)
+        The 5 columns are in the YOLO format, i.e. (target_class, x_c, y_c, width, height)
 
         Parameters
         ----------
-        true_labels
-        predicted_labels
+        true_labels: Dict[str, npt.NDArray]
+            Ground truth annotations.
+        predicted_labels: Dict[str, npt.NDArray]
+            Predictions.
 
         Returns
         -------
+        Dictionary with statistics:
 
+            {
+                "true_positives": int,
+                "false_positives": int,
+                "true_negatives": int,
+                "false_negatives:": int,
+                "precision": float,
+                "recall": float,
+                "f1_score": float,
+            }
         """
         pixel_stats = PixelStats()
 
@@ -165,16 +230,32 @@ class EvaluatePixelWise:
         single_size_only: bool = False,
     ) -> Dict[str, Dict[str, float]]:
         """
-
-        Computes a dict with statistics (tn, tp, fp, fn, precision, recall, f1) for each target class and size.
+        Computes a dict with statistics (tn, tp, fp, fn, precision, recall, f1)
+        for each target class and bounding box size.
 
         Parameters
         ----------
+        classes: Iterable[ObjectClass] = ObjectClass,
+            Which classes to evaluate (default is all).
+        single_size_only: bool = False,
+            Whether to differentiate bounding box sizes (small, medium, large)
+            or simply provide overall scores.
 
-
-        Returns:
+        Returns
         -------
+        Dictionary with results:
 
+            {
+                [object_class]_[size]: {
+                    "true_positives": float,
+                    "false_positives": float,
+                    "true_negatives": float,
+                    "false_negatives:": float,
+                    "precision": float,
+                    "recall": float,
+                    "f1_score": float,
+                }
+            }
         """
         results = {}
 

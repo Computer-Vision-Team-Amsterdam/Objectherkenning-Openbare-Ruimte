@@ -9,6 +9,41 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.me
 
 
 class EvaluateImageWise:
+    """
+    This class is used to run per-image evaluation over a dataset of ground
+    truth and prediction labels. For each object class and bounding box size
+    (small, medium, large) it will compute precision, recall, false positive
+    rate, false negative rate, and true negative rate based on the per-image
+    accuracy of the predictions.
+
+    Per-image accuracy here means that we check for each image that contains at
+    least one ground truth annotation for a specific class, whether it also has
+    at least one prediction, regardless of whether the bounding boxes overlap or
+    not.
+
+    For the different bounding box sizes only recall can be computed. Precision
+    is only meaningful aggregated over all bounding box sizes.
+
+    Parameters
+    ----------
+        ground_truth_path: str
+            Path to ground truth annotations, either as a folder with YOLO .txt
+            annotation files, or as a COCO JSON file.
+        predictions_path: str
+            Path to ground truth annotations, either as a folder with YOLO .txt
+            annotation files, or as a COCO JSON file.
+        image_shape: Tuple[int, int] = (3840, 2160)
+            Shape of the images. Since YOLO .txt annotations contain bounding
+            box dimensions as fraction of the image shape, the pixel dimensions
+            are less important as long as the ratio is preserved. Higher pixel
+            resolution might lead to better precision at the cost of higher
+            computation time.
+            When annotations are provided as COCO JSON, it is important that the
+            shape provided here is equal to the shape in the ground truth
+            annotation JSON.
+        precision: int = 3
+            Round statistics to the given number of decimals.
+    """
 
     def __init__(
         self,
@@ -42,7 +77,33 @@ class EvaluateImageWise:
         classes: Iterable[ObjectClass] = ObjectClass,
         single_size_only: bool = False,
     ) -> Dict[str, Dict[str, float]]:
+        """
+        Computes a dict with statistics (precision, recall, false positive rate
+        - fpr, false negative rate - fnr, true negative rate - tnr) for each
+        target class and bounding box size.
 
+        Parameters
+        ----------
+        classes: Iterable[ObjectClass] = ObjectClass
+            Which classes to evaluate (default is all).
+        single_size_only: bool = False
+            Whether to differentiate bounding box sizes (small, medium, large)
+            or simply provide overall scores.
+
+        Returns
+        -------
+        Dictionary with results:
+
+            {
+                [object_class]_[size]: {
+                    "precision": float,
+                    "recall": float,
+                    "fpr": float,
+                    "fnr:": float,
+                    "tnr": float,
+                }
+            }
+        """
         results = {}
 
         for target_class in classes:
@@ -68,12 +129,15 @@ class EvaluateImageWise:
         return results
 
     def _get_filename_set(self, yolo_dataset: YoloLabelsDataset) -> Set:
+        """Extract filtered_labels from a YoloLabelsDataset and return the
+        corresponding image names as a set."""
         labels = yolo_dataset.get_filtered_labels()
         return set(k for k, v in labels.items() if len(v) > 0)
 
     def _compute_stats(
         self, ground_truth: Set, predictions: Set, box_size_name: str
-    ) -> Dict:
+    ) -> Dict[str, float]:
+        """Compute statistics for a given set of ground truth and prediction image names."""
         is_all = box_size_name == "all"
         P = len(ground_truth)
         N = len(self.gt_all - ground_truth)

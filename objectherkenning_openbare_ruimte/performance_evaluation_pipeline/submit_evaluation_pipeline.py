@@ -1,5 +1,6 @@
 import os
 
+from aml_interface.aml_interface import AMLInterface
 from azure.ai.ml import Input, Output
 from azure.ai.ml.constants import AssetTypes
 from azure.ai.ml.dsl import pipeline
@@ -13,8 +14,6 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
-
-from aml_interface.aml_interface import AMLInterface  # noqa: E402
 
 aml_interface = AMLInterface()
 

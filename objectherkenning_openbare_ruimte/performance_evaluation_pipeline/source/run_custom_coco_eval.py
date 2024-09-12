@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, Tuple
 
 from pycocotools.coco import COCO
 
@@ -16,34 +16,55 @@ logger = logging.getLogger("performance_evaluation")
 
 
 def run_custom_coco_eval(
-    coco_annotations_json: str,
+    coco_ground_truth_json: str,
     coco_predictions_json: str,
     predicted_img_shape: Tuple[int, int],
-    class_ids: List[int] = [0, 1, 2, 3, 4],
-    class_labels: List[str] = [
-        "person",
-        "license plate",
-        "container",
-        "mobile toilet",
-        "scaffolding",
-    ],
-    print_summary: bool = True,
+    classes: Iterable[ObjectClass] = ObjectClass,
+    print_summary: bool = False,
     precision: int = 3,
 ) -> Dict[str, float]:
     """
-    Runs COCO evaluation on the output of YOLO validation
+    Runs our custom COCO evaluation on a ground truth dataset and YOLO model
+    predictions.
 
     Parameters
     ----------
-    coco_annotations_json: annotations in the COCO format compatible with yolov5. Comes from the metadata pipeline
-    coco_predictions_json: predictions in COCO format of the yolov5 run.
-    metrics_metadata: info about image sizes and areas for sanity checks.
+    coco_ground_truth_json: str
+        Path to JSON file with ground truth annotations in the COCO format.
+    coco_predictions_json: str
+        Path to JSON file with prediction annotations in the COCO format.
+    predicted_img_shape: Tuple[int, int]
+        Shape of images in the coco_predictions_json. Should equal the shape of
+        ground truth images. Used as a sanity check.
+    classes: Iterable[ObjectClass] = ObjectClass
+        Which classes to evaluate (default is all).
+    print_summary: bool = False
+        Whether or not to have CustomCOCOeval print a summary of results.
+    precision: int = 3
+        Rounds precision, recall, and f1_score to the given number of decimals.
 
     Returns
     -------
+    Dictionary with the results:
 
+            {
+            [object_class]: {
+                "AP@50-95_all": float,
+                "AP@75_all": float,
+                "AP@50_all": float,
+                "AP@50_small": float,
+                "AP@50_medium": float,
+                "AP@50_large": float,
+                "AR@50-95_all": float,
+                "AR@75_all": float,
+                "AR@50_all": float,
+                "AR@50_small": float,
+                "AR@50_medium": float,
+                "AR@50_large": float,
+            }
+        }
     """
-    COCO_gt = COCO(coco_annotations_json)  # init annotations api
+    COCO_gt = COCO(coco_ground_truth_json)  # init annotations api
     try:
         COCO_dt = COCO_gt.loadRes(coco_predictions_json)  # init predictions api
     except FileNotFoundError:
@@ -55,7 +76,7 @@ def run_custom_coco_eval(
     evaluation = CustomCOCOeval(COCO_gt, COCO_dt, "bbox")
 
     # Opening JSON file
-    with open(coco_annotations_json) as f:
+    with open(coco_ground_truth_json) as f:
         data = json.load(f)
 
     height = data["images"][0]["height"]
@@ -72,14 +93,15 @@ def run_custom_coco_eval(
             "annotations. 2. Re-compute the coco_annotations_json using the right image shape."
         )
 
+    # Set evaluation params
     image_names = [image["id"] for image in data["images"]]
     evaluation.params.imgIds = image_names  # image IDs to evaluate
-    evaluation.params.catIds = class_ids
-    class_labels = [class_labels[i] for i in class_ids]
+    evaluation.params.catIds = [obj.value for obj in classes]
+    class_labels = [obj.name for obj in classes]
     evaluation.params.catLbls = class_labels
 
+    # We need to overwrite the default area ranges for the bounding box size differentiation
     img_area = height * width
-
     areaRng = []
     for areaRngLbl in evaluation.params.areaRngLbl:
         aRng = {"areaRngLbl": areaRngLbl}
@@ -87,9 +109,9 @@ def run_custom_coco_eval(
             box = BoxSize.from_objectclass(obj_cls).__getattribute__(areaRngLbl)
             aRng[obj_cls.value] = (box[0] * img_area, box[1] * img_area)
         areaRng.append(aRng)
-
     evaluation.params.areaRng = areaRng
 
+    # Run the evaluation
     evaluation.evaluate()
     evaluation.accumulate()
     evaluation.summarize(print_summary=print_summary)
@@ -98,6 +120,7 @@ def run_custom_coco_eval(
 
 
 def _stats_to_dict(eval: CustomCOCOeval, precision: int) -> Dict:
+    """Convert CustomCOCOeval results to dict."""
     keys = [
         "AP@50-95_all",
         "AP@75_all",
