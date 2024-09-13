@@ -2,10 +2,13 @@ from enum import Enum
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
-from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
+import numpy.typing as npt
 
 
 class ObjectClass(Enum):
+    """Convenience class to represent objects of interest. Class labels can be
+    accessed as `<ObjectClass>.value`, class names as `<ObjectClass>.name`."""
+
     person = 0
     license_plate = 1
     container = 2
@@ -17,6 +20,21 @@ class ObjectClass(Enum):
 
 
 class BoxSize:
+    """
+    This class is used to represent bounding box size categories 'small',
+    'medium', 'large', and 'all'. The bounds of each category are given as
+    fraction of the image surface.
+
+    Objects of this class can be created by passing the two relevant bounds, or
+    by passing an ObjectClass. For example, to get the 'medium' bounds for a
+    'person': `BoxSize.from_objectclass(ObjectClass.person).medium`.
+
+    Parameters
+    ----------
+    bounds: Tuple[float, float] = (0.005, 0.01)
+        The two relevant bounds between small and medium, and medium and large.
+    """
+
     all: Tuple[float, float] = (0.0, 1.0)
     small: Tuple[float, float]
     medium: Tuple[float, float]
@@ -29,6 +47,22 @@ class BoxSize:
 
     @classmethod
     def from_objectclass(cls, object_class: ObjectClass):
+        """
+        Create a BoxSize object from an ObjectClass instance. This will return a
+        BoxSize instance with bounds set to the appropriate values for that
+        ObjectClass instance. These values have been set to the 1/3rd and 2/3rd
+        quantiles of the bounding box size distribution for that class in the
+        training dataset.
+
+        Parameters
+        ----------
+        object_class: ObjectClass
+            The ObjectClass to get the BoxSize for, e.g. `BoxSize.from_objectclass(ObjectClass.person)`.
+
+        Returns
+        -------
+        BoxSize instance with the appropriate bounds.
+        """
         switch = {
             ObjectClass.person: (0.000665, 0.003397),
             ObjectClass.license_plate: (0.000108, 0.000436),
@@ -39,6 +73,21 @@ class BoxSize:
         return cls(switch.get(object_class))
 
     def to_dict(self, all_only: bool = False) -> Dict[str, Tuple[float, float]]:
+        """
+        Get a dict representation of this instance.
+
+        Parameters
+        ----------
+        all_only: bool = False
+            Whether or not to only return the bounds for 'all'. This is purely a
+            convenience method for the 'single_size_only' case of several
+            metrics and serves no other practical purpose.
+
+        Returns
+        -------
+        A dictionary with the size categories as keys and their bounds as
+        values.
+        """
         if all_only:
             return {"all": self.all}
         else:
@@ -57,15 +106,17 @@ def parse_labels(
     file_path: str,
 ) -> Tuple[List[int], List[Tuple[float, float, float, float]]]:
     """
-     Parses a txt file with the following normalized format: [class x_center, y_center, width, height]
+    Parse a YOLO annotation .txt file with the following normalized format:
+    `class x_center y_center width height`
 
     Parameters
     ----------
-    file_path The path to the labels file to be parsed.
+    file_path: str
+        The path to the annotation file to be parsed.
 
-    Returns (classes and bounding_boxes)
+    Returns
     -------
-
+    A tuple: (list of classes, list of (tuples of) bounding boxes)
     """
     with open(file_path, "r") as f:
         lines = f.readlines()
@@ -84,21 +135,33 @@ def parse_labels(
 
 
 def generate_binary_mask(
-    bounding_boxes, image_width=3840, image_height=2160, consider_upper_half=False
-):
+    bounding_boxes: Union[
+        npt.NDArray, List[List[float]], List[Tuple[float, float, float, float]]
+    ],
+    image_width: int = 3840,
+    image_height: int = 2160,
+    consider_upper_half: bool = False,
+) -> npt.NDArray:
     """
-    Creates binary mask where all points inside the bounding boxes are 1, 0 otherwise.
+    Create a binary mask where all points inside the given bounding boxes are 1,
+    and 0 otherwise.
 
     Parameters
     ----------
-    bounding_boxes: list of bounding box coordinates
-    image_width
-    image_height
-    consider_upper_half: only look at the upper half of the bounding boxes
+    bounding_boxes:
+        Bounding boxes coordinates, either as ndarray of shape(n_boxes, 4),
+        as list of lists, or list of tuples.
+    image_width: int = 3840
+        Width of the image, in pixels.
+    image_height: int = 2160
+        Height of the image, in pixels.
+    consider_upper_half: bool = False
+        Only look at the upper half of the bounding boxes (useful for the person
+        object class where you want to make sure the head is detected).
 
     Returns
     -------
-
+    The binary mask.
     """
 
     mask = np.zeros((image_height, image_width), dtype=bool)
@@ -124,16 +187,3 @@ def generate_binary_mask(
             mask[y_min[i] : y_max[i], x_min[i] : x_max[i]] = 1
 
     return mask
-
-
-def get_target_cls_file_names(
-    annotations_folder: str, target_cls: Union[ObjectClass, None] = None
-) -> List[str]:
-    yolo_dataset = YoloLabelsDataset(
-        folder_path=annotations_folder,
-        image_area=None,
-    )
-    if target_cls:
-        yolo_dataset.filter_by_class(target_cls.value)
-    target_labels = yolo_dataset._filtered_labels
-    return [k for k, v in target_labels.items() if len(v) > 0]
