@@ -7,14 +7,12 @@ from typing import Dict, List, Tuple, Union
 
 from PIL import Image
 
+from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (
+    ObjectClass,
+)
+
 # Define the categories for the COCO dataset
-CATEGORIES = [
-    {"id": 0, "name": "person"},
-    {"id": 1, "name": "license plate"},
-    {"id": 2, "name": "container"},
-    {"id": 3, "name": "mobile toilet"},
-    {"id": 4, "name": "scaffolding"},
-]
+CATEGORIES = [{"id": obj_cls.value, "name": obj_cls.name} for obj_cls in ObjectClass]
 
 
 def convert_yolo_predictions_to_coco_json(

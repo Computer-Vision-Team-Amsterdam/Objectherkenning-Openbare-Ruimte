@@ -8,7 +8,7 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.me
 )
 
 
-class EvaluateImageWise:
+class PerImageEvaluator:
     """
     This class is used to run per-image evaluation over a dataset of ground
     truth and prediction labels. For each object class and bounding box size

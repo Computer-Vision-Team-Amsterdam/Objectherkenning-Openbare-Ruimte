@@ -101,7 +101,7 @@ class PixelStats:
         }
 
 
-class EvaluatePixelWise:
+class PerPixelEvaluator:
     """
     This class is used to run per-pixel evaluation over a dataset of ground
     truth and prediction labels. For each object class and bounding box size

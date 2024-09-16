@@ -8,10 +8,10 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.me
     ObjectClass,
 )
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.per_image_stats import (
-    EvaluateImageWise,
+    PerImageEvaluator,
 )
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.per_pixel_stats import (
-    EvaluatePixelWise,
+    PerPixelEvaluator,
 )
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.yolo_to_coco import (
     convert_yolo_dataset_to_coco_json,
@@ -188,7 +188,7 @@ class OOREvaluator:
                 f"Running TBA evaluation for {self.model_name} / {split if split != '' else 'all'}"
             )
             ground_truth_folder, prediction_folder = self._get_folders_for_split(split)
-            evaluator = EvaluatePixelWise(
+            evaluator = PerPixelEvaluator(
                 ground_truth_path=ground_truth_folder,
                 predictions_path=prediction_folder,
                 image_shape=self.predictions_image_shape,
@@ -232,7 +232,7 @@ class OOREvaluator:
                 f"Running per-image evaluation for {self.model_name} / {split if split != '' else 'all'}"
             )
             ground_truth_folder, prediction_folder = self._get_folders_for_split(split)
-            evaluator = EvaluateImageWise(
+            evaluator = PerImageEvaluator(
                 ground_truth_path=ground_truth_folder,
                 predictions_path=prediction_folder,
                 image_shape=self.predictions_image_shape,
