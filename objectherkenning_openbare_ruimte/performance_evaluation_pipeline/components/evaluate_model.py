@@ -10,7 +10,7 @@ from mldesigner import Input, Output, command_component
 sys.path.append("../../..")
 
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.oor_evaluation import (  # noqa: E402
-    OOREvaluation,
+    OOREvaluator,
     custom_coco_result_to_df,
     per_image_result_to_df,
     tba_result_to_df,
@@ -89,7 +89,7 @@ def evaluate_model(
 
     os.makedirs(output_dir, exist_ok=True)
 
-    OOREval = OOREvaluation(
+    oor_eval = OOREvaluator(
         ground_truth_base_folder=ground_truth_base_dir,
         predictions_base_folder=predictions_base_dir,
         output_folder=output_dir,
@@ -99,17 +99,17 @@ def evaluate_model(
     )
 
     # Total Blurred Area evaluation
-    tba_results = OOREval.tba_evaluation()
+    tba_results = oor_eval.evaluate_tba()
     filename = os.path.join(output_dir, f"{model_name}-tba-eval.csv")
     _df_to_csv(tba_result_to_df(tba_results), filename)
 
     # Per Image evaluation
-    per_image_results = OOREval.per_image_evaluation()
+    per_image_results = oor_eval.evaluate_per_image()
     filename = os.path.join(output_dir, f"{model_name}-per-image-eval.csv")
     _df_to_csv(per_image_result_to_df(per_image_results), filename)
 
     # Custom COCO evaluation
-    coco_results = OOREval.coco_evaluation()
+    coco_results = oor_eval.evaluate_coco()
     filename = os.path.join(output_dir, f"{model_name}-custom-coco-eval.csv")
     _df_to_csv(custom_coco_result_to_df(coco_results), filename)
 

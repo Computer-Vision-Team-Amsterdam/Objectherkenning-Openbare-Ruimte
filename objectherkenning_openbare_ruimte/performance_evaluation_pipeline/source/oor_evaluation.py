@@ -30,12 +30,12 @@ DEFAULT_SENSITIVE_CLASSES = [
 ]
 
 
-class OOREvaluation:
+class OOREvaluator:
     """
     This class is used to run evaluation of a trained YOLO model based on ground
     truth annotations and model predictions.
 
-    OOREvaluation supports three evaluation methods:
+    OOREvaluator supports three evaluation methods:
 
     * Total Blurred Area evaluation for sensitive classes. This tells us the
       percentage of bounding boxes that are covered by predictions.
@@ -148,7 +148,7 @@ class OOREvaluation:
         )
         return ground_truth_folder, prediction_folder
 
-    def tba_evaluation(
+    def evaluate_tba(
         self,
         upper_half: bool = False,
     ) -> Dict[str, Dict[str, Dict[str, float]]]:
@@ -201,7 +201,7 @@ class OOREvaluation:
             )
         return tba_results
 
-    def per_image_evaluation(self) -> Dict[str, Dict[str, Dict[str, float]]]:
+    def evaluate_per_image(self) -> Dict[str, Dict[str, Dict[str, float]]]:
         """
         Run Per Image evaluation for the sensitive classes. This tells us the
         precision and recall based on whole images, i.e. if a single image
@@ -243,7 +243,7 @@ class OOREvaluation:
             )
         return per_image_results
 
-    def coco_evaluation(self) -> Dict[str, Dict[str, Dict[str, float]]]:
+    def evaluate_coco(self) -> Dict[str, Dict[str, Dict[str, float]]]:
         """
         Run custom COCO evaluation. This is a COCO-style evaluation of overall
         and per class precision and recall, for different bounding box sizes and
