@@ -9,11 +9,11 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_databricks_environment,
     get_job_process_time,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
-    TableManager,
-)
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
     SignalHandler,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.tables.table_manager import (  # noqa: E402
+    TableManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -117,7 +117,6 @@ if __name__ == "__main__":
         access_token_url=settings["signalen"]["access_token_url"],
         base_url=settings["signalen"]["base_url"],
         job_process_time=get_job_process_time(
-            job_process_time_settings,
             is_first_pipeline_step=False,
         ),
     )

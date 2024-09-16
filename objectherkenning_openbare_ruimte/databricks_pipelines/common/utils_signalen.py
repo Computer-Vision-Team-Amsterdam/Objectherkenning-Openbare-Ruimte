@@ -8,8 +8,8 @@ from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import Row, SparkSession
 from pyspark.sql import functions as F
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
-    get_image_upload_path_from_detection_id,
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames_detections import (
+    SilverFrameAndDetectionMetadata,
 )
 
 
@@ -455,7 +455,9 @@ class SignalHandler:
         top_scores_df_with_date = top_scores_df.withColumn(
             "notification_date", F.to_date(F.lit(date_of_notification))
         )
-
+        silverFrameAndDetectionMetadata = SilverFrameAndDetectionMetadata(
+            spark=self.spark, catalog=self.catalog_name, schema=self.schem
+        )
         successful_notifications = []
         unsuccessful_notifications = []
 
@@ -463,12 +465,11 @@ class SignalHandler:
             LAT = float(entry["object_lat"])
             LON = float(entry["object_lon"])
             detection_id = entry["detection_id"]
-            image_upload_path = get_image_upload_path_from_detection_id(
-                spark=self.spark,
-                catalog=self.catalog_name,
-                schema=self.schema,
-                detection_id=detection_id,
-                device_id=self.device_id,
+            image_upload_path = (
+                silverFrameAndDetectionMetadata.get_image_upload_path_from_detection_id(
+                    detection_id=detection_id,
+                    device_id=self.device_id,
+                )
             )
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)
@@ -500,27 +501,3 @@ class SignalHandler:
                 unsuccessful_notifications.append(updated_failed_entry)
 
         return successful_notifications, unsuccessful_notifications
-
-    def get_top_pending_records(self, table_name, limit=20):
-        # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
-        select_query = f"""
-        SELECT * FROM {self.catalog_name}.oor.{table_name}
-        WHERE status = 'Pending' AND object_class = 2 AND score >= 0.4
-        ORDER BY score DESC
-        LIMIT {limit}
-        """  # nosec
-        results = self.spark.sql(select_query)
-        return results
-
-    def get_top_pending_records_no_sql(self, table_name, limit=10):
-        table_full_name = f"{self.catalog_name}.oor.{table_name}"
-        results = (
-            self.spark.table(table_full_name)
-            .filter(
-                (self.spark.col("status") == "Pending")
-                & (self.spark.col("object_class") == 2)
-            )
-            .orderBy(self.spark.col("score").desc())
-            .limit(limit)
-        )
-        return results

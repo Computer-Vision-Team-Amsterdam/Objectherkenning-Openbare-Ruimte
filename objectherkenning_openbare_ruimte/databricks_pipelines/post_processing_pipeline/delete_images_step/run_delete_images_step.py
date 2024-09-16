@@ -11,12 +11,17 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_databricks_environment,
     get_job_process_time,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: #402
+    SilverDetectionMetadata,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames_detections import (  # noqa: #402
+    SilverFrameAndDetectionMetadata,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (  # noqa: E402
     TableManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
     delete_file,
-    get_image_name_from_detection_id,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -32,6 +37,9 @@ def run_delete_images_step(
 ):
     job_date = job_process_time.split("T")[0]
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
+    silverDetectionMetadata = SilverDetectionMetadata(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
 
     bronze_frame_metadata_df = tableManager.get_table(
         table_name="bronze_frame_metadata"
@@ -62,8 +70,8 @@ def run_delete_images_step(
     )
     to_keep_image_names_current_run_list = []
     for detection_id in detection_ids:
-        to_keep_image_name = get_image_name_from_detection_id(
-            sparkSession, catalog, schema, detection_id
+        to_keep_image_name = silverDetectionMetadata.get_image_name_from_detection_id(
+            detection_id=detection_id
         )
         to_keep_image_names_current_run_list.append(to_keep_image_name)
     print(f"{len(to_keep_image_names_current_run_list)} images to keep.")
@@ -104,7 +112,6 @@ if __name__ == "__main__":
         schema=settings["schema"],
         device_id=settings["device_id"],
         job_process_time=get_job_process_time(
-            job_process_time_settings,
             is_first_pipeline_step=False,
         ),
     )

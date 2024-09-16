@@ -17,9 +17,6 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_databricks_environment,
     get_job_process_time,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.table_manager import (  # noqa: E402
-    TableManager,
-)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
     utils_visualization,
 )
@@ -31,6 +28,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.vulnerable_bridges_handler import (  # noqa: E402
     VulnerableBridgesHandler,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.tables.table_manager import (  # noqa: E402
+    TableManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -224,7 +224,6 @@ if __name__ == "__main__":
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
         job_process_time=get_job_process_time(
-            job_process_time_settings,
             is_first_pipeline_step=False,
         ),
     )
