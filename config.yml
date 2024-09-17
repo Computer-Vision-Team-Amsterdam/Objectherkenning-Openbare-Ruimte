@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 48
+  env_version: 51
   src_dir: "."
 
 convert_dataset:
@@ -50,6 +50,19 @@ frame_extraction:
   exclude_dirs: ["checkboard", "frames", "decos"]  # Do not check for MP4 in these dirs
   exclude_files: ["D17M02Y2024-H20M50S55"]  # Metadata for this file is invalid
   fps: 1
+
+performance_evaluation:
+  inputs:
+    datastore: "dataset_oor_v2_1"
+    ground_truth_rel_path: "processed-dataset-oor-v2-1"
+    predictions_rel_path: "inference/processed-v21/yolov8m_1280_v2.1"
+  outputs:
+    datastore: "dataset_oor_v2_1"
+    output_rel_path: "evaluation/processed-v21/yolov8m_1280_v2.1"
+  model_name: "yolov8m_1280_v2.1"
+  predictions_image_shape: [1280, 720]
+  splits: ["train", "val", "test"]
+  prediction_labels_rel_path: "detected_labels"
 
 training_pipeline:
   model_parameters:
@@ -101,7 +114,7 @@ wandb:
 
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations", "performance_evaluation"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING

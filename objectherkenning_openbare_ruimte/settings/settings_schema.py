@@ -70,6 +70,15 @@ class LoggingSpec(SettingsSpecModel):
     ai_instrumentation_key: str = ""
 
 
+class PerformanceEvaluationSpec(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    model_name: str
+    predictions_image_shape: List[int]
+    splits: List[str]
+    prediction_labels_rel_path: str = "labels"
+
+
 class TrainingModelParameters(SettingsSpecModel):
     img_size: int = 1024
     batch: Union[float, int] = -1
@@ -125,6 +134,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     data_sampling: DataSampling
     distortion_correction: DistortionCorrectionSpec
     frame_extraction: FrameExtractionSpec
+    performance_evaluation: PerformanceEvaluationSpec
     logging: LoggingSpec = LoggingSpec()
     training_pipeline: TrainingPipelineSpec = None
     sweep_pipeline: SweepPipelineSpec = None
