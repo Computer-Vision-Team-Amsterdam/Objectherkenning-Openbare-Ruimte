@@ -12,6 +12,13 @@ class TableManager(ABC):
         self.schema = schema
         self.table_name = table_name
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if not hasattr(cls, "table_name"):
+            raise TypeError(
+                f"Subclass {cls.__name__} must define a 'table_name' attribute"
+            )
+
     def get_table_name(self):
         return self.table_name
 
