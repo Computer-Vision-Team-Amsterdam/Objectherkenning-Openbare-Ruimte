@@ -17,8 +17,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
- 
-class TestSilverObjectsPerDayManager():   
+
+
+class TestSilverObjectsPerDayManager:
 
     def __init__(self):
         self.sparkSession = SparkSession.builder.appName("TestCase").getOrCreate()
@@ -43,8 +44,8 @@ class TestSilverObjectsPerDayManager():
             """  # nosec
 
         top_scores_df = self.sparkSession.sql(query)
-        top_scores_df_no_sql = (
-            silverObjectsPerDayManager.get_top_pending_records_no_sql(limit=20)
+        top_scores_df_no_sql = silverObjectsPerDayManager.get_top_pending_records(
+            limit=20
         )
 
         compare_dataframes(
