@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from databricks.sdk.runtime import *  # noqa: F403
 
 
@@ -52,3 +54,8 @@ def compare_dataframes(df1, df2, df1_name, df2_name):
         print(f"Schema of {df2_name}:")
         df2.printSchema()
     print(50 * "-")
+
+
+def unix_to_yyyy_mm_dd(unix_timestamp) -> str:
+    date_time = datetime.fromtimestamp(unix_timestamp)
+    return date_time.strftime("%Y-%m-%d")

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from pyspark.sql import SparkSession
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (
@@ -7,6 +5,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
     SilverFrameMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
+    unix_to_yyyy_mm_dd,
 )
 
 
@@ -26,16 +27,13 @@ class SilverMetadataAggregator:
         and constructs the path for uploading the image.
         """
         image_basename = self.detections.get_image_name_from_detection_id(detection_id)
-
-        gps_date_dmy = self.frames.get_gps_date_from_image_name(image_basename)
-
-        date_obj = datetime.strptime(gps_date_dmy, "%d/%m/%Y")
-
-        gps_date_ymd = date_obj.strftime("%Y-%m-%d")
-
+        gps_internal_timestamp = self.frames.get_gps_internal_timestamp_from_image_name(
+            image_basename
+        )
+        date_of_image_upload = unix_to_yyyy_mm_dd(unix_timestamp=gps_internal_timestamp)
         image_upload_path = (
             f"/Volumes/{self.catalog}/default/landingzone/{device_id}/images/"
-            f"{gps_date_ymd}/{image_basename}"
+            f"{date_of_image_upload}/{image_basename}"
         )
 
         return image_upload_path
