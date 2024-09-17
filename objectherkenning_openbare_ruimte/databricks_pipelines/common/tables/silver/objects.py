@@ -5,12 +5,15 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 )
 
 
-class SilverObjectsPerDay(TableManager):
-    def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        # Call the constructor of the base class
-        super().__init__(spark, catalog, schema)
-        # Define the specific table name for this subclass
-        self.table_name = "silver_objects_per_day"
+class SilverObjectsPerDayManager(TableManager):
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "silver_objects_per_day",
+    ):
+        super().__init__(spark, catalog, schema, table_name)
 
     def get_top_pending_records(self, limit=20):
         # Select all rows where status is 'Pending' and detections are containers, sort by score in descending order, and limit the results to the top 10
@@ -21,6 +24,9 @@ class SilverObjectsPerDay(TableManager):
         LIMIT {limit}
         """  # nosec
         results = self.spark.sql(select_query)
+        print(
+            f"Loaded {results.count()} rows with top {limit} scores from {self.catalog}.{self.schema}.{self.table_name}."
+        )
         return results
 
     def get_top_pending_records_no_sql(self, limit=20):
@@ -35,4 +41,18 @@ class SilverObjectsPerDay(TableManager):
             .orderBy(self.spark.col("score").desc())
             .limit(limit)
         )
+        print(
+            f"Loaded {results.count()} rows with top {limit} scores from {self.catalog}.{self.schema}.{self.table_name}."
+        )
         return results
+
+
+class SilverObjectsPerDayQuarantineManager(TableManager):
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "silver_objects_per_day_quarantine",
+    ):
+        super().__init__(spark, catalog, schema, table_name)

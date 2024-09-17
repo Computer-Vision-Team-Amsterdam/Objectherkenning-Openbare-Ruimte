@@ -10,17 +10,18 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_job_process_time,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.detections import (  # noqa: E402
-    BronzeDetectionMetadata,
+    BronzeDetectionMetadataManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
-    BronzeFrameMetadata,
+    BronzeFrameMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: E402
+    SilverDetectionMetadataManager,
+    SilverDetectionMetadataQuarantineManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (  # noqa: E402
-    SilverFrameMetadata,
+    SilverFrameMetadataManager,
     SilverFrameMetadataQuarantine,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (  # noqa: E402
-    TableManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -28,60 +29,53 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_metadata_healthcheck_step(sparkSession, catalog, schema, job_process_time):
-    tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
 
-    bronze_frame_metadata = BronzeFrameMetadata(
+    bronzeFrameMetadataManager = BronzeFrameMetadataManager(
         spark=sparkSession, catalog=catalog, schema=schema
     )
-    valid_frame_metadata = bronze_frame_metadata.get_valid_metadata()
-    invalid_frame_metadata = bronze_frame_metadata.get_invalid_metadata()
-
-    tableManager.write_to_table(
-        valid_frame_metadata, table_name="silver_frame_metadata"
-    )
-    tableManager.write_to_table(
-        invalid_frame_metadata, table_name="silver_frame_metadata_quarantine"
-    )
-    tableManager.update_status(
-        table_name="bronze_frame_metadata", job_process_time=job_process_time
-    )
-
-    bronze_detection_metadata = BronzeDetectionMetadata(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    silver_frame_metadata = SilverFrameMetadata(
+    bronzeDetectionMetadataManager = BronzeDetectionMetadataManager(
         spark=sparkSession, catalog=catalog, schema=schema
     )
 
-    # make TableManager an abstract class and then use get_table_name below()
-    silver_frame_metadata_pending = silver_frame_metadata.load_pending_rows_from_table(
-        table_name="silver_frame_metadata"
-    )
-    valid_detection_metadata = bronze_detection_metadata.get_valid_metadata(
-        silver_frame_metadata=silver_frame_metadata_pending
-    )
-
-    silver_frame_metadata_quarantine = SilverFrameMetadataQuarantine(
+    silverFrameMetadataManager = SilverFrameMetadataManager(
         spark=sparkSession, catalog=catalog, schema=schema
     )
-    silver_frame_metadata_quarantine_pending = (
-        silver_frame_metadata_quarantine.load_pending_rows_from_table(
-            table_name="silver_frame_metadata_quarantine"
+    silverFrameMetadataQuarantineManager = SilverFrameMetadataQuarantine(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+    silverDetectionMetadataManager = SilverDetectionMetadataManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+    silverDetectionMetadataQuarantineManager = SilverDetectionMetadataQuarantineManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+
+    valid_frame_metadata = bronzeFrameMetadataManager.filter_valid_metadata()
+    invalid_frame_metadata = bronzeFrameMetadataManager.filter_invalid_metadata()
+
+    silverFrameMetadataManager.insert_data(df=valid_frame_metadata)
+    silverFrameMetadataQuarantineManager.insert_data(df=invalid_frame_metadata)
+    bronzeFrameMetadataManager.update_status(job_process_time=job_process_time)
+
+    silverFrameMetadataDf = silverFrameMetadataManager.load_pending_rows_from_table()
+    valid_detection_metadata_df = bronzeDetectionMetadataManager.filter_valid_metadata(
+        silver_frame_metadata_df=silverFrameMetadataDf
+    )
+    silverFrameMetadataQuarantineDf = (
+        silverFrameMetadataQuarantineManager.load_pending_rows_from_table()
+    )
+
+    invalid_detection_metadata_df = (
+        bronzeDetectionMetadataManager.filter_invalid_metadata(
+            silver_frame_metadata_quarantine_df=silverFrameMetadataQuarantineDf
         )
     )
-    invalid_detection_metadata = bronze_detection_metadata.get_invalid_metadata(
-        silver_frame_metadata_quarantine=silver_frame_metadata_quarantine_pending
+    silverDetectionMetadataManager.insert_data(df=valid_detection_metadata_df)
+    silverDetectionMetadataQuarantineManager.insert_data(
+        df=invalid_detection_metadata_df
     )
 
-    tableManager.write_to_table(
-        valid_detection_metadata, table_name="silver_detection_metadata"
-    )
-    tableManager.write_to_table(
-        invalid_detection_metadata, table_name="silver_detection_metadata_quarantine"
-    )
-    tableManager.update_status(
-        table_name="bronze_detection_metadata", job_process_time=job_process_time
-    )
+    bronzeDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":

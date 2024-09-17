@@ -5,10 +5,15 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 )
 
 
-class SilverFrameMetadata(TableManager):
-    def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        super().__init__(spark, catalog, schema)
-        self.table_name = "silver_frame_metadata"
+class SilverFrameMetadataManager(TableManager):
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "silver_frame_metadata",
+    ):
+        super().__init__(spark, catalog, schema, table_name)
 
     def get_gps_date_from_image_name(self, image_name: str) -> str:
         fetch_date_of_image_upload_query = f"""
@@ -22,6 +27,11 @@ class SilverFrameMetadata(TableManager):
 
 
 class SilverFrameMetadataQuarantine(TableManager):
-    def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        super().__init__(spark, catalog, schema)
-        self.table_name = "silver_frame_metadata_quarantine"
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "silver_frame_metadata_quarantine",
+    ):
+        super().__init__(spark, catalog, schema, table_name)

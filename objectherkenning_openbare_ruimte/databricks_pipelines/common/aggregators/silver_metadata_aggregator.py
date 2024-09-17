@@ -3,21 +3,20 @@ from datetime import datetime
 from pyspark.sql import SparkSession
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (
-    SilverDetectionMetadata,
+    SilverDetectionMetadataManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
-    SilverFrameMetadata,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
-    TableManager,
+    SilverFrameMetadataManager,
 )
 
 
-class SilverFrameAndDetectionMetadata(TableManager):
+class SilverMetadataAggregator:
     def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        super().__init__(spark, catalog, schema)
-        self.detections = SilverDetectionMetadata(spark, catalog, schema)
-        self.frames = SilverFrameMetadata(spark, catalog, schema)
+        self.spark = spark
+        self.catalog = catalog
+        self.schema = schema
+        self.detections = SilverDetectionMetadataManager(spark, catalog, schema)
+        self.frames = SilverFrameMetadataManager(spark, catalog, schema)
 
     def get_image_upload_path_from_detection_id(
         self, detection_id: int, device_id: str

@@ -6,21 +6,26 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 )
 
 
-class BronzeDetectionMetadata(TableManager):
-    def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        super().__init__(spark, catalog, schema)
-        self.table_name = "bronze_detection_metadata"
+class BronzeDetectionMetadataManager(TableManager):
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "bronze_detection_metadata",
+    ):
+        super().__init__(spark, catalog, schema, table_name)
 
-    def get_valid_metadata(self, silver_frame_metadata):
+    def filter_valid_metadata(self, silver_frame_metadata_df):
         bronze_detection_metadata = self.load_pending_rows_from_table(self.table_name)
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
-        silver_frame_metadata = self.load_pending_rows_from_table(
-            silver_frame_metadata.ta
+        silver_frame_metadata_df = self.load_pending_rows_from_table(
+            silver_frame_metadata_df.ta
         )
-        silver_frame_metadata = silver_frame_metadata.alias("silver_frame")
+        silver_frame_metadata_df = silver_frame_metadata_df.alias("silver_frame")
         valid_metadata = (
             bronze_detection_metadata.join(
-                silver_frame_metadata,
+                silver_frame_metadata_df,
                 F.col("bronze_detection.image_name")
                 == F.col("silver_frame.image_name"),
             )
@@ -31,15 +36,15 @@ class BronzeDetectionMetadata(TableManager):
 
         return valid_metadata
 
-    def get_invalid_metadata(self, silver_frame_metadata_quarantine):
+    def filter_invalid_metadata(self, silver_frame_metadata_quarantine_df):
         bronze_detection_metadata = self.load_pending_rows_from_table(self.table_name)
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
-        silver_frame_metadata_quarantine = silver_frame_metadata_quarantine.alias(
+        silver_frame_metadata_quarantine_df = silver_frame_metadata_quarantine_df.alias(
             "quarantine_frame"
         )
         invalid_metadata = (
             bronze_detection_metadata.join(
-                silver_frame_metadata_quarantine,
+                silver_frame_metadata_quarantine_df,
                 F.col("bronze_detection.image_name")
                 == F.col("quarantine_frame.image_name"),
             )

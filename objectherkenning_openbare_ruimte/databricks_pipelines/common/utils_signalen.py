@@ -8,8 +8,8 @@ from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import Row, SparkSession
 from pyspark.sql import functions as F
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames_detections import (
-    SilverFrameAndDetectionMetadata,
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators.silver_metadata_aggregator import (
+    SilverMetadataAggregator,
 )
 
 
@@ -455,8 +455,8 @@ class SignalHandler:
         top_scores_df_with_date = top_scores_df.withColumn(
             "notification_date", F.to_date(F.lit(date_of_notification))
         )
-        silverFrameAndDetectionMetadata = SilverFrameAndDetectionMetadata(
-            spark=self.spark, catalog=self.catalog_name, schema=self.schem
+        silverFrameAndDetectionMetadata = SilverMetadataAggregator(
+            spark=self.spark, catalog=self.catalog_name, schema=self.schema
         )
         successful_notifications = []
         unsuccessful_notifications = []

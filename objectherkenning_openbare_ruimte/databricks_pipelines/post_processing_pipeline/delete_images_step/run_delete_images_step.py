@@ -12,7 +12,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_job_process_time,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: #402
-    SilverDetectionMetadata,
+    SilverDetectionMetadataManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames_detections import (  # noqa: #402
     SilverFrameAndDetectionMetadata,
@@ -37,7 +37,7 @@ def run_delete_images_step(
 ):
     job_date = job_process_time.split("T")[0]
     tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
-    silverDetectionMetadata = SilverDetectionMetadata(
+    silverDetectionMetadata = SilverDetectionMetadataManager(
         spark=sparkSession, catalog=catalog, schema=schema
     )
 

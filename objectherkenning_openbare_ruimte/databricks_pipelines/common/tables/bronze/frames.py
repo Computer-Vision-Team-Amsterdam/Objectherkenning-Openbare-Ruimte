@@ -6,12 +6,17 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 )
 
 
-class BronzeFrameMetadata(TableManager):
-    def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        super().__init__(spark, catalog, schema)
-        self.table_name = "bronze_frame_metadata"
+class BronzeFrameMetadataManager(TableManager):
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "bronze_frame_metadata",
+    ):
+        super().__init__(spark, catalog, schema, table_name)
 
-    def get_valid_metadata(self):
+    def filter_valid_metadata(self):
         """
         Filters the valid frame metadata based on the conditions that
         gps_lat and gps_lon are not null and not zero.
@@ -32,7 +37,7 @@ class BronzeFrameMetadata(TableManager):
         print(f"Filtered valid metadata with {valid_metadata.count()} rows.")
         return valid_metadata
 
-    def get_invalid_metadata(self):
+    def filter_invalid_metadata(self):
         """
         Filters the invalid frame metadata where gps_lat or gps_lon are null or zero.
         Returns:

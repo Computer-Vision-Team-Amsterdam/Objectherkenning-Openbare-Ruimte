@@ -17,6 +17,15 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_databricks_environment,
     get_job_process_time,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: E402
+    SilverDetectionMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (  # noqa: E402
+    SilverFrameMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
+    SilverObjectsPerDayManager,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
     utils_visualization,
 )
@@ -28,9 +37,6 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.vulnerable_bridges_handler import (  # noqa: E402
     VulnerableBridgesHandler,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.tables.table_manager import (  # noqa: E402
-    TableManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -70,7 +76,15 @@ def run_data_enrichment_step(
         db_port=5432,
     )
 
-    tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
+    silverFrameMetadataManager = SilverFrameMetadataManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+    silverDetectionMetadataManager = SilverDetectionMetadataManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+    silverObjectsPerDayManager = SilverObjectsPerDayManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
 
     print(f"03: Number of containers: {len(containers_coordinates_geometry)}.")
     # Enrich with bridges data
@@ -177,15 +191,9 @@ def run_data_enrichment_step(
         .withColumn("score", F.col("score").cast("float"))
     )
 
-    tableManager.write_to_table(
-        clustering.df_joined, table_name="silver_objects_per_day"
-    )
-    tableManager.update_status(
-        table_name="silver_frame_metadata", job_process_time=job_process_time
-    )
-    tableManager.update_status(
-        table_name="silver_detection_metadata", job_process_time=job_process_time
-    )
+    silverObjectsPerDayManager.insert_data(df=clustering.df_joined)
+    silverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    silverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:

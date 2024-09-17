@@ -5,10 +5,15 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 )
 
 
-class SilverDetectionMetadata(TableManager):
-    def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        super().__init__(spark, catalog, schema)
-        self.table_name = "silver_detection_metadata"
+class SilverDetectionMetadataManager(TableManager):
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "silver_detection_metadata",
+    ):
+        super().__init__(spark, catalog, schema, table_name)
 
     def get_image_name_from_detection_id(self, detection_id: int) -> str:
         """
@@ -32,3 +37,14 @@ class SilverDetectionMetadata(TableManager):
 
         image_name = image_name_result_df.collect()[0]["image_name"]
         return image_name
+
+
+class SilverDetectionMetadataQuarantineManager(TableManager):
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        table_name: str = "silver_detection_metadata_quarantine",
+    ):
+        super().__init__(spark, catalog, schema, table_name)

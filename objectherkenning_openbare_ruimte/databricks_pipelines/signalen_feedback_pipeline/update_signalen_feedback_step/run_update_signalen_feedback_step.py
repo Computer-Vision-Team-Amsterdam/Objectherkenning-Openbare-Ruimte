@@ -10,11 +10,14 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_databricks_environment,
     get_job_process_time,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.feedback import (  # noqa: E402
+    BronzeSignalNotificationsFeedbackManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.gold.notifications import (  # noqa: E402
+    GoldSignalNotificationsManager,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
     SignalHandler,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.tables.table_manager import (  # noqa: E402
-    TableManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -44,13 +47,15 @@ def run_update_signalen_feedback_step(
         base_url,
     )
 
-    tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
+    goldSignalNotificationsManager = GoldSignalNotificationsManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
 
     signalen_feedback_entries = []
     ids_of_not_updated_status = []
-    for entry in tableManager.load_pending_rows_from_table(
-        table_name="gold_signal_notifications"
-    ).collect():
+    for (
+        entry
+    ) in goldSignalNotificationsManager.load_pending_rows_from_table().collect():
         id = entry["id"]
         signal_status = signalHandler.get_signal(sig_id=entry["signal_id"])["status"]
         if signal_status["state_display"] != "Gemeld":
@@ -76,22 +81,20 @@ def run_update_signalen_feedback_step(
         else:
             ids_of_not_updated_status.append(id)
 
-    modified_schema = tableManager.remove_fields_from_table_schema(
-        table_name="bronze_signal_notifications_feedback",
-        fields_to_remove={"id", "processed_at"},
+    modified_schema = goldSignalNotificationsManager.remove_fields_from_table_schema(
+        fields_to_remove={"id", "processed_at"}
     )
 
     signalen_feedback_df = sparkSession.createDataFrame(  # noqa: F821
         signalen_feedback_entries, schema=modified_schema
     )
 
-    tableManager.write_to_table(
-        df=signalen_feedback_df, table_name="bronze_signal_notifications_feedback"
+    bronzeSignalNotificationsFeedbackManager = BronzeSignalNotificationsFeedbackManager(
+        spark=sparkSession, catalog=catalog, schema=schema
     )
-    tableManager.update_status(
-        table_name="gold_signal_notifications",
-        job_process_time=job_process_time,
-        exclude_ids=ids_of_not_updated_status,
+    bronzeSignalNotificationsFeedbackManager.insert_data(df=signalen_feedback_df)
+    goldSignalNotificationsManager.update_status(
+        job_process_time=job_process_time, exclude_ids=ids_of_not_updated_status
     )
 
 
