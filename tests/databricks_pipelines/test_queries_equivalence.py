@@ -1,5 +1,3 @@
-import unittest
-
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
@@ -19,9 +17,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
-
-
-class TestSilverObjectsPerDayManager(unittest.TestCase):
+ 
+class TestSilverObjectsPerDayManager():   
 
     def __init__(self):
         self.sparkSession = SparkSession.builder.appName("TestCase").getOrCreate()
@@ -39,7 +36,7 @@ class TestSilverObjectsPerDayManager(unittest.TestCase):
             schema=self.settings["schema"],
         )
         query = f"""
-            SELECT * FROM {self.catalog}.{self.schema}.{silverObjectsPerDayManager.get_table_name()}
+            SELECT * FROM {self.settings['catalog']}.{self.settings['schema']}.{silverObjectsPerDayManager.get_table_name()}
             WHERE status = 'Pending' AND object_class = 2 AND score >= 0.4
             ORDER BY score DESC
             LIMIT 20
@@ -59,4 +56,5 @@ class TestSilverObjectsPerDayManager(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    t = TestSilverObjectsPerDayManager()
+    t.test_get_top_pending_records()
