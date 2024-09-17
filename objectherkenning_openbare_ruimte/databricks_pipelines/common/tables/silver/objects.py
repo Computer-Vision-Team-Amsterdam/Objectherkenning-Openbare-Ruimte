@@ -1,3 +1,4 @@
+import pyspark.sql.functions as F
 from pyspark.sql import SparkSession
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
@@ -34,11 +35,11 @@ class SilverObjectsPerDayManager(TableManager):
         results = (
             self.spark.table(table_full_name)
             .filter(
-                (self.spark.col("status") == "Pending")
-                & (self.spark.col("object_class") == 2)
-                & (self.spark.col("score") >= 0.4)
+                (F.col("status") == "Pending")
+                & (F.col("object_class") == 2)
+                & (F.col("score") >= 0.4)
             )
-            .orderBy(self.spark.col("score").desc())
+            .orderBy(F.col("score").desc())
             .limit(limit)
         )
         print(
