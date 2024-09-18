@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, date_format  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
@@ -54,3 +54,20 @@ class BronzeFrameMetadataManager(TableManager):
         )
         print(f"Filtered invalid metadata with {invalid_metadata.count()} rows.")
         return invalid_metadata
+
+    def get_all_image_names_current_run(self, job_date: str):
+        return (
+            self.get_table()
+            .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
+            .select("image_name")
+            .rdd.flatMap(lambda x: x)
+            .collect()
+        )
+
+    def get_gps_internal_timestamp_of_current_run(self, job_date: str):
+        return (
+            self.get_table()
+            .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
+            .select("gps_internal_timestamp")
+            .first()[0]
+        )

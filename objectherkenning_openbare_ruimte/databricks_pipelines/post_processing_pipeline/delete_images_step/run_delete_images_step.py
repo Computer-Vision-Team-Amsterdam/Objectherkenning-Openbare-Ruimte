@@ -2,29 +2,28 @@
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import os  # noqa: E402
-from datetime import datetime  # noqa: E402
 
+from objectherkenning_oenbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
+    load_settings,
+)
 from pyspark.sql import SparkSession  # noqa: E402
-from pyspark.sql.functions import col, date_format  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
     get_job_process_time,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: #402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
+    BronzeFrameMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: E402
     SilverDetectionMetadataManager,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames_detections import (  # noqa: #402
-    SilverFrameAndDetectionMetadata,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (  # noqa: E402
-    TableManager,
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
+    SilverObjectsPerDayManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
     delete_file,
-)
-from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
-    load_settings,
+    unix_to_yyyy_mm_dd,
 )
 
 
@@ -36,59 +35,42 @@ def run_delete_images_step(
     job_process_time,
 ):
     job_date = job_process_time.split("T")[0]
-    tableManager = TableManager(spark=sparkSession, catalog=catalog, schema=schema)
     silverDetectionMetadata = SilverDetectionMetadataManager(
         spark=sparkSession, catalog=catalog, schema=schema
     )
-
-    bronze_frame_metadata_df = tableManager.get_table(
-        table_name="bronze_frame_metadata"
+    bronzeFrameMetadataManager = BronzeFrameMetadataManager(
+        spark=sparkSession, catalog=catalog, schema=schema
     )
-    filtered_df = bronze_frame_metadata_df.filter(
-        (date_format(col("processed_at"), "yyyy-MM-dd") == job_date)
-    )
-
-    gps_date_value = filtered_df.select("gps_date").first()[0]
-    all_image_names_current_run_list = (
-        filtered_df.select("image_name").rdd.flatMap(lambda x: x).collect()
+    silverObjectsPerDayManager = SilverObjectsPerDayManager(
+        spark=sparkSession, catalog=catalog, schema=schema
     )
 
-    print(f"{len(all_image_names_current_run_list)} images found on {gps_date_value}.")
-
-    silver_objects_per_day_df = tableManager.get_table(
-        table_name="silver_objects_per_day"
-    )
-
-    # handle images from the current run only where score is Green (score > 1 as with the current definition)
-    filtered_df = silver_objects_per_day_df.filter(
-        (col("score") > 1)
-        & (date_format(col("processed_at"), "yyyy-MM-dd") == job_date)
-    )
-
-    detection_ids = (
-        filtered_df.select("detection_id").rdd.flatMap(lambda x: x).collect()
-    )
-    to_keep_image_names_current_run_list = []
-    for detection_id in detection_ids:
-        to_keep_image_name = silverDetectionMetadata.get_image_name_from_detection_id(
-            detection_id=detection_id
+    gps_internal_timestamp = unix_to_yyyy_mm_dd(
+        bronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
+            job_date=job_date
         )
-        to_keep_image_names_current_run_list.append(to_keep_image_name)
-    print(f"{len(to_keep_image_names_current_run_list)} images to keep.")
-
-    # Substract image names we want to keep from all image names
-    to_delete_image_names_current_run_list = list(
-        set(all_image_names_current_run_list)
-        - set(to_keep_image_names_current_run_list)
     )
+    stlanding_date_folder = unix_to_yyyy_mm_dd(gps_internal_timestamp)
+    all_image_names = bronzeFrameMetadataManager.get_all_image_names_current_run(
+        job_date=job_date
+    )
+    print(f"{len(all_image_names)} images found on {stlanding_date_folder}.")
+    detection_ids = silverObjectsPerDayManager.get_detection_ids_to_delete_current_run(
+        job_date=job_date
+    )
+    to_keep_image_names = [
+        silverDetectionMetadata.get_image_name_from_detection_id(d)
+        for d in detection_ids
+    ]
+    print(f"{len(to_keep_image_names)} images to keep.")
+
+    to_delete_image_names = list(set(all_image_names) - set(to_keep_image_names))
+    print(f"{len(to_delete_image_names)} images to delete.")
+
     successful_deletions = 0
-    formatted_gps_date_value = datetime.strptime(gps_date_value, "%d/%m/%Y").strftime(
-        "%Y-%m-%d"
-    )
-    for img in to_delete_image_names_current_run_list:
-
-        image_to_delete_full_path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{formatted_gps_date_value}/{img}"
-        if delete_file(databricks_volume_full_path=image_to_delete_full_path):
+    for img in to_delete_image_names:
+        path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_date_folder}/{img}"
+        if delete_file(databricks_volume_full_path=path):
             successful_deletions += 1
     print(f"{successful_deletions} images successfully deleted.")
 

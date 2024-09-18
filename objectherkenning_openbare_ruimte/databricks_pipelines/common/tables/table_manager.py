@@ -52,7 +52,7 @@ class TableManager(ABC):
             f"Updated {updated_rows} 'Pending' rows to 'Processed' in {self.catalog}.{self.schema}.{self.table_name}, {total_pending_after} rows remained 'Pending'."
         )
 
-    def get_table(self, table_name: str) -> DataFrame:
+    def get_table(self) -> DataFrame:
         """
         Loads a table from the catalog and schema.
 
@@ -66,7 +66,7 @@ class TableManager(ABC):
         DataFrame
             A DataFrame containing the rows from the specified table.
         """
-        full_table_name = f"{self.catalog}.{self.schema}.{table_name}"
+        full_table_name = f"{self.catalog}.{self.schema}.{self.table_name}"
         table_rows = self.spark.table(full_table_name)
         print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
@@ -85,7 +85,7 @@ class TableManager(ABC):
         DataFrame
             A DataFrame containing the rows with a 'Pending' status from the specified table.
         """
-        table_rows = self.get_table(self.table_name)
+        table_rows = self.get_table()
         pending_table_rows = table_rows.filter("status = 'Pending'")
         print(
             f"Filtered to {pending_table_rows.count()} 'Pending' rows from {self.catalog}.{self.schema}.{self.table_name}."
@@ -107,7 +107,7 @@ class TableManager(ABC):
         StructType: The modified schema with the specified fields removed.
 
         """
-        table_schema = self.get_table(table_name=self.table_name).schema
+        table_schema = self.get_table().schema
 
         # Modify the schema by removing the specified fields
         modified_schema = StructType(

@@ -33,6 +33,12 @@ class SilverObjectsPerDayManager(TableManager):
         )
         return results
 
+    def get_detection_ids_to_delete_current_run(self, job_date: str):
+        return self.get_table().filter(
+            (F.col("score") > 1)
+            & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
+        )
+
 
 class SilverObjectsPerDayQuarantineManager(TableManager):
     def __init__(
