@@ -7,6 +7,7 @@ import geopy.distance
 import numpy as np
 import pandas as pd
 import requests
+from pyspark.sql import Row
 from shapely.geometry import Point
 
 from .reference_db_connector import ReferenceDatabaseConnector
@@ -259,16 +260,16 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         permits_locations_as_points: List[Point],
         permits_ids: List[str],
         permits_coordinates: List[Tuple[float, float]],
-        containers_locations_as_points: List[Point],
+        containers_coordinates_df,
     ):
-        permit_distances = []
-        closest_permits = []
-        closest_permits_coordinates = []
+        results = []
 
-        for container_location in containers_locations_as_points:
+        for row in containers_coordinates_df.collect():
+            container_location = row.geometry
             closest_permit_distances = []
             for permit_location in permits_locations_as_points:
                 try:
+                    # calculate distance between container point and permit point
                     permit_dist = geopy.distance.distance(
                         container_location.coords, permit_location.coords
                     ).meters
@@ -282,10 +283,17 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                         f"Permit location: {permit_location}, {permit_location.coords}"
                     )
                 closest_permit_distances.append(permit_dist)
-
             min_distance_idx = np.argmin(closest_permit_distances)
-            permit_distances.append(float(closest_permit_distances[min_distance_idx]))
-            closest_permits.append(permits_ids[min_distance_idx])
-            closest_permits_coordinates.append(permits_coordinates[min_distance_idx])
+            results.append(
+                Row(
+                    detection_id=row.detection_id,  # retain the detection id for joining
+                    closest_permit_distance=float(
+                        closest_permit_distances[min_distance_idx]
+                    ),
+                    closest_permit_id=permits_ids[min_distance_idx],
+                    closest_permit_coordinates=permits_coordinates[min_distance_idx],
+                )
+            )
+        results_df = self.spark.createDataFrame(results)
 
-        return permit_distances, closest_permits, closest_permits_coordinates
+        return results_df

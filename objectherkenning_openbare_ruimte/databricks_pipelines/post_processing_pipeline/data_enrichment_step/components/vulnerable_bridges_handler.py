@@ -1,12 +1,11 @@
-from typing import List, Tuple
+from typing import List
 
 import geopy.distance
 from osgeo import osr  # pylint: disable-all
-from pyspark.sql import SparkSession
+from pyspark.sql import Row, SparkSession
 from shapely.geometry import LineString, Point
 from shapely.ops import nearest_points
 from shapely.wkt import dumps as wkt_dumps
-from tqdm import tqdm
 
 
 class VulnerableBridgesHandler:
@@ -97,22 +96,21 @@ class VulnerableBridgesHandler:
         )
         return closest_point_in_meters
 
-    @staticmethod
     def calculate_distances_to_closest_vulnerable_bridges(
+        self,
         bridges_locations_as_linestrings: List[LineString],
-        containers_locations_as_points: List[Point],
+        containers_coordinates_df,
         bridges_ids: List[int],
         bridges_coordinates: List[List[List[float]]],
-    ) -> Tuple[List[float], List[int], List[List[float]], List[LineString]]:
-        bridges_distances = []
-        closest_bridge_ids = []
-        closest_bridge_coordinates = []
-        closest_bridge_wkts = []
+    ):
+        results = []
 
-        for container_location in containers_locations_as_points:
+        for row in containers_coordinates_df.collect():
+            container_location = row.geometry
             bridge_container_distances = []
             for idx, bridge_location in enumerate(bridges_locations_as_linestrings):
                 try:
+                    # calculate distance between container point and bridge linestring
                     bridge_dist = VulnerableBridgesHandler._line_to_point_in_meters(
                         bridge_location, container_location
                     )
@@ -126,9 +124,9 @@ class VulnerableBridgesHandler:
                 bridge_container_distances.append(
                     (
                         bridge_dist,
-                        bridges_ids[idx],
-                        bridges_coordinates[idx][0],
-                        bridge_location,
+                        bridges_ids[idx],  # ID of the bridge
+                        bridges_coordinates[idx][0],  # Coordinates of the bridge
+                        bridge_location,  # Bridge linestring (in WKT format)
                     )
                 )
             (
@@ -137,14 +135,16 @@ class VulnerableBridgesHandler:
                 closest_bridge_coord,
                 closest_bridge_linestring,
             ) = min(bridge_container_distances, key=lambda x: x[0])
-            bridges_distances.append(round(closest_bridge_distance, 2))
-            closest_bridge_ids.append(closest_bridge_id)
-            closest_bridge_coordinates.append(closest_bridge_coord)
-            closest_bridge_wkts.append(wkt_dumps(closest_bridge_linestring))
+            results.append(
+                Row(
+                    detection_id=row.detection_id,  # retain the detection id for joining
+                    closest_bridge_distance=round(closest_bridge_distance, 2),
+                    closest_bridge_id=closest_bridge_id,
+                    closest_bridge_coordinates=closest_bridge_coord,
+                    closest_bridge_linestring_wkt=wkt_dumps(closest_bridge_linestring),
+                )
+            )
 
-        return (
-            bridges_distances,
-            closest_bridge_ids,
-            closest_bridge_coordinates,
-            closest_bridge_wkts,
-        )
+        results_df = self.spark.createDataFrame(results)
+
+        return results_df

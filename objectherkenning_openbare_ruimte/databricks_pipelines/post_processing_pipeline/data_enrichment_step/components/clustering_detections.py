@@ -1,6 +1,6 @@
 import numpy as np
 from databricks.sdk.runtime import sqlContext
-from pyspark.sql import SparkSession, Window
+from pyspark.sql import Row, SparkSession, Window
 from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_number
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
@@ -10,25 +10,15 @@ MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are
 
 
 class Clustering:
-    def __init__(self, spark: SparkSession, catalog, schema):
+    def __init__(self, spark: SparkSession, catalog, schema, detections, frames):
         self.spark = spark
         self.catalog = catalog
         self.schema = schema
-        query_detection_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_detection_metadata WHERE status='Pending'"  # nosec
-        self.detection_metadata = self.spark.sql(query_detection_metadata)
-        print(
-            f"03: Loaded {self.detection_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_detection_metadata."
-        )
-
-        query_frame_metadata = f"SELECT * FROM {self.catalog}.{self.schema}.silver_frame_metadata WHERE status='Pending'"  # nosec
-        self.frame_metadata = self.spark.sql(query_frame_metadata)
-        print(
-            f"03: Loaded {self.frame_metadata.count()} 'Pending' rows from {self.catalog}.oor.silver_frame_metadata."
-        )
-
+        self.detection_metadata = detections
+        self.frame_metadata = frames
         self.df_joined = self._join_frame_and_detection_metadata()
-        self._containers_coordinates = None
-        self._containers_coordinates_geometry = None
+        self._containers_coordinates_with_detection_id = None
+        self._containers_coordinates_with_detection_id_and_geometry = None
 
     def filter_by_confidence_score(self, min_conf_score: float):
         self.df_joined = self.df_joined.where(col("confidence") > min_conf_score)
@@ -38,28 +28,19 @@ class Clustering:
         self.df_joined = self.df_joined.withColumn("area", col("width") * col("height"))
         self.df_joined = self.df_joined.where(col("area") > min_bbox_size)
 
-    def get_containers_coordinates(self):
-        if not self._containers_coordinates:
-            self._containers_coordinates = self._extract_containers_coordinates()
-        return self._containers_coordinates
+    def get_containers_coordinates_with_detection_id(self):
+        if not self._containers_coordinates_with_detection_id:
+            self._containers_coordinates_with_detection_id = (
+                self._extract_containers_coordinates_with_detection_id()
+            )
+        return self._containers_coordinates_with_detection_id
 
-    def get_containers_coordinates_geometry(self):
-        if not self._containers_coordinates_geometry:
-            self._containers_coordinates_geometry = self._convert_coordinates_to_point()
-        return self._containers_coordinates_geometry
-
-    def _filter_objects_by_date(self, date):
-        self.detection_metadata = self.detection_metadata.filter(
-            self.detection_metadata["image_name"].like(f"%{date}%")
-        )
-
-    def _filter_objects_randomly(self):
-        self.detection_metadata = self.detection_metadata.sample(
-            False, 0.1, seed=42
-        )  # 10% sample size
-
-    def _filter_objects_by_tracking_id(self):
-        pass
+    def get_containers_coordinates_with_detection_id_and_geometry(self):
+        if not self._containers_coordinates_with_detection_id_and_geometry:
+            self._containers_coordinates_with_detection_id_and_geometry = (
+                self.add_geometry_to_containers_coordinates()
+            )
+        return self._containers_coordinates_with_detection_id_and_geometry
 
     def _join_frame_and_detection_metadata(self):
 
@@ -78,8 +59,6 @@ class Clustering:
             col("dm.width"),
             col("dm.height"),
             col("dm.confidence"),
-            # col("fm.gps_lat"),
-            # col("fm.gps_lon"),
             col("fm.gps_lat").cast("float"),
             col("fm.gps_lon").cast("float"),
         ]
@@ -88,52 +67,26 @@ class Clustering:
 
         return joined_df
 
-    def _extract_containers_coordinates(self):
-        # Collect the DataFrame rows as a list of Row objects
-        rows = self.df_joined.select("gps_lat", "gps_lon").collect()
-        # Convert the list of Row objects into a list of tuples
-        containers_coordinates = [(row["gps_lat"], row["gps_lon"]) for row in rows]
+    def _extract_containers_coordinates_with_detection_id(self):
 
-        return containers_coordinates
+        containers_df = self.df_joined.select("detection_id", "gps_lat", "gps_lon")
 
-    def _convert_coordinates_to_point(self):
+        return containers_df
+
+    def add_geometry_to_containers_coordinates(self):
         """
         We need the containers coordinates as Point to perform distance calculations
         """
-        containers_coordinates_geometry = [
-            Point(location) for location in self.get_containers_coordinates()
-        ]
-        return containers_coordinates_geometry
+        containers_df = self._extract_containers_coordinates_with_detection_id()
 
-    # why is this operation so complicated!?
-    def add_column(self, column_name, values):
-
-        # Ensure the length of the values matches the number of rows in the dataframe
-        if len(values) != self.df_joined.count():
-            raise ValueError(
-                "The length of the list does not match the number of rows in the dataframe"
+        containers_df_with_geom = containers_df.rdd.map(
+            lambda row: Row(
+                **row.asDict(),  # retain all original columns in the row
+                geometry=Point(row["gps_lat"], row["gps_lon"])
             )
+        ).toDF()
 
-        # convert list to a dataframe
-        b = sqlContext.createDataFrame(
-            [(v,) for v in values], [column_name]
-        )  # noqa: F405
-
-        # add 'sequential' index and join both dataframe to get the final result
-        self.df_joined = self.df_joined.withColumn(
-            "row_idx", row_number().over(Window.orderBy(monotonically_increasing_id()))
-        )
-        b = b.withColumn(
-            "row_idx", row_number().over(Window.orderBy(monotonically_increasing_id()))
-        )
-
-        self.df_joined = self.df_joined.join(
-            b, self.df_joined.row_idx == b.row_idx
-        ).drop("row_idx")
-
-    def add_columns(self, columns_dict):
-        for column_name, values in columns_dict.items():
-            self.add_column(column_name, values)
+        return containers_df_with_geom
 
     def _cluster_points(self, eps, min_samples=MIN_SAMPLES):
         """
@@ -145,7 +98,12 @@ class Clustering:
         min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
         """
 
-        coordinates = np.array(self.get_containers_coordinates())
+        containers_df = np.array(self.get_containers_coordinates_with_detection_id())
+        coordinates = np.array(
+            containers_df.select("gps_lat", "gps_lon")
+            .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
+            .collect()
+        )
 
         db = DBSCAN(
             eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
@@ -153,7 +111,9 @@ class Clustering:
 
         # Add cluster labels to the DataFrame
         labels = [int(v) for v in db.labels_]
-        self.add_column("tracking_id", labels)
+        self.df_joined = self.add_column_to_df(
+            df=self.df_joined, column_name="tracking_id", values=labels
+        )
 
     def cluster_and_select_images(self, distance=10):
         # Cluster the points based on distance
@@ -181,8 +141,12 @@ class Clustering:
         )
 
         # Update container coordinates after clustering
-        self._containers_coordinates = self._extract_containers_coordinates()
-        self._containers_coordinates_geometry = self._convert_coordinates_to_point()
+        self._containers_coordinates_with_detection_id = (
+            self._extract_containers_coordinates_with_detection_id()
+        )
+        self._containers_coordinates_with_detection_id_and_geometry = (
+            self.add_geometry_to_containers_coordinates()
+        )
 
     def setup(self):
         self.filter_by_confidence_score(0.7)
@@ -195,3 +159,27 @@ class Clustering:
             return
 
         self.cluster_and_select_images()
+
+    def add_column_to_df(self, df, column_name, values):
+        # Ensure the length of the values matches the number of rows in the dataframe
+        if len(values) != df.count():
+            raise ValueError(
+                "The length of the list does not match the number of rows in the dataframe"
+            )
+
+        # convert list to a dataframe
+        b = sqlContext.createDataFrame(
+            [(v,) for v in values], [column_name]
+        )  # noqa: F405
+
+        # add 'sequential' index and join both dataframe to get the final result
+        df = df.withColumn(
+            "row_idx", row_number().over(Window.orderBy(monotonically_increasing_id()))
+        )
+        b = b.withColumn(
+            "row_idx", row_number().over(Window.orderBy(monotonically_increasing_id()))
+        )
+
+        df = df.join(b, df.row_idx == b.row_idx).drop("row_idx")
+
+        return df

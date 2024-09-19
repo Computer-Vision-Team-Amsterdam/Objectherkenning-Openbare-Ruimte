@@ -1,8 +1,3 @@
-# Run clustering
-# enrich with Decos data and with Bridges data
-# prioritize based on score
-# store results in tables.
-
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
@@ -12,6 +7,7 @@ from datetime import datetime  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
 from pyspark.sql.functions import col  # noqa: E402
+from pyspark.sql.types import FloatType  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
@@ -55,9 +51,27 @@ def run_data_enrichment_step(
     job_process_time,
 ):
     # Setup clustering
-    clustering = Clustering(spark=sparkSession, catalog=catalog, schema=schema)
+    silverFrameMetadataManager = SilverFrameMetadataManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+    silverDetectionMetadataManager = SilverDetectionMetadataManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+    silverObjectsPerDayManager = SilverObjectsPerDayManager(
+        spark=sparkSession, catalog=catalog, schema=schema
+    )
+
+    clustering = Clustering(
+        spark=sparkSession,
+        catalog=catalog,
+        schema=schema,
+        detections=silverDetectionMetadataManager.load_pending_rows_from_table(),
+        frames=silverFrameMetadataManager.load_pending_rows_from_table(),
+    )
     clustering.setup()
-    containers_coordinates_geometry = clustering.get_containers_coordinates_geometry()
+    containers_coordinates_df = (
+        clustering.get_containers_coordinates_with_detection_id_and_geometry()
+    )
 
     # Setup bridges data
     bridgesHandler = VulnerableBridgesHandler(
@@ -76,37 +90,20 @@ def run_data_enrichment_step(
         db_port=5432,
     )
 
-    silverFrameMetadataManager = SilverFrameMetadataManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    silverDetectionMetadataManager = SilverDetectionMetadataManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    silverObjectsPerDayManager = SilverObjectsPerDayManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
+    print(f"03: Number of containers: {containers_coordinates_df.count()}.")
 
-    print(f"03: Number of containers: {len(containers_coordinates_geometry)}.")
     # Enrich with bridges data
-    (
-        closest_bridges_distances,
-        closest_bridges_ids,
-        closest_bridges_coordinates,
-        closest_bridges_wkts,
-    ) = VulnerableBridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
-        bridges_locations_as_linestrings=bridges_coordinates_geometry,
-        containers_locations_as_points=containers_coordinates_geometry,
-        bridges_ids=bridgesHandler.get_bridges_ids(),
-        bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
+    closest_bridges_df = (
+        VulnerableBridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
+            bridges_locations_as_linestrings=bridges_coordinates_geometry,
+            containers_coordinates_df=containers_coordinates_df,
+            bridges_ids=bridgesHandler.get_bridges_ids(),
+            bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
+        )
     )
 
-    clustering.add_columns(
-        {
-            "closest_bridge_distance": closest_bridges_distances,
-            "closest_bridge_id": closest_bridges_ids,
-            "closest_bridge_coordinates": closest_bridges_coordinates,
-            "closest_bridge_linestring_wkt": closest_bridges_wkts,
-        }
+    containers_coordinates_with_closest_bridge_df = containers_coordinates_df.join(
+        closest_bridges_df, "detection_id"
     )
 
     # Enrich with decos data
@@ -116,42 +113,37 @@ def run_data_enrichment_step(
     decosDataHandler.run(query)
     decosDataHandler.process_query_result()
 
-    permit_distances, closest_permits, closest_permits_coordinates = (
-        decosDataHandler.calculate_distances_to_closest_permits(
-            permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
-            permits_ids=decosDataHandler.get_permits_ids(),
-            permits_coordinates=decosDataHandler.get_permits_coordinates(),
-            containers_locations_as_points=containers_coordinates_geometry,
+    closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
+        permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
+        permits_ids=decosDataHandler.get_permits_ids(),
+        permits_coordinates=decosDataHandler.get_permits_coordinates(),
+        containers_coordinates_df=containers_coordinates_df,
+    )
+
+    containers_coordinates_with_closest_bridge_and_closest_permit_df = (
+        containers_coordinates_with_closest_bridge_df.join(
+            closest_permits_df, "detection_id"
         )
     )
 
-    clustering.add_columns(
-        {
-            "closest_permit_distance": permit_distances,
-            "closest_permit_id": closest_permits,
-            "closest_permit_coordinates": closest_permits_coordinates,
-        }
-    )
-
     # Enrich with score
-    scores = [
-        float(calculate_score(closest_bridges_distances[idx], permit_distances[idx]))
-        for idx in range(len(clustering.get_containers_coordinates()))
-    ]
-    clustering.add_column(column_name="score", values=scores)
+    calculate_score_spark_udf = F.udf(calculate_score, FloatType())
+    containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
+        "score",
+        calculate_score_spark_udf(
+            containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_bridge_distance,
+            containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_permit_distance,
+        ),
+    )
 
     # Gather data to visualize
-    current_datetime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    name = f"{current_datetime}-map"
-    path = f"/Volumes/{clustering.catalog}/default/landingzone/Luna/visualizations/{date_to_query}/"
-
     utils_visualization.generate_map(
-        dataframe=clustering.df_joined,
-        name=name,
-        path=path,
+        dataframe=containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df,
+        name=f"{job_process_time}-map",
+        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
     )
 
-    clustering.df_joined = clustering.df_joined.select(
+    selected_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.select(
         col("detection_id"),
         col("object_class"),
         col("gps_lat").alias("object_lat"),
@@ -164,8 +156,8 @@ def run_data_enrichment_step(
         col("score"),
     )
 
-    clustering.df_joined = (
-        clustering.df_joined.withColumn(
+    modified_df = (
+        selected_df.withColumn(
             "closest_permit_lat", F.col("closest_permit_coordinates._1")
         )
         .withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2"))
@@ -173,10 +165,8 @@ def run_data_enrichment_step(
         .drop("closest_permit_coordinates")
     )
 
-    clustering.df_joined = (
-        clustering.df_joined.withColumn(
-            "detection_id", F.col("detection_id").cast("int")
-        )
+    final_casted_df = (
+        modified_df.withColumn("detection_id", F.col("detection_id").cast("int"))
         .withColumn("object_lat", F.col("object_lat").cast("string"))
         .withColumn("object_lon", F.col("object_lon").cast("string"))
         .withColumn(
@@ -191,9 +181,9 @@ def run_data_enrichment_step(
         .withColumn("score", F.col("score").cast("float"))
     )
 
-    silverObjectsPerDayManager.insert_data(df=clustering.df_joined)
-    silverFrameMetadataManager.update_status(job_process_time=job_process_time)
-    silverDetectionMetadataManager.update_status(job_process_time=job_process_time)
+    silverObjectsPerDayManager.insert_data(df=final_casted_df)
+    silverFrameMetadataManager.update_status(job_process_time=final_casted_df)
+    silverDetectionMetadataManager.update_status(job_process_time=final_casted_df)
 
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
