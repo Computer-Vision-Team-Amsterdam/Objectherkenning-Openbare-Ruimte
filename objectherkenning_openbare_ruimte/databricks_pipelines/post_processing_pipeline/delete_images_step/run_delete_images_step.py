@@ -85,9 +85,6 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
-    job_process_time_settings = load_settings(config_file_path)["databricks_pipelines"][
-        "job_process_time"
-    ]
     run_delete_images_step(
         sparkSession=sparkSession,
         catalog=settings["catalog"],
