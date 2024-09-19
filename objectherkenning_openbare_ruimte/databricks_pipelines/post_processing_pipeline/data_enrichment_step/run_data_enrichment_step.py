@@ -95,7 +95,7 @@ def run_data_enrichment_step(
 
     # Enrich with bridges data
     closest_bridges_df = (
-        VulnerableBridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
+        bridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
             bridges_locations_as_linestrings=bridges_coordinates_geometry,
             containers_coordinates_df=containers_coordinates_df,
             bridges_ids=bridgesHandler.get_bridges_ids(),
