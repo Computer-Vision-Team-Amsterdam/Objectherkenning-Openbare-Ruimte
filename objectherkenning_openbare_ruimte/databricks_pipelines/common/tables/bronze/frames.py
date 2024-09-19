@@ -27,7 +27,7 @@ class BronzeFrameMetadataManager(TableManager):
             The DataFrame containing valid frame metadata.
         """
 
-        bronze_frame_metadata = self.load_pending_rows_from_table(self.table_name)
+        bronze_frame_metadata = self.load_pending_rows_from_table()
         valid_metadata = bronze_frame_metadata.filter(
             (col("gps_lat").isNotNull())
             & (col("gps_lat") != 0)
@@ -45,7 +45,7 @@ class BronzeFrameMetadataManager(TableManager):
         DataFrame
             The DataFrame containing invalid frame metadata.
         """
-        bronze_frame_metadata = self.load_pending_rows_from_table(self.table_name)
+        bronze_frame_metadata = self.load_pending_rows_from_table()
         invalid_metadata = bronze_frame_metadata.filter(
             (col("gps_lat").isNull())
             | (col("gps_lat") == 0)
