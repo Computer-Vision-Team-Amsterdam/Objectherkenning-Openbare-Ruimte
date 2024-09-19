@@ -98,7 +98,7 @@ class Clustering:
         min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
         """
 
-        containers_df = np.array(self.get_containers_coordinates_with_detection_id())
+        containers_df = self.get_containers_coordinates_with_detection_id()
         coordinates = np.array(
             containers_df.select("gps_lat", "gps_lon")
             .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
