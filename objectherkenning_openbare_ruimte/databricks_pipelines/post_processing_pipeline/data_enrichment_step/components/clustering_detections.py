@@ -1,6 +1,7 @@
 import numpy as np
 from databricks.sdk.runtime import sqlContext
-from pyspark.sql import Row, SparkSession, Window
+from pyspark.sql import SparkSession, Window
+from pyspark.sql import functions as F
 from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_number
 from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
@@ -79,12 +80,16 @@ class Clustering:
         """
         containers_df = self._extract_containers_coordinates_with_detection_id()
 
-        containers_df_with_geom = containers_df.rdd.map(
-            lambda row: Row(
-                **row.asDict(),  # retain all original columns in the row
-                geometry=Point(row["gps_lat"], row["gps_lon"])
-            )
-        ).toDF()
+        # Define a UDF to create Shapely Point objects from latitude and longitude
+        def create_point(lat, lon):
+            return Point(lon, lat)
+
+        point_udf = F.udf(create_point)
+
+        # Add the 'geometry' column to the DataFrame using the UDF
+        containers_df_with_geom = containers_df.withColumn(
+            "geometry", point_udf(F.col("gps_lat"), F.col("gps_lon"))
+        )
 
         return containers_df_with_geom
 
