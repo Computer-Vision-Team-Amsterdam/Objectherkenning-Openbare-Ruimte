@@ -17,11 +17,8 @@ class BronzeDetectionMetadataManager(TableManager):
         super().__init__(spark, catalog, schema, table_name)
 
     def filter_valid_metadata(self, silver_frame_metadata_df):
-        bronze_detection_metadata = self.load_pending_rows_from_table(self.table_name)
+        bronze_detection_metadata = self.load_pending_rows_from_table()
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
-        silver_frame_metadata_df = self.load_pending_rows_from_table(
-            silver_frame_metadata_df.ta
-        )
         silver_frame_metadata_df = silver_frame_metadata_df.alias("silver_frame")
         valid_metadata = (
             bronze_detection_metadata.join(
@@ -37,7 +34,7 @@ class BronzeDetectionMetadataManager(TableManager):
         return valid_metadata
 
     def filter_invalid_metadata(self, silver_frame_metadata_quarantine_df):
-        bronze_detection_metadata = self.load_pending_rows_from_table(self.table_name)
+        bronze_detection_metadata = self.load_pending_rows_from_table()
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
         silver_frame_metadata_quarantine_df = silver_frame_metadata_quarantine_df.alias(
             "quarantine_frame"
