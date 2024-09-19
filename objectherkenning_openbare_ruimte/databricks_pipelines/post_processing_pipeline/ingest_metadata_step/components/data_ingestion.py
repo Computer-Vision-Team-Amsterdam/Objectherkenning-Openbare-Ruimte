@@ -66,7 +66,7 @@ class DataLoader:
         df = self._load_new_frame_metadata(
             source, path_table_schema=path_table_schema, format="csv"
         )
-        print("01: Loaded frame metadata.")
+        print("Loaded frame metadata.")
         self._store_new_data(
             df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table
         )
@@ -78,7 +78,7 @@ class DataLoader:
         df = self._load_new_detection_metadata(
             source, path_table_schema=path_table_schema, format="csv"
         )
-        print("01: Loaded detection metadata.")
+        print("Loaded detection metadata.")
         self._store_new_data(
             df,
             checkpoint_path=self.checkpoint_detections,
@@ -146,9 +146,9 @@ class DataLoader:
         # Get number of rows processed
         if query_progress:
             rows_processed = stream_query.lastProgress["numInputRows"]
-            print(f"01: Stored {rows_processed} new rows into {target}.")
+            print(f"Stored {rows_processed} new rows into {target}.")
         else:
-            print("01: Query did not terminate properly.")
+            print("Query did not terminate properly.")
 
     def cleanup_temp_files(self):
         """
@@ -157,4 +157,4 @@ class DataLoader:
         for temp_file in self.temp_files:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
-                print(f"01: Deleted temporary file: {temp_file}")
+                print(f"Deleted temporary file: {temp_file}")
