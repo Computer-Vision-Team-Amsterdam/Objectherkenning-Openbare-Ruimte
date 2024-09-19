@@ -1,3 +1,4 @@
+# flake8: noqa
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
@@ -211,10 +212,6 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
-    job_process_time_settings = load_settings(config_file_path)["databricks_pipelines"][
-        "job_process_time"
-    ]
-
     run_data_enrichment_step(
         sparkSession=sparkSession,
         catalog=settings["catalog"],
