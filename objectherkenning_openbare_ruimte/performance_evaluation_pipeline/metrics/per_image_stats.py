@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Set, Tuple
+from typing import Dict, Iterable, Optional, Set, Tuple
 
 from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
 
@@ -41,6 +41,9 @@ class PerImageEvaluator:
             When annotations are provided as COCO JSON, it is important that the
             shape provided here is equal to the shape in the ground truth
             annotation JSON.
+        confidence_threshold: Optional[float] = None
+            Optional: confidence threshold at which to compute statistics. If
+            omitted, all predictions will be used.
         precision: int = 3
             Round statistics to the given number of decimals.
     """
@@ -50,25 +53,34 @@ class PerImageEvaluator:
         ground_truth_path: str,
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
+        confidence_threshold: Optional[float] = None,
         precision: int = 3,
     ):
         self.precision = precision
         img_area = image_shape[0] * image_shape[1]
         if ground_truth_path.endswith(".json"):
             self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
-                yolo_val_json=ground_truth_path, image_shape=image_shape
+                yolo_val_json=ground_truth_path,
+                image_shape=image_shape,
+                confidence_threshold=confidence_threshold,
             )
         else:
             self.gt_dataset = YoloLabelsDataset(
-                folder_path=ground_truth_path, image_area=img_area
+                folder_path=ground_truth_path,
+                image_area=img_area,
+                confidence_threshold=confidence_threshold,
             )
         if predictions_path.endswith(".json"):
             self.pred_dataset = YoloLabelsDataset.from_yolo_validation_json(
-                yolo_val_json=predictions_path, image_shape=image_shape
+                yolo_val_json=predictions_path,
+                image_shape=image_shape,
+                confidence_threshold=confidence_threshold,
             )
         else:
             self.pred_dataset = YoloLabelsDataset(
-                folder_path=predictions_path, image_area=img_area
+                folder_path=predictions_path,
+                image_area=img_area,
+                confidence_threshold=confidence_threshold,
             )
         self.gt_all = self._get_filename_set(self.gt_dataset)
 

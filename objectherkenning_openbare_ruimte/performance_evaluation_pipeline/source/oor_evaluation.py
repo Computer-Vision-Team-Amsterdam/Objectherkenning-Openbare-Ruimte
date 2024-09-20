@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -23,7 +23,11 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.run
 
 logger = logging.getLogger("performance_evaluation")
 
-DEFAULT_OBJECT_CLASSES = ObjectClass
+DEFAULT_TARGET_CLASSES = [
+    ObjectClass.container,
+    ObjectClass.mobile_toilet,
+    ObjectClass.scaffolding,
+]
 DEFAULT_SENSITIVE_CLASSES = [
     ObjectClass.person,
     ObjectClass.license_plate,
@@ -60,14 +64,14 @@ class OOREvaluator:
     predictions_base_folder: str
         Location of predictions (root folder, is expected to contain `labels/`
         subfolder).
-    output_folder: Union[str, None] = None
+    output_folder: Optional[Union[str, None]] = None
         Location where output will be stored. If None, the
         predictions_base_folder will be used.
     ground_truth_image_shape: Tuple[int, int] = (3840, 2160)
         Shape of ground truth images as (w, h).
     predictions_image_shape: Tuple[int, int] = (3840, 2160)
         Shape of prediction images as (w, h).
-    model_name: Union[str, None] = None
+    model_name: Optional[Union[str, None]] = None
         Name of the model used in the results. If no name is provided, the name
         of the predictions folder is used.
     gt_annotations_rel_path: str = "labels"
@@ -76,12 +80,18 @@ class OOREvaluator:
         Name of the folder containing prediction labels.
     splits: Union[List[str], None] = ["train", "val", "test"]
         Which splits to evaluate. Set to `None` of the data contains no splits.
-    object_classes: Iterable[ObjectClass] = DEFAULT_OBJECT_CLASSES
-        Which object classes should be evaluated (default is ["person",
-        "license_plate", "container", "mobile_toilet", "scaffolding"]).
+    target_classes: Iterable[ObjectClass] = DEFAULT_TARGET_CLASSES
+        Which object classes should be evaluated (default is ["container",
+        "mobile_toilet", "scaffolding"]).
     sensitive_classes: Iterable[ObjectClass] = DEFAULT_SENSITIVE_CLASSES
         Which object classes should be treated as sensitive for the Total
         Blurred Area computation (default is ["person", "license_plate"]).
+    target_classes_conf: Optional[float] = None
+        Confidence threshold used for target classes. If not specified, all
+        predictions will be evaluated.
+    sensitive_classes_conf: Optional[float] = None
+        Confidence threshold used for sensitive classes. If not specified, all
+        predictions will be evaluated.
     single_size_only: bool = False
         Set to true to disable differentiation in bounding box sizes. Default is
         to evaluate for the sizes S, M, and L.
@@ -91,15 +101,17 @@ class OOREvaluator:
         self,
         ground_truth_base_folder: str,
         predictions_base_folder: str,
-        output_folder: Union[str, None] = None,
+        output_folder: Optional[Union[str, None]] = None,
         ground_truth_image_shape: Tuple[int, int] = (3840, 2160),
         predictions_image_shape: Tuple[int, int] = (3840, 2160),
-        model_name: Union[str, None] = None,
+        model_name: Optional[Union[str, None]] = None,
         gt_annotations_rel_path: str = "labels",
         pred_annotations_rel_path: str = "labels",
         splits: Union[List[str], None] = ["train", "val", "test"],
-        object_classes: Iterable[ObjectClass] = DEFAULT_OBJECT_CLASSES,
-        sensitive_classes: Iterable[ObjectClass] = DEFAULT_SENSITIVE_CLASSES,
+        target_classes: List[ObjectClass] = DEFAULT_TARGET_CLASSES,
+        sensitive_classes: List[ObjectClass] = DEFAULT_SENSITIVE_CLASSES,
+        target_classes_conf: Optional[float] = None,
+        sensitive_classes_conf: Optional[float] = None,
         single_size_only: bool = False,
     ):
         self.ground_truth_base_folder = ground_truth_base_folder
@@ -115,8 +127,13 @@ class OOREvaluator:
         self.gt_annotations_rel_path = gt_annotations_rel_path
         self.pred_annotations_rel_path = pred_annotations_rel_path
         self.splits = splits if splits else [""]
-        self.object_classes = object_classes
+
+        self.target_classes = target_classes
         self.sensitive_classes = sensitive_classes
+        self.all_classes = self.target_classes + self.sensitive_classes
+
+        self.target_classes_conf = target_classes_conf
+        self.sensitive_classes_conf = sensitive_classes_conf
         self.single_size_only = single_size_only
 
         self._log_stats()
@@ -150,6 +167,7 @@ class OOREvaluator:
 
     def evaluate_tba(
         self,
+        confidence_threshold: Optional[float] = None,
         upper_half: bool = False,
     ) -> Dict[str, Dict[str, Dict[str, float]]]:
         """
@@ -174,6 +192,10 @@ class OOREvaluator:
 
         Parameters
         ----------
+        confidence_threshold: Optional[float] = None
+            Optional: confidence threshold at which to compute statistics. If
+            omitted, the initial confidence threshold at construction will be
+            used.
         upper_half: bool = False
             Whether to only consider the upper half of bounding boxes (relevant
             for people, to make sure the face is blurred).
@@ -182,6 +204,9 @@ class OOREvaluator:
         -------
         Results as Dict[str, Dict[str, Dict[str, float]]] as described above.
         """
+        if not confidence_threshold:
+            confidence_threshold = self.sensitive_classes_conf
+
         tba_results = dict()
         for split in self.splits:
             logger.info(
@@ -192,6 +217,7 @@ class OOREvaluator:
                 ground_truth_path=ground_truth_folder,
                 predictions_path=prediction_folder,
                 image_shape=self.predictions_image_shape,
+                confidence_threshold=confidence_threshold,
                 upper_half=upper_half,
             )
             key = f"{self.model_name}_{split if split != '' else 'all'}"
@@ -201,7 +227,10 @@ class OOREvaluator:
             )
         return tba_results
 
-    def evaluate_per_image(self) -> Dict[str, Dict[str, Dict[str, float]]]:
+    def evaluate_per_image(
+        self,
+        confidence_threshold: Optional[float] = None,
+    ) -> Dict[str, Dict[str, Dict[str, float]]]:
         """
         Run Per Image evaluation for the sensitive classes. This tells us the
         precision and recall based on whole images, i.e. if a single image
@@ -222,10 +251,20 @@ class OOREvaluator:
                 }
             }
 
+        Parameters
+        ----------
+        confidence_threshold: Optional[float] = None
+            Optional: confidence threshold at which to compute statistics. If
+            omitted, the initial confidence threshold at construction will be
+            used.
+
         Returns
         -------
         Results as Dict[str, Dict[str, Dict[str, float]]] as described above.
         """
+        if not confidence_threshold:
+            confidence_threshold = self.target_classes_conf
+
         per_image_results = dict()
         for split in self.splits:
             logger.info(
@@ -236,10 +275,11 @@ class OOREvaluator:
                 ground_truth_path=ground_truth_folder,
                 predictions_path=prediction_folder,
                 image_shape=self.predictions_image_shape,
+                confidence_threshold=confidence_threshold,
             )
             key = f"{self.model_name}_{split if split != '' else 'all'}"
             per_image_results[key] = evaluator.collect_results_per_class_and_size(
-                classes=self.object_classes, single_size_only=self.single_size_only
+                classes=self.target_classes, single_size_only=self.single_size_only
             )
         return per_image_results
 
@@ -275,9 +315,9 @@ class OOREvaluator:
         Results as Dict[str, Dict[str, Dict[str, float]]] as described above.
         """
         custom_coco_result: Dict[str, Dict[str, Dict[str, float]]] = dict()
-        target_classes = {"all": self.object_classes}
-        for obj_cls in self.object_classes:
-            target_classes[obj_cls.name] = [obj_cls]
+        coco_eval_classes = {"all": self.all_classes}
+        for obj_cls in self.all_classes:
+            coco_eval_classes[obj_cls.name] = [obj_cls]
 
         # The custom COCO evaluation needs annotations in COCO JSON format, so we need to convert.
         ## Set output folders for COCO JSON files.
@@ -310,7 +350,7 @@ class OOREvaluator:
             key = f"{self.model_name}_{split if split != '' else 'all'}"
             custom_coco_result[key] = dict()
 
-            for target_cls_name, target_cls in target_classes.items():
+            for target_cls_name, target_cls in coco_eval_classes.items():
                 logger.info(
                     f"Running custom COCO evaluation for {self.model_name} / {split if split != '' else 'all'} / {target_cls_name}"
                 )

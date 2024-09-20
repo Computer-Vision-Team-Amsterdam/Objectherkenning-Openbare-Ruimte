@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -125,6 +125,9 @@ class PerPixelEvaluator:
             When annotations are provided as COCO JSON, it is important that the
             shape provided here is equal to the shape in the ground truth
             annotation JSON.
+        confidence_threshold: Optional[float] = None
+            Optional: confidence threshold at which to compute statistics. If
+            omitted, all predictions will be used.
         upper_half: bool = False
             Whether to only consider the upper half of bounding boxes (relevant
             for people, to make sure the face is blurred).
@@ -137,6 +140,7 @@ class PerPixelEvaluator:
         ground_truth_path: str,
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
+        confidence_threshold: Optional[float] = None,
         upper_half: bool = False,
         precision: int = 3,
     ):
@@ -146,19 +150,27 @@ class PerPixelEvaluator:
         img_area = self.img_shape[0] * self.img_shape[1]
         if ground_truth_path.endswith(".json"):
             self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
-                yolo_val_json=ground_truth_path, image_shape=image_shape
+                yolo_val_json=ground_truth_path,
+                image_shape=image_shape,
+                confidence_threshold=confidence_threshold,
             )
         else:
             self.gt_dataset = YoloLabelsDataset(
-                folder_path=ground_truth_path, image_area=img_area
+                folder_path=ground_truth_path,
+                image_area=img_area,
+                confidence_threshold=confidence_threshold,
             )
         if predictions_path.endswith(".json"):
             self.pred_dataset = YoloLabelsDataset.from_yolo_validation_json(
-                yolo_val_json=predictions_path, image_shape=image_shape
+                yolo_val_json=predictions_path,
+                image_shape=image_shape,
+                confidence_threshold=confidence_threshold,
             )
         else:
             self.pred_dataset = YoloLabelsDataset(
-                folder_path=predictions_path, image_area=img_area
+                folder_path=predictions_path,
+                image_area=img_area,
+                confidence_threshold=confidence_threshold,
             )
 
     def _get_per_pixel_statistics(
