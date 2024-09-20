@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -16,10 +16,14 @@ class AMLExperimentDetailsSpec(SettingsSpecModel):
     ai_instrumentation_key: str = None
 
 
-class DistortionCorrectionParameters(SettingsSpecModel):
+class DefisheyeParameters(SettingsSpecModel):
     camera_matrix: List[List[float]]
     distortion_params: List[List[float]]
     input_image_size: Tuple[int, int]
+
+
+class DistortionCorrectionSpec(SettingsSpecModel):
+    defisheye_params: DefisheyeParameters
 
 
 class InferenceModelParameters(SettingsSpecModel):
@@ -32,16 +36,17 @@ class InferenceModelParameters(SettingsSpecModel):
 
 
 class InferencePipelineSpec(SettingsSpecModel):
-    detection_params: InferenceModelParameters
+    model_params: InferenceModelParameters
     inputs: Dict[str, str] = None
     outputs: Dict[str, str] = None
-    target_classes: List[int]
-    sensitive_classes: List[int]
-    output_image_size: Tuple[int, int]
-    save_detection_images: bool
-    save_detection_labels: bool
-    defisheye_flag: bool
-    defisheye_params: DistortionCorrectionParameters
+    target_classes: List[int] = None
+    sensitive_classes: List[int] = []
+    target_classes_conf: Optional[float] = None
+    sensitive_classes_conf: Optional[float] = None
+    output_image_size: Optional[Tuple[int, int]] = None
+    save_detection_images: bool = False
+    save_detection_labels: bool = True
+    defisheye_flag: bool = False
 
 
 class LoggingSpec(SettingsSpecModel):
@@ -66,4 +71,5 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     customer: str
     aml_experiment_details: AMLExperimentDetailsSpec
     logging: LoggingSpec = LoggingSpec()
+    distortion_correction: DistortionCorrectionSpec = None
     inference_pipeline: InferencePipelineSpec = None
