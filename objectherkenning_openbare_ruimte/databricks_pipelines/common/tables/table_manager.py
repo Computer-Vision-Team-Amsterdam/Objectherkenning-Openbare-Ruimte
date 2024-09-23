@@ -9,20 +9,17 @@ class TableManager(ABC):
     spark = None
     catalog = None
     schema = None
-
-    @property
-    def table_name(self):
-        return self.__class__.table_name
+    table_name = None
 
     @staticmethod
     def get_table_name():
-        return TableManager.table_name
+        return TableManager.__name__.lower()
 
     @staticmethod
     def update_status(job_process_time: datetime, exclude_ids=[]):
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
-        FROM {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}
+        FROM {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}
         WHERE status = 'Pending'
         """  # nosec
         total_pending_before = TableManager.spark.sql(count_pending_query).collect()[0][  # type: ignore
@@ -30,7 +27,7 @@ class TableManager(ABC):
         ]
 
         update_query = f"""
-        UPDATE {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}
+        UPDATE {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}
         SET status = 'Processed', processed_at = '{job_process_time}'
         WHERE status = 'Pending'
         """  # nosec
@@ -46,7 +43,7 @@ class TableManager(ABC):
         updated_rows = total_pending_before - total_pending_after
 
         print(
-            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}, {total_pending_after} rows remained 'Pending'."
+            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}, {total_pending_after} rows remained 'Pending'."
         )
 
     @staticmethod
@@ -64,9 +61,7 @@ class TableManager(ABC):
         DataFrame
             A DataFrame containing the rows from the specified table.
         """
-        full_table_name = (
-            f"{TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}"
-        )
+        full_table_name = f"{TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}"
         table_rows = TableManager.spark.table(full_table_name)  # type: ignore
         print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
@@ -89,7 +84,7 @@ class TableManager(ABC):
         table_rows = TableManager.get_table()
         pending_table_rows = table_rows.filter("status = 'Pending'")
         print(
-            f"Filtered to {pending_table_rows.count()} 'Pending' rows from {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}."
+            f"Filtered to {pending_table_rows.count()} 'Pending' rows from {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}."
         )
         return pending_table_rows
 
@@ -121,6 +116,6 @@ class TableManager(ABC):
     @staticmethod
     def insert_data(df, mode="append"):
         df.write.mode(mode).saveAsTable(
-            f"{TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}"
+            f"{TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}"
         )
-        print(f"Appended {df.count()} rows to {TableManager.table_name}.")
+        print(f"Appended {df.count()} rows to {TableManager.get_table_name()}.")
