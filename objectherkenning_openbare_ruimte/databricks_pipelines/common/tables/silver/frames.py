@@ -6,13 +6,16 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class SilverFrameMetadataManager(TableManager):
     table_name: str = "silver_frame_metadata"
 
-    def get_gps_internal_timestamp_from_image_name(self, image_name: str) -> str:
+    @staticmethod
+    def get_gps_internal_timestamp_from_image_name(image_name: str) -> str:
         fetch_date_of_image_upload_query = f"""
             SELECT gps_internal_timestamp
-            FROM {self.catalog}.{self.schema}.{self.table_name}
+            FROM {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}
             WHERE image_name = '{image_name}'
         """  # nosec
-        date_of_image_upload_df = self.spark.sql(fetch_date_of_image_upload_query)
+        date_of_image_upload_df = TableManager.spark.sql(
+            fetch_date_of_image_upload_query
+        )
         date_of_image_upload_dmy = date_of_image_upload_df.collect()[0][
             "gps_internal_timestamp"
         ]
