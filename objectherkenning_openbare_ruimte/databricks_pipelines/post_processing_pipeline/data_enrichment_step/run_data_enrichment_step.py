@@ -109,6 +109,7 @@ def run_data_enrichment_step(
     # Enrich with decos data
     # date_to_query = datetime.today().strftime("%Y-%m-%d")
     date_to_query = job_process_time.strftime("%Y-%m-%d")
+    date_to_query = "2024-08-27"
     query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
     print(f"Querying the database for date {date_to_query}...")
     decosDataHandler.run(query)
