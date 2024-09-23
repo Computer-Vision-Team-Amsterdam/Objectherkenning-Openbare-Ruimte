@@ -214,7 +214,8 @@ def run_data_enrichment_step(
             .alias("distance_closest_permit")
             .cast("float"),
             F.col("closest_permit_id"),
-            F.col("closest_permit_coordinates"),
+            F.col("closest_permit_lat").cast("float"),
+            F.col("closest_permit_lon").cast("float"),
             F.col("score").cast("float"),
             F.lit("Pending").alias("status"),
         )
