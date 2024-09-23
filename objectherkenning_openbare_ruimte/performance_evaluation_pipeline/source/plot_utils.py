@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import numpy as np
 import pandas as pd
 
@@ -41,7 +41,7 @@ def save_pr_curve(
         kind="line",
         title=f"{result_type.upper()}\nDataset: {dataset}_{split}, Model: {model_name}, Object: {target_class.name}",
         xlabel="Confidence threshold",
-        xticks=np.arange(0.1, 1, 0.1),
+        xticks=list(np.arange(0.1, 1, 0.1)),
         ylim=[0.39, 1.01],
     )
     fig = ax.get_figure()
@@ -50,7 +50,9 @@ def save_pr_curve(
         plt.close()
 
     if not filename:
-        filename = f"{result_type}_{split}_{target_class.name}_pr-curve.png"
+        filename = (
+            f"{result_type}_{split}_{target_class.name.replace('_', '-')}_pr-curve.png"
+        )
     fig.savefig(os.path.join(output_dir, filename))
 
 
@@ -72,7 +74,7 @@ def save_fscore_curve(
         kind="line",
         title=f"{result_type.upper()}\nDataset: {dataset}_{split}, Model: {model_name}, Object: {target_class.name}",
         xlabel="Confidence threshold",
-        xticks=np.arange(0.1, 1, 0.1),
+        xticks=list(np.arange(0.1, 1, 0.1)),
         ylim=[0.39, 1.01],
     )
     fig = ax.get_figure()
@@ -81,5 +83,7 @@ def save_fscore_curve(
         plt.close()
 
     if not filename:
-        filename = f"{result_type}_{split}_{target_class.name}_f-score.png"
+        filename = (
+            f"{result_type}_{split}_{target_class.name.replace('_', '-')}_f-score.png"
+        )
     fig.savefig(os.path.join(output_dir, filename))
