@@ -70,7 +70,7 @@ def run_data_enrichment_step(
     )
     clustering.setup()
     containers_coordinates_df = (
-        clustering.get_containers_coordinates_with_detection_id_and_geometry()
+        clustering.get_containers_coordinates_with_detection_id()
     )
 
     # Setup bridges data
