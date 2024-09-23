@@ -1,5 +1,4 @@
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
@@ -7,17 +6,10 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 
 class BronzeDetectionMetadataManager(TableManager):
-    def __init__(
-        self,
-        spark: SparkSession,
-        catalog: str,
-        schema: str,
-        table_name: str = "bronze_detection_metadata",
-    ):
-        super().__init__(spark, catalog, schema, table_name)
+    table_name: str = "bronze_detection_metadata"
 
-    def filter_valid_metadata(self, silver_frame_metadata_df):
-        bronze_detection_metadata = self.load_pending_rows_from_table()
+    def filter_valid_metadata(silver_frame_metadata_df):
+        bronze_detection_metadata = TableManager.load_pending_rows_from_table()
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
         silver_frame_metadata_df = silver_frame_metadata_df.alias("silver_frame")
         valid_metadata = (
@@ -33,8 +25,8 @@ class BronzeDetectionMetadataManager(TableManager):
 
         return valid_metadata
 
-    def filter_invalid_metadata(self, silver_frame_metadata_quarantine_df):
-        bronze_detection_metadata = self.load_pending_rows_from_table()
+    def filter_invalid_metadata(silver_frame_metadata_quarantine_df):
+        bronze_detection_metadata = TableManager.load_pending_rows_from_table()
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
         silver_frame_metadata_quarantine_df = silver_frame_metadata_quarantine_df.alias(
             "quarantine_frame"

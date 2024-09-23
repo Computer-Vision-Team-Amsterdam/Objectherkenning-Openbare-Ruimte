@@ -1,19 +1,10 @@
-from pyspark.sql import SparkSession
-
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
 )
 
 
 class SilverFrameMetadataManager(TableManager):
-    def __init__(
-        self,
-        spark: SparkSession,
-        catalog: str,
-        schema: str,
-        table_name: str = "silver_frame_metadata",
-    ):
-        super().__init__(spark, catalog, schema, table_name)
+    table_name: str = "silver_frame_metadata"
 
     def get_gps_internal_timestamp_from_image_name(self, image_name: str) -> str:
         fetch_date_of_image_upload_query = f"""
@@ -28,12 +19,5 @@ class SilverFrameMetadataManager(TableManager):
         return date_of_image_upload_dmy
 
 
-class SilverFrameMetadataQuarantine(TableManager):
-    def __init__(
-        self,
-        spark: SparkSession,
-        catalog: str,
-        schema: str,
-        table_name: str = "silver_frame_metadata_quarantine",
-    ):
-        super().__init__(spark, catalog, schema, table_name)
+class SilverFrameMetadataQuarantineManager(TableManager):
+    table_name: str = "silver_frame_metadata_quarantine"

@@ -2,6 +2,10 @@ from datetime import datetime
 
 from databricks.sdk.runtime import *  # noqa: F403
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
+    TableManager,
+)
+
 
 def delete_file(databricks_volume_full_path):
     """
@@ -59,3 +63,9 @@ def compare_dataframes(df1, df2, df1_name, df2_name):
 def unix_to_yyyy_mm_dd(unix_timestamp) -> str:
     date_time = datetime.fromtimestamp(unix_timestamp)
     return date_time.strftime("%Y-%m-%d")
+
+
+def setup_tables(spark, catalog, schema):
+    TableManager.spark = spark
+    TableManager.catalog = catalog
+    TableManager.schema = schema

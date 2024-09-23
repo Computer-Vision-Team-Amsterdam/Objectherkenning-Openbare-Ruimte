@@ -1,19 +1,10 @@
-from pyspark.sql import SparkSession
-
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
 )
 
 
 class SilverDetectionMetadataManager(TableManager):
-    def __init__(
-        self,
-        spark: SparkSession,
-        catalog: str,
-        schema: str,
-        table_name: str = "silver_detection_metadata",
-    ):
-        super().__init__(spark, catalog, schema, table_name)
+    table_name: str = "silver_detection_metadata"
 
     def get_image_name_from_detection_id(self, detection_id: int) -> str:
         """
@@ -40,11 +31,4 @@ class SilverDetectionMetadataManager(TableManager):
 
 
 class SilverDetectionMetadataQuarantineManager(TableManager):
-    def __init__(
-        self,
-        spark: SparkSession,
-        catalog: str,
-        schema: str,
-        table_name: str = "silver_detection_metadata_quarantine",
-    ):
-        super().__init__(spark, catalog, schema, table_name)
+    table_name: str = "silver_detection_metadata_quarantine"

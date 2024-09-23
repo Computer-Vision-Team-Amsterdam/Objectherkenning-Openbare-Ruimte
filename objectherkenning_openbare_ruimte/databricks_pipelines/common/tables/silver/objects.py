@@ -1,5 +1,4 @@
 import pyspark.sql.functions as F
-from pyspark.sql import SparkSession
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
@@ -7,19 +6,15 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 
 class SilverObjectsPerDayManager(TableManager):
-    def __init__(
-        self,
-        spark: SparkSession,
-        catalog: str,
-        schema: str,
-        table_name: str = "silver_objects_per_day",
-    ):
-        super().__init__(spark, catalog, schema, table_name)
+    table_name: str = "silver_objects_per_day"
 
-    def get_top_pending_records(self, limit=20):
-        table_full_name = f"{self.catalog}.{self.schema}.{self.table_name}"
+    @staticmethod
+    def get_top_pending_records(limit=20):
+        table_full_name = (
+            f"{TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}"
+        )
         results = (
-            self.spark.table(table_full_name)
+            TableManager.spark.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
                 & (F.col("object_class") == 2)
@@ -29,23 +24,17 @@ class SilverObjectsPerDayManager(TableManager):
             .limit(limit)
         )
         print(
-            f"Loaded {results.count()} rows with top {limit} scores from {self.catalog}.{self.schema}.{self.table_name}."
+            f"Loaded {results.count()} rows with top {limit} scores from {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}."
         )
         return results
 
-    def get_detection_ids_to_delete_current_run(self, job_date: str):
-        return self.get_table().filter(
+    @staticmethod
+    def get_detection_ids_to_delete_current_run(job_date: str):
+        return TableManager.get_table().filter(
             (F.col("score") > 1)
             & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
         )
 
 
 class SilverObjectsPerDayQuarantineManager(TableManager):
-    def __init__(
-        self,
-        spark: SparkSession,
-        catalog: str,
-        schema: str,
-        table_name: str = "silver_objects_per_day_quarantine",
-    ):
-        super().__init__(spark, catalog, schema, table_name)
+    table_name: str = "silver_objects_per_day_quarantine"
