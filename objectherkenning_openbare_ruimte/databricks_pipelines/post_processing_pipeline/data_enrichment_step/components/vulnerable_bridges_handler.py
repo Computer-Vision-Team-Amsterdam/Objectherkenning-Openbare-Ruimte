@@ -109,7 +109,7 @@ class VulnerableBridgesHandler:
             container_lat = row.gps_lat
             container_lon = row.gps_lon
 
-            container_location = Point(container_lon, container_lat)
+            container_location = Point(container_lat, container_lon)
             bridge_container_distances = []
             for idx, bridge_location in enumerate(bridges_locations_as_linestrings):
                 try:
