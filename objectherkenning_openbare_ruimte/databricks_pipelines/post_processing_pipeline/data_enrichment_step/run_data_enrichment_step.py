@@ -145,11 +145,11 @@ def run_data_enrichment_step(
     display(df_joined_with_closest_bridge_and_closest_permit_and_score_df)
 
     # # Gather data to visualize
-    # utils_visualization.generate_map(
-    #     dataframe=containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df,
-    #     name=f"{job_process_time}-map",
-    #     path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
-    # )
+    utils_visualization.generate_map(
+        dataframe=df_joined_with_closest_bridge_and_closest_permit_and_score_df,
+        name=f"{job_process_time}-map",
+        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
+    )
 
     # selected_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.select(
     #     col("detection_id"),
@@ -165,12 +165,8 @@ def run_data_enrichment_step(
     # )
 
     # modified_df = (
-    #     selected_df.withColumn(
-    #         "closest_permit_lat", F.col("closest_permit_coordinates._1")
-    #     )
-    #     .withColumn("closest_permit_lon", F.col("closest_permit_coordinates._2"))
-    #     .withColumn("status", F.lit("Pending"))
-    #     .drop("closest_permit_coordinates")
+    #     selected_df.withColumn("status", F.lit("Pending"))
+
     # )
 
     # final_casted_df = (
@@ -188,6 +184,22 @@ def run_data_enrichment_step(
     #     .withColumn("closest_permit_lon", F.col("closest_permit_lon").cast("float"))
     #     .withColumn("score", F.col("score").cast("float"))
     # )
+
+    selected_casted_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.select(
+        F.col("detection_id").cast("int"),
+        F.col("object_class"),
+        F.col("gps_lat").alias("object_lat").cast("string"),
+        F.col("gps_lon").alias("object_lon").cast("string"),
+        F.col("closest_bridge_distance").alias("distance_closest_bridge").cast("float"),
+        F.col("closest_bridge_id").cast("string"),
+        F.col("closest_permit_distance").alias("distance_closest_permit").cast("float"),
+        F.col("closest_permit_id"),
+        F.col("closest_permit_coordinates"),
+        F.col("score").cast("float"),
+        F.lit("Pending").alias("status"),
+    )
+    final_casted_df = selected_casted_df.withColumn("status", F.lit("Pending"))
+    display(final_casted_df)
 
     # SilverObjectsPerDayManager.insert_data(df=final_casted_df)
     # SilverFrameMetadataManager.update_status(job_process_time=final_casted_df)
