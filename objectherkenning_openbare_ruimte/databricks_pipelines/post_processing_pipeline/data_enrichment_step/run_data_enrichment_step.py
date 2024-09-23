@@ -143,7 +143,7 @@ def run_data_enrichment_step(
     #     ).drop(clustering.df_joined)
     # )
     df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
-        clustering.df_joined.join(
+        df_joined_with_closest_bridge_and_closest_permit_and_score_df.join(
             clustering.df_joined.withColumnRenamed(
                 "gps_lat", "gps_lat_copy"
             ).withColumnRenamed("gps_lon", "gps_lon_copy"),
