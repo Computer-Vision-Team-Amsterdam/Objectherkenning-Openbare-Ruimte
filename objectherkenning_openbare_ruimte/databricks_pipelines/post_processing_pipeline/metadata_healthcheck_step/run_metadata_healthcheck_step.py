@@ -34,7 +34,8 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 def run_metadata_healthcheck_step(sparkSession, catalog, schema, job_process_time):
 
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
-    valid_frame_metadata = BronzeFrameMetadataManager.filter_valid_metadata()
+    bronzeFrameMetadataManager = BronzeFrameMetadataManager()
+    valid_frame_metadata = bronzeFrameMetadataManager.filter_valid_metadata()
     invalid_frame_metadata = BronzeFrameMetadataManager.filter_invalid_metadata()
 
     SilverFrameMetadataManager.insert_data(df=valid_frame_metadata)
