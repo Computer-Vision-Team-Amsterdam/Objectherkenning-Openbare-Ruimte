@@ -9,6 +9,10 @@ class BronzeFrameMetadataManager(TableManager):
     table_name: str = "bronze_frame_metadata"
 
     @staticmethod
+    def get_table_name() -> str:
+        return BronzeFrameMetadataManager.table_name
+
+    @staticmethod
     def filter_valid_metadata():
         """
         Filters the valid frame metadata based on the conditions that

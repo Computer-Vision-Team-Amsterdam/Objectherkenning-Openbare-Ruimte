@@ -9,6 +9,10 @@ class SilverObjectsPerDayManager(TableManager):
     table_name: str = "silver_objects_per_day"
 
     @staticmethod
+    def get_table_name() -> str:
+        return SilverObjectsPerDayManager.table_name
+
+    @staticmethod
     def get_top_pending_records(limit=20):
         table_full_name = f"{SilverObjectsPerDayManager.catalog}.{SilverObjectsPerDayManager.schema}.{SilverObjectsPerDayManager.table_name}"
         results = (
@@ -36,3 +40,7 @@ class SilverObjectsPerDayManager(TableManager):
 
 class SilverObjectsPerDayQuarantineManager(TableManager):
     table_name: str = "silver_objects_per_day_quarantine"
+
+    @staticmethod
+    def get_table_name() -> str:
+        return SilverObjectsPerDayQuarantineManager.table_name

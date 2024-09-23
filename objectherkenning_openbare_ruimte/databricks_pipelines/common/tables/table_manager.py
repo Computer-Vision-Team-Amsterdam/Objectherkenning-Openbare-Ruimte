@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime
 
 from pyspark.sql import DataFrame
@@ -12,8 +12,9 @@ class TableManager(ABC):
     table_name = None
 
     @staticmethod
-    def get_table_name():
-        return TableManager.__name__.lower()
+    @abstractmethod
+    def get_table_name() -> str:
+        pass
 
     @staticmethod
     def update_status(job_process_time: datetime, exclude_ids=[]):

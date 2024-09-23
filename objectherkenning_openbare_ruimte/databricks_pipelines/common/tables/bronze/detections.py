@@ -8,6 +8,10 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class BronzeDetectionMetadataManager(TableManager):
     table_name: str = "bronze_detection_metadata"
 
+    @staticmethod
+    def get_table_name() -> str:
+        return BronzeDetectionMetadataManager.table_name
+
     def filter_valid_metadata(silver_frame_metadata_df):
         bronze_detection_metadata = (
             BronzeDetectionMetadataManager.load_pending_rows_from_table()

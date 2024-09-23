@@ -7,6 +7,10 @@ class SilverDetectionMetadataManager(TableManager):
     table_name: str = "silver_detection_metadata"
 
     @staticmethod
+    def get_table_name() -> str:
+        return SilverDetectionMetadataManager.table_name
+
+    @staticmethod
     def get_image_name_from_detection_id(detection_id: int) -> str:
         """
         Fetches the image name corresponding to a specific detection ID from the silver_detection_metadata table.
@@ -35,3 +39,7 @@ class SilverDetectionMetadataManager(TableManager):
 
 class SilverDetectionMetadataQuarantineManager(TableManager):
     table_name: str = "silver_detection_metadata_quarantine"
+
+    @staticmethod
+    def get_table_name() -> str:
+        return SilverDetectionMetadataQuarantineManager.table_name

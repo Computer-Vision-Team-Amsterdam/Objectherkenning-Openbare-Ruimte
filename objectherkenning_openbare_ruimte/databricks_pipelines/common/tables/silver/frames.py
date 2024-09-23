@@ -7,6 +7,10 @@ class SilverFrameMetadataManager(TableManager):
     table_name: str = "silver_frame_metadata"
 
     @staticmethod
+    def get_table_name() -> str:
+        return SilverFrameMetadataManager.table_name
+
+    @staticmethod
     def get_gps_internal_timestamp_from_image_name(image_name: str) -> str:
         fetch_date_of_image_upload_query = f"""
             SELECT gps_internal_timestamp
@@ -24,3 +28,7 @@ class SilverFrameMetadataManager(TableManager):
 
 class SilverFrameMetadataQuarantineManager(TableManager):
     table_name: str = "silver_frame_metadata_quarantine"
+
+    @staticmethod
+    def get_table_name() -> str:
+        return SilverFrameMetadataQuarantineManager.table_name
