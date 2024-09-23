@@ -20,7 +20,9 @@ class BronzeFrameMetadataManager(TableManager):
             The DataFrame containing valid frame metadata.
         """
 
-        bronze_frame_metadata = TableManager.load_pending_rows_from_table()
+        bronze_frame_metadata = (
+            BronzeFrameMetadataManager.load_pending_rows_from_table()
+        )
         valid_metadata = bronze_frame_metadata.filter(
             (col("gps_lat").isNotNull())
             & (col("gps_lat") != 0)
@@ -39,7 +41,9 @@ class BronzeFrameMetadataManager(TableManager):
         DataFrame
             The DataFrame containing invalid frame metadata.
         """
-        bronze_frame_metadata = TableManager.load_pending_rows_from_table()
+        bronze_frame_metadata = (
+            BronzeFrameMetadataManager.load_pending_rows_from_table()
+        )
         invalid_metadata = bronze_frame_metadata.filter(
             (col("gps_lat").isNull())
             | (col("gps_lat") == 0)
@@ -52,7 +56,7 @@ class BronzeFrameMetadataManager(TableManager):
     @staticmethod
     def get_all_image_names_current_run(job_date: str):
         return (
-            TableManager.get_table()
+            BronzeFrameMetadataManager.get_table()
             .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
             .select("image_name")
             .rdd.flatMap(lambda x: x)
@@ -62,7 +66,7 @@ class BronzeFrameMetadataManager(TableManager):
     @staticmethod
     def get_gps_internal_timestamp_of_current_run(job_date: str):
         return (
-            TableManager.get_table()
+            BronzeFrameMetadataManager.get_table()
             .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
             .select("gps_internal_timestamp")
             .first()[0]

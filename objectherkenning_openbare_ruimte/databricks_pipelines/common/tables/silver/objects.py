@@ -10,11 +10,9 @@ class SilverObjectsPerDayManager(TableManager):
 
     @staticmethod
     def get_top_pending_records(limit=20):
-        table_full_name = (
-            f"{TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}"
-        )
+        table_full_name = f"{SilverObjectsPerDayManager.catalog}.{SilverObjectsPerDayManager.schema}.{SilverObjectsPerDayManager.table_name}"
         results = (
-            TableManager.spark.table(table_full_name)
+            SilverObjectsPerDayManager.spark.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
                 & (F.col("object_class") == 2)
@@ -24,13 +22,13 @@ class SilverObjectsPerDayManager(TableManager):
             .limit(limit)
         )
         print(
-            f"Loaded {results.count()} rows with top {limit} scores from {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}."
+            f"Loaded {results.count()} rows with top {limit} scores from {SilverObjectsPerDayManager.catalog}.{SilverObjectsPerDayManager.schema}.{SilverObjectsPerDayManager.table_name}."
         )
         return results
 
     @staticmethod
     def get_detection_ids_to_delete_current_run(job_date: str):
-        return TableManager.get_table().filter(
+        return SilverObjectsPerDayManager.get_table().filter(
             (F.col("score") > 1)
             & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
         )

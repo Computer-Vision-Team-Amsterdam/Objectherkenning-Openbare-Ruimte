@@ -10,10 +10,10 @@ class SilverFrameMetadataManager(TableManager):
     def get_gps_internal_timestamp_from_image_name(image_name: str) -> str:
         fetch_date_of_image_upload_query = f"""
             SELECT gps_internal_timestamp
-            FROM {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}
+            FROM {SilverFrameMetadataManager.catalog}.{SilverFrameMetadataManager.schema}.{SilverFrameMetadataManager.table_name}
             WHERE image_name = '{image_name}'
         """  # nosec
-        date_of_image_upload_df = TableManager.spark.sql(
+        date_of_image_upload_df = SilverFrameMetadataManager.spark.sql(
             fetch_date_of_image_upload_query
         )
         date_of_image_upload_dmy = date_of_image_upload_df.collect()[0][

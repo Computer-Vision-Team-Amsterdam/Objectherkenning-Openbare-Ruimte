@@ -22,10 +22,12 @@ class SilverDetectionMetadataManager(TableManager):
         """
         fetch_image_name_query = f"""
             SELECT image_name
-            FROM {TableManager.catalog}.{TableManager.schema}.{TableManager.table_name}
+            FROM {SilverDetectionMetadataManager.catalog}.{SilverDetectionMetadataManager.schema}.{SilverDetectionMetadataManager.table_name}
             WHERE id = {detection_id}
         """  # nosec
-        image_name_result_df = TableManager.spark.sql(fetch_image_name_query)
+        image_name_result_df = SilverDetectionMetadataManager.spark.sql(
+            fetch_image_name_query
+        )
 
         image_name = image_name_result_df.collect()[0]["image_name"]
         return image_name
