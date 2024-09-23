@@ -8,15 +8,13 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class SilverObjectsPerDayManager(TableManager):
     table_name: str = "silver_objects_per_day"
 
-    @staticmethod
-    def get_table_name() -> str:
-        return SilverObjectsPerDayManager.table_name
-
-    @staticmethod
-    def get_top_pending_records(limit=20):
-        table_full_name = f"{SilverObjectsPerDayManager.catalog}.{SilverObjectsPerDayManager.schema}.{SilverObjectsPerDayManager.table_name}"
+    @classmethod
+    def get_top_pending_records(cls, limit=20):
+        table_full_name = (
+            f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
+        )
         results = (
-            SilverObjectsPerDayManager.spark.table(table_full_name)
+            TableManager.spark.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
                 & (F.col("object_class") == 2)
@@ -26,13 +24,13 @@ class SilverObjectsPerDayManager(TableManager):
             .limit(limit)
         )
         print(
-            f"Loaded {results.count()} rows with top {limit} scores from {SilverObjectsPerDayManager.catalog}.{SilverObjectsPerDayManager.schema}.{SilverObjectsPerDayManager.table_name}."
+            f"Loaded {results.count()} rows with top {limit} scores from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
         )
         return results
 
-    @staticmethod
-    def get_detection_ids_to_delete_current_run(job_date: str):
-        return SilverObjectsPerDayManager.get_table().filter(
+    @classmethod
+    def get_detection_ids_to_delete_current_run(cls, job_date: str):
+        return cls.get_table().filter(
             (F.col("score") > 1)
             & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
         )
@@ -40,7 +38,3 @@ class SilverObjectsPerDayManager(TableManager):
 
 class SilverObjectsPerDayQuarantineManager(TableManager):
     table_name: str = "silver_objects_per_day_quarantine"
-
-    @staticmethod
-    def get_table_name() -> str:
-        return SilverObjectsPerDayQuarantineManager.table_name

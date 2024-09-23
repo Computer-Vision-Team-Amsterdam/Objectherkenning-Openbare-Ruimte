@@ -8,14 +8,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class BronzeDetectionMetadataManager(TableManager):
     table_name: str = "bronze_detection_metadata"
 
-    @staticmethod
-    def get_table_name() -> str:
-        return BronzeDetectionMetadataManager.table_name
-
-    def filter_valid_metadata(silver_frame_metadata_df):
-        bronze_detection_metadata = (
-            BronzeDetectionMetadataManager.load_pending_rows_from_table()
-        )
+    @classmethod
+    def filter_valid_metadata(cls, silver_frame_metadata_df):
+        bronze_detection_metadata = cls.load_pending_rows_from_table()
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
         silver_frame_metadata_df = silver_frame_metadata_df.alias("silver_frame")
         valid_metadata = (
@@ -31,10 +26,9 @@ class BronzeDetectionMetadataManager(TableManager):
 
         return valid_metadata
 
-    def filter_invalid_metadata(silver_frame_metadata_quarantine_df):
-        bronze_detection_metadata = (
-            BronzeDetectionMetadataManager.load_pending_rows_from_table()
-        )
+    @classmethod
+    def filter_invalid_metadata(cls, silver_frame_metadata_quarantine_df):
+        bronze_detection_metadata = cls.load_pending_rows_from_table()
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
         silver_frame_metadata_quarantine_df = silver_frame_metadata_quarantine_df.alias(
             "quarantine_frame"
