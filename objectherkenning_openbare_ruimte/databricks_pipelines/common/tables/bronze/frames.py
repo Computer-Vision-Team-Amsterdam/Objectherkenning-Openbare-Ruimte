@@ -8,7 +8,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class BronzeFrameMetadataManager(TableManager):
     table_name: str = "bronze_frame_metadata"
 
-    def filter_valid_metadata(self):
+    @classmethod
+    def filter_valid_metadata(cls):
         """
         Filters the valid frame metadata based on the conditions that
         gps_lat and gps_lon are not null and not zero.
@@ -19,7 +20,7 @@ class BronzeFrameMetadataManager(TableManager):
             The DataFrame containing valid frame metadata.
         """
 
-        bronze_frame_metadata = self.load_pending_rows_from_table()
+        bronze_frame_metadata = cls.load_pending_rows_from_table()
         valid_metadata = bronze_frame_metadata.filter(
             (col("gps_lat").isNotNull())
             & (col("gps_lat") != 0)
