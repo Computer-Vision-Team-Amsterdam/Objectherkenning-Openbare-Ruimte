@@ -266,7 +266,8 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             container_lat = row.gps_lat
             container_lon = row.gps_lon
 
-            container_location = Point(container_lon, container_lat)
+            container_location = Point(container_lat, container_lon)
+
             closest_permit_distances = []
             for permit_location in permits_locations_as_points:
                 try:

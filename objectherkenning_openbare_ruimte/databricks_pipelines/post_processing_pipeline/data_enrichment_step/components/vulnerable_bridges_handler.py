@@ -132,7 +132,6 @@ class VulnerableBridgesHandler:
                         bridge_location,  # Bridge linestring (in WKT format)
                     )
                 )
-                print(bridge_dist, bridges_ids[idx])
             (
                 closest_bridge_distance,
                 closest_bridge_id,
