@@ -184,6 +184,7 @@ poetry.lock
 /local
 /local_test_data
 /notebooks
+/results
 /tests
 /weights
 /yolov5/runs

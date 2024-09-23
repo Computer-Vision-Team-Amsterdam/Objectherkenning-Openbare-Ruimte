@@ -1,5 +1,6 @@
 from typing import Dict, Iterable, Optional, Set, Tuple
 
+import numpy as np
 from cvtoolkit.datasets.yolo_labels_dataset import YoloLabelsDataset
 
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (  # noqa: E402
@@ -44,7 +45,7 @@ class PerImageEvaluator:
         confidence_threshold: Optional[float] = None
             Optional: confidence threshold at which to compute statistics. If
             omitted, all predictions will be used.
-        precision: int = 3
+        decimals: int = 3
             Round statistics to the given number of decimals.
     """
 
@@ -54,9 +55,9 @@ class PerImageEvaluator:
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
         confidence_threshold: Optional[float] = None,
-        precision: int = 3,
+        decimals: int = 3,
     ):
-        self.precision = precision
+        self.decimals = decimals
         img_area = image_shape[0] * image_shape[1]
         if ground_truth_path.endswith(".json"):
             self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
@@ -150,7 +151,7 @@ class PerImageEvaluator:
         self, ground_truth: Set, predictions: Set, box_size_name: str
     ) -> Dict[str, float]:
         """Compute statistics for a given set of ground truth and prediction image names."""
-        is_all = box_size_name == "all"
+        size_all = box_size_name == "all"
         P = len(ground_truth)
         N = len(self.gt_all - ground_truth)
         PP = len(predictions)
@@ -160,16 +161,16 @@ class PerImageEvaluator:
         tn = len((self.gt_all - ground_truth) & (self.gt_all - predictions))
         fn = len(ground_truth - predictions)
 
-        precision = round(tp / PP, self.precision) if PP > 0 else None
-        recall = round(tp / P, self.precision) if P > 0 else None
-        fpr = round(fp / N, self.precision)
-        fnr = round(fn / P, self.precision) if P > 0 else None
-        tnr = round(tn / N, self.precision)
+        precision = round(tp / PP, self.decimals) if PP > 0 else np.nan
+        recall = round(tp / P, self.decimals) if P > 0 else np.nan
+        fpr = round(fp / N, self.decimals)
+        fnr = round(fn / P, self.decimals) if P > 0 else np.nan
+        tnr = round(tn / N, self.decimals)
 
         return {
-            "precision": precision if is_all else None,
+            "precision": precision if size_all else np.nan,
             "recall": recall,
-            "fpr": fpr if is_all else None,
+            "fpr": fpr if size_all else np.nan,
             "fnr": fnr,
-            "tnr": tnr if is_all else None,
+            "tnr": tnr if size_all else np.nan,
         }
