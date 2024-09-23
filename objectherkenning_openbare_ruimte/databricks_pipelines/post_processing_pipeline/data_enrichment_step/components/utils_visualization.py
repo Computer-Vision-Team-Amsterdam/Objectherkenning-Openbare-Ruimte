@@ -85,9 +85,7 @@ def generate_map(
         detection_score = row["score"]
         vulnerable_bridge = wkt_loads(row["closest_bridge_linestring_wkt"])
         closest_bridge_id = row["closest_bridge_id"]
-        permit_location = Point(
-            row["closest_permit_coordinates"][0], row["closest_permit_coordinates"][1]
-        )
+        permit_location = Point(row["closest_permit_lat"], row["closest_permit_lon"])
         closest_permit_id = row["closest_permit_id"]
 
         # Determine marker color based on the score

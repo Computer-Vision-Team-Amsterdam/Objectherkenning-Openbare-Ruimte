@@ -293,7 +293,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                         closest_permit_distances[min_distance_idx]
                     ),
                     closest_permit_id=permits_ids[min_distance_idx],
-                    closest_permit_coordinates=permits_coordinates[min_distance_idx],
+                    # closest_permit_coordinates=permits_coordinates[min_distance_idx],
                     closest_permit_lat=permits_coordinates[min_distance_idx][0],
                     closest_permit_lon=permits_coordinates[min_distance_idx][1],
                 )
