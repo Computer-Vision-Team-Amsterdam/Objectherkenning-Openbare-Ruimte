@@ -1,16 +1,21 @@
 from abc import ABC
 from datetime import datetime
 
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType
 
 
 class TableManager(ABC):
-    def __init__(self, spark: SparkSession, catalog: str, schema: str, table_name: str):
-        self.spark = spark
-        self.catalog = catalog
-        self.schema = schema
-        self.table_name = table_name
+    # def __init__(self, spark: SparkSession, catalog: str, schema: str, table_name: str):
+    #     self.spark = spark
+    #     self.catalog = catalog
+    #     self.schema = schema
+    #     self.table_name = table_name
+
+    spark = None
+    catalog = None
+    schema = None
+    table_name = None
 
     def get_table_name(self):
         return self.table_name
@@ -21,7 +26,7 @@ class TableManager(ABC):
         FROM {self.catalog}.{self.schema}.{self.table_name}
         WHERE status = 'Pending'
         """  # nosec
-        total_pending_before = self.spark.sql(count_pending_query).collect()[0][
+        total_pending_before = self.spark.sql(count_pending_query).collect()[0][  # type: ignore
             "pending_count"
         ]
 
@@ -34,9 +39,9 @@ class TableManager(ABC):
             exclude_ids_str = ", ".join(map(str, exclude_ids))
             update_query += f" AND id NOT IN ({exclude_ids_str})"
 
-        self.spark.sql(update_query)
+        self.spark.sql(update_query)  # type: ignore
 
-        total_pending_after = self.spark.sql(count_pending_query).collect()[0][
+        total_pending_after = self.spark.sql(count_pending_query).collect()[0][  # type: ignore
             "pending_count"
         ]
         updated_rows = total_pending_before - total_pending_after
@@ -60,7 +65,7 @@ class TableManager(ABC):
             A DataFrame containing the rows from the specified table.
         """
         full_table_name = f"{self.catalog}.{self.schema}.{self.table_name}"
-        table_rows = self.spark.table(full_table_name)
+        table_rows = self.spark.table(full_table_name)  # type: ignore
         print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
 
