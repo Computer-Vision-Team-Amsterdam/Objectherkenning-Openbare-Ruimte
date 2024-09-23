@@ -9,7 +9,10 @@ class TableManager(ABC):
     spark = None
     catalog = None
     schema = None
-    table_name = None
+
+    @property
+    def table_name(self):
+        return self.__class__.table_name
 
     @staticmethod
     def get_table_name():
