@@ -8,9 +8,6 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class BronzeFrameMetadataManager(TableManager):
     table_name: str = "bronze_frame_metadata"
 
-    def get_table_name(self) -> str:
-        return BronzeFrameMetadataManager.table_name
-
     def filter_valid_metadata(self):
         """
         Filters the valid frame metadata based on the conditions that
