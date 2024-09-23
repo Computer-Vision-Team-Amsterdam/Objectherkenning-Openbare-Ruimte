@@ -10,16 +10,14 @@ class TableManager(ABC):
     catalog = None
     schema = None
 
-    @staticmethod
     @abstractmethod
-    def get_table_name() -> str:
+    def get_table_name(self) -> str:
         pass
 
-    @staticmethod
-    def update_status(job_process_time: datetime, exclude_ids=[]):
+    def update_status(self, job_process_time: datetime, exclude_ids=[]):
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
-        FROM {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}
+        FROM {TableManager.catalog}.{TableManager.schema}.{self.get_table_name()}
         WHERE status = 'Pending'
         """  # nosec
         total_pending_before = TableManager.spark.sql(count_pending_query).collect()[0][  # type: ignore
@@ -27,7 +25,7 @@ class TableManager(ABC):
         ]
 
         update_query = f"""
-        UPDATE {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}
+        UPDATE {TableManager.catalog}.{TableManager.schema}.{self.get_table_name()}
         SET status = 'Processed', processed_at = '{job_process_time}'
         WHERE status = 'Pending'
         """  # nosec
@@ -43,11 +41,10 @@ class TableManager(ABC):
         updated_rows = total_pending_before - total_pending_after
 
         print(
-            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}, {total_pending_after} rows remained 'Pending'."
+            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {TableManager.catalog}.{TableManager.schema}.{self.get_table_name()}, {total_pending_after} rows remained 'Pending'."
         )
 
-    @staticmethod
-    def get_table() -> DataFrame:
+    def get_table(self) -> DataFrame:
         """
         Loads a table from the catalog and schema.
 
@@ -61,13 +58,14 @@ class TableManager(ABC):
         DataFrame
             A DataFrame containing the rows from the specified table.
         """
-        full_table_name = f"{TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}"
+        full_table_name = (
+            f"{TableManager.catalog}.{TableManager.schema}.{self.get_table_name()}"
+        )
         table_rows = TableManager.spark.table(full_table_name)  # type: ignore
         print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
 
-    @staticmethod
-    def load_pending_rows_from_table() -> DataFrame:
+    def load_pending_rows_from_table(self) -> DataFrame:
         """
         Loads all rows with a 'Pending' status from the specified table in the catalog and schema.
 
@@ -81,15 +79,14 @@ class TableManager(ABC):
         DataFrame
             A DataFrame containing the rows with a 'Pending' status from the specified table.
         """
-        table_rows = TableManager.get_table()
+        table_rows = self.get_table()
         pending_table_rows = table_rows.filter("status = 'Pending'")
         print(
-            f"Filtered to {pending_table_rows.count()} 'Pending' rows from {TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}."
+            f"Filtered to {pending_table_rows.count()} 'Pending' rows from {TableManager.catalog}.{TableManager.schema}.{self.get_table_name()}."
         )
         return pending_table_rows
 
-    @staticmethod
-    def remove_fields_from_table_schema(fields_to_remove: set) -> StructType:
+    def remove_fields_from_table_schema(self, fields_to_remove: set) -> StructType:
         """
         This method loads the schema of the specified table, removes the fields
         listed in `fields_to_remove`, and returns the modified schema.
@@ -104,7 +101,7 @@ class TableManager(ABC):
         StructType: The modified schema with the specified fields removed.
 
         """
-        table_schema = TableManager.get_table().schema
+        table_schema = self.get_table().schema
 
         # Modify the schema by removing the specified fields
         modified_schema = StructType(
@@ -113,9 +110,8 @@ class TableManager(ABC):
 
         return modified_schema
 
-    @staticmethod
-    def insert_data(df, mode="append"):
+    def insert_data(self, df, mode="append"):
         df.write.mode(mode).saveAsTable(
-            f"{TableManager.catalog}.{TableManager.schema}.{TableManager.get_table_name()}"
+            f"{TableManager.catalog}.{TableManager.schema}.{self.get_table_name()}"
         )
-        print(f"Appended {df.count()} rows to {TableManager.get_table_name()}.")
+        print(f"Appended {df.count()} rows to {self.get_table_name()}.")

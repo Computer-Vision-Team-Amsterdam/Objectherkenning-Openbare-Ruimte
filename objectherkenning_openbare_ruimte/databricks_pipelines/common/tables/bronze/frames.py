@@ -8,12 +8,10 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class BronzeFrameMetadataManager(TableManager):
     table_name: str = "bronze_frame_metadata"
 
-    @staticmethod
-    def get_table_name() -> str:
+    def get_table_name(self) -> str:
         return BronzeFrameMetadataManager.table_name
 
-    @staticmethod
-    def filter_valid_metadata():
+    def filter_valid_metadata(self):
         """
         Filters the valid frame metadata based on the conditions that
         gps_lat and gps_lon are not null and not zero.
@@ -24,9 +22,7 @@ class BronzeFrameMetadataManager(TableManager):
             The DataFrame containing valid frame metadata.
         """
 
-        bronze_frame_metadata = (
-            BronzeFrameMetadataManager.load_pending_rows_from_table()
-        )
+        bronze_frame_metadata = self.load_pending_rows_from_table()
         valid_metadata = bronze_frame_metadata.filter(
             (col("gps_lat").isNotNull())
             & (col("gps_lat") != 0)
@@ -36,8 +32,7 @@ class BronzeFrameMetadataManager(TableManager):
         print(f"Filtered valid metadata with {valid_metadata.count()} rows.")
         return valid_metadata
 
-    @staticmethod
-    def filter_invalid_metadata():
+    def filter_invalid_metadata(self):
         """
         Filters the invalid frame metadata where gps_lat or gps_lon are null or zero.
         Returns:
@@ -45,9 +40,7 @@ class BronzeFrameMetadataManager(TableManager):
         DataFrame
             The DataFrame containing invalid frame metadata.
         """
-        bronze_frame_metadata = (
-            BronzeFrameMetadataManager.load_pending_rows_from_table()
-        )
+        bronze_frame_metadata = self.load_pending_rows_from_table()
         invalid_metadata = bronze_frame_metadata.filter(
             (col("gps_lat").isNull())
             | (col("gps_lat") == 0)
@@ -57,10 +50,9 @@ class BronzeFrameMetadataManager(TableManager):
         print(f"Filtered invalid metadata with {invalid_metadata.count()} rows.")
         return invalid_metadata
 
-    @staticmethod
-    def get_all_image_names_current_run(job_date: str):
+    def get_all_image_names_current_run(self, job_date: str):
         return (
-            BronzeFrameMetadataManager.get_table()
+            self.get_table()
             .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
             .select("image_name")
             .rdd.flatMap(lambda x: x)
@@ -68,9 +60,9 @@ class BronzeFrameMetadataManager(TableManager):
         )
 
     @staticmethod
-    def get_gps_internal_timestamp_of_current_run(job_date: str):
+    def get_gps_internal_timestamp_of_current_run(self, job_date: str):
         return (
-            BronzeFrameMetadataManager.get_table()
+            self.get_table()
             .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
             .select("gps_internal_timestamp")
             .first()[0]
