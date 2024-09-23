@@ -16,6 +16,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.
     SilverObjectsPerDayManager,
     SilverObjectsPerDayQuarantineManager,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
+    setup_tables,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
     SignalHandler,
 )
@@ -35,7 +38,7 @@ def run_submit_to_signalen_step(
     base_url,
     job_process_time,
 ):
-    # Initialize SignalHandler
+    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
         sparkSession,
         catalog,
@@ -47,10 +50,7 @@ def run_submit_to_signalen_step(
         base_url,
     )
 
-    silverObjectsPerDayManager = SilverObjectsPerDayManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    top_scores_df = silverObjectsPerDayManager.get_top_pending_records(limit=20)
+    top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(limit=20)
 
     if top_scores_df.count() == 0:
         print("No data found for creating notifications. Stopping execution.")
@@ -60,36 +60,29 @@ def run_submit_to_signalen_step(
         signalHandler.process_notifications(top_scores_df)
     )
 
-    goldSignalNotificationsManager = GoldSignalNotificationsManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    silverObjectsPerDayQuarantineManager = SilverObjectsPerDayQuarantineManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-
     if successful_notifications:
         modified_schema = (
-            goldSignalNotificationsManager.remove_fields_from_table_schema(
+            GoldSignalNotificationsManager.remove_fields_from_table_schema(
                 fields_to_remove={"id", "processed_at"},
             )
         )
         successful_df = sparkSession.createDataFrame(
             successful_notifications, schema=modified_schema
         )
-        goldSignalNotificationsManager.insert_data(df=successful_df)
+        GoldSignalNotificationsManager.insert_data(df=successful_df)
 
     if unsuccessful_notifications:
         modified_schema = (
-            silverObjectsPerDayQuarantineManager.remove_fields_from_table_schema(
+            SilverObjectsPerDayQuarantineManager.remove_fields_from_table_schema(
                 fields_to_remove={"id", "processed_at"},
             )
         )
         unsuccessful_df = sparkSession.createDataFrame(
             unsuccessful_notifications, schema=modified_schema
         )
-        silverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
+        SilverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
 
-    silverObjectsPerDayManager.update_status(job_process_time=job_process_time)
+    SilverObjectsPerDayManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":

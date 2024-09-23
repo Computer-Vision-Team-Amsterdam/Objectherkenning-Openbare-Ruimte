@@ -16,6 +16,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.gold.notifications import (  # noqa: E402
     GoldSignalNotificationsManager,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
+    setup_tables,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
     SignalHandler,
 )
@@ -36,6 +39,7 @@ def run_update_signalen_feedback_step(
     job_process_time,
 ):
 
+    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
         sparkSession,
         catalog,
@@ -47,15 +51,11 @@ def run_update_signalen_feedback_step(
         base_url,
     )
 
-    goldSignalNotificationsManager = GoldSignalNotificationsManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-
     signalen_feedback_entries = []
     ids_of_not_updated_status = []
     for (
         entry
-    ) in goldSignalNotificationsManager.load_pending_rows_from_table().collect():
+    ) in GoldSignalNotificationsManager.load_pending_rows_from_table().collect():
         id = entry["id"]
         signal_status = signalHandler.get_signal(sig_id=entry["signal_id"])["status"]
         if signal_status["state_display"] != "Gemeld":
@@ -81,19 +81,15 @@ def run_update_signalen_feedback_step(
         else:
             ids_of_not_updated_status.append(id)
 
-    modified_schema = goldSignalNotificationsManager.remove_fields_from_table_schema(
+    modified_schema = GoldSignalNotificationsManager.remove_fields_from_table_schema(
         fields_to_remove={"id", "processed_at"}
     )
 
     signalen_feedback_df = sparkSession.createDataFrame(  # noqa: F821
         signalen_feedback_entries, schema=modified_schema
     )
-
-    bronzeSignalNotificationsFeedbackManager = BronzeSignalNotificationsFeedbackManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    bronzeSignalNotificationsFeedbackManager.insert_data(df=signalen_feedback_df)
-    goldSignalNotificationsManager.update_status(
+    BronzeSignalNotificationsFeedbackManager.insert_data(df=signalen_feedback_df)
+    GoldSignalNotificationsManager.update_status(
         job_process_time=job_process_time, exclude_ids=ids_of_not_updated_status
     )
 

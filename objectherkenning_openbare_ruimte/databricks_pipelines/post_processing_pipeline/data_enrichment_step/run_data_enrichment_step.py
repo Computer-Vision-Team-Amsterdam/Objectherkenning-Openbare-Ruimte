@@ -22,6 +22,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
     SilverObjectsPerDayManager,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
+    setup_tables,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
     utils_visualization,
 )
@@ -51,22 +54,14 @@ def run_data_enrichment_step(
     job_process_time,
 ):
     # Setup clustering
-    silverFrameMetadataManager = SilverFrameMetadataManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    silverDetectionMetadataManager = SilverDetectionMetadataManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
-    silverObjectsPerDayManager = SilverObjectsPerDayManager(
-        spark=sparkSession, catalog=catalog, schema=schema
-    )
+    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
 
     clustering = Clustering(
         spark=sparkSession,
         catalog=catalog,
         schema=schema,
-        detections=silverDetectionMetadataManager.load_pending_rows_from_table(),
-        frames=silverFrameMetadataManager.load_pending_rows_from_table(),
+        detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
+        frames=SilverFrameMetadataManager.load_pending_rows_from_table(),
     )
     clustering.setup()
     containers_coordinates_df = (
@@ -186,9 +181,9 @@ def run_data_enrichment_step(
     #     .withColumn("score", F.col("score").cast("float"))
     # )
 
-    # silverObjectsPerDayManager.insert_data(df=final_casted_df)
-    # silverFrameMetadataManager.update_status(job_process_time=final_casted_df)
-    # silverDetectionMetadataManager.update_status(job_process_time=final_casted_df)
+    # SilverObjectsPerDayManager.insert_data(df=final_casted_df)
+    # SilverFrameMetadataManager.update_status(job_process_time=final_casted_df)
+    # SilverDetectionMetadataManager.update_status(job_process_time=final_casted_df)
 
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
