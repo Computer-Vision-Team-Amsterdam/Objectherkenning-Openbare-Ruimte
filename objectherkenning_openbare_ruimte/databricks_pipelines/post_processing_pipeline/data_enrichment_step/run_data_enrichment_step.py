@@ -136,12 +136,27 @@ def run_data_enrichment_step(
     display(clustering.df_joined)
     display(containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df)
 
+    # df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
+    #     clustering.df_joined.join(
+    #         containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df,
+    #         "detection_id",
+    #     ).drop(clustering.df_joined)
+    # )
     df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
         clustering.df_joined.join(
-            containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df,
-            "detection_id",
+            clustering.df_joined.withColumnRenamed(
+                "gps_lat", "gps_lat_copy"
+            ).withColumnRenamed("gps_lon", "gps_lon_copy"),
+            on="detection_id",
+            how="inner",
         )
     )
+    df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
+        df_joined_with_closest_bridge_and_closest_permit_and_score_df.drop(
+            "gps_lat_copy", "gps_lon_copy"
+        )
+    )
+
     display(df_joined_with_closest_bridge_and_closest_permit_and_score_df)
 
     # # Gather data to visualize
