@@ -77,8 +77,6 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             self.query_result_df, addresses
         )
 
-        display(self.query_result_df)  # noqa: F821
-
         # Store rows where permit_lat and permit_lon are non null as healthy data
         self._healthy_df = self.query_result_df[
             self.query_result_df["permit_lat"].notnull()
