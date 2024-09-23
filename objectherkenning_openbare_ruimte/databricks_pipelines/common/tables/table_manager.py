@@ -9,7 +9,6 @@ class TableManager(ABC):
     spark = None
     catalog = None
     schema = None
-    table_name = None
 
     @staticmethod
     @abstractmethod
