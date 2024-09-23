@@ -1,9 +1,7 @@
 import numpy as np
 from databricks.sdk.runtime import sqlContext
 from pyspark.sql import SparkSession, Window
-from pyspark.sql import functions as F
 from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_number
-from shapely.geometry import Point
 from sklearn.cluster import DBSCAN
 
 MS_PER_RAD = 6371008.8  # Earth radius in meters
@@ -19,7 +17,7 @@ class Clustering:
         self.frame_metadata = frames
         self.df_joined = self._join_frame_and_detection_metadata()
         self._containers_coordinates_with_detection_id = None
-        self._containers_coordinates_with_detection_id_and_geometry = None
+        # self._containers_coordinates_with_detection_id_and_geometry = None
 
     def filter_by_confidence_score(self, min_conf_score: float):
         self.df_joined = self.df_joined.where(col("confidence") > min_conf_score)
@@ -36,12 +34,12 @@ class Clustering:
             )
         return self._containers_coordinates_with_detection_id
 
-    def get_containers_coordinates_with_detection_id_and_geometry(self):
-        if not self._containers_coordinates_with_detection_id_and_geometry:
-            self._containers_coordinates_with_detection_id_and_geometry = (
-                self.add_geometry_to_containers_coordinates()
-            )
-        return self._containers_coordinates_with_detection_id_and_geometry
+    # def get_containers_coordinates_with_detection_id_and_geometry(self):
+    #     if not self._containers_coordinates_with_detection_id_and_geometry:
+    #         self._containers_coordinates_with_detection_id_and_geometry = (
+    #             self.add_geometry_to_containers_coordinates()
+    #         )
+    #     return self._containers_coordinates_with_detection_id_and_geometry
 
     def _join_frame_and_detection_metadata(self):
 
@@ -74,24 +72,24 @@ class Clustering:
 
         return containers_df
 
-    def add_geometry_to_containers_coordinates(self):
-        """
-        We need the containers coordinates as Point to perform distance calculations
-        """
-        containers_df = self._extract_containers_coordinates_with_detection_id()
+    # def add_geometry_to_containers_coordinates(self):
+    #     """
+    #     We need the containers coordinates as Point to perform distance calculations
+    #     """
+    #     containers_df = self._extract_containers_coordinates_with_detection_id()
 
-        # Define a UDF to create Shapely Point objects from latitude and longitude
-        def create_point(lat, lon):
-            return Point(lon, lat)
+    #     # Define a UDF to create Shapely Point objects from latitude and longitude
+    #     def create_point(lat, lon):
+    #         return Point(lon, lat)
 
-        point_udf = F.udf(create_point)
+    #     point_udf = F.udf(create_point)
 
-        # Add the 'geometry' column to the DataFrame using the UDF
-        containers_df_with_geom = containers_df.withColumn(
-            "geometry", point_udf(F.col("gps_lat"), F.col("gps_lon"))
-        )
+    #     # Add the 'geometry' column to the DataFrame using the UDF
+    #     containers_df_with_geom = containers_df.withColumn(
+    #         "geometry", point_udf(F.col("gps_lat"), F.col("gps_lon"))
+    #     )
 
-        return containers_df_with_geom
+    #     return containers_df_with_geom
 
     def _cluster_points(self, eps, min_samples=MIN_SAMPLES):
         """
@@ -149,9 +147,9 @@ class Clustering:
         self._containers_coordinates_with_detection_id = (
             self._extract_containers_coordinates_with_detection_id()
         )
-        self._containers_coordinates_with_detection_id_and_geometry = (
-            self.add_geometry_to_containers_coordinates()
-        )
+        # self._containers_coordinates_with_detection_id_and_geometry = (
+        #     self.add_geometry_to_containers_coordinates()
+        # )
 
     def setup(self):
         self.filter_by_confidence_score(0.7)

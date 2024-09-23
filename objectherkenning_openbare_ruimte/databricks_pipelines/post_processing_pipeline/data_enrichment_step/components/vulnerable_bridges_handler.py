@@ -106,7 +106,10 @@ class VulnerableBridgesHandler:
         results = []
 
         for row in containers_coordinates_df.collect():
-            container_location = row.geometry
+            container_lat = row.gps_lat
+            container_lon = row.gps_lon
+
+            container_location = Point(container_lon, container_lat)
             bridge_container_distances = []
             for idx, bridge_location in enumerate(bridges_locations_as_linestrings):
                 try:

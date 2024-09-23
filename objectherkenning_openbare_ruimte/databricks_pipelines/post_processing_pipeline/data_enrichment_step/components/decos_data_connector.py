@@ -265,7 +265,10 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         results = []
 
         for row in containers_coordinates_df.collect():
-            container_location = row.geometry
+            container_lat = row.gps_lat
+            container_lon = row.gps_lon
+
+            container_location = Point(container_lon, container_lat)
             closest_permit_distances = []
             for permit_location in permits_locations_as_points:
                 try:
