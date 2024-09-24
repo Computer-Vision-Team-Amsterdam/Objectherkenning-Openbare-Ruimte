@@ -28,14 +28,14 @@ def get_job_process_time(is_first_pipeline_step):
     current_timestamp = datetime.now()
     if is_first_pipeline_step:
         print(
-            f"Using automatic job process time: {current_timestamp.strftime('%Y-%m-%d %H:%M:%S')}."
+            f"Job process time: {type(current_timestamp)} {current_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
         )
         return current_timestamp
-    else:
-        job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
-            taskKey="data-ingestion",
-            key="job_process_time",
-            default=current_timestamp,
-            debugValue=current_timestamp,
-        )
-        return job_process_time
+    job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
+        taskKey="data-ingestion",
+        key="job_process_time",
+        default=current_timestamp,
+        debugValue=current_timestamp,
+    )
+    print(f"Job process time: {type(job_process_time)} {job_process_time}")
+    return job_process_time
