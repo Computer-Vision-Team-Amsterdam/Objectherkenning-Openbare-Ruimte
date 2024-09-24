@@ -219,7 +219,7 @@ def run_data_enrichment_step(
 
     selected_casted_df = (
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
-            F.col("detection_id").cast("int"),
+            F.col("a.detection_id").cast("int"),
             F.col("object_class"),
             F.col("gps_lat").alias("object_lat").cast("string"),
             F.col("gps_lon").alias("object_lon").cast("string"),
