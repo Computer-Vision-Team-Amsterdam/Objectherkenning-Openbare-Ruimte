@@ -142,25 +142,40 @@ def run_data_enrichment_step(
     #         "detection_id",
     #     ).drop(clustering.df_joined)
     # )
-    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
-        containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.join(
-            clustering.joined_metadata.withColumnRenamed(
-                "gps_lat", "gps_lat_copy"
-            ).withColumnRenamed("gps_lon", "gps_lon_copy"),
-            on="detection_id",
-        )
-    )
+    # joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
+    #     containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.join(
+    #         clustering.joined_metadata.withColumnRenamed(
+    #             "gps_lat", "gps_lat_copy"
+    #         ).withColumnRenamed("gps_lon", "gps_lon_copy"),
+    #         on="detection_id",
+    #     )
+    # )
 
+    # print("Before drop")
+    # display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
+    # joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
+    #     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.drop(
+    #         "gps_lat_copy", "gps_lon_copy"
+    #     )
+    # )
+    # print("After drop")
+    # display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
+
+    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
+        "a"
+    ).join(
+        clustering.joined_metadata.alias("b"),
+        on=F.col("a.detection_id") == F.col("b.detection_id"),
+    )
     print("Before drop")
     display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.drop(
-            "gps_lat_copy", "gps_lon_copy"
+            "b.gps_lat", "b.gps_lon"
         )
     )
     print("After drop")
     display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
-
     # # Gather data to visualize
     utils_visualization.generate_map(
         dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
