@@ -85,7 +85,7 @@ def run_data_enrichment_step(
         db_port=5432,
     )
 
-    print(f"Number of containers: {containers_coordinates_df.count()}.")
+    print(f"03: Number of containers: {containers_coordinates_df.count()}.")
 
     # Enrich with bridges data
     closest_bridges_df = (
@@ -102,7 +102,9 @@ def run_data_enrichment_step(
     )
 
     # Enrich with decos data
-    date_to_query = datetime.today().strftime("%Y-%m-%d")
+    # date_to_query = datetime.today().strftime("%Y-%m-%d")
+    # date_to_query = job_process_time.strftime("%Y-%m-%d")
+    date_to_query = "2024-08-27"
     query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
     print(f"Querying the database for date {date_to_query}...")
     decosDataHandler.run(query)
@@ -134,14 +136,15 @@ def run_data_enrichment_step(
     display(containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df)
     display(clustering.joined_metadata)
 
-    
+    clustering.joined_metadata = clustering.joined_metadata.drop("gps_lat", "gps_lon")
+    print("dropped gps from joined metadata")
+    display(clustering.joined_metadata)
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
         "a"
     ).join(
         clustering.joined_metadata.alias("b"),
         on=F.col("a.detection_id") == F.col("b.detection_id"),
     )
-    
 
     print("After join")
     display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
@@ -156,8 +159,8 @@ def run_data_enrichment_step(
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
             F.col("a.detection_id").cast("int"),
             F.col("object_class"),
-            F.col("b.gps_lat").alias("object_lat").cast("string"),
-            F.col("b.gps_lon").alias("object_lon").cast("string"),
+            F.col("a.gps_lat").alias("object_lat").cast("string"),
+            F.col("a.gps_lon").alias("object_lon").cast("string"),
             F.col("closest_bridge_distance")
             .alias("distance_closest_bridge")
             .cast("float"),
