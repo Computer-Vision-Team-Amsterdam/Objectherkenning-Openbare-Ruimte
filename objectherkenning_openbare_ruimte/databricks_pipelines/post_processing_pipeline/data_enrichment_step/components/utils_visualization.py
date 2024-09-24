@@ -83,7 +83,7 @@ def generate_map(
         detection_id = row["detection_id"]
         detection_image_name = row["image_name"]
         detection_priority_id = row["priority_id"]
-        detection_score = row["score"]
+        detection_score = row["score"] if row["score"] else 0
         vulnerable_bridge = wkt_loads(row["closest_bridge_linestring_wkt"])
         closest_bridge_id = row["closest_bridge_id"]
         permit_location = Point(row["closest_permit_lat"], row["closest_permit_lon"])
