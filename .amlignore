@@ -186,9 +186,11 @@ poetry.lock
 /local_test_data
 /notebooks
 /results
+/scripts
 /tests
 /weights
 /yolov5/runs
+*.csv
 *.jpg
 *.DS_Store
 *.md
