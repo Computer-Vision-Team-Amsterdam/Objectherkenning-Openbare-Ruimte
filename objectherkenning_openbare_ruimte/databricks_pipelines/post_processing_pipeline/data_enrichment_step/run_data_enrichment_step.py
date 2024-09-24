@@ -150,6 +150,8 @@ def run_data_enrichment_step(
             on="detection_id",
         )
     )
+
+    display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.drop(
             "gps_lat_copy", "gps_lon_copy"
