@@ -151,13 +151,14 @@ def run_data_enrichment_step(
         )
     )
 
+    print("Before drop")
     display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.drop(
             "gps_lat_copy", "gps_lon_copy"
         )
     )
-
+    print("After drop")
     display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
 
     # # Gather data to visualize
@@ -221,13 +222,13 @@ def run_data_enrichment_step(
             F.lit("Pending").alias("status"),
         )
     )
-    display(selected_casted_df)
-    final_casted_df = selected_casted_df.withColumn("status", F.lit("Pending"))
-    display(final_casted_df)
 
-    # SilverObjectsPerDayManager.insert_data(df=final_casted_df)
-    # SilverFrameMetadataManager.update_status(job_process_time=final_casted_df)
-    # SilverDetectionMetadataManager.update_status(job_process_time=final_casted_df)
+    print("Final df")
+    display(selected_casted_df)
+
+    # SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+    # SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
