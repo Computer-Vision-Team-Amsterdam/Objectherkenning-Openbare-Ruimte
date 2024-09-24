@@ -161,20 +161,17 @@ def run_data_enrichment_step(
     # print("After drop")
     # display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
 
+    clustering.frame_metadata = clustering.frame_metadata.drop("gps_lat", "gps_lon")
+    print("dropped gps from joined metadata")
+    display(clustering.frame_metadata)
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
         "a"
     ).join(
         clustering.joined_metadata.alias("b"),
         on=F.col("a.detection_id") == F.col("b.detection_id"),
     )
-    print("Before drop")
-    display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
-    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
-        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.drop(
-            "b.gps_lat", "b.gps_lon"
-        )
-    )
-    print("After drop")
+
+    print("After join")
     display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
     # # Gather data to visualize
     utils_visualization.generate_map(
@@ -182,40 +179,6 @@ def run_data_enrichment_step(
         name=f"{job_process_time}-map",
         path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
     )
-
-    # selected_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.select(
-    #     col("detection_id"),
-    #     col("object_class"),
-    #     col("gps_lat").alias("object_lat"),
-    #     col("gps_lon").alias("object_lon"),
-    #     col("closest_bridge_distance").alias("distance_closest_bridge"),
-    #     col("closest_bridge_id"),
-    #     col("closest_permit_distance").alias("distance_closest_permit"),
-    #     col("closest_permit_id"),
-    #     col("closest_permit_coordinates"),
-    #     col("score"),
-    # )
-
-    # modified_df = (
-    #     selected_df.withColumn("status", F.lit("Pending"))
-
-    # )
-
-    # final_casted_df = (
-    #     modified_df.withColumn("detection_id", F.col("detection_id").cast("int"))
-    #     .withColumn("object_lat", F.col("object_lat").cast("string"))
-    #     .withColumn("object_lon", F.col("object_lon").cast("string"))
-    #     .withColumn(
-    #         "distance_closest_bridge", F.col("distance_closest_bridge").cast("float")
-    #     )
-    #     .withColumn("closest_bridge_id", F.col("closest_bridge_id").cast("string"))
-    #     .withColumn(
-    #         "distance_closest_permit", F.col("distance_closest_permit").cast("float")
-    #     )
-    #     .withColumn("closest_permit_lat", F.col("closest_permit_lat").cast("float"))
-    #     .withColumn("closest_permit_lon", F.col("closest_permit_lon").cast("float"))
-    #     .withColumn("score", F.col("score").cast("float"))
-    # )
 
     selected_casted_df = (
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
