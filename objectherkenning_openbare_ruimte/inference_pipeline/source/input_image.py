@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -8,18 +8,30 @@ logger = logging.getLogger("inference_pipeline")
 
 
 class InputImage:
-    mapxy = [None, None]
+    mapxy: List[Optional[cv2.typing.MatLike]] = [
+        None,
+        None,
+    ]  # Class variable so we only need to compute it once
 
     def __init__(self, image_full_path: str) -> None:
-        self.image = cv2.imread(str(image_full_path))
-
-    def resize(self, output_image_size: Tuple[int, int]) -> None:
-        """Resizes the image
+        """
+        This class is used to load, resize, and de-fisheye an input image.
 
         Parameters
         ----------
-        output_image_size : List
-            Output size on format: [width, height]
+        image_full_path: str
+            Path to the input image.
+        """
+        self.image = cv2.imread(str(image_full_path))
+
+    def resize(self, output_image_size: Tuple[int, int]) -> None:
+        """
+        Resize the image if needed.
+
+        Parameters
+        ----------
+        output_image_size: Tuple[int, int]
+            Output size as Tuple `(width, height)`.
         """
         if (self.image.shape[0] != output_image_size[1]) or (
             self.image.shape[1] != output_image_size[0]
@@ -27,16 +39,33 @@ class InputImage:
             self.image = cv2.resize(self.image, output_image_size)
 
     def defisheye(self, defisheye_params: Dict[str, List]) -> None:
-        """Removes fisheye effect from the images.
+        """
+        Removes fisheye effect from the images using provided distortion
+        correction parameters. See the [OpenCV
+        documentation](https://docs.opencv.org/4.x/dc/dbb/tutorial_py_calibration.html)
+        for details.
+
+        *NOTE*: the current implementation pre-computes certain mappings and
+        stores these as class variables upon processing the first image.
+        Afterwards, all images are assumed to have the same size and
+        `defisheye_params`.
+
+        The `defisheye_params` have the following structure:
+
+            {
+                "camera_matrix": [[f_x, 0, c_x], [0, f_y, c_y], [ 0, 0, 1]],
+                "distortion_params": [[k1, k2, p1, p2, k3]], "input_image_size":
+                [width, height]  # Size of the original input image
+            }
 
         Parameters
         ----------
-        defisheye_params : Dict
-            Parameters to use for defisheying. The structure is the following:
-                camera_matrix: [[2028, 0, 1954.1], [0, 2029.6, 1055.1], [ 0, 0, 1]]
-                distortion_params: [[-0.24083, 0.10647, 0.00083113, 0.0001802, -0.025874]]
-                input_image_size: [3840, 2160]
+        defisheye_params: Dict[str, List]
+            Parameters to use for distortion correction.
         """
+        # Pre-compute mapx and mapy. These are stored as class variables so we
+        # need to compute them only once. NOTE: this assumes from now on all
+        # images will have the same size and distortion correction params.
         if (self.mapxy[0] is None) or (self.mapxy[1] is None):
             old_w, old_h = defisheye_params["input_image_size"]
             new_h, new_w = self.image.shape[:2]

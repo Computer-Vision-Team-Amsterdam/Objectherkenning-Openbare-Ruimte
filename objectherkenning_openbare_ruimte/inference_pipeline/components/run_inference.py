@@ -37,16 +37,28 @@ aml_experiment_settings = settings["aml_experiment_details"]
     is_deterministic=False,
 )
 def run_inference(
-    mounted_dataset: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
-    model_weights: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
-    output_path: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
+    inference_data_dir: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
+    model_weights_dir: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
+    output_dir: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
 ):
     """
-    Pipeline step to run inference on YOLOv8 model.
+    Run inference using a pretrained YOLOv8 model on a chosen set of images.
+
+    Parameters
+    ----------
+    inference_data_dir: Input(type=AssetTypes.URI_FOLDER)
+        Location of images to run inference on. The optional sub-folder
+        structure will be preserved in the output.
+    model_weights_dir: Input(type=AssetTypes.URI_FOLDER)
+        Location of the model weights.
+    output_dir: Output(type=AssetTypes.URI_FOLDER)
+        Location where output will be stored. Depending on the config settings
+        this can be annotation labels as .txt files, images with blurred
+        sensitive classes and bounding boxes, or both.
     """
     inference_setting = settings["inference_pipeline"]
     model_name = inference_setting["inputs"]["model_name"]
-    model_path = os.path.join(model_weights, model_name)
+    model_path = os.path.join(model_weights_dir, model_name)
     model_params = inference_setting["model_params"]
     batch_size = model_params["batch_size"]
 
@@ -56,12 +68,12 @@ def run_inference(
         "save_txt": model_params.get("save_txt_flag", False),
         "save_conf": model_params.get("save_conf_flag", False),
         "conf": model_params.get("conf", 0.25),
-        "project": output_path,
+        "project": output_dir,
     }
 
     inference_pipeline = DataInference(
-        images_folder=mounted_dataset,
-        output_folder=output_path,
+        images_folder=inference_data_dir,
+        output_folder=output_dir,
         model_path=model_path,
         inference_params=full_model_params,
         target_classes=inference_setting["target_classes"],
@@ -69,10 +81,10 @@ def run_inference(
         target_classes_conf=inference_setting["target_classes_conf"],
         sensitive_classes_conf=inference_setting["sensitive_classes_conf"],
         output_image_size=inference_setting["output_image_size"],
-        save_detections=inference_setting["save_detection_images"],
+        save_images=inference_setting["save_detection_images"],
         save_labels=inference_setting["save_detection_labels"],
-        detections_subfolder=inference_setting["outputs"]["detections_subfolder"],
-        labels_subfolder=inference_setting["outputs"]["labels_subfolder"],
+        save_images_subfolder=inference_setting["outputs"]["detections_subfolder"],
+        save_labels_subfolder=inference_setting["outputs"]["labels_subfolder"],
         defisheye_flag=inference_setting["defisheye_flag"],
         defisheye_params=settings["distortion_correction"]["defisheye_params"],
         batch_size=batch_size,

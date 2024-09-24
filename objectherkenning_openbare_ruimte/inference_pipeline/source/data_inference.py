@@ -33,19 +33,68 @@ class DataInference:
         output_image_size: Optional[Tuple[int, int]] = None,
         defisheye_flag: bool = False,
         defisheye_params: Dict = {},
-        save_detections: bool = False,
+        save_images: bool = False,
         save_labels: bool = True,
-        detections_subfolder: str = "",
-        labels_subfolder: str = "",
+        save_images_subfolder: Optional[str] = None,
+        save_labels_subfolder: Optional[str] = None,
         batch_size: int = 1,
     ) -> None:
         """
-        Object that find containers in the images using a pre-trained YOLO model and blurs sensitive data.
+        This class runs inference on images using a pre-trained YOLOv8 model to
+        detect a set of target classes. Optionally, sensitive classes are
+        blurred and output images are stored.
+
+        Input images will be de-fisheyed and resized if needed. When one or more
+        objects belonging to one of the target classes are detected in an image,
+        the bounding boxes for those detections are stored in a .txt file with
+        the same name as the image. If save_images is set, the output will be
+        saved as an image with the original file name, with sensitive classes
+        blurred, and bounding boxes of target classes drawn.
 
         Parameters
         ----------
-        images_folder
-            Folder containing images to run detection on.
+        images_folder: str
+            Location of images to run inference on. If the location contains
+            sub-folders, this folder structure will be preserved in the output.
+        output_folder: str
+            Location where output (annotation labels and possible images) will
+            be stored.
+        model_path: str
+            Location of the pre-trained YOLOv8 model.
+        inference_params: Dict
+            Inference parameters for the YOLOv8 model.
+        target_classes: List
+            List of target classes for which bounding boxes will be predicted.
+        sensitive_classes: List
+            List of sensitive classes which will be blurred in output images.
+        target_classes_conf: Optional[float] = None
+            Optional: confidence threshold for target classes. Only detections
+            above this threshold will be considered. If omitted,
+            inference_param["conf"] will be used.
+        sensitive_classes_conf: Optional[float] = None
+            Optional: confidence threshold for sensitive classes. Only
+            detections above this threshold will be considered. If omitted,
+            inference_param["conf"] will be used.
+        output_image_size: Optional[Tuple[int, int]] = None
+            Optional: output images will be resized to these (width, height)
+            dimensions if set.
+        defisheye_flag: bool = False
+            Whether or not to apply distortion correction to the input images.
+        defisheye_params: Dict = {}
+            If defisheye_flag is True, these distortion correction parameters
+            will be used. Contains "camera_matrix", "distortion_params", and
+            "input_image_size" (size of images used to compute these
+            parameters).
+        save_images: bool = False
+            Whether or not to save the output images.
+        save_labels: bool = True
+            Whether or not to save the annotation labels.
+        save_images_subfolder: Optional[str] = None
+            Optional: sub-folder in which to store output images.
+        save_labels_subfolder: Optional[str] = None
+            Optional: sub-folder in which to store annotation labels.
+        batch_size: int = 1
+            Batch size for inference.
         """
         self.images_folder = images_folder
         self.output_folder = output_folder
@@ -77,22 +126,24 @@ class DataInference:
         self.defisheye_params = defisheye_params
         self.mapx = self.mapy = None
 
-        self.save_detections = save_detections
+        self.save_detections = save_images
         self.save_labels = save_labels
-        self.detections_subfolder = detections_subfolder
-        self.labels_subfolder = labels_subfolder
+        self.detections_subfolder = (
+            save_images_subfolder if save_images_subfolder else ""
+        )
+        self.labels_subfolder = save_labels_subfolder if save_labels_subfolder else ""
 
         self.batch_size = batch_size
 
     def run_pipeline(self) -> None:
         """
-        Runs the detection pipeline:
-            - find the images to detect;
-            - detects everything;
-            - stores labels if required;
-            - stores images if required, with
-              - sensitive classes blurred;
-              - target classes bounding boxes drawn;
+        Runs the inference pipeline:
+        - find the images to detect;
+        - detects everything;
+        - stores labels if required;
+        - stores images if required, with
+            - sensitive classes blurred;
+            - target classes bounding boxes drawn;
         """
         logger.info(f"Running detection pipeline on {self.images_folder}..")
         folders_and_frames = self._find_image_paths_and_group_by_folder(
@@ -114,6 +165,15 @@ class DataInference:
         return image.image
 
     def _process_batches(self, folders_and_frames: Dict[str, List[str]]) -> None:
+        """
+        Process all images in all sub-folders in batches of size batch_size.
+
+        Parameters
+        ----------
+        folders_and_frames: Dict[str, List[str]]
+            Dictionary mapping folder names to the images they contain as
+            `{"folder_name": List[image_names]}`
+        """
         for folder_name, images in folders_and_frames.items():
             logger.debug(
                 f"Running inference on folder: {os.path.relpath(folder_name, self.images_folder)}"
@@ -141,6 +201,18 @@ class DataInference:
     def _process_detections_and_blur_image(
         self, model_results: List[Results], image_paths: List[str]
     ) -> None:
+        """
+        Process the YOLOv8 inference Results objects:
+        - save output image
+        - save annotation labels
+
+        Parameters
+        ----------
+        model_results: List[Results]
+            List of YOLOv8 inference Results objects.
+        image_paths: List[str]
+            List of input image paths corresponding to the Results.
+        """
         for result, image_path in zip(model_results, image_paths):
             model_result = ModelResult(
                 model_result=result,
@@ -152,6 +224,8 @@ class DataInference:
                 save_labels=self.save_labels,
             )
 
+            # Get the relative path of the image w.r.t. the input folder. This
+            # is used to preserve the folder structure in the output.
             base_folder = os.path.dirname(
                 os.path.relpath(image_path, self.images_folder)
             )
@@ -165,13 +239,27 @@ class DataInference:
             logger.debug(f"Processing and blurring image: {image_file_name}")
 
             model_result.process_detections_and_blur_sensitive_data(
-                image_output_path=image_output_path,
+                output_folder=image_output_path,
                 image_file_name=image_file_name,
-                labels_output_path=labels_output_path,
+                labels_output_folder=labels_output_path,
             )
 
     @staticmethod
     def _find_image_paths_and_group_by_folder(root_folder: str) -> Dict[str, List[str]]:
+        """
+        Find all image files in the root_folder, group them by sub-folder, and
+        return these as a dictionary mapping.
+
+        Parameters
+        ----------
+        root_folder: str
+            The root folder.
+
+        Returns
+        -------
+        A dictionary mapping sub-folders to images contained in them:
+        `{"folder_name": ["img_1.jpg", "img_2.jpg", ...]}`
+        """
         folders_and_frames: Dict[str, List[str]] = {}
         for foldername, _, filenames in os.walk(root_folder):
             for filename in filenames:

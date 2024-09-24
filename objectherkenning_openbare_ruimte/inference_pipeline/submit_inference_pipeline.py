@@ -48,11 +48,11 @@ def inference_pipeline():
         path=model_weights_path,
     )
     run_inference_step = run_inference(
-        mounted_dataset=inference_data, model_weights=model_weights
+        inference_data_dir=inference_data, model_weights_dir=model_weights
     )
 
     output_path = os.path.join(output_datastore_path, output_rel_path)
-    run_inference_step.outputs.output_path = Output(
+    run_inference_step.outputs.output_dir = Output(
         type="uri_folder", mode="rw_mount", path=output_path
     )
 
