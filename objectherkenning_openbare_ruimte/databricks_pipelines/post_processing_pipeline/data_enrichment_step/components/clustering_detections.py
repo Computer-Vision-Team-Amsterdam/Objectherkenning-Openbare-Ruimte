@@ -15,16 +15,20 @@ class Clustering:
         self.schema = schema
         self.detection_metadata = detections
         self.frame_metadata = frames
-        self.df_joined = self._join_frame_and_detection_metadata()
+        self.joined_metadata = self._join_frame_and_detection_metadata()
         self._containers_coordinates_with_detection_id = None
 
     def filter_by_confidence_score(self, min_conf_score: float):
-        self.df_joined = self.df_joined.where(col("confidence") > min_conf_score)
+        self.joined_metadata = self.joined_metadata.where(
+            col("confidence") > min_conf_score
+        )
 
     def filter_by_bounding_box_size(self, min_bbox_size: float):
         # Calculate area for each image
-        self.df_joined = self.df_joined.withColumn("area", col("width") * col("height"))
-        self.df_joined = self.df_joined.where(col("area") > min_bbox_size)
+        self.joined_metadata = self.joined_metadata.withColumn(
+            "area", col("width") * col("height")
+        )
+        self.joined_metadata = self.joined_metadata.where(col("area") > min_bbox_size)
 
     def get_containers_coordinates_with_detection_id(self):
         if not self._containers_coordinates_with_detection_id:
@@ -60,7 +64,9 @@ class Clustering:
 
     def _extract_containers_coordinates_with_detection_id(self):
 
-        containers_df = self.df_joined.select("detection_id", "gps_lat", "gps_lon")
+        containers_df = self.joined_metadata.select(
+            "detection_id", "gps_lat", "gps_lon"
+        )
 
         return containers_df
 
@@ -87,8 +93,8 @@ class Clustering:
 
         # Add cluster labels to the DataFrame
         labels = [int(v) for v in db.labels_]
-        self.df_joined = self.add_column_to_df(
-            df=self.df_joined, column_name="tracking_id", values=labels
+        self.joined_metadata = self.add_column_to_df(
+            df=self.joined_metadata, column_name="tracking_id", values=labels
         )
 
     def cluster_and_select_images(self, distance=10):
@@ -98,21 +104,21 @@ class Clustering:
 
         # Calculate the mean confidence for each cluster
         window_spec = Window.partitionBy("tracking_id")
-        self.df_joined = self.df_joined.withColumn(
+        self.joined_metadata = self.joined_metadata.withColumn(
             "mean_confidence", mean("confidence").over(window_spec)
         )
 
         # Select images with confidence above the mean confidence of their cluster
-        self.df_joined = self.df_joined.filter(
+        self.joined_metadata = self.joined_metadata.filter(
             col("confidence") >= col("mean_confidence")
         )
 
         # Select the image with the largest area within each cluster
         window_spec_area = Window.partitionBy("tracking_id").orderBy(col("area").desc())
-        self.df_joined = self.df_joined.withColumn(
+        self.joined_metadata = self.joined_metadata.withColumn(
             "row_number", row_number().over(window_spec_area)
         )
-        self.df_joined = self.df_joined.filter(col("row_number") == 1).drop(
+        self.joined_metadata = self.joined_metadata.filter(col("row_number") == 1).drop(
             "row_number", "mean_confidence", "area"
         )
 

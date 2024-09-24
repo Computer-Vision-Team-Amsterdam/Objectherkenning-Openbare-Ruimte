@@ -24,12 +24,10 @@ def get_databricks_environment(spark: SparkSession):
     raise ValueError("Databricks environment is not set.")
 
 
-def get_job_process_time(is_first_pipeline_step):
+def get_job_process_time(is_first_pipeline_step: bool):
     current_timestamp = datetime.now()
     if is_first_pipeline_step:
-        print(
-            f"Job process time: {type(current_timestamp)} {current_timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
-        )
+        print(f"Job process time: {type(current_timestamp)} {current_timestamp}")
         return current_timestamp
     job_process_time = dbutils.jobs.taskValues.get(  # type: ignore[name-defined] # noqa: F821, F405
         taskKey="data-ingestion",

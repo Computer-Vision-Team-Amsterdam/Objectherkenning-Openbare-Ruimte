@@ -133,7 +133,7 @@ def run_data_enrichment_step(
         ),
     )
 
-    display(clustering.df_joined)
+    display(clustering.joined_metadata)
     display(containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df)
 
     # df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
@@ -144,7 +144,7 @@ def run_data_enrichment_step(
     # )
     df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
         containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.join(
-            clustering.df_joined.withColumnRenamed(
+            clustering.joined_metadata.withColumnRenamed(
                 "gps_lat", "gps_lat_copy"
             ).withColumnRenamed("gps_lon", "gps_lon_copy"),
             on="detection_id",
