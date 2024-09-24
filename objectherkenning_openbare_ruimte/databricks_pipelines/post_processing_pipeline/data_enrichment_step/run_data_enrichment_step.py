@@ -149,11 +149,11 @@ def run_data_enrichment_step(
     print("After join")
     display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
     # # Gather data to visualize
-    utils_visualization.generate_map(
-        dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
-        name=f"{job_process_time}-map",
-        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
-    )
+    # utils_visualization.generate_map(
+    #     dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
+    #     name=f"{job_process_time}-map",
+    #     path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
+    # )
 
     selected_casted_df = (
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
