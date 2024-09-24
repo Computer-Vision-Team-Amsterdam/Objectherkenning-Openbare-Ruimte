@@ -148,7 +148,6 @@ def run_data_enrichment_step(
                 "gps_lat", "gps_lat_copy"
             ).withColumnRenamed("gps_lon", "gps_lon_copy"),
             on="detection_id",
-            how="inner",
         )
     )
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
