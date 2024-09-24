@@ -128,7 +128,7 @@ class Clustering:
         )
 
     def setup(self):
-        self.filter_by_confidence_score(0.7)
+        self.filter_by_confidence_score(0.8)
         self.filter_by_bounding_box_size(0.003)
 
         if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
