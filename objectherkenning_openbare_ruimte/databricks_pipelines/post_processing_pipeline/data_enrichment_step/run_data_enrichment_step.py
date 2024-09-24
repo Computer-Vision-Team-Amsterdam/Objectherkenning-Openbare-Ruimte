@@ -142,7 +142,7 @@ def run_data_enrichment_step(
     #         "detection_id",
     #     ).drop(clustering.df_joined)
     # )
-    df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
+    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
         containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.join(
             clustering.joined_metadata.withColumnRenamed(
                 "gps_lat", "gps_lat_copy"
@@ -151,17 +151,17 @@ def run_data_enrichment_step(
             how="inner",
         )
     )
-    df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
-        df_joined_with_closest_bridge_and_closest_permit_and_score_df.drop(
+    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
+        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.drop(
             "gps_lat_copy", "gps_lon_copy"
         )
     )
 
-    display(df_joined_with_closest_bridge_and_closest_permit_and_score_df)
+    display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
 
     # # Gather data to visualize
     utils_visualization.generate_map(
-        dataframe=df_joined_with_closest_bridge_and_closest_permit_and_score_df,
+        dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
         name=f"{job_process_time}-map",
         path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
     )
@@ -201,7 +201,7 @@ def run_data_enrichment_step(
     # )
 
     selected_casted_df = (
-        df_joined_with_closest_bridge_and_closest_permit_and_score_df.select(
+        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
             F.col("detection_id").cast("int"),
             F.col("object_class"),
             F.col("gps_lat").alias("object_lat").cast("string"),
@@ -220,6 +220,7 @@ def run_data_enrichment_step(
             F.lit("Pending").alias("status"),
         )
     )
+    display(selected_casted_df)
     final_casted_df = selected_casted_df.withColumn("status", F.lit("Pending"))
     display(final_casted_df)
 
