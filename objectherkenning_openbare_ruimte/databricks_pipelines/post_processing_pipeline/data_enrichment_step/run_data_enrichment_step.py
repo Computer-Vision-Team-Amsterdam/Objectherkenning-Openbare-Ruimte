@@ -161,9 +161,9 @@ def run_data_enrichment_step(
     # print("After drop")
     # display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
 
-    clustering.frame_metadata = clustering.frame_metadata.drop("gps_lat", "gps_lon")
+    clustering.joined_metadata = clustering.joined_metadata.drop("gps_lat", "gps_lon")
     print("dropped gps from joined metadata")
-    display(clustering.frame_metadata)
+    display(clustering.joined_metadata)
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
         "a"
     ).join(
