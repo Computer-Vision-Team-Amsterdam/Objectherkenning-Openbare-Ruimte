@@ -2,7 +2,7 @@ minimum_pre_commit_version: "1.21"
 files: ^.*\.py$
 repos:
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.9
+    rev: 1.7.10
     hooks:
       - id: bandit
         args: ["-c", "bandit.yaml"]

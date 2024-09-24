@@ -6,11 +6,54 @@ aml_experiment_details:
   env_version: 51
   src_dir: "."
 
+convert_dataset:
+  input_old_datastore: "old_datastore"
+  output_new_datastore: "new_datastore"
+  face_width: 1024
+
+convert_annotations:
+  input_datastore_name: annotations_conversion_old
+  output_datastore_name: annotations_conversion_new
+  final_datastore_name: converted_new_dataset_oor
+  categories_file: categories.json
+  separate_labels: True
+  label_folder: dataset_folder/labels
+
+data_sampling:
+  inputs:
+    datastore: "oor_velotech"
+    rel_path: "frames/20240329-141802"
+    frame_metadata_rel_path: "frames/metadata"
+    decos_rel_path: "decos"
+  outputs:
+    datastore: "oor_velotech"
+    rel_path: "frames/sample"
+  n_frames: 1500
+  sampling_weight: 1.0
+  decos_radius: 30
+
 distortion_correction:
   defisheye_params:
     camera_matrix: [[2028, 0, 1954.1], [0, 2029.6, 1055.1], [ 0, 0, 1]]
     distortion_params: [[-0.24083, 0.10647, 0.00083113, 0.0001802, -0.025874]]
     input_image_size: [3840, 2160]
+  cx: 0.509
+  cy: 0.488
+  k1: -0.241
+  k2: 0.106
+
+frame_extraction:
+  inputs:
+    datastore: "oor_velotech"
+    rel_path: ""
+  outputs:
+    datastore: "oor_velotech"
+    rel_path: "frames"
+    metadata_rel_path: "frames/metadata"
+  log_dir: "logs"
+  exclude_dirs: ["checkboard", "frames", "decos"]  # Do not check for MP4 in these dirs
+  exclude_files: ["D17M02Y2024-H20M50S55"]  # Metadata for this file is invalid
+  fps: 1
 
 inference_pipeline:
   model_params:
@@ -36,12 +79,73 @@ inference_pipeline:
   save_detection_labels: True
   defisheye_flag: False
 
+performance_evaluation:
+  inputs:
+    datastore: "dataset_oor_v2_1"
+    ground_truth_rel_path: "processed-dataset-oor-v2-1"
+    predictions_rel_path: "inference/processed-v21/yolov8m_1280_v2.1"
+  outputs:
+    datastore: "dataset_oor_v2_1"
+    output_rel_path: "evaluation/processed-v21/yolov8m_1280_v2.1"
+  model_name: "yolov8m_1280_v2.1"
+  predictions_image_shape: [1280, 720]
+  splits: ["train", "val", "test"]
+  prediction_labels_rel_path: "detected_labels"
+
+training_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 500
+    patience: 100
+    n_classes: 5
+    cos_lr: True
+    dropout: 0.0
+    seed: 0
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  inputs:
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
+    model_weights_rel_path: "model"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+  outputs:
+    project_datastore_path: "dataset_oor_v2_0"
+    project_rel_path: "model"
+
+sweep_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 100
+    patience: 100
+    n_classes: 5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  sweep_trials: 30
+  inputs:
+    datastore_path: "dataset_oor_v2_0"
+    training_data_rel_path: "processed-dataset-oor-v2-0"
+    model_weights_rel_path: "model"
+    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    sweep_config: "sweep_config.json"
+  outputs:
+    project_datastore_path: "dataset_oor_v2_0"
+    project_rel_path: "model"
+
+wandb:
+  api_key: ""
+  mode: "online"
+
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "inference_pipeline"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations", "inference_pipeline", "performance_evaluation"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
-    level: DEBUG
+    level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: ""
+  ai_instrumentation_key: "AI_INSTRUMENTATION_KEY"
