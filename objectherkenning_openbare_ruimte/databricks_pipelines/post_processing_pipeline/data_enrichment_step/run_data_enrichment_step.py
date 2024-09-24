@@ -133,8 +133,8 @@ def run_data_enrichment_step(
         ),
     )
 
-    display(clustering.joined_metadata)
     display(containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df)
+    display(clustering.joined_metadata)
 
     # df_joined_with_closest_bridge_and_closest_permit_and_score_df = (
     #     clustering.df_joined.join(
