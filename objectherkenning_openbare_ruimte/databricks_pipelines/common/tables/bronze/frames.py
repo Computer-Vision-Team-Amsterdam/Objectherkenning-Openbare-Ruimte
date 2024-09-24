@@ -4,6 +4,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
     TableManager,
 )
 
+MAX_GPS_DELAY = 5  # in seconds
+
 
 class BronzeFrameMetadataManager(TableManager):
     table_name: str = "bronze_frame_metadata"
@@ -27,6 +29,18 @@ class BronzeFrameMetadataManager(TableManager):
             & (col("gps_lon").isNotNull())
             & (col("gps_lon") != 0)
         )
+
+        valid_metadata = valid_metadata.withColumn(
+            "gps_delay",
+            (
+                col("pylon0_frame_timestamp").cast("long")
+                - col("gps_internal_timestamp").cast("long")
+            ),
+        )
+
+        valid_metadata = valid_metadata.filter(col("gps_delay") <= MAX_GPS_DELAY)
+        valid_metadata = valid_metadata.drop("gps_delay")
+
         print(f"Filtered valid metadata with {valid_metadata.count()} rows.")
         return valid_metadata
 
@@ -46,6 +60,17 @@ class BronzeFrameMetadataManager(TableManager):
             | (col("gps_lon").isNull())
             | (col("gps_lon") == 0)
         )
+        invalid_metadata = invalid_metadata.withColumn(
+            "gps_delay",
+            (
+                col("pylon0_frame_timestamp").cast("long")
+                - col("gps_internal_timestamp").cast("long")
+            ),
+        )
+
+        invalid_metadata = invalid_metadata.filter(col("gps_delay") > MAX_GPS_DELAY)
+        invalid_metadata = invalid_metadata.drop("gps_delay")
+
         print(f"Filtered invalid metadata with {invalid_metadata.count()} rows.")
         return invalid_metadata
 
