@@ -83,6 +83,7 @@ def run_inference(
         output_image_size=inference_setting["output_image_size"],
         save_images=inference_setting["save_detection_images"],
         save_labels=inference_setting["save_detection_labels"],
+        save_all_images=inference_setting["save_all_images"],
         save_images_subfolder=inference_setting["outputs"]["detections_subfolder"],
         save_labels_subfolder=inference_setting["outputs"]["labels_subfolder"],
         defisheye_flag=inference_setting["defisheye_flag"],

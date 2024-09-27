@@ -26,16 +26,21 @@ class ModelResult:
         sensitive_classes_conf: Optional[float] = None,
         save_image: bool = False,
         save_labels: bool = True,
+        save_all_images: bool = False,
     ) -> None:
         """
         This class is used to process a Results object from YOLO inference.
 
         When one or more objects belonging to one of the target classes are
         detected in the image, the bounding boxes for those detections are
-        stored in a .txt file with the same name as the image. If save_images is
-        set, the output will be saved as an image with the original file name,
-        with sensitive classes blurred, and bounding boxes of target classes
-        drawn.
+        stored in a .txt file with the same name as the image. If save_images or
+        save_all_images is set, the output will be saved as an image with the
+        original file name, with sensitive classes blurred, and bounding boxes
+        of target classes drawn.
+
+        The difference between save_image and save_all_images is that the former
+        will only save images when an object belonging to one of the
+        target_classes is detected in the image.
 
         Parameters
         ----------
@@ -57,6 +62,9 @@ class ModelResult:
             Whether or not to save the output image.
         save_labels: bool = True
             Whether or not to save the annotation labels.
+        save_all_images: bool = False
+            Whether to save all processed images (TRue) or only those containing
+            objects belonging to one of the target classes (False).
         """
         self.result = model_result.cpu()
         self.output_image = OutputImage(self.result.orig_img.copy())
@@ -69,6 +77,7 @@ class ModelResult:
         )
         self.save_image = save_image
         self.save_labels = save_labels
+        self.save_all_images = save_all_images
 
         # Initialize the category_colors dictionary with predefined colors and add random colors for new categories
         self.category_colors = defaultdict(
@@ -118,7 +127,7 @@ class ModelResult:
             np.in1d(self.boxes.cls, self.target_classes)
             & (self.boxes.conf >= self.target_classes_conf)
         )[0]
-        if len(target_idxs) == 0:
+        if len(target_idxs) == 0 and not self.save_all_images:
             logger.debug("No container detected, not storing the image.")
             return 0
 
@@ -130,17 +139,18 @@ class ModelResult:
             sensitive_bounding_boxes = self.boxes[sensitive_idxs].xyxy
             self.output_image.blur_inside_boxes(boxes=sensitive_bounding_boxes)
 
-        target_bounding_boxes = self.boxes[target_idxs].xyxy
-        target_categories = [int(box.cls) for box in self.boxes[target_idxs]]
-        self.output_image.draw_bounding_boxes(
-            boxes=target_bounding_boxes,
-            categories=target_categories,
-            colour_map=self.category_colors,
-        )
+        if len(target_idxs) > 0:
+            target_bounding_boxes = self.boxes[target_idxs].xyxy
+            target_categories = [int(box.cls) for box in self.boxes[target_idxs]]
+            self.output_image.draw_bounding_boxes(
+                boxes=target_bounding_boxes,
+                categories=target_categories,
+                colour_map=self.category_colors,
+            )
 
-        if self.save_image:
+        if self.save_image or self.save_all_images:
             self._save_image(output_folder, image_file_name)
-        if self.save_labels:
+        if self.save_labels and len(target_idxs) > 0:
             annotation_str = self._get_annotation_string_from_boxes(
                 self.boxes[target_idxs]
             )

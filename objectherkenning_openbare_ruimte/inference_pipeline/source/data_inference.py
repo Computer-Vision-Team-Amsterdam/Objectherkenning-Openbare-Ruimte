@@ -35,6 +35,7 @@ class DataInference:
         defisheye_params: Dict = {},
         save_images: bool = False,
         save_labels: bool = True,
+        save_all_images: bool = False,
         save_images_subfolder: Optional[str] = None,
         save_labels_subfolder: Optional[str] = None,
         batch_size: int = 1,
@@ -47,9 +48,13 @@ class DataInference:
         Input images will be de-fisheyed and resized if needed. When one or more
         objects belonging to one of the target classes are detected in an image,
         the bounding boxes for those detections are stored in a .txt file with
-        the same name as the image. If save_images is set, the output will be
-        saved as an image with the original file name, with sensitive classes
-        blurred, and bounding boxes of target classes drawn.
+        the same name as the image. If save_images or save_all_images is set,
+        the output will be saved as an image with the original file name, with
+        sensitive classes blurred, and bounding boxes of target classes drawn.
+
+        The difference between save_image and save_all_images is that the former
+        will only save images when an object belonging to one of the
+        target_classes is detected in the image.
 
         Parameters
         ----------
@@ -89,6 +94,9 @@ class DataInference:
             Whether or not to save the output images.
         save_labels: bool = True
             Whether or not to save the annotation labels.
+        save_all_images: bool = False
+            Whether to save all processed images (TRue) or only those containing
+            objects belonging to one of the target classes (False).
         save_images_subfolder: Optional[str] = None
             Optional: sub-folder in which to store output images.
         save_labels_subfolder: Optional[str] = None
@@ -128,6 +136,7 @@ class DataInference:
 
         self.save_detections = save_images
         self.save_labels = save_labels
+        self.save_all_images = save_all_images
         self.detections_subfolder = (
             save_images_subfolder if save_images_subfolder else ""
         )
@@ -222,6 +231,7 @@ class DataInference:
                 sensitive_classes_conf=self.sensitive_classes_conf,
                 save_image=self.save_detections,
                 save_labels=self.save_labels,
+                save_all_images=self.save_all_images,
             )
 
             # Get the relative path of the image w.r.t. the input folder. This

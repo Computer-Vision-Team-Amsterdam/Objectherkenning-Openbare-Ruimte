@@ -67,7 +67,7 @@ inference_pipeline:
     model_name: "yolov8m_1280_v2.2_curious_hill_12.pt"
   outputs:
     datastore_path: "inference_test"  # empty string "" means same as input datastore
-    output_rel_path: "inference/demo_images/test3/"
+    output_rel_path: "inference/demo_images/test/"
     detections_subfolder: ""
     labels_subfolder: ""
   target_classes: [2, 3, 4]
@@ -77,6 +77,7 @@ inference_pipeline:
   output_image_size: [1280, 720]  # null means keep original size
   save_detection_images: True
   save_detection_labels: True
+  save_all_images: False  # If True, all images will be saved regardless of whether they contain target class objects
   defisheye_flag: False
 
 performance_evaluation:
