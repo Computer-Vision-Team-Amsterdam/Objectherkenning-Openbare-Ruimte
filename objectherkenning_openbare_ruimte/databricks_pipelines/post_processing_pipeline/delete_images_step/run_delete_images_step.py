@@ -39,8 +39,10 @@ def run_delete_images_step(
     job_date = job_process_time.split("T")[0]
 
     gps_internal_timestamp = unix_to_yyyy_mm_dd(
-        BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
-            job_date=job_date
+        float(
+            BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
+                job_date=job_date
+            )
         )
     )
     stlanding_date_folder = unix_to_yyyy_mm_dd(gps_internal_timestamp)
