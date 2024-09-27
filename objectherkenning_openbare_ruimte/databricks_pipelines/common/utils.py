@@ -17,7 +17,7 @@ def delete_file(databricks_volume_full_path):
     """
     try:
         # if the file exists, remove it
-        dbutils.fs.rm(file_path)  # type: ignore[name-defined] # noqa: F821, F405
+        dbutils.fs.rm(databricks_volume_full_path)  # type: ignore[name-defined] # noqa: F821, F405
         return True
     except Exception as e:
         # Check if the error is due to the file not being found
