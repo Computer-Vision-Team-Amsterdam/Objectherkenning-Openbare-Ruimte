@@ -7,6 +7,7 @@ from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
+    get_job_process_time,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
     BronzeFrameMetadataManager,
@@ -80,8 +81,7 @@ if __name__ == "__main__":
         catalog=settings["catalog"],
         schema=settings["schema"],
         device_id=settings["device_id"],
-        job_process_time="2024-09-23T09:45:44.498633",
-        # job_process_time=get_job_process_time(
-        #     is_first_pipeline_step=False,
-        # ),
+        job_process_time=get_job_process_time(
+            is_first_pipeline_step=False,
+        ),
     )
