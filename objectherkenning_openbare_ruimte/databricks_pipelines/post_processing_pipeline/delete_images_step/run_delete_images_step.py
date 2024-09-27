@@ -60,7 +60,7 @@ def run_delete_images_step(
 
         if image_name not in to_keep_image_names:
             print(f"Deleting {image_name}...")
-            if delete_file(databricks_volume_full_path=file):
+            if delete_file(databricks_volume_full_path=file.path):
                 successful_deletions += 1
     print(f"{successful_deletions} images successfully deleted.")
 
