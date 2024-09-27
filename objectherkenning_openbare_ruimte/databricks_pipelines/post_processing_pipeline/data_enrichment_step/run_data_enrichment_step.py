@@ -131,20 +131,13 @@ def run_data_enrichment_step(
         ),
     )
 
-    display(containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df)
-    display(clustering.joined_metadata)
-
-    
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
         "a"
     ).join(
         clustering.joined_metadata.alias("b"),
         on=F.col("a.detection_id") == F.col("b.detection_id"),
     )
-    
 
-    print("After join")
-    display(joined_metadata_with_closest_bridge_and_closest_permit_and_score_df)
     # Gather data to visualize
     utils_visualization.generate_map(
         dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
@@ -172,9 +165,6 @@ def run_data_enrichment_step(
             F.lit("Pending").alias("status"),
         )
     )
-
-    print("Final df")
-    display(selected_casted_df)
 
     SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
     SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
