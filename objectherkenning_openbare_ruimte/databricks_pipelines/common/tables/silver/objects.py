@@ -29,9 +29,9 @@ class SilverObjectsPerDayManager(TableManager):
         return results
 
     @classmethod
-    def get_detection_ids_to_delete_current_run(cls, job_date: str):
+    def get_detection_ids_to_keep_current_run(cls, job_date: str):
         return cls.get_table().filter(
-            (F.col("score") > 1)
+            (F.col("score") >= 1)
             & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
         )
 

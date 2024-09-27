@@ -7,7 +7,6 @@ from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
-    get_job_process_time,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
     BronzeFrameMetadataManager,
@@ -44,11 +43,9 @@ def run_delete_images_step(
         )
     )
     stlanding_date_folder = unix_to_yyyy_mm_dd(gps_internal_timestamp)
-    all_image_names = BronzeFrameMetadataManager.get_all_image_names_current_run(
-        job_date=job_date
-    )
-    print(f"{len(all_image_names)} images found on {stlanding_date_folder}.")
-    detection_ids = SilverObjectsPerDayManager.get_detection_ids_to_delete_current_run(
+    image_files_current_run = dbutils.fs.ls(f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_date_folder}/")  # type: ignore[name-defined] # noqa: F821, F405
+    print(f"{len(image_files_current_run)} images found on {stlanding_date_folder}.")
+    detection_ids = SilverObjectsPerDayManager.get_detection_ids_to_keep_current_run(
         job_date=job_date
     )
     to_keep_image_names = [
@@ -57,14 +54,14 @@ def run_delete_images_step(
     ]
     print(f"{len(to_keep_image_names)} images to keep.")
 
-    to_delete_image_names = list(set(all_image_names) - set(to_keep_image_names))
-    print(f"{len(to_delete_image_names)} images to delete.")
-
     successful_deletions = 0
-    for img in to_delete_image_names:
-        path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_date_folder}/{img}"
-        if delete_file(databricks_volume_full_path=path):
-            successful_deletions += 1
+    for file in image_files_current_run:
+        image_name = file.name
+
+        if image_name not in to_keep_image_names:
+            print(f"Deleting {image_name}...")
+            if delete_file(databricks_volume_full_path=file):
+                successful_deletions += 1
     print(f"{successful_deletions} images successfully deleted.")
 
 
@@ -83,7 +80,8 @@ if __name__ == "__main__":
         catalog=settings["catalog"],
         schema=settings["schema"],
         device_id=settings["device_id"],
-        job_process_time=get_job_process_time(
-            is_first_pipeline_step=False,
-        ),
+        job_process_time="2024-09-23T09:45:44.498633",
+        # job_process_time=get_job_process_time(
+        #     is_first_pipeline_step=False,
+        # ),
     )
