@@ -39,13 +39,11 @@ def run_delete_images_step(
     job_date = job_process_time.split("T")[0]
 
     gps_internal_timestamp = unix_to_yyyy_mm_dd(
-        float(
-            BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
-                job_date=job_date
-            )
+        BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
+            job_date=job_date
         )
     )
-    stlanding_date_folder = unix_to_yyyy_mm_dd(gps_internal_timestamp)
+    stlanding_date_folder = unix_to_yyyy_mm_dd(float(gps_internal_timestamp))
     image_files_current_run = dbutils.fs.ls(f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_date_folder}/")  # type: ignore[name-defined] # noqa: F821, F405
     print(f"{len(image_files_current_run)} images found on {stlanding_date_folder}.")
     detection_ids = SilverObjectsPerDayManager.get_detection_ids_to_keep_current_run(
