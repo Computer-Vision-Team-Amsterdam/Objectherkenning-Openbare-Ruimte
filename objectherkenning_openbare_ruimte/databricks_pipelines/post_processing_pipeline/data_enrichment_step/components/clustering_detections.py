@@ -132,9 +132,7 @@ class Clustering:
         self.filter_by_bounding_box_size(0.003)
 
         if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
-            print(
-                "03: Missing or incomplete data to run clustering. Stopping execution."
-            )
+            print("Missing or incomplete data to run clustering. Stopping execution.")
             return
 
         self.cluster_and_select_images()
