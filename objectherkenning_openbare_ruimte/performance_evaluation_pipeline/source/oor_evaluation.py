@@ -13,12 +13,12 @@ from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.pe
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.per_pixel_stats import (
     PerPixelEvaluator,
 )
-from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.yolo_to_coco import (
-    convert_yolo_dataset_to_coco_json,
-    convert_yolo_predictions_to_coco_json,
-)
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.run_custom_coco_eval import (
     run_custom_coco_eval,
+)
+from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.yolo_to_coco import (
+    convert_yolo_dataset_to_coco_json,
+    convert_yolo_predictions_to_coco_json,
 )
 
 logger = logging.getLogger("performance_evaluation")

@@ -22,11 +22,13 @@ def convert_yolo_predictions_to_coco_json(
     splits: Optional[List[str]] = ["train", "val", "test"],
     output_dir: Optional[str] = None,
     conf: Optional[float] = None,
-):
+) -> List[str]:
     if not splits:
         splits = [""]
     if not output_dir:
         output_dir = predictions_dir
+
+    output_files: List[str] = []
 
     for split in splits:
         label_dir = os.path.join(predictions_dir, labels_rel_path, split)
@@ -34,8 +36,12 @@ def convert_yolo_predictions_to_coco_json(
         prediction_data = _convert_predictions_split(label_dir, image_shape, conf)
 
         # Save the predictions to a JSON file
-        with open(os.path.join(output_dir, f"coco_predictions_{split}.json"), "w") as f:
+        output_file = os.path.join(output_dir, f"coco_predictions_{split}.json")
+        with open(output_file, "w") as f:
             f.write(json.dumps(prediction_data))
+        output_files.append(output_file)
+
+    return output_files
 
 
 def _convert_predictions_split(
@@ -75,11 +81,13 @@ def convert_yolo_dataset_to_coco_json(
     dataset_dir: str,
     splits: Optional[List[str]] = ["train", "val", "test"],
     output_dir: Optional[str] = None,
-):
+) -> List[str]:
     if not splits:
         splits = [""]
     if not output_dir:
         output_dir = dataset_dir
+
+    output_files: List[str] = []
 
     for split in splits:
         image_dir = os.path.join(dataset_dir, "images", split)
@@ -88,8 +96,12 @@ def convert_yolo_dataset_to_coco_json(
         coco_dataset = _convert_dataset_split(image_dir, label_dir)
 
         # Save the COCO dataset to a JSON file
-        with open(os.path.join(output_dir, f"coco_gt_{split}.json"), "w") as f:
+        output_file = os.path.join(output_dir, f"coco_gt_{split}.json")
+        with open(output_file, "w") as f:
             json.dump(coco_dataset, f)
+        output_files.append(output_file)
+
+    return output_files
 
 
 def _convert_dataset_split(image_dir: str, label_dir: str) -> Dict:
