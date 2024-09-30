@@ -78,7 +78,6 @@ def generate_map(
     # Iterate over each row in the DataFrame
     for row in dataframe_with_priority.toLocalIterator():
         # Extract data from the row
-        print(f"score is {row['score']}")
         detection = Point(row["gps_lat"], row["gps_lon"])
         detection_id = row["detection_id"]
         detection_image_name = row["image_name"]

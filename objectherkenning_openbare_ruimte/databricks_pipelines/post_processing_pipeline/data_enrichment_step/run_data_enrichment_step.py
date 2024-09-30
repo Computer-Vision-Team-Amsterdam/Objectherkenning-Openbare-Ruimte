@@ -1,4 +1,3 @@
-# flake8: noqa
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
@@ -7,7 +6,6 @@ from datetime import datetime  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
-from pyspark.sql.types import FloatType  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
@@ -121,15 +119,7 @@ def run_data_enrichment_step(
         )
     )
 
-    # # Enrich with score
-    # calculate_score_spark_udf = F.udf(calculate_score, FloatType())
-    # containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
-    #     "score",
-    #     calculate_score_spark_udf(
-    #         containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_bridge_distance,
-    #         containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_permit_distance,
-    #     ),
-    # )
+    # Enrich with score
     containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
         containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
             "score",
@@ -182,27 +172,9 @@ def run_data_enrichment_step(
         )
     )
 
-    # SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
-    # SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
-    # SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
-
-
-def calculate_score(bridge_distance: float, permit_distance: float) -> float:
-    """
-    Calculate score for bridge and permit distance;
-    """
-    print(f"Permit distance: {permit_distance}, Bridge distance: {bridge_distance}")
-    if permit_distance is None or bridge_distance is None:
-        return 10
-    if permit_distance >= 40 and bridge_distance < 25:
-        print(f"Score: {1 + max([(25 - bridge_distance) / 25, 0])}")
-        return 1 + max([(25 - bridge_distance) / 25, 0])
-    elif permit_distance >= 40 and bridge_distance >= 25:
-        print(f"Score: {min(1.0, permit_distance / 100.0)}")
-        return min(1.0, permit_distance / 100.0)
-    else:
-        print(f"Score: 0")
-        return 0
+    SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+    SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":
