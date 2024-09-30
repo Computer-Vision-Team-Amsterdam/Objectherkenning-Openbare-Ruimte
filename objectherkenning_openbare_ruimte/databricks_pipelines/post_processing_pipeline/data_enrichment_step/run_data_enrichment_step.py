@@ -121,14 +121,30 @@ def run_data_enrichment_step(
         )
     )
 
-    # Enrich with score
-    calculate_score_spark_udf = F.udf(calculate_score, FloatType())
-    containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
-        "score",
-        calculate_score_spark_udf(
-            containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_bridge_distance,
-            containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_permit_distance,
-        ),
+    # # Enrich with score
+    # calculate_score_spark_udf = F.udf(calculate_score, FloatType())
+    # containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
+    #     "score",
+    #     calculate_score_spark_udf(
+    #         containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_bridge_distance,
+    #         containers_coordinates_with_closest_bridge_and_closest_permit_df.closest_permit_distance,
+    #     ),
+    # )
+    containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
+        containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
+            "score",
+            F.when(
+                (F.col("closest_permit_distance") >= 40)
+                & (F.col("closest_bridge_distance") < 25),
+                1 + F.greatest((25 - F.col("closest_bridge_distance")) / 25, F.lit(0)),
+            )
+            .when(
+                (F.col("closest_permit_distance") >= 40)
+                & (F.col("closest_bridge_distance") >= 25),
+                F.least(F.lit(1.0), F.col("closest_permit_distance") / 100),
+            )
+            .otherwise(0),
+        )
     )
 
     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
