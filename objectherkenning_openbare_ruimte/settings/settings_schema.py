@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -74,9 +74,14 @@ class PerformanceEvaluationSpec(SettingsSpecModel):
     inputs: Dict[str, str]
     outputs: Dict[str, str]
     model_name: str
+    ground_truth_image_shape: List[int]
     predictions_image_shape: List[int]
-    splits: List[str]
     prediction_labels_rel_path: str = "labels"
+    splits: List[str]
+    target_classes: Optional[List[int]] = None
+    sensitive_classes: List[int] = []
+    target_classes_conf: Optional[float] = None
+    sensitive_classes_conf: Optional[float] = None
 
 
 class TrainingModelParameters(SettingsSpecModel):

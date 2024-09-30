@@ -60,9 +60,14 @@ performance_evaluation:
     datastore: "dataset_oor_v2_1"
     output_rel_path: "evaluation/processed-v21/yolov8m_1280_v2.1"
   model_name: "yolov8m_1280_v2.1"
+  ground_truth_image_shape: [3840, 2160]
   predictions_image_shape: [1280, 720]
-  splits: ["train", "val", "test"]
   prediction_labels_rel_path: "detected_labels"
+  splits: ["train", "val", "test"]
+  target_classes: [2, 3, 4]
+  sensitive_classes: [0, 1]
+  target_classes_conf: 0.7  # null means all predictions are used
+  sensitive_classes_conf: null  # null means all predictions are used
 
 training_pipeline:
   model_parameters:

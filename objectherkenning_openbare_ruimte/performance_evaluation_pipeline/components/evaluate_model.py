@@ -9,6 +9,9 @@ from mldesigner import Input, Output, command_component
 
 sys.path.append("../../..")
 
+from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (  # noqa: E402
+    ObjectClass,
+)
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.oor_evaluation import (  # noqa: E402
     OOREvaluator,
     custom_coco_result_to_df,
@@ -26,7 +29,6 @@ config_path = os.path.abspath(
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
-log_settings = settings["logging"]
 azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
 azure_logging_configurer.setup_oor_logging()
 logger = logging.getLogger("performance_evaluation")
@@ -77,13 +79,16 @@ def evaluate_model(
     output_dir: Output(type=AssetTypes.URI_FOLDER)
         Location where output will be stored.
     """
-    model_name = settings["performance_evaluation"]["model_name"]
-    predictions_img_shape = settings["performance_evaluation"][
-        "predictions_image_shape"
-    ]
-    prediction_labels_rel_path = settings["performance_evaluation"][
-        "prediction_labels_rel_path"
-    ]
+    eval_settings = settings["performance_evaluation"]
+    model_name = eval_settings["model_name"]
+    ground_truth_img_shape = eval_settings["ground_truth_image_shape"]
+    predictions_img_shape = eval_settings["predictions_image_shape"]
+    prediction_labels_rel_path = eval_settings["prediction_labels_rel_path"]
+    splits = eval_settings["splits"]
+    target_classes = eval_settings["target_classes"]
+    sensitive_classes = eval_settings["sensitive_classes"]
+    target_classes_conf = eval_settings["target_classes_conf"]
+    sensitive_classes_conf = eval_settings["sensitive_classes_conf"]
 
     logger.info(f"Running performance evaluation for model: {model_name}")
 
@@ -93,9 +98,15 @@ def evaluate_model(
         ground_truth_base_folder=ground_truth_base_dir,
         predictions_base_folder=predictions_base_dir,
         output_folder=output_dir,
+        ground_truth_image_shape=ground_truth_img_shape,
         predictions_image_shape=predictions_img_shape,
         model_name=model_name,
         pred_annotations_rel_path=prediction_labels_rel_path,
+        splits=splits,
+        target_classes=[ObjectClass(val) for val in target_classes],
+        sensitive_classes=[ObjectClass(val) for val in sensitive_classes],
+        target_classes_conf=target_classes_conf,
+        sensitive_classes_conf=sensitive_classes_conf,
     )
 
     # Total Blurred Area evaluation
