@@ -358,12 +358,12 @@ class OOREvaluator:
         else:
             pred_output_dir = self.output_folder
         ## Run conversion.
-        convert_yolo_dataset_to_coco_json(
+        gt_json_files = convert_yolo_dataset_to_coco_json(
             dataset_dir=self.ground_truth_base_folder,
             splits=self.splits,
             output_dir=gt_output_dir,
         )
-        convert_yolo_predictions_to_coco_json(
+        pred_json_files = convert_yolo_predictions_to_coco_json(
             predictions_dir=self.predictions_base_folder,
             image_shape=self.ground_truth_image_shape,
             labels_rel_path=self.pred_annotations_rel_path,
@@ -372,10 +372,8 @@ class OOREvaluator:
             conf=confidence_threshold,
         )
 
-        for split in self.splits:
-            gt_json = os.path.join(gt_output_dir, f"coco_gt_{split}.json")
-            pred_json = os.path.join(pred_output_dir, f"coco_predictions_{split}.json")
-
+        # Run evaluation
+        for i, split in enumerate(self.splits):
             key = f"{self.model_name}_{split if split != '' else 'all'}"
             custom_coco_result[key] = dict()
 
@@ -384,14 +382,20 @@ class OOREvaluator:
                     f"Running custom COCO evaluation for {self.model_name} / {split if split != '' else 'all'} / {target_cls_name}"
                 )
                 eval = run_custom_coco_eval(
-                    coco_ground_truth_json=gt_json,
-                    coco_predictions_json=pred_json,
+                    coco_ground_truth_json=gt_json_files[i],
+                    coco_predictions_json=pred_json_files[i],
                     predicted_img_shape=self.ground_truth_image_shape,
                     classes=target_cls,
                     print_summary=False,
                 )
                 subkey = target_cls_name
                 custom_coco_result[key][subkey] = eval
+
+        # Remove temporary JSON files
+        for gt_file, pred_file in zip(gt_json_files, pred_json_files):
+            os.remove(gt_file)
+            os.remove(pred_file)
+
         return custom_coco_result
 
 
