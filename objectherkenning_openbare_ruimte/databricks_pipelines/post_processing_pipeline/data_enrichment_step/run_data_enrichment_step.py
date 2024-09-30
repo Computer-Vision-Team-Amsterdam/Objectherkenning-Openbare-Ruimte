@@ -175,11 +175,15 @@ def calculate_score(bridge_distance: float, permit_distance: float) -> float:
     """
     Calculate score for bridge and permit distance;
     """
+    print(f"Permit distance: {permit_distance}, Bridge distance: {bridge_distance}")
     if permit_distance >= 40 and bridge_distance < 25:
+        print(f"Score: {1 + max([(25 - bridge_distance) / 25, 0])}")
         return 1 + max([(25 - bridge_distance) / 25, 0])
     elif permit_distance >= 40 and bridge_distance >= 25:
+        print(f"Score: {min(1.0, permit_distance / 100.0)}")
         return min(1.0, permit_distance / 100.0)
     else:
+        print(f"Score: 0")
         return 0
 
 
