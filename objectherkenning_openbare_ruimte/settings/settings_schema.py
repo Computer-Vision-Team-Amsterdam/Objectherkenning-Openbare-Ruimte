@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -39,7 +39,14 @@ class DataSampling(SettingsSpecModel):
     decos_radius: float
 
 
+class DefisheyeParameters(SettingsSpecModel):
+    camera_matrix: List[List[float]]
+    distortion_params: List[List[float]]
+    input_image_size: Tuple[int, int]
+
+
 class DistortionCorrectionSpec(SettingsSpecModel):
+    defisheye_params: DefisheyeParameters
     cx: float
     cy: float
     k1: float
@@ -55,6 +62,30 @@ class FrameExtractionSpec(SettingsSpecModel):
     fps: float
 
 
+class InferenceModelParameters(SettingsSpecModel):
+    batch_size: int = 1
+    img_size: int = 640
+    conf: float = 0.5
+    save_img_flag: bool = False
+    save_txt_flag: bool = False
+    save_conf_flag: bool = False
+
+
+class InferencePipelineSpec(SettingsSpecModel):
+    model_params: InferenceModelParameters
+    inputs: Dict[str, str] = None
+    outputs: Dict[str, str] = None
+    target_classes: List[int] = None
+    sensitive_classes: List[int] = []
+    target_classes_conf: Optional[float] = None
+    sensitive_classes_conf: Optional[float] = None
+    output_image_size: Optional[Tuple[int, int]] = None
+    save_detection_images: bool = False
+    save_detection_labels: bool = True
+    save_all_images: bool = False
+    defisheye_flag: bool = False
+
+
 class LoggingSpec(SettingsSpecModel):
     loglevel_own: str = "INFO"
     own_packages: List[str] = [
@@ -68,6 +99,15 @@ class LoggingSpec(SettingsSpecModel):
         "datefmt": "%Y-%m-%d %H:%M:%S",
     }
     ai_instrumentation_key: str = ""
+
+
+class PerformanceEvaluationSpec(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    model_name: str
+    predictions_image_shape: List[int]
+    splits: List[str]
+    prediction_labels_rel_path: str = "labels"
 
 
 class TrainingModelParameters(SettingsSpecModel):
@@ -123,9 +163,11 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
     data_sampling: DataSampling
-    distortion_correction: DistortionCorrectionSpec
-    frame_extraction: FrameExtractionSpec
+    distortion_correction: DistortionCorrectionSpec = None
+    frame_extraction: FrameExtractionSpec = None
+    inference_pipeline: InferencePipelineSpec = None
     logging: LoggingSpec = LoggingSpec()
+    performance_evaluation: PerformanceEvaluationSpec
     training_pipeline: TrainingPipelineSpec = None
     sweep_pipeline: SweepPipelineSpec = None
     wandb: WandbSpec = None

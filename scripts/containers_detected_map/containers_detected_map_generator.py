@@ -2,6 +2,7 @@ import base64
 import glob
 import os
 import random
+from datetime import datetime
 from typing import List
 
 import folium
@@ -14,11 +15,13 @@ class ContainersDetectedMapGenerator:
         date_of_the_ride: str,
         confidence_threshold: float = 0.7,
         size_of_detection_threshold: float = 0.003,
+        max_gps_delay: int = 5,
     ):
         """The data needs to be located in the same folder with the following structure:
         - frame_metadata/date
         - full_frame_metadata/date
         - detection_metadata/date
+        - images/date
 
         Parameters
         ----------
@@ -28,14 +31,25 @@ class ContainersDetectedMapGenerator:
             Model confidence threshold, by default 0.7
         size_of_detection_threshold : float, optional
             Minimum size of detection, by default 0.003
+        max_gps_delay: int, optional
+            Max gps delay tolerated in seconds
         """
         self.folder_name = date_of_the_ride
-        self.frame_metadata_folder = f"frame_metadata/{self.folder_name}"
-        self.full_frame_metadata_folder = f"full_frame_metadata/{self.folder_name}"
-        self.detection_metadata_folder = f"detection_metadata/{self.folder_name}"
-        self.images_folder = f"images/{self.folder_name}"
+        self.frame_metadata_folder = (
+            f"scripts/containers_detected_map/frame_metadata/{self.folder_name}"
+        )
+        self.full_frame_metadata_folder = (
+            f"scripts/containers_detected_map/full_frame_metadata/{self.folder_name}"
+        )
+        self.detection_metadata_folder = (
+            f"scripts/containers_detected_map/detection_metadata/{self.folder_name}"
+        )
+        self.images_folder = (
+            f"scripts/containers_detected_map/images/{self.folder_name}"
+        )
         self.confidence_threshold = confidence_threshold
         self.size_of_detection_threshold = size_of_detection_threshold
+        self.max_gps_delay = max_gps_delay
 
     def create_and_store_map(self):
         detections_map = self._create_map()
@@ -55,7 +69,6 @@ class ContainersDetectedMapGenerator:
                 full_frame_csv_files=full_frame_csv_files,
                 frame_metadata_file_path=file_path,
             )
-
             if (
                 "gps_lat" not in frame_data.columns
                 or "gps_lon" not in frame_data.columns
@@ -63,7 +76,7 @@ class ContainersDetectedMapGenerator:
                 or full_frame_path is None
             ):
                 print(
-                    f"Skipping {file_path}: Missing 'gps_lat', 'gps_lon', or 'image_name' columns."
+                    f"Skipping {file_path}: Missing 'gps_lat', 'gps_lon', 'image_name' columns, or full_frame_path is None."
                 )
                 continue
 
@@ -93,13 +106,22 @@ class ContainersDetectedMapGenerator:
         merged_data = pd.merge(frame_data, detection_data, on="image_name")
         for _, row in merged_data.iterrows():
             size_of_detection = row["width"] * row["height"]
+            frame_timestamp = datetime.fromtimestamp(
+                float(row["pylon://0_frame_timestamp"])
+            )
+            gps_internal_timestamp = datetime.fromtimestamp(
+                float(row["gps_internal_timestamp"])
+            )
+            gps_delay = abs((frame_timestamp - gps_internal_timestamp).total_seconds())
             if (
                 row["confidence"] > self.confidence_threshold
                 and size_of_detection > self.size_of_detection_threshold
+                and gps_delay < self.max_gps_delay
             ):
                 html = f"""
                 <b>Image Name:</b> {row['image_name']}<br>
                 <b>Confidence:</b> {row['confidence']}<br>
+                <b>GPS delay:</b> {gps_delay}<br>
                 """
 
                 image_path = os.path.join(self.images_folder, f"{row['image_name']}")
@@ -132,7 +154,9 @@ class ContainersDetectedMapGenerator:
         full_frame_csv_files: List[str], frame_metadata_file_path: str
     ):
         for full_file_path in full_frame_csv_files:
-            if frame_metadata_file_path in full_file_path:
+            if os.path.basename(full_file_path) == os.path.basename(
+                frame_metadata_file_path
+            ):
                 return full_file_path
         return None
 
