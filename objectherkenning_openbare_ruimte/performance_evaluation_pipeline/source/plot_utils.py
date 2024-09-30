@@ -67,6 +67,9 @@ def save_pr_curve(
     filename: Optional[str] = None,
     show_plot: bool = False,
 ) -> None:
+    """
+    Plot and save the precision and recall curve for a particular split and target_class.
+    """
     plot_df = _extract_plot_df(
         results_df=results_df, split=split, target_class=target_class
     )[["Precision", "Recall"]]
@@ -100,6 +103,9 @@ def save_fscore_curve(
     filename: Optional[str] = None,
     show_plot: bool = False,
 ) -> None:
+    """
+    Plot and save the F-score curve for a particular split and target_class.
+    """
     plot_df = _extract_plot_df(
         results_df=results_df, split=split, target_class=target_class
     )[["F1", "F0.5", "F2"]]

@@ -410,24 +410,42 @@ class OOREvaluator:
         return custom_coco_result
 
     def save_tba_results_to_csv(self, results: Dict[str, Dict[str, Dict[str, float]]]):
+        """Save TBA results dict as CSV file."""
         filename = os.path.join(self.output_folder, f"{self.model_name}-tba-eval.csv")
         _df_to_csv(tba_result_to_df(results), filename)
 
     def save_per_image_results_to_csv(
         self, results: Dict[str, Dict[str, Dict[str, float]]]
     ):
+        """Save per-image results dict as CSV file."""
         filename = os.path.join(
             self.output_folder, f"{self.model_name}-per-image-eval.csv"
         )
         _df_to_csv(per_image_result_to_df(results), filename)
 
     def save_coco_results_to_csv(self, results: Dict[str, Dict[str, Dict[str, float]]]):
+        """Save COCO results dict as CSV file."""
         filename = os.path.join(
             self.output_folder, f"{self.model_name}-custom-coco-eval.csv"
         )
         _df_to_csv(custom_coco_result_to_df(results), filename)
 
     def _compute_pr_curve_data(self, eval_func: Callable) -> pd.DataFrame:
+        """
+        Compute data needed to plot precision and recall curves. This method
+        calls either `self.evaluate_tba` or `self.evaluate_per_image` with
+        argument `single_size_only=True` for a range of confidence thresholds
+        and returns the results in a DataFrame.
+
+        Parameters
+        ----------
+        eval_func: Callable
+            Either `self.evaluate_tba` or `self.evaluate_per_image`.
+
+        Returns
+        -------
+        A pandas DataFrame with the evaluation results
+        """
         confs = np.arange(0.05, 1.0, 0.05)
         dfs = []
 
@@ -450,6 +468,7 @@ class OOREvaluator:
         output_dir: str = "",
         show_plot: bool = False,
     ):
+        """Plot the precision and recall curves, and F-score curves."""
         for split, eval_class in product(self.splits, eval_classes):
             save_pr_curve(
                 results_df=pr_df,
@@ -473,6 +492,18 @@ class OOREvaluator:
             )
 
     def plot_tba_pr_f_curves(self, show_plot: bool = False):
+        """
+        Plot and save precision and recall curves and f-score curves for the
+        total blurred area statistic. This will call evaluate_tba() for a each
+        split and target_class for a range of confidence thresholds, which can
+        take some time to compute.
+
+        Parameters
+        ----------
+        show_plot: bool = False
+            Whether or not to show the plot (True) or only save the image
+            (False).
+        """
         logger.info(f"Plotting TBA precision/recall curves for {self.model_name}")
         pr_curve_df = self._compute_pr_curve_data(self.evaluate_tba)
         self._plot_pr_f_curves(
@@ -484,6 +515,18 @@ class OOREvaluator:
         )
 
     def plot_per_image_pr_f_curves(self, show_plot: bool = False):
+        """
+        Plot and save precision and recall curves and f-score curves for the
+        per-image statistic. This will call evaluate_per-image() for a each
+        split and target_class for a range of confidence thresholds, which can
+        take some time to compute.
+
+        Parameters
+        ----------
+        show_plot: bool = False
+            Whether or not to show the plot (True) or only save the image
+            (False).
+        """
         logger.info(f"Plotting per-image precision/recall curves for {self.model_name}")
         pr_curve_df = self._compute_pr_curve_data(self.evaluate_per_image)
         self._plot_pr_f_curves(
