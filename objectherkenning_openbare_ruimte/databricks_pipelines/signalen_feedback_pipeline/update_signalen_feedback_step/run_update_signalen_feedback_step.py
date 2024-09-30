@@ -100,7 +100,7 @@ if __name__ == "__main__":
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
-    config_file_path = os.path.join(project_root, "config_db.yml")
+    config_file_path = os.path.join(project_root, "config_databricks.yml")
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
