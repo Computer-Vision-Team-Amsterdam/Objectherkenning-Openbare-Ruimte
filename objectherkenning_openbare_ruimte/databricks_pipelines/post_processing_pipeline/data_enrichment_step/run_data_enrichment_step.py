@@ -166,9 +166,9 @@ def run_data_enrichment_step(
         )
     )
 
-    SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
-    SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
-    SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+    # SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 def calculate_score(bridge_distance: float, permit_distance: float) -> float:
@@ -176,6 +176,8 @@ def calculate_score(bridge_distance: float, permit_distance: float) -> float:
     Calculate score for bridge and permit distance;
     """
     print(f"Permit distance: {permit_distance}, Bridge distance: {bridge_distance}")
+    if permit_distance is None or bridge_distance is None:
+        return 10
     if permit_distance >= 40 and bridge_distance < 25:
         print(f"Score: {1 + max([(25 - bridge_distance) / 25, 0])}")
         return 1 + max([(25 - bridge_distance) / 25, 0])
