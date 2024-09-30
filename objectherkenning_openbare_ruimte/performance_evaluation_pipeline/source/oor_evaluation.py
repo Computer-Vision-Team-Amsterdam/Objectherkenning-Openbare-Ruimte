@@ -380,7 +380,7 @@ class OOREvaluator:
             labels_rel_path=self.pred_annotations_rel_path,
             splits=self.splits,
             output_dir=pred_output_dir,
-            conf=confidence_threshold,
+            conf=(confidence_threshold if confidence_threshold else 0.0),
         )
 
         # Run evaluation
