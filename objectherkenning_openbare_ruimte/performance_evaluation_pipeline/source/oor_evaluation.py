@@ -1,17 +1,24 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+from itertools import product
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
 
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (
     ObjectClass,
+    compute_fb_score,
 )
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.per_image_stats import (
     PerImageEvaluator,
 )
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.per_pixel_stats import (
     PerPixelEvaluator,
+)
+from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.plot_utils import (
+    save_fscore_curve,
+    save_pr_curve,
 )
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.run_custom_coco_eval import (
     run_custom_coco_eval,
@@ -71,6 +78,8 @@ class OOREvaluator:
         Shape of ground truth images as (w, h).
     predictions_image_shape: Tuple[int, int] = (3840, 2160)
         Shape of prediction images as (w, h).
+    dataset_name: str = ""
+        Name of dataset, used in results plots.
     model_name: Optional[Union[str, None]] = None
         Name of the model used in the results. If no name is provided, the name
         of the predictions folder is used.
@@ -104,6 +113,7 @@ class OOREvaluator:
         output_folder: Optional[Union[str, None]] = None,
         ground_truth_image_shape: Tuple[int, int] = (3840, 2160),
         predictions_image_shape: Tuple[int, int] = (3840, 2160),
+        dataset_name: str = "",
         model_name: Optional[Union[str, None]] = None,
         gt_annotations_rel_path: str = "labels",
         pred_annotations_rel_path: str = "labels",
@@ -119,6 +129,7 @@ class OOREvaluator:
         self.output_folder = output_folder
         self.ground_truth_image_shape = ground_truth_image_shape
         self.predictions_image_shape = predictions_image_shape
+        self.dataset_name = dataset_name
         self.model_name = (
             model_name
             if model_name
@@ -398,6 +409,91 @@ class OOREvaluator:
 
         return custom_coco_result
 
+    def save_tba_results_to_csv(self, results: Dict[str, Dict[str, Dict[str, float]]]):
+        filename = os.path.join(self.output_folder, f"{self.model_name}-tba-eval.csv")
+        _df_to_csv(tba_result_to_df(results), filename)
+
+    def save_per_image_results_to_csv(
+        self, results: Dict[str, Dict[str, Dict[str, float]]]
+    ):
+        filename = os.path.join(
+            self.output_folder, f"{self.model_name}-per-image-eval.csv"
+        )
+        _df_to_csv(per_image_result_to_df(results), filename)
+
+    def save_coco_results_to_csv(self, results: Dict[str, Dict[str, Dict[str, float]]]):
+        filename = os.path.join(
+            self.output_folder, f"{self.model_name}-custom-coco-eval.csv"
+        )
+        _df_to_csv(custom_coco_result_to_df(results), filename)
+
+    def _compute_pr_curve_data(self, eval_func: Callable) -> pd.DataFrame:
+        confs = np.arange(0.05, 1.0, 0.05)
+        dfs = []
+
+        for conf in confs:
+            tba_results = eval_func(confidence_threshold=conf, single_size_only=True)
+            df = tba_result_to_df(tba_results)
+            df.insert(4, "Conf", conf)
+            df["F1"] = compute_fb_score(df["Precision"], df["Recall"], 1.0)
+            df["F0.5"] = compute_fb_score(df["Precision"], df["Recall"], 0.5)
+            df["F2"] = compute_fb_score(df["Precision"], df["Recall"], 2.0)
+            dfs.append(df)
+
+        return pd.concat(dfs, ignore_index=True)
+
+    def _plot_pr_f_curves(
+        self,
+        pr_df: pd.DataFrame,
+        result_type: str,
+        eval_classes: List[ObjectClass],
+        output_dir: str = "",
+        show_plot: bool = False,
+    ):
+        for split, eval_class in product(self.splits, eval_classes):
+            save_pr_curve(
+                results_df=pr_df,
+                dataset=self.dataset_name,
+                split=split,
+                target_class=eval_class,
+                model_name=self.model_name,
+                result_type=result_type,
+                output_dir=output_dir,
+                show_plot=show_plot,
+            )
+            save_fscore_curve(
+                results_df=pr_df,
+                dataset=self.dataset_name,
+                split=split,
+                target_class=eval_class,
+                model_name=self.model_name,
+                result_type=result_type,
+                output_dir=output_dir,
+                show_plot=show_plot,
+            )
+
+    def plot_tba_pr_f_curves(self, show_plot: bool = False):
+        logger.info(f"Plotting TBA precision/recall curves for {self.model_name}")
+        pr_curve_df = self._compute_pr_curve_data(self.evaluate_tba)
+        self._plot_pr_f_curves(
+            pr_df=pr_curve_df,
+            result_type="total blurred area",
+            eval_classes=self.sensitive_classes,
+            output_dir=self.output_folder,
+            show_plot=show_plot,
+        )
+
+    def plot_per_image_pr_f_curves(self, show_plot: bool = False):
+        logger.info(f"Plotting per-image precision/recall curves for {self.model_name}")
+        pr_curve_df = self._compute_pr_curve_data(self.evaluate_per_image)
+        self._plot_pr_f_curves(
+            pr_df=pr_curve_df,
+            result_type="per image",
+            eval_classes=self.target_classes,
+            output_dir=self.output_folder,
+            show_plot=show_plot,
+        )
+
 
 def _default_result_to_df(
     results: Dict[str, Dict[str, Dict[str, float]]]
@@ -475,3 +571,9 @@ def custom_coco_result_to_df(
             df.loc[len(df)] = data
 
     return df
+
+
+def _df_to_csv(df: pd.DataFrame, output_file: str):
+    """Convenience method, currently not very useful but allows to change
+    formatting of all CSVs in one place."""
+    df.to_csv(output_file)

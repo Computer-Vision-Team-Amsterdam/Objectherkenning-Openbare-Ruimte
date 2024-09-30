@@ -53,13 +53,14 @@ frame_extraction:
 
 performance_evaluation:
   inputs:
-    datastore: "dataset_oor_v2_1"
-    ground_truth_rel_path: "processed-dataset-oor-v2-1"
-    predictions_rel_path: "inference/processed-v21/yolov8m_1280_v2.1"
+    datastore: "dataset_oor_v2_2"
+    ground_truth_rel_path: "processed-dataset-oor-v2-2"
+    predictions_rel_path: "inference/v2-2/v2.2"
   outputs:
-    datastore: "dataset_oor_v2_1"
-    output_rel_path: "evaluation/processed-v21/yolov8m_1280_v2.1"
-  model_name: "yolov8m_1280_v2.1"
+    datastore: "dataset_oor_v2_2"
+    output_rel_path: "evaluation/v2-2/v2.2_test"
+  dataset_name: "v2-2"
+  model_name: "yolov8m_1280_v2.2"
   ground_truth_image_shape: [3840, 2160]
   predictions_image_shape: [1280, 720]
   prediction_labels_rel_path: "detected_labels"
@@ -68,6 +69,7 @@ performance_evaluation:
   sensitive_classes: [0, 1]
   target_classes_conf: 0.7  # null means all predictions are used
   sensitive_classes_conf: null  # null means all predictions are used
+  plot_pr_curves: True
 
 training_pipeline:
   model_parameters:
