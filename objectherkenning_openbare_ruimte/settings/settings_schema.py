@@ -104,10 +104,17 @@ class LoggingSpec(SettingsSpecModel):
 class PerformanceEvaluationSpec(SettingsSpecModel):
     inputs: Dict[str, str]
     outputs: Dict[str, str]
+    dataset_name: str = ""
     model_name: str
+    ground_truth_image_shape: List[int]
     predictions_image_shape: List[int]
-    splits: List[str]
     prediction_labels_rel_path: str = "labels"
+    splits: List[str]
+    target_classes: List[int]
+    sensitive_classes: List[int]
+    target_classes_conf: Optional[float] = None
+    sensitive_classes_conf: Optional[float] = None
+    plot_pr_curves: bool = True
 
 
 class TrainingModelParameters(SettingsSpecModel):
@@ -167,7 +174,7 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     frame_extraction: FrameExtractionSpec = None
     inference_pipeline: InferencePipelineSpec = None
     logging: LoggingSpec = LoggingSpec()
-    performance_evaluation: PerformanceEvaluationSpec
+    performance_evaluation: PerformanceEvaluationSpec = None
     training_pipeline: TrainingPipelineSpec = None
     sweep_pipeline: SweepPipelineSpec = None
     wandb: WandbSpec = None

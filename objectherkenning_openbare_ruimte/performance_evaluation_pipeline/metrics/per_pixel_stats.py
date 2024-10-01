@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -48,7 +48,7 @@ class PixelStats:
         self.tn += np.count_nonzero(np.logical_and(~true_mask, ~predicted_mask))
         self.fn += np.count_nonzero(np.logical_and(true_mask, ~predicted_mask))
 
-    def get_statistics(self, precision: int = 3) -> Dict[str, float]:
+    def get_statistics(self, size_all: bool, decimals: int = 3) -> Dict[str, float]:
         """
         Return statistics after all masks have been added to the calculation.
         Computes precision, recall and f1_score. Also returns the total number
@@ -57,7 +57,12 @@ class PixelStats:
 
         Parameters
         ----------
-        precision: int = 3
+        size_all: bool
+            Indicates whether the statistics are computed over all bounding box
+            sizes (True) or whether a subset is evaluated (False). If False,
+            only True Positive, False Negative, and Recall are returned as the
+            other statistics are not meaningful.
+        decimals: int = 3
             Rounds precision, recall, and f1_score to the given number of decimals.
 
         Returns
@@ -68,36 +73,36 @@ class PixelStats:
                 "true_positives": int,
                 "false_positives": int,
                 "true_negatives": int,
-                "false_negatives:": int,
+                "false_negatives": int,
                 "precision": float,
                 "recall": float,
                 "f1_score": float,
             }
         """
-        prec = (
-            round(self.tp / (self.tp + self.fp), precision)
+        precision = (
+            round(self.tp / (self.tp + self.fp), decimals)
             if self.tp + self.fp > 0
-            else None
+            else np.nan
         )
         recall = (
-            round(self.tp / (self.tp + self.fn), precision)
+            round(self.tp / (self.tp + self.fn), decimals)
             if self.tp + self.fn > 0
-            else None
+            else np.nan
         )
         f1_score = (
-            round(2 * prec * recall / (prec + recall), precision)
-            if prec and recall
-            else None
+            round(2 * precision * recall / (precision + recall), decimals)
+            if precision and recall
+            else np.nan
         )
 
         return {
             "true_positives": self.tp,
-            "false_positives": self.fp,
-            "true_negatives": self.tn,
-            "false_negatives:": self.fn,
-            "precision": prec,
+            "false_positives": self.fp if size_all else np.nan,
+            "true_negatives": self.tn if size_all else np.nan,
+            "false_negatives": self.fn,
+            "precision": precision if size_all else np.nan,
             "recall": recall,
-            "f1_score": f1_score,
+            "f1_score": f1_score if size_all else np.nan,
         }
 
 
@@ -125,10 +130,13 @@ class PerPixelEvaluator:
             When annotations are provided as COCO JSON, it is important that the
             shape provided here is equal to the shape in the ground truth
             annotation JSON.
+        confidence_threshold: Optional[float] = None
+            Optional: confidence threshold at which to compute statistics. If
+            omitted, all predictions will be used.
         upper_half: bool = False
             Whether to only consider the upper half of bounding boxes (relevant
             for people, to make sure the face is blurred).
-        precision: int = 3
+        decimals: int = 3
             Round statistics to the given number of decimals.
     """
 
@@ -137,34 +145,44 @@ class PerPixelEvaluator:
         ground_truth_path: str,
         predictions_path: str,
         image_shape: Tuple[int, int] = (3840, 2160),
+        confidence_threshold: Optional[float] = None,
         upper_half: bool = False,
-        precision: int = 3,
+        decimals: int = 3,
     ):
         self.img_shape = image_shape
         self.upper_half = upper_half
-        self.precision = precision
+        self.decimals = decimals
         img_area = self.img_shape[0] * self.img_shape[1]
         if ground_truth_path.endswith(".json"):
             self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
-                yolo_val_json=ground_truth_path, image_shape=image_shape
+                yolo_val_json=ground_truth_path,
+                image_shape=image_shape,
+                confidence_threshold=confidence_threshold,
             )
         else:
             self.gt_dataset = YoloLabelsDataset(
-                folder_path=ground_truth_path, image_area=img_area
+                folder_path=ground_truth_path,
+                image_area=img_area,
+                confidence_threshold=confidence_threshold,
             )
         if predictions_path.endswith(".json"):
             self.pred_dataset = YoloLabelsDataset.from_yolo_validation_json(
-                yolo_val_json=predictions_path, image_shape=image_shape
+                yolo_val_json=predictions_path,
+                image_shape=image_shape,
+                confidence_threshold=confidence_threshold,
             )
         else:
             self.pred_dataset = YoloLabelsDataset(
-                folder_path=predictions_path, image_area=img_area
+                folder_path=predictions_path,
+                image_area=img_area,
+                confidence_threshold=confidence_threshold,
             )
 
     def _get_per_pixel_statistics(
         self,
         true_labels: Dict[str, npt.NDArray],
         predicted_labels: Dict[str, npt.NDArray],
+        size_all: bool,
     ) -> Dict[str, float]:
         """
         Calculates per pixel statistics (tp, tn, fp, fn, precision, recall, f1
@@ -179,6 +197,11 @@ class PerPixelEvaluator:
             Ground truth annotations.
         predicted_labels: Dict[str, npt.NDArray]
             Predictions.
+        size_all: bool
+            Indicates whether the statistics are computed over all bounding box
+            sizes (True) or whether a subset is evaluated (False). If False,
+            only True Positive, True Negative, and Precision are returned as the
+            other statistics are not meaningful.
 
         Returns
         -------
@@ -188,7 +211,7 @@ class PerPixelEvaluator:
                 "true_positives": int,
                 "false_positives": int,
                 "true_negatives": int,
-                "false_negatives:": int,
+                "false_negatives": int,
                 "precision": float,
                 "recall": float,
                 "f1_score": float,
@@ -220,7 +243,7 @@ class PerPixelEvaluator:
                 true_mask=tba_true_mask, predicted_mask=tba_pred_mask
             )
 
-        results = pixel_stats.get_statistics(self.precision)
+        results = pixel_stats.get_statistics(size_all=size_all, decimals=self.decimals)
 
         return results
 
@@ -250,7 +273,7 @@ class PerPixelEvaluator:
                     "true_positives": float,
                     "false_positives": float,
                     "true_negatives": float,
-                    "false_negatives:": float,
+                    "false_negatives": float,
                     "precision": float,
                     "recall": float,
                     "f1_score": float,
@@ -268,6 +291,8 @@ class PerPixelEvaluator:
             box_sizes = BoxSize.from_objectclass(target_class).to_dict(single_size_only)
 
             for box_size_name, box_size in box_sizes.items():
+                size_all = box_size_name == "all"
+
                 self.gt_dataset.reset_filter()
                 true_target_class_size = (  # i.e. true_person_small
                     self.gt_dataset.filter_by_class(class_to_keep=target_class.value)
@@ -279,6 +304,7 @@ class PerPixelEvaluator:
                     self._get_per_pixel_statistics(
                         true_labels=true_target_class_size,
                         predicted_labels=predicted_target_class,
+                        size_all=size_all,
                     )
                 )
 

@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 
 
 class ObjectClass(Enum):
@@ -187,3 +188,40 @@ def generate_binary_mask(
             mask[y_min[i] : y_max[i], x_min[i] : x_max[i]] = 1
 
     return mask
+
+
+def compute_fb_score(
+    precision: Union[float, npt.NDArray, pd.Series],
+    recall: Union[float, npt.NDArray, pd.Series],
+    beta: float = 1.0,
+    decimals: int = 3,
+):
+    """
+    Compute [F-scores](https://en.wikipedia.org/wiki/F-score) for a pair of
+    precision and recall values. The parameter beta determines the relative
+    importance of recall w.r.t. precision, i.e., recall is considered _beta_
+    times as important as precision.
+
+    Parameters
+    ----------
+    precision: Union[float, npt.NDArray, pd.Series]
+        (List of) precision value(s).
+    recall: Union[float, npt.NDArray, pd.Series]
+        (List of) recall value(s).
+    beta: float = 1.0
+        Relative importance of recall w.r.t. precision.
+    decimals: int = 3
+        Rounds f-score to the given number of decimals.
+
+    Returns
+    -------
+    F-scores for the precision and recall pair(s).
+    """
+    if isinstance(precision, pd.Series):
+        precision = precision.to_numpy()
+    if isinstance(recall, pd.Series):
+        recall = recall.to_numpy()
+    return np.round(
+        (1 + beta**2) * (precision * recall) / (beta**2 * precision + recall),
+        decimals=decimals,
+    )

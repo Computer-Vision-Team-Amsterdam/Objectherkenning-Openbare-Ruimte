@@ -2,18 +2,17 @@ import logging
 import os
 import sys
 
-import pandas as pd
 from aml_interface.azure_logging import AzureLoggingConfigurer
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
 
 sys.path.append("../../..")
 
+from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.metrics.metrics_utils import (  # noqa: E402
+    ObjectClass,
+)
 from objectherkenning_openbare_ruimte.performance_evaluation_pipeline.source.oor_evaluation import (  # noqa: E402
     OOREvaluator,
-    custom_coco_result_to_df,
-    per_image_result_to_df,
-    tba_result_to_df,
 )
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
@@ -26,7 +25,6 @@ config_path = os.path.abspath(
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
-log_settings = settings["logging"]
 azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
 azure_logging_configurer.setup_oor_logging()
 logger = logging.getLogger("performance_evaluation")
@@ -77,13 +75,17 @@ def evaluate_model(
     output_dir: Output(type=AssetTypes.URI_FOLDER)
         Location where output will be stored.
     """
-    model_name = settings["performance_evaluation"]["model_name"]
-    predictions_img_shape = settings["performance_evaluation"][
-        "predictions_image_shape"
-    ]
-    prediction_labels_rel_path = settings["performance_evaluation"][
-        "prediction_labels_rel_path"
-    ]
+    eval_settings = settings["performance_evaluation"]
+    dataset_name = eval_settings["dataset_name"]
+    model_name = eval_settings["model_name"]
+    ground_truth_img_shape = eval_settings["ground_truth_image_shape"]
+    predictions_img_shape = eval_settings["predictions_image_shape"]
+    prediction_labels_rel_path = eval_settings["prediction_labels_rel_path"]
+    splits = eval_settings["splits"]
+    target_classes = eval_settings["target_classes"]
+    sensitive_classes = eval_settings["sensitive_classes"]
+    target_classes_conf = eval_settings["target_classes_conf"]
+    sensitive_classes_conf = eval_settings["sensitive_classes_conf"]
 
     logger.info(f"Running performance evaluation for model: {model_name}")
 
@@ -93,28 +95,31 @@ def evaluate_model(
         ground_truth_base_folder=ground_truth_base_dir,
         predictions_base_folder=predictions_base_dir,
         output_folder=output_dir,
+        ground_truth_image_shape=ground_truth_img_shape,
         predictions_image_shape=predictions_img_shape,
+        dataset_name=dataset_name,
         model_name=model_name,
         pred_annotations_rel_path=prediction_labels_rel_path,
+        splits=splits,
+        target_classes=[ObjectClass(val) for val in target_classes],
+        sensitive_classes=[ObjectClass(val) for val in sensitive_classes],
+        target_classes_conf=target_classes_conf,
+        sensitive_classes_conf=sensitive_classes_conf,
     )
 
     # Total Blurred Area evaluation
     tba_results = oor_eval.evaluate_tba()
-    filename = os.path.join(output_dir, f"{model_name}-tba-eval.csv")
-    _df_to_csv(tba_result_to_df(tba_results), filename)
+    oor_eval.save_tba_results_to_csv(results=tba_results)
 
     # Per Image evaluation
     per_image_results = oor_eval.evaluate_per_image()
-    filename = os.path.join(output_dir, f"{model_name}-per-image-eval.csv")
-    _df_to_csv(per_image_result_to_df(per_image_results), filename)
+    oor_eval.save_per_image_results_to_csv(results=per_image_results)
 
     # Custom COCO evaluation
     coco_results = oor_eval.evaluate_coco()
-    filename = os.path.join(output_dir, f"{model_name}-custom-coco-eval.csv")
-    _df_to_csv(custom_coco_result_to_df(coco_results), filename)
+    oor_eval.save_coco_results_to_csv(results=coco_results)
 
-
-def _df_to_csv(df: pd.DataFrame, output_file: str):
-    """Convenience method, currently not very useful but allows to change
-    formatting of all CSVs in one place."""
-    df.to_csv(output_file)
+    # Plot precision/recall curves
+    if eval_settings["plot_pr_curves"]:
+        oor_eval.plot_tba_pr_f_curves(show_plot=False)
+        oor_eval.plot_per_image_pr_f_curves(show_plot=False)

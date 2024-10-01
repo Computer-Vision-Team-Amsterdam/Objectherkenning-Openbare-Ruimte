@@ -6,6 +6,7 @@
 *.html
 
 local/
+results/
 
 config.yml
 config.json
