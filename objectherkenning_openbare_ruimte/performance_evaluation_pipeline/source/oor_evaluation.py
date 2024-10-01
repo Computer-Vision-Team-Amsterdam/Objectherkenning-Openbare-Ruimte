@@ -430,12 +430,12 @@ class OOREvaluator:
         )
         _df_to_csv(custom_coco_result_to_df(results), filename)
 
-    def _compute_pr_curve_data(self, eval_func: Callable) -> pd.DataFrame:
+    def _compute_pr_f_curve_data(self, eval_func: Callable) -> pd.DataFrame:
         """
-        Compute data needed to plot precision and recall curves. This method
-        calls either `self.evaluate_tba` or `self.evaluate_per_image` with
-        argument `single_size_only=True` for a range of confidence thresholds
-        and returns the results in a DataFrame.
+        Compute data needed to plot precision and recall curves, and the f-score
+        curves. This method calls either `self.evaluate_tba` or
+        `self.evaluate_per_image` with argument `single_size_only=True` for a
+        range of confidence thresholds and returns the results in a DataFrame.
 
         Parameters
         ----------
@@ -444,7 +444,8 @@ class OOREvaluator:
 
         Returns
         -------
-        A pandas DataFrame with the evaluation results
+        A pandas DataFrame with the precision, recall, F1, F0.5, and F2 scores
+        for each confidence level.
         """
         confs = np.arange(0.05, 1.0, 0.05)
         dfs = []
@@ -494,7 +495,7 @@ class OOREvaluator:
     def plot_tba_pr_f_curves(self, show_plot: bool = False):
         """
         Plot and save precision and recall curves and f-score curves for the
-        total blurred area statistic. This will call evaluate_tba() for a each
+        total blurred area statistic. This will call evaluate_tba() for each
         split and target_class for a range of confidence thresholds, which can
         take some time to compute.
 
@@ -505,7 +506,7 @@ class OOREvaluator:
             (False).
         """
         logger.info(f"Plotting TBA precision/recall curves for {self.model_name}")
-        pr_curve_df = self._compute_pr_curve_data(self.evaluate_tba)
+        pr_curve_df = self._compute_pr_f_curve_data(self.evaluate_tba)
         self._plot_pr_f_curves(
             pr_df=pr_curve_df,
             result_type="total blurred area",
@@ -528,7 +529,7 @@ class OOREvaluator:
             (False).
         """
         logger.info(f"Plotting per-image precision/recall curves for {self.model_name}")
-        pr_curve_df = self._compute_pr_curve_data(self.evaluate_per_image)
+        pr_curve_df = self._compute_pr_f_curve_data(self.evaluate_per_image)
         self._plot_pr_f_curves(
             pr_df=pr_curve_df,
             result_type="per image",
