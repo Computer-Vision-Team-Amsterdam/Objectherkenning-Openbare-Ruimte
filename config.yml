@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 51
+  env_version: 52
   src_dir: "."
 
 convert_dataset:
