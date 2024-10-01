@@ -60,7 +60,7 @@ class PixelStats:
         size_all: bool
             Indicates whether the statistics are computed over all bounding box
             sizes (True) or whether a subset is evaluated (False). If False,
-            only True Positive, True Negative, and Recall are returned as the
+            only True Positive, False Negative, and Recall are returned as the
             other statistics are not meaningful.
         decimals: int = 3
             Rounds precision, recall, and f1_score to the given number of decimals.
