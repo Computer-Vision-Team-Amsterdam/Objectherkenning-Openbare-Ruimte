@@ -22,7 +22,7 @@ RUN conda update conda \
     && conda config --add channels conda-forge \
     && conda config --set channel_priority strict
 
-RUN conda create -n env python=3.8
+RUN conda create -n env python=3.12
 RUN echo "source activate env" > ~/.bashrc
 ENV PATH="/opt/miniconda/envs/env/bin:$PATH"
 
