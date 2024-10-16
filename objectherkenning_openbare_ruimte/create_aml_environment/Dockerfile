@@ -10,15 +10,12 @@ RUN apt -y update \
         libsm6 \
         libxext6 \
         libpq-dev \
-    && apt -y remove \
-        python3-setuptools \
-        python-setuptools \
     && apt upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/app
 
-RUN conda update conda \
+RUN conda update -n base -c conda-forge conda \
     && conda config --add channels conda-forge \
     && conda config --set channel_priority strict
 
@@ -32,9 +29,6 @@ RUN poetry config virtualenvs.create false
 
 COPY pyproject.toml .
 COPY poetry.lock .
-
-RUN pip install --upgrade setuptools \
-    && pip3 install --upgrade setuptools
 
 # Initialize Conda, activate environment and install poetry packages
 RUN /opt/miniconda/bin/conda init bash && \
