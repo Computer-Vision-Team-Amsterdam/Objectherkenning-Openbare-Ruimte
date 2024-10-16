@@ -24,15 +24,12 @@ numpy = {version = "^1.24.2", source = "PyPI"}
 opencv-python = {version = "^4.8.0.74", source = "PyPI"}
 pandas = {version = "^2.0.3", source = "PyPI"}
 pathvalidate = {version = "^3.2.0", source = "PyPI"}
-pre-commit = {version = "^3.2.0", source = "PyPI"}
 py360convert-modified = {version = "^1.0.1", source = "PyPI"}
 pycocotools = {version = "^2.0.7", source = "PyPI"}
-setuptools = {version = ">=70", source = "PyPI"}
 torch = {version = "^2.2.1", source="torch"}
 torchaudio = {version = "^2.2.1", source="torch"}
 torchvision = {version = "^0.17.1", source="torch"}
 ultralytics = {version = "^8.2.76", source = "PyPI"}
-urllib3 = {version = "^1.26.19", source = "PyPI"}
 wandb = {version = "^0.17.5", source = "PyPI"}
 
 [[tool.poetry.source]]
@@ -41,12 +38,12 @@ url = "https://download.pytorch.org/whl/cu118"
 priority = "explicit"
 
 [tool.poetry.dev-dependencies]
-azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 folium = {version = "^0.17.0", source = "PyPI"}
 geopandas = {version = "~0.13.2", source = "PyPI"}
 ipykernel = {version = "^6.29.4", source = "PyPI"}
 nbstripout = {version = "^0.7.1", source = "PyPI"}
-pandas-stubs = "2.0.*"
+pandas-stubs = {version = "2.0.*", source = "PyPI"}
+pre-commit = {version = "^3.2.0", source = "PyPI"}
 pytest = {version = "^7.0.1", source = "PyPI"}
 pytest-cov = {version = "^4.0.0", source = "PyPI"}
 safety = {version = "^3.2.4", source = "PyPI"}
