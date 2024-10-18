@@ -180,6 +180,7 @@ class ModelResult:
         image_file_name: Union[str, os.PathLike],
     ) -> None:
         """Save the annotation labels."""
+        os.makedirs(output_folder, exist_ok=True)
         img_name = os.path.splitext(os.path.basename(image_file_name))[0]
         labels_full_path = os.path.join(output_folder, f"{img_name}.txt")
         with open(labels_full_path, "w") as f:
