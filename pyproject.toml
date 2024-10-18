@@ -41,6 +41,8 @@ priority = "explicit"
 folium = {version = "^0.17.0", source = "PyPI"}
 geopandas = {version = "~0.13.2", source = "PyPI"}
 ipykernel = {version = "^6.29.4", source = "PyPI"}
+matplotlib = {version = "^3.9.2", source = "PyPI"}
+mapclassify = {version = "^2.8.1", source = "PyPI"}
 nbstripout = {version = "^0.7.1", source = "PyPI"}
 pandas-stubs = {version = "2.0.*", source = "PyPI"}
 pre-commit = {version = "^3.2.0", source = "PyPI"}
