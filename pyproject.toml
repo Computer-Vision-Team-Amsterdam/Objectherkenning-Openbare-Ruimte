@@ -1,10 +1,10 @@
 [project]
 name = "objectherkenning_openbare_ruimte"
-version = "0.1.6"
+version = "0.1.7"
 
 [tool.poetry]
 name = "objectherkenning_openbare_ruimte"
-version = "0.1.6"
+version = "0.1.7"
 description = "Objectherkenning Openbare Ruimte is a project about recognising objects from public space images."
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
@@ -14,25 +14,22 @@ authors = [
 ]
 
 [tool.poetry.dependencies]
-python = "~3.8"
-aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git",  tag = "v1.1.1" }
+python = "~3.12"
+aml_interface = { git = "https://github.com/Computer-Vision-Team-Amsterdam/AML-Interface.git", tag = "v1.1.2" }
 azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 azure-storage-blob = {version = "^12.19.0", source = "PyPI"}
-cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git",  tag = "v2.0.2" }
+cvtoolkit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/CVToolkit.git", tag = "v2.0.3" }
 mldesigner = {version = "^0.1.0-beta.9", source = "PyPI"}
 numpy = {version = "^1.24.2", source = "PyPI"}
 opencv-python = {version = "^4.8.0.74", source = "PyPI"}
 pandas = {version = "^2.0.3", source = "PyPI"}
 pathvalidate = {version = "^3.2.0", source = "PyPI"}
-pre-commit = {version = "^3.2.0", source = "PyPI"}
 py360convert-modified = {version = "^1.0.1", source = "PyPI"}
 pycocotools = {version = "^2.0.7", source = "PyPI"}
-setuptools = {version = ">=70", source = "PyPI"}
 torch = {version = "^2.2.1", source="torch"}
 torchaudio = {version = "^2.2.1", source="torch"}
 torchvision = {version = "^0.17.1", source="torch"}
 ultralytics = {version = "^8.2.76", source = "PyPI"}
-urllib3 = {version = "^1.26.19", source = "PyPI"}
 wandb = {version = "^0.17.5", source = "PyPI"}
 
 [[tool.poetry.source]]
@@ -41,12 +38,12 @@ url = "https://download.pytorch.org/whl/cu118"
 priority = "explicit"
 
 [tool.poetry.dev-dependencies]
-azure-ai-ml = {version = "^1.2.0", source = "PyPI"}
 folium = {version = "^0.17.0", source = "PyPI"}
 geopandas = {version = "~0.13.2", source = "PyPI"}
 ipykernel = {version = "^6.29.4", source = "PyPI"}
 nbstripout = {version = "^0.7.1", source = "PyPI"}
-pandas-stubs = "2.0.*"
+pandas-stubs = {version = "2.0.*", source = "PyPI"}
+pre-commit = {version = "^3.2.0", source = "PyPI"}
 pytest = {version = "^7.0.1", source = "PyPI"}
 pytest-cov = {version = "^4.0.0", source = "PyPI"}
 safety = {version = "^3.2.4", source = "PyPI"}
