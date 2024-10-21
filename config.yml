@@ -156,4 +156,4 @@ logging:
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: ""
+  ai_instrumentation_key: "AI_INSTRUMENTATION_KEY"
