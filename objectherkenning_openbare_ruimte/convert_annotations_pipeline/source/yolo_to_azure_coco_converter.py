@@ -7,7 +7,7 @@ from typing import Any, Dict
 import cv2
 from cvtoolkit.helpers.file_helpers import find_image_paths  # noqa: E402
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("convert_annotations_pipeline")
 
 
 class YoloToAzureCocoConverter:
@@ -123,9 +123,10 @@ class YoloToAzureCocoConverter:
         dict
             The annotation in COCO format.
         """
-        class_id, x_center, y_center, width, height = map(
-            float, yolo_annotation.split()
-        )
+        # Split the annotation and select only the first 5 values
+        values = yolo_annotation.split()[:5]
+        class_id, x_center, y_center, width, height = map(float, values)
+
         class_id += 1  # Azure COCO expects classes to start from 1
         x_center, y_center, width, height = (
             x_center * img_width,
@@ -166,7 +167,7 @@ class YoloToAzureCocoConverter:
             )
             file_name_formatted = f"{folder_name}/{file_name}"
             coco_url = f"AmlDatastore://{self.datastore_name}/{file_name_formatted}"
-            absolute_url = f"https://cvoamlweupgwapeg4pyiw5e7.blob.core.windows.net/{self.datastore_name}/{file_name_formatted.replace(' ', '%20')}"
+            absolute_url = f"https://cvodataweupgwapeg4pyiw5e.blob.core.windows.net/{self.datastore_name}/{file_name_formatted.replace(' ', '%20')}"
 
             self.coco_json["images"].append(
                 {

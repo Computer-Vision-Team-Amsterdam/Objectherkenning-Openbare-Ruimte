@@ -2,13 +2,15 @@ import logging
 import os
 import sys
 
+from aml_interface.azure_logging import AzureLoggingConfigurer
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
 
 sys.path.append("../../..")
 
-from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
-
+from objectherkenning_openbare_ruimte.convert_annotations_pipeline.source.yolo_to_azure_coco_converter import (  # noqa: E402
+    YoloToAzureCocoConverter,
+)
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -16,17 +18,14 @@ from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
 config_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "config.yml")
 )
-settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
-log_settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)[
-    "logging"
-]
-setup_azure_logging(log_settings, __name__)
-aml_experiment_settings = settings["aml_experiment_details"]
-logger = logging.getLogger("convert_annotations")
+ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
+settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
-from objectherkenning_openbare_ruimte.convert_annotations_pipeline.source.yolo_to_azure_coco_converter import (  # noqa: E402
-    YoloToAzureCocoConverter,
-)
+azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
+azure_logging_configurer.setup_oor_logging()
+logger = logging.getLogger("convert_annotations_pipeline")
+
+aml_experiment_settings = settings["aml_experiment_details"]
 
 
 @command_component(

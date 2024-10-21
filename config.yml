@@ -3,7 +3,7 @@ customer: ""
 aml_experiment_details:
   compute_name: oor-testing
   env_name: oor-environment
-  env_version: 52
+  env_version: 57
   src_dir: "."
 
 convert_dataset:
@@ -15,7 +15,7 @@ convert_annotations:
   input_datastore_name: annotations_conversion_old
   output_datastore_name: annotations_conversion_new
   final_datastore_name: converted_new_dataset_oor
-  categories_file: categories.json
+  categories_file: categories_baas.json
   separate_labels: True
   label_folder: dataset_folder/labels
 
@@ -116,12 +116,12 @@ training_pipeline:
     name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
     rect: False
   inputs:
-    datastore_path: "dataset_oor_v2_0"
-    training_data_rel_path: "processed-dataset-oor-v2-0"
+    datastore_path: "dataset_oor_v2_2"
+    training_data_rel_path: "processed-dataset-oor-v2-2"
     model_weights_rel_path: "model"
-    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    model_name: "best_yolo11m_coco_161024.pt"
   outputs:
-    project_datastore_path: "dataset_oor_v2_0"
+    project_datastore_path: "dataset_oor_v2_2"
     project_rel_path: "model"
 
 sweep_pipeline:
@@ -135,13 +135,13 @@ sweep_pipeline:
     rect: False
   sweep_trials: 30
   inputs:
-    datastore_path: "dataset_oor_v2_0"
-    training_data_rel_path: "processed-dataset-oor-v2-0"
+    datastore_path: "dataset_oor_v2_2"
+    training_data_rel_path: "processed-dataset-oor-v2-2"
     model_weights_rel_path: "model"
-    model_name: "best_yolov8m_coco_290524_old_oor_nc_5.pt"
+    model_name: "best_yolo11m_coco_161024.pt"
     sweep_config: "sweep_config.json"
   outputs:
-    project_datastore_path: "dataset_oor_v2_0"
+    project_datastore_path: "dataset_oor_v2_2"
     project_rel_path: "model"
 
 wandb:
@@ -150,10 +150,10 @@ wandb:
 
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations", "inference_pipeline", "performance_evaluation"]
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations_pipeline", "inference_pipeline", "performance_evaluation"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: "AI_INSTRUMENTATION_KEY"
+  ai_instrumentation_key: ""
