@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -22,6 +23,21 @@ config_path = os.path.abspath(
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 aml_experiment_settings = settings["aml_experiment_details"]
+
+
+def load_training_parameters(json_file: str):
+    """Load parameters from a JSON file, returning an empty dictionary if the file is empty."""
+    if os.stat(json_file).st_size == 0:  # Check if file is empty
+        return {}
+
+    try:
+        with open(json_file, "r") as file:
+            config = json.load(file)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Failed to parse JSON from {json_file}: {e}")
+
+    parameters = {k: v["value"] for k, v in config.get("parameters", {}).items()}
+    return parameters
 
 
 @command_component(
@@ -60,6 +76,10 @@ def train_model(
 
     ultralytics_settings.update({"runs_dir": project_path})
     wandb.init(job_type="training", config_exclude_keys=["project"])
+
+    # Load parameters from the JSON configuration file
+    config_file = settings["training_pipeline"]["inputs"]["config_file"]
+    train_params_from_json = load_training_parameters(config_file)
 
     n_classes = settings["training_pipeline"]["model_parameters"]["n_classes"]
     name_classes = settings["training_pipeline"]["model_parameters"]["name_classes"]
@@ -106,6 +126,7 @@ def train_model(
         "cls": model_parameters.get("cls", 0.5),
         "dfl": model_parameters.get("dfl", 1.5),
     }
+    train_params.update(train_params_from_json)  # Update with dynamically loaded params
 
     # Train the model
     model.train(**train_params)
