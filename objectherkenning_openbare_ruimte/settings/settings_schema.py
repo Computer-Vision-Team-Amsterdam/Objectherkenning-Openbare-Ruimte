@@ -26,6 +26,7 @@ class ConvertAnnotations(SettingsSpecModel):
     input_datastore_name: str = "annotations_conversion_old"
     output_datastore_name: str = "annotations_conversion_new"
     final_datastore_name: str = "converted-dataset-oor"
+    image_storage_account: str = "cvodataweupgwapeg4pyiw5e"
     categories_file: str = "categories.json"
     separate_labels: bool = False
     label_folder: str = None

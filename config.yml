@@ -15,6 +15,7 @@ convert_annotations:
   input_datastore_name: annotations_conversion_old
   output_datastore_name: annotations_conversion_new
   final_datastore_name: converted_new_dataset_oor
+  image_storage_account: cvodataweupgwapeg4pyiw5e
   categories_file: categories.json
   separate_labels: True
   label_folder: dataset_folder/labels

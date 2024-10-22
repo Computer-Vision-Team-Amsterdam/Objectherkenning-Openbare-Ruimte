@@ -20,6 +20,7 @@ class YoloToAzureCocoConverter:
         input_folder: str,
         output_folder: str,
         datastore_name: str,
+        image_storage_account: str,
         categories_file: str,
         separate_labels: bool = False,
         label_folder: str = None,
@@ -33,12 +34,15 @@ class YoloToAzureCocoConverter:
             Path to the folder where the Azure COCO annotations will be stored.
         datastore_name: str
             Name of the datastore to be used in the COCO file URLs.
+        image_storage_account: str
+            Name of the storage account to be used in the COCO file URLs.
         categories_file: str
             Path to the JSON file containing the categories.
         """
         self.input_folder = input_folder
         self.output_folder = output_folder
         self.datastore_name = datastore_name
+        self.image_storage_account = image_storage_account
         self.separate_labels = separate_labels
         self.label_folder = label_folder if separate_labels else input_folder
         self._load_categories(categories_file)
@@ -167,7 +171,7 @@ class YoloToAzureCocoConverter:
             )
             file_name_formatted = f"{folder_name}/{file_name}"
             coco_url = f"AmlDatastore://{self.datastore_name}/{file_name_formatted}"
-            absolute_url = f"https://cvodataweupgwapeg4pyiw5e.blob.core.windows.net/{self.datastore_name}/{file_name_formatted.replace(' ', '%20')}"
+            absolute_url = f"https://{self.image_storage_account}.blob.core.windows.net/{self.datastore_name}/{file_name_formatted.replace(' ', '%20')}"
 
             self.coco_json["images"].append(
                 {

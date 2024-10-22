@@ -28,6 +28,7 @@ def convert_annotations_pipeline():
     )
 
     final_datastore_name = settings["convert_annotations"]["final_datastore_name"]
+    image_storage_account = settings["convert_annotations"]["image_storage_account"]
     categories_file = settings["convert_annotations"]["categories_file"]
     separate_labels = settings["convert_annotations"]["separate_labels"]
     label_folder = settings["convert_annotations"]["label_folder"]
@@ -35,6 +36,7 @@ def convert_annotations_pipeline():
     convert_annotations_step = convert_annotations(
         input_old_folder=input_old_input,
         datastore_name=final_datastore_name,
+        image_storage_account=image_storage_account,
         categories_file=categories_file,
         separate_labels=separate_labels,
         label_folder=label_folder,
