@@ -2,13 +2,15 @@ import logging
 import os
 import sys
 
+from aml_interface.azure_logging import AzureLoggingConfigurer
 from azure.ai.ml.constants import AssetTypes
 from mldesigner import Input, Output, command_component
 
 sys.path.append("../../..")
 
-from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
-
+from objectherkenning_openbare_ruimte.convert_annotations_pipeline.source.yolo_to_azure_coco_converter import (  # noqa: E402
+    YoloToAzureCocoConverter,
+)
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
 )
@@ -16,17 +18,14 @@ from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
 config_path = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "config.yml")
 )
-settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
-log_settings = ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)[
-    "logging"
-]
-setup_azure_logging(log_settings, __name__)
-aml_experiment_settings = settings["aml_experiment_details"]
-logger = logging.getLogger("convert_annotations")
+ObjectherkenningOpenbareRuimteSettings.set_from_yaml(config_path)
+settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 
-from objectherkenning_openbare_ruimte.convert_annotations_pipeline.source.yolo_to_azure_coco_converter import (  # noqa: E402
-    YoloToAzureCocoConverter,
-)
+azure_logging_configurer = AzureLoggingConfigurer(settings["logging"])
+azure_logging_configurer.setup_oor_logging()
+logger = logging.getLogger("convert_annotations_pipeline")
+
+aml_experiment_settings = settings["aml_experiment_details"]
 
 
 @command_component(
@@ -40,6 +39,7 @@ def convert_annotations(
     input_old_folder: Input(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
     output_new_folder: Output(type=AssetTypes.URI_FOLDER),  # type: ignore # noqa: F821
     datastore_name: str,
+    image_storage_account: str,
     categories_file: str,
     separate_labels: bool = False,
     label_folder: str = None,
@@ -55,6 +55,8 @@ def convert_annotations(
         Path to the folder containing the converted annotations.
     datastore_name: str
         Name of the datastore of the dataset.
+    image_storage_account: str
+        Name of the storage account of the dataset.
     categories_file: str
         Path to the JSON file containing the categories.
     separate_labels: bool, optional
@@ -67,6 +69,7 @@ def convert_annotations(
     logger.info(f"Input folder: {input_old_folder}")
     logger.info(f"Output folder: {output_new_folder}")
     logger.info(f"Datastore name: {datastore_name}")
+    logger.info(f"Image storage account: {image_storage_account}")
     logger.info(f"Categories file: {categories_file}")
     logger.info(f"Separate labels: {separate_labels}")
 
@@ -81,6 +84,7 @@ def convert_annotations(
         input_old_folder,
         output_new_folder,
         datastore_name,
+        image_storage_account,
         categories_file,
         separate_labels,
         label_folder_path,
