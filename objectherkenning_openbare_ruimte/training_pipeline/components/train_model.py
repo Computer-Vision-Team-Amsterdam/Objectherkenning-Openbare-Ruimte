@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from typing import Dict, Optional
 
 import wandb
 import yaml
@@ -25,8 +26,14 @@ settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
 aml_experiment_settings = settings["aml_experiment_details"]
 
 
-def load_training_parameters(json_file: str):
-    """Load parameters from a JSON file, returning an empty dictionary if the file is empty."""
+def load_training_parameters(json_file: Optional[str]) -> Dict:
+    """Load parameters from a JSON file if it exists, returning an empty dictionary if the file doesn't exist or is empty."""
+    if not json_file:  # If no config file is provided
+        return {}
+
+    if not os.path.exists(json_file):  # Check if file exists
+        return {}
+
     if os.stat(json_file).st_size == 0:  # Check if file is empty
         return {}
 
@@ -77,8 +84,8 @@ def train_model(
     ultralytics_settings.update({"runs_dir": project_path})
     wandb.init(job_type="training", config_exclude_keys=["project"])
 
-    # Load parameters from the JSON configuration file
-    config_file = settings["training_pipeline"]["inputs"]["config_file"]
+    # Load parameters from the JSON configuration file, if provided
+    config_file = settings["training_pipeline"]["inputs"].get("config_file", None)
     train_params_from_json = load_training_parameters(config_file)
 
     n_classes = settings["training_pipeline"]["model_parameters"]["n_classes"]
