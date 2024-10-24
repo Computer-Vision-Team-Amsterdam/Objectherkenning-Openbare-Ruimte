@@ -1,0 +1,52 @@
+{
+  "parameters": {
+    "close_mosaic": {
+      "value": 50
+    },
+    "warmup_epochs": {
+      "value": 15
+    },
+    "hsv_h": {
+      "value": 0.05
+    },
+    "hsv_s": {
+      "value": 0.05
+    },
+    "hsv_v": {
+      "value": 0.67
+    },
+    "degrees": {
+      "value": 10
+    },
+    "translate": {
+      "value": 0.08
+    },
+    "scale": {
+      "value": 0.75
+    },
+    "shear": {
+      "value": -10
+    },
+    "perspective": {
+      "value": 0.00044
+    },
+    "flipud": {
+      "value": 0.10
+    },
+    "fliplr": {
+      "value": 0.55
+    },
+    "bgr": {
+      "value": 0.2
+    },
+    "mosaic": {
+      "value": 0.72
+    },
+    "mixup": {
+      "value": 0.10
+    },
+    "copy_paste": {
+      "value": 0.7
+    }
+  }
+}

@@ -121,6 +121,7 @@ training_pipeline:
     training_data_rel_path: "processed-dataset-oor-v2-2"
     model_weights_rel_path: "model"
     model_name: "best_yolo11m_coco_161024.pt"
+    config_file: "train_data_augment_config.json" # can be an empty string or omitted entirely
   outputs:
     project_datastore_path: "dataset_oor_v2_2"
     project_rel_path: "model"
@@ -147,7 +148,7 @@ sweep_pipeline:
 
 wandb:
   api_key: ""
-  mode: "online"
+  mode: "offline"
 
 logging:
   loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
