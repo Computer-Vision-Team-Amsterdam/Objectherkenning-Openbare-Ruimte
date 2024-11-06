@@ -1,26 +1,15 @@
 from enum import Enum
-from typing import List, Tuple
+from typing import Dict, List, Tuple, Union
 
-import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image
-from PIL.Image import Image as ImageType
+import numpy.typing as npt
+import pandas as pd
 
 
-class ImageSize(Enum):
-    small = [0, 5000]
-    medium = [5000, 10000]
-    large = [10000, 1048576]
-    all = [0, 1048576]
+class ObjectClass(Enum):
+    """Convenience class to represent objects of interest. Class labels can be
+    accessed as `<ObjectClass>.value`, class names as `<ObjectClass>.name`."""
 
-    def __repr__(self):
-        return self.value
-
-    def __getitem__(self, index):
-        return self.value[index]
-
-
-class TargetClass(Enum):
     person = 0
     license_plate = 1
     container = 2
@@ -31,19 +20,104 @@ class TargetClass(Enum):
         return self.value
 
 
+class BoxSize:
+    """
+    This class is used to represent bounding box size categories 'small',
+    'medium', 'large', and 'all'. The bounds of each category are given as
+    fraction of the image surface.
+
+    Objects of this class can be created by passing the two relevant bounds, or
+    by passing an ObjectClass. For example, to get the 'medium' bounds for a
+    'person': `BoxSize.from_objectclass(ObjectClass.person).medium`.
+
+    Parameters
+    ----------
+    bounds: Tuple[float, float] = (0.005, 0.01)
+        The two relevant bounds between small and medium, and medium and large.
+    """
+
+    all: Tuple[float, float] = (0.0, 1.0)
+    small: Tuple[float, float]
+    medium: Tuple[float, float]
+    large: Tuple[float, float]
+
+    def __init__(self, bounds: Tuple[float, float] = (0.005, 0.01)):
+        self.small = (0.0, bounds[0])
+        self.medium = bounds
+        self.large = (bounds[1], 1.0)
+
+    @classmethod
+    def from_objectclass(cls, object_class: ObjectClass):
+        """
+        Create a BoxSize object from an ObjectClass instance. This will return a
+        BoxSize instance with bounds set to the appropriate values for that
+        ObjectClass instance. These values have been set to the 1/3rd and 2/3rd
+        quantiles of the bounding box size distribution for that class in the
+        training dataset.
+
+        Parameters
+        ----------
+        object_class: ObjectClass
+            The ObjectClass to get the BoxSize for, e.g. `BoxSize.from_objectclass(ObjectClass.person)`.
+
+        Returns
+        -------
+        BoxSize instance with the appropriate bounds.
+        """
+        switch = {
+            ObjectClass.person: (0.000665, 0.003397),
+            ObjectClass.license_plate: (0.000108, 0.000436),
+            ObjectClass.container: (0.003424, 0.022598),
+            ObjectClass.mobile_toilet: (0.000854, 0.004376),
+            ObjectClass.scaffolding: (0.010298, 0.125452),
+        }
+        return cls(switch.get(object_class))
+
+    def to_dict(self, all_only: bool = False) -> Dict[str, Tuple[float, float]]:
+        """
+        Get a dict representation of this instance.
+
+        Parameters
+        ----------
+        all_only: bool = False
+            Whether or not to only return the bounds for 'all'. This is purely a
+            convenience method for the 'single_size_only' case of several
+            metrics and serves no other practical purpose.
+
+        Returns
+        -------
+        A dictionary with the size categories as keys and their bounds as
+        values.
+        """
+        if all_only:
+            return {"all": self.all}
+        else:
+            return {
+                "all": self.all,
+                "small": self.small,
+                "medium": self.medium,
+                "large": self.large,
+            }
+
+    def __repr__(self) -> str:
+        return repr(self.medium)
+
+
 def parse_labels(
     file_path: str,
 ) -> Tuple[List[int], List[Tuple[float, float, float, float]]]:
     """
-     Parses a txt file with the following normalized format: [class x_center, y_center, width, height]
+    Parse a YOLO annotation .txt file with the following normalized format:
+    `class x_center y_center width height`
 
     Parameters
     ----------
-    file_path The path to the labels file to be parsed.
+    file_path: str
+        The path to the annotation file to be parsed.
 
-    Returns (classes and bounding_boxes)
+    Returns
     -------
-
+    A tuple: (list of classes, list of (tuples of) bounding boxes)
     """
     with open(file_path, "r") as f:
         lines = f.readlines()
@@ -62,21 +136,33 @@ def parse_labels(
 
 
 def generate_binary_mask(
-    bounding_boxes, image_width=8000, image_height=4000, consider_upper_half=False
-):
+    bounding_boxes: Union[
+        npt.NDArray, List[List[float]], List[Tuple[float, float, float, float]]
+    ],
+    image_width: int = 3840,
+    image_height: int = 2160,
+    consider_upper_half: bool = False,
+) -> npt.NDArray:
     """
-    Creates binary mask where all points inside the bounding boxes are 1, 0 otherwise.
+    Create a binary mask where all points inside the given bounding boxes are 1,
+    and 0 otherwise.
 
     Parameters
     ----------
-    bounding_boxes: list of bounding box coordinates
-    image_width
-    image_height
-    consider_upper_half: only look at the upper half of the bounding boxes
+    bounding_boxes:
+        Bounding boxes coordinates, either as ndarray of shape(n_boxes, 4),
+        as list of lists, or list of tuples.
+    image_width: int = 3840
+        Width of the image, in pixels.
+    image_height: int = 2160
+        Height of the image, in pixels.
+    consider_upper_half: bool = False
+        Only look at the upper half of the bounding boxes (useful for the person
+        object class where you want to make sure the head is detected).
 
     Returns
     -------
-
+    The binary mask.
     """
 
     mask = np.zeros((image_height, image_width), dtype=bool)
@@ -104,51 +190,38 @@ def generate_binary_mask(
     return mask
 
 
-def generate_mask(
-    bounding_boxes, image: ImageType, consider_upper_half=False
-) -> ImageType:
+def compute_fb_score(
+    precision: Union[float, npt.NDArray, pd.Series],
+    recall: Union[float, npt.NDArray, pd.Series],
+    beta: float = 1.0,
+    decimals: int = 3,
+):
     """
-    Generates an RGB mask for an image given a list of bounding boxes.
-    Similar to generate_binary_mask, but this is used for visualizations, mainly as sanity checks
+    Compute [F-scores](https://en.wikipedia.org/wiki/F-score) for a pair of
+    precision and recall values. The parameter beta determines the relative
+    importance of recall w.r.t. precision, i.e., recall is considered _beta_
+    times as important as precision.
 
     Parameters
     ----------
-    bounding_boxes List of bounding boxes with normalised (x_center, y_center, width, height)
-    image  An image to generate the mask for.
-    consider_upper_half only look at the upper half of the bounding boxes
+    precision: Union[float, npt.NDArray, pd.Series]
+        (List of) precision value(s).
+    recall: Union[float, npt.NDArray, pd.Series]
+        (List of) recall value(s).
+    beta: float = 1.0
+        Relative importance of recall w.r.t. precision.
+    decimals: int = 3
+        Rounds f-score to the given number of decimals.
 
     Returns
     -------
-
+    F-scores for the precision and recall pair(s).
     """
-    mask = np.zeros_like(np.array(image))
-
-    if len(bounding_boxes):
-        bounding_boxes = np.array(bounding_boxes)
-        y_min = (
-            (bounding_boxes[:, 1] - bounding_boxes[:, 3] / 2) * image.height
-        ).astype(int)
-        x_min = (
-            (bounding_boxes[:, 0] - bounding_boxes[:, 2] / 2) * image.width
-        ).astype(int)
-        x_max = (
-            (bounding_boxes[:, 0] + bounding_boxes[:, 2] / 2) * image.width
-        ).astype(int)
-        if consider_upper_half:
-            y_max = (bounding_boxes[:, 1] * image.height).astype(int)
-        else:
-            y_max = (
-                (bounding_boxes[:, 1] + bounding_boxes[:, 3] / 2) * image.height
-            ).astype(int)
-        for i in range(len(x_min)):
-            mask[y_min[i] : y_max[i], x_min[i] : x_max[i], :] = np.array(image)[
-                y_min[i] : y_max[i], x_min[i] : x_max[i], :
-            ]
-    return Image.fromarray(mask)
-
-
-def visualize_mask(image, name="mask.jpg"):
-    plt.figure(name, figsize=(16, 8))
-    plt.imshow(np.array(image))
-    plt.savefig(name, dpi=500)
-    plt.show()
+    if isinstance(precision, pd.Series):
+        precision = precision.to_numpy()
+    if isinstance(recall, pd.Series):
+        recall = recall.to_numpy()
+    return np.round(
+        (1 + beta**2) * (precision * recall) / (beta**2 * precision + recall),
+        decimals=decimals,
+    )

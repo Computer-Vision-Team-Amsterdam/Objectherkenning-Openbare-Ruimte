@@ -1,15 +1,10 @@
 customer: ""
 
 aml_experiment_details:
-  compute_name: cpu-blurring-model2
+  compute_name: oor-testing
   env_name: oor-environment
-  env_version: 23
+  env_version: 57
   src_dir: "."
-
-azure_iot:
-  hostname: "iothub-oor-ont-weu-itr-01.azure-devices.net"
-  device_id: "test-diana"
-  shared_access_key: "{SHARED_ACCESS_KEY_IOT}"
 
 convert_dataset:
   input_old_datastore: "old_datastore"
@@ -20,14 +15,10 @@ convert_annotations:
   input_datastore_name: annotations_conversion_old
   output_datastore_name: annotations_conversion_new
   final_datastore_name: converted_new_dataset_oor
+  image_storage_account: cvodataweupgwapeg4pyiw5e
   categories_file: categories.json
   separate_labels: True
-  label_folder: prelabeling_new_dataset_oor/labels
-
-data_delivery_pipeline:
-  images_path: "/raw_frames"
-  detections_path: ""
-  metadata_path: ""
+  label_folder: dataset_folder/labels
 
 data_minimisation:
   sensitive_classes: [0, 1]  # Classes to anonymise
@@ -61,6 +52,10 @@ data_sampling:
   decos_radius: 30
 
 distortion_correction:
+  defisheye_params:
+    camera_matrix: [[2028, 0, 1954.1], [0, 2029.6, 1055.1], [ 0, 0, 1]]
+    distortion_params: [[-0.24083, 0.10647, 0.00083113, 0.0001802, -0.025874]]
+    input_image_size: [3840, 2160]
   cx: 0.509
   cy: 0.488
   k1: -0.241
@@ -79,12 +74,106 @@ frame_extraction:
   exclude_files: ["D17M02Y2024-H20M50S55"]  # Metadata for this file is invalid
   fps: 1
 
+inference_pipeline:
+  model_params:
+    batch_size: 1
+    img_size: 1280
+    conf: 0.3
+  inputs:
+    datastore_path: "inference_test"
+    inference_data_rel_path: "datasets/demo_images"
+    model_weights_rel_path: "model_weights"
+    model_name: "yolov8m_1280_v2.2_curious_hill_12.pt"
+  outputs:
+    datastore_path: "inference_test"  # empty string "" means same as input datastore
+    output_rel_path: "inference/demo_images/test/"
+    detections_subfolder: ""
+    labels_subfolder: ""
+  target_classes: [2, 3, 4]
+  sensitive_classes: [0, 1]
+  target_classes_conf: 0.7  # null means conf is taken from model_params
+  sensitive_classes_conf: null  # null means conf is taken from model_params
+  output_image_size: [1280, 720]  # null means keep original size
+  save_detection_images: True
+  save_detection_labels: True
+  save_all_images: False  # If True, all images will be saved regardless of whether they contain target class objects
+  defisheye_flag: False
+
+performance_evaluation:
+  inputs:
+    datastore: "dataset_oor_v2_2"
+    ground_truth_rel_path: "processed-dataset-oor-v2-2"
+    predictions_rel_path: "inference/v2-2/v2.2"
+  outputs:
+    datastore: "dataset_oor_v2_2"
+    output_rel_path: "evaluation/v2-2/v2.2_test"
+  dataset_name: "v2-2"
+  model_name: "yolov8m_1280_v2.2"
+  ground_truth_image_shape: [3840, 2160]
+  predictions_image_shape: [1280, 720]
+  prediction_labels_rel_path: "detected_labels"
+  splits: ["train", "val", "test"]
+  target_classes: [2, 3, 4]
+  sensitive_classes: [0, 1]
+  target_classes_conf: 0.7  # null means all predictions are used
+  sensitive_classes_conf: null  # null means all predictions are used
+  plot_pr_curves: True
+
+training_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 500
+    patience: 100
+    n_classes: 5
+    cos_lr: True
+    dropout: 0.0
+    seed: 0
+    box: 7.5
+    cls: 0.5
+    dfl: 1.5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  inputs:
+    datastore_path: "dataset_oor_v2_2"
+    training_data_rel_path: "processed-dataset-oor-v2-2"
+    model_weights_rel_path: "model"
+    model_name: "best_yolo11m_coco_161024.pt"
+    config_file: "train_data_augment_config.json" # can be an empty string or omitted entirely
+  outputs:
+    project_datastore_path: "dataset_oor_v2_2"
+    project_rel_path: "model"
+
+sweep_pipeline:
+  model_parameters:
+    img_size: 1280
+    batch: 0.85
+    epochs: 100
+    patience: 100
+    n_classes: 5
+    name_classes: ["person", "license plate", "container", "mobile toilet", "scaffolding"]
+    rect: False
+  sweep_trials: 30
+  inputs:
+    datastore_path: "dataset_oor_v2_2"
+    training_data_rel_path: "processed-dataset-oor-v2-2"
+    model_weights_rel_path: "model"
+    model_name: "best_yolo11m_coco_161024.pt"
+    sweep_config: "sweep_config.json"
+  outputs:
+    project_datastore_path: "dataset_oor_v2_2"
+    project_rel_path: "model"
+
+wandb:
+  api_key: ""
+  mode: "offline"
+
 logging:
-  loglevel_own: INFO  # override loglevel for packages defined in `own_packages`
-  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations"]
+  loglevel_own: DEBUG  # override loglevel for packages defined in `own_packages`
+  own_packages: ["__main__", "objectherkenning_openbare_ruimte", "convert_annotations_pipeline", "inference_pipeline", "performance_evaluation"]
   basic_config:
     # log config as arguments to `logging.basicConfig`
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: "APPLICATION_INSIGHTS_CONNECTION_STRING"
+  ai_instrumentation_key: "AI_INSTRUMENTATION_KEY"

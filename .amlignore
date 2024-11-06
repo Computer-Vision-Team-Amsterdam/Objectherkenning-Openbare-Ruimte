@@ -124,6 +124,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# VSCode
+.vscode
 
 # PyCharm
 .idea
@@ -176,14 +178,19 @@ poetry.lock
 /*.md
 #/.*
 
-
+## Project specific files
+.git
+/draw-YOLO-box
+/experiments
+/local
 /local_test_data
+/notebooks
+/results
+/scripts
+/tests
 /weights
 /yolov5/runs
-/draw-YOLO-box
+*.csv
 *.jpg
 *.DS_Store
 *.md
-/tests
-/experiments
-/datasets

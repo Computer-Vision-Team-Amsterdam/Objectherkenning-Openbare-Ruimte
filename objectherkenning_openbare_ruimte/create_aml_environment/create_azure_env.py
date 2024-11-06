@@ -14,7 +14,7 @@ def main():
     aml_interface.create_aml_environment(
         env_name=settings["aml_experiment_details"]["env_name"],
         build_context_path="objectherkenning_openbare_ruimte/create_aml_environment",
-        dockerfile_path="oor-environment.Dockerfile",
+        dockerfile_path="Dockerfile",
     )
 
 

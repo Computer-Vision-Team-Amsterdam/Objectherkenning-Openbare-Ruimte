@@ -1,7 +1,15 @@
 # Project specific files
 *.jpg
+*.png
 *.mp4
 *.csv
+*.html
+
+local/
+results/
+
+config.yml
+config.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -164,12 +172,12 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
+# VSCode
+.vscode/
+
 # Assets
 input/
 output/
 
 # Mac .DS_Store
 *.DS_Store
-
-config.yml
-config.json

@@ -1,4 +1,3 @@
-from aml_interface.azure_logging import setup_azure_logging  # noqa: E402
 from azure.ai.ml import Input, Output
 from azure.ai.ml.constants import AssetTypes
 from azure.ai.ml.dsl import pipeline
@@ -12,7 +11,6 @@ from objectherkenning_openbare_ruimte.settings.settings import (
 
 ObjectherkenningOpenbareRuimteSettings.set_from_yaml("config.yml")
 settings = ObjectherkenningOpenbareRuimteSettings.get_settings()
-setup_azure_logging(settings["logging"], __name__)
 
 from aml_interface.aml_interface import AMLInterface  # noqa: E402
 
@@ -30,6 +28,7 @@ def convert_annotations_pipeline():
     )
 
     final_datastore_name = settings["convert_annotations"]["final_datastore_name"]
+    image_storage_account = settings["convert_annotations"]["image_storage_account"]
     categories_file = settings["convert_annotations"]["categories_file"]
     separate_labels = settings["convert_annotations"]["separate_labels"]
     label_folder = settings["convert_annotations"]["label_folder"]
@@ -37,6 +36,7 @@ def convert_annotations_pipeline():
     convert_annotations_step = convert_annotations(
         input_old_folder=input_old_input,
         datastore_name=final_datastore_name,
+        image_storage_account=image_storage_account,
         categories_file=categories_file,
         separate_labels=separate_labels,
         label_folder=label_folder,
