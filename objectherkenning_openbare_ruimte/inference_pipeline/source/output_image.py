@@ -25,6 +25,7 @@ class OutputImage:
             The original image.
         """
         self.image = image
+        self.shape = self.image.shape
 
     def get_image(self) -> npt.NDArray:
         """Returns the image as Numpy array."""
