@@ -194,8 +194,8 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             coordinates = self.convert_address_to_coordinates(address)
             print(f"Coordinate of address {address}: {coordinates}")
             if coordinates:
-                longitudes.append(coordinates[0])
-                latitudes.append(coordinates[1])
+                longitudes.append(coordinates[1])
+                latitudes.append(coordinates[0])
             else:  # None, because there was an exception while converting the address into coordinates
                 longitudes.append(None)
                 latitudes.append(None)
