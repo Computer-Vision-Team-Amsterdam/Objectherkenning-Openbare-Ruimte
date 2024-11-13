@@ -59,13 +59,13 @@ if __name__ == "__main__":
         f"{databricks_environment}"
     ]
 
-    silver_detection_metadata = DeltaTable.forPath(
+    silver_detection_metadata = DeltaTable.forName(
         sparkSession,
         "dpcv_prd.oor.silver_detection_metadata",
     )
     silver_detection_metadata.restoreToVersion(12)
 
-    silver_frame_metadata = DeltaTable.forPath(
+    silver_frame_metadata = DeltaTable.forName(
         sparkSession,
         "dpcv_prd.oor.silver_frame_metadata",
     )
