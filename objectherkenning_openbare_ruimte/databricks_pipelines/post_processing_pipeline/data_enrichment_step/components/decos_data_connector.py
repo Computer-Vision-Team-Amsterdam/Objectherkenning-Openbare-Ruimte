@@ -72,8 +72,6 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         # Get list of permit addresses in BAG format
         addresses = self.query_result_df["locatie"].tolist()
 
-        print(f"Addresses found: {addresses}")
-
         # Add new columns for lat lon coordinates of permits
         self.query_result_df = self.add_permit_coordinates_columns(
             self.query_result_df, addresses
