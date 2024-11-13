@@ -3,7 +3,6 @@ dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import os  # noqa: E402
 
-from delta.tables import DeltaTable  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
@@ -58,24 +57,6 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
-
-    silver_objects_per_day = DeltaTable.forName(
-        sparkSession,
-        "dpcv_prd.oor.silver_objects_per_day",
-    )
-    silver_objects_per_day.restoreToVersion(11)
-
-    silver_detection_metadata = DeltaTable.forName(
-        sparkSession,
-        "dpcv_prd.oor.silver_detection_metadata",
-    )
-    silver_detection_metadata.restoreToVersion(12)
-
-    silver_frame_metadata = DeltaTable.forName(
-        sparkSession,
-        "dpcv_prd.oor.silver_frame_metadata",
-    )
-    silver_frame_metadata.restoreToVersion(12)
 
     run_ingest_metadata_step(
         sparkSesssion=sparkSession,
