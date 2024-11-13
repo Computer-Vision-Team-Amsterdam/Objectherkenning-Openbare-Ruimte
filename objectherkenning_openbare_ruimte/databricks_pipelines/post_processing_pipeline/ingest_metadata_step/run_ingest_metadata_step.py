@@ -59,6 +59,12 @@ if __name__ == "__main__":
         f"{databricks_environment}"
     ]
 
+    silver_objects_per_day = DeltaTable.forName(
+        sparkSession,
+        "dpcv_prd.oor.silver_objects_per_day",
+    )
+    silver_objects_per_day.restoreToVersion(11)
+
     silver_detection_metadata = DeltaTable.forName(
         sparkSession,
         "dpcv_prd.oor.silver_detection_metadata",
