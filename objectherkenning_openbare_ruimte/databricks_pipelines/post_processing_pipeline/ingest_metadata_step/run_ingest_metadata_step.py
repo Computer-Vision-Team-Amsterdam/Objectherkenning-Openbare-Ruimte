@@ -3,6 +3,7 @@ dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import os  # noqa: E402
 
+from delta.tables import DeltaTable  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
@@ -57,6 +58,24 @@ if __name__ == "__main__":
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
+
+    silver_objects_per_day = DeltaTable.forPath(
+        sparkSession,
+        "catalog@stcatalogdpcvprdweu01.dfs.core.windows.net/__unitystorage/schemas/b594d498-13f9-4672-b576-31b8c2a79450/tables/681f83fc-5a4c-45cd-be51-ca652de746ec",
+    )
+    silver_objects_per_day.restoreToVersion(11)
+
+    silver_detection_metadata = DeltaTable.forPath(
+        sparkSession,
+        "catalog@stcatalogdpcvprdweu01.dfs.core.windows.net/__unitystorage/schemas/b594d498-13f9-4672-b576-31b8c2a79450/tables/7cb1d6d2-6900-47be-a2dc-c6c54ec1961c",
+    )
+    silver_detection_metadata.restoreToVersion(12)
+
+    silver_frame_metadata = DeltaTable.forPath(
+        sparkSession,
+        "catalog@stcatalogdpcvprdweu01.dfs.core.windows.net/__unitystorage/schemas/b594d498-13f9-4672-b576-31b8c2a79450/tables/c3d9e380-b4b7-4184-b3c6-4e2d918847f9",
+    )
+    silver_frame_metadata.restoreToVersion(12)
 
     run_ingest_metadata_step(
         sparkSesssion=sparkSession,
