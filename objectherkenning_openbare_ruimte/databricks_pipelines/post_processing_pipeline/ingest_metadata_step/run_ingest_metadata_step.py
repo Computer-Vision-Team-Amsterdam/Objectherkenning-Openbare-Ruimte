@@ -59,21 +59,21 @@ if __name__ == "__main__":
         f"{databricks_environment}"
     ]
 
-    silver_objects_per_day = DeltaTable.forPath(
+    silver_objects_per_day = DeltaTable.forName(
         sparkSession,
-        "catalog@stcatalogdpcvprdweu01.dfs.core.windows.net/__unitystorage/schemas/b594d498-13f9-4672-b576-31b8c2a79450/tables/681f83fc-5a4c-45cd-be51-ca652de746ec",
+        "dpcv_prd.oor.silver_objects_per_day",
     )
     silver_objects_per_day.restoreToVersion(11)
 
     silver_detection_metadata = DeltaTable.forPath(
         sparkSession,
-        "catalog@stcatalogdpcvprdweu01.dfs.core.windows.net/__unitystorage/schemas/b594d498-13f9-4672-b576-31b8c2a79450/tables/7cb1d6d2-6900-47be-a2dc-c6c54ec1961c",
+        "dpcv_prd.oor.silver_detection_metadata",
     )
     silver_detection_metadata.restoreToVersion(12)
 
     silver_frame_metadata = DeltaTable.forPath(
         sparkSession,
-        "catalog@stcatalogdpcvprdweu01.dfs.core.windows.net/__unitystorage/schemas/b594d498-13f9-4672-b576-31b8c2a79450/tables/c3d9e380-b4b7-4184-b3c6-4e2d918847f9",
+        "dpcv_prd.oor.silver_frame_metadata",
     )
     silver_frame_metadata.restoreToVersion(12)
 
