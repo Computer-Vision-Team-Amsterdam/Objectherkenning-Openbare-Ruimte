@@ -261,7 +261,8 @@ class SignalHandler:
 
     def post_signal_with_image_attachment(self, json_content: Any, filename: str):
         signal_id = self.post_signal(json_content=json_content)
-        self.image_upload(filename=filename, sig_id=signal_id)
+        print(f"The signal id of {filename} is {signal_id}")
+        # self.image_upload(filename=filename, sig_id=signal_id)
         return signal_id
 
     @staticmethod
