@@ -1,3 +1,5 @@
+from typing import List
+
 import pyspark.sql.functions as F
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
@@ -25,6 +27,21 @@ class SilverObjectsPerDayManager(TableManager):
         )
         print(
             f"Loaded {results.count()} rows with top {limit} scores from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
+        )
+        return results
+
+    @classmethod
+    def get_pending_records_by_detection_id(cls, detection_ids: List[int]):
+        table_full_name = (
+            f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
+        )
+        results = TableManager.spark.table(table_full_name).filter(
+            (F.col("status") == "Pending")
+            & (F.col("object_class") == 2)
+            & (F.col("detection_id").isin(detection_ids))
+        )
+        print(
+            f"Loaded {results.count()} rows scores using detection ids from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
         )
         return results
 
