@@ -57,7 +57,7 @@ def run_submit_to_signalen_step(
         detection_ids=detection_ids
     )
 
-    print(top_scores_df)
+    print(top_scores_df.show(10))
 
     # if top_scores_df.count() == 0:
     #     print("No data found for creating notifications. Stopping execution.")
