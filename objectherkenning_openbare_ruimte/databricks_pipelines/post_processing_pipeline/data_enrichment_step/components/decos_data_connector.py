@@ -28,6 +28,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             "puinbak",
             "container",
             "keet",
+            "schaftkeet",
             "cabin",
         ]
 
