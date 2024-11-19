@@ -51,7 +51,7 @@ def run_submit_to_signalen_step(
     )
 
     # top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(limit=10)
-    detection_ids = [3605, 3561, 3555, 3589, 3606]
+    detection_ids = [7965, 8100, 7863, 7872, 7994, 8004, 8017, 8031, 7761, 7912]
     top_scores_df = SilverObjectsPerDayManager.get_pending_records_by_detection_id(
         detection_ids=detection_ids
     )
