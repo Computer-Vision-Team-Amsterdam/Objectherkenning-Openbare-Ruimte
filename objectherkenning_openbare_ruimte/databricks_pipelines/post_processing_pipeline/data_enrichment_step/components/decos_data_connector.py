@@ -19,7 +19,8 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         self.spark = spark
         self.query_result_df = None
 
-    def is_container_permit(self, objects):
+    @staticmethod
+    def is_container_permit(objects):
         """
         Check whether permit is for a container based on the 'objecten' column.
         """

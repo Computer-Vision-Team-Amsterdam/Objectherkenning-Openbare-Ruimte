@@ -1,27 +1,6 @@
-import re
-
-
-def is_container_permit(objects):
-    """
-    Check whether permit is for a container based on the 'objecten' column.
-    """
-    container_words = [
-        "puinbak",
-        "container",
-        "keet",
-        "cabin",
-    ]
-
-    regex_pattern = re.compile(r"(?i)(" + "|".join(container_words) + r")")
-    try:
-        for obj in objects:
-            if bool(regex_pattern.search(obj["object"])):
-                return True
-    except Exception as e:
-        print(f"There was an exception in the is_container_permit function: {e}")
-
-    return False
-
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (
+    DecosDataHandler,
+)
 
 values_to_test = [
     {"object": "Schaftkeet"},
@@ -46,7 +25,7 @@ values_to_test = [
 def test_is_container_permit():
     results = []
     for value in values_to_test:
-        result = is_container_permit([value])
+        result = DecosDataHandler.is_container_permit([value])
         results.append(result)
 
     assert results == [
