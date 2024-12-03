@@ -171,8 +171,14 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 results = json.loads(response.content)["results"]
                 for result in results:
                     if "centroid" in result:
-                        bag_coords_lon_and_lat = result["centroid"]
-                        return [bag_coords_lon_and_lat[0], bag_coords_lon_and_lat[1]]
+                        coordinates = result["centroid"]
+                        if coordinates[0] > coordinates[1]:
+                            latitude = coordinates[0]
+                            longitude = coordinates[1]
+                        else:
+                            latitude = coordinates[1]
+                            longitude = coordinates[0]
+                        return [latitude, longitude]
                 # If no centroid is found in any result
                 return None
         except Exception as e:
@@ -191,8 +197,8 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         for address in addresses:
             coordinates = self.convert_address_to_coordinates(address)
             if coordinates:
-                longitudes.append(coordinates[0])
-                latitudes.append(coordinates[1])
+                latitudes.append(coordinates[0])
+                longitudes.append(coordinates[1])
             else:  # None, because there was an exception while converting the address into coordinates
                 longitudes.append(None)
                 latitudes.append(None)
