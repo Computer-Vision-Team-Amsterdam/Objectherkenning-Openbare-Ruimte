@@ -30,7 +30,8 @@ torch = {version = "^2.2.1", source="torch"}
 torchaudio = {version = "^2.2.1", source="torch"}
 torchvision = {version = "^0.17.1", source="torch"}
 ultralytics = {version = "^8.2.76", source = "PyPI"}
-wandb = {version = "^0.17.5", source = "PyPI"}
+wandb = {version = ">0.17.5", source = "PyPI"}
+yolo_model_development_kit = { git = "https://github.com/Computer-Vision-Team-Amsterdam/YOLO-model-development-kit.git", branch = "feature/BCV-1319" }
 
 [[tool.poetry.source]]
 name = "torch"
