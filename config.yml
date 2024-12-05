@@ -158,4 +158,4 @@ logging:
     level: WARNING
     format: "%(asctime)s|||%(levelname)-8s|%(name)s|%(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
-  ai_instrumentation_key: "InstrumentationKey=1d25102d-d52b-4579-abf5-8733968471b9;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/;ApplicationId=83fa5e0d-f94a-4cf2-a92d-4f64ba5ae829"
+  ai_instrumentation_key: AI_INSTRUMENTATION_KEY"
