@@ -8,8 +8,8 @@ from mldesigner import Input, Output, command_component
 
 sys.path.append("../../..")
 
-from objectherkenning_openbare_ruimte.inference_pipeline.source.data_inference import (  # noqa: E402
-    DataInference,
+from objectherkenning_openbare_ruimte.inference_pipeline.source.OORInference import (  # noqa: E402
+    OORInference,
 )
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
@@ -56,39 +56,15 @@ def run_inference(
         this can be annotation labels as .txt files, images with blurred
         sensitive classes and bounding boxes, or both.
     """
-    inference_setting = settings["inference_pipeline"]
-    model_name = inference_setting["inputs"]["model_name"]
-    model_path = os.path.join(model_weights_dir, model_name)
-    model_params = inference_setting["model_params"]
-    batch_size = model_params["batch_size"]
+    inference_settings = settings["inference_pipeline"]
 
-    full_model_params = {
-        "imgsz": model_params.get("img_size", 640),
-        "save": model_params.get("save_img_flag", False),
-        "save_txt": model_params.get("save_txt_flag", False),
-        "save_conf": model_params.get("save_conf_flag", False),
-        "conf": model_params.get("conf", 0.25),
-        "project": output_dir,
-    }
-
-    inference_pipeline = DataInference(
+    inference_pipeline = OORInference(
         images_folder=inference_data_dir,
         output_folder=output_dir,
-        model_path=model_path,
-        inference_params=full_model_params,
-        target_classes=inference_setting["target_classes"],
-        sensitive_classes=inference_setting["sensitive_classes"],
-        target_classes_conf=inference_setting["target_classes_conf"],
-        sensitive_classes_conf=inference_setting["sensitive_classes_conf"],
-        output_image_size=inference_setting["output_image_size"],
-        save_images=inference_setting["save_detection_images"],
-        save_labels=inference_setting["save_detection_labels"],
-        save_all_images=inference_setting["save_all_images"],
-        save_images_subfolder=inference_setting["outputs"]["detections_subfolder"],
-        save_labels_subfolder=inference_setting["outputs"]["labels_subfolder"],
-        defisheye_flag=inference_setting["defisheye_flag"],
-        defisheye_params=settings["distortion_correction"]["defisheye_params"],
-        batch_size=batch_size,
+        model_path=os.path.join(
+            model_weights_dir, inference_settings["inputs"]["model_name"]
+        ),
+        inference_settings=inference_settings,
     )
 
     inference_pipeline.run_pipeline()
