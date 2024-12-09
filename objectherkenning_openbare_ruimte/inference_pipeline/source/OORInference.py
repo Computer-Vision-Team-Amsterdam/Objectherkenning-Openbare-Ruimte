@@ -20,8 +20,6 @@ class OORInference(YOLOInference):
         output_folder: str,
         model_path: str,
         inference_settings: Dict,
-        defisheye_flag: bool = False,
-        defisheye_params: Dict = {},
     ) -> None:
         """
         This class extends YOLOInference class to run inference on images using a pre-trained YOLO model.
@@ -76,14 +74,14 @@ class OORInference(YOLOInference):
                 save_labels_subfolder: Optional[str] = None
                     Optional: sub-folder in which to store annotation labels.
                 batch_size: int = 1
-                    Batch size for inference.
-        defisheye_flag: bool = False
-            Whether or not to apply distortion correction to the input images.
-        defisheye_params: Dict = {}
-            If defisheye_flag is True, these distortion correction parameters
-            will be used. Contains "camera_matrix", "distortion_params", and
-            "input_image_size" (size of images used to compute these
-            parameters).
+                            Batch size for inference.
+                defisheye_flag: bool = False
+                    Whether or not to apply distortion correction to the input images.
+                defisheye_params: Dict = {}
+                    If defisheye_flag is True, these distortion correction parameters
+                    will be used. Contains "camera_matrix", "distortion_params", and
+                    "input_image_size" (size of images used to compute these
+                    parameters).
         """
         super().__init__(
             images_folder=images_folder,
@@ -91,8 +89,8 @@ class OORInference(YOLOInference):
             model_path=model_path,
             inference_settings=inference_settings,
         )
-        self.defisheye_flag = defisheye_flag
-        self.defisheye_params = defisheye_params
+        self.defisheye_flag = inference_settings["defisheye_flag"]
+        self.defisheye_params = inference_settings["defisheye_params"]
 
     def _load_image(self, image_path: Union[os.PathLike, str]) -> OORInputImage:
         image = super()._load_image(image_path=image_path, child_class=OORInputImage)
