@@ -74,7 +74,7 @@ class OORInference(YOLOInference):
                 save_labels_subfolder: Optional[str] = None
                     Optional: sub-folder in which to store annotation labels.
                 batch_size: int = 1
-                            Batch size for inference.
+                    Batch size for inference.
                 defisheye_flag: bool = False
                     Whether or not to apply distortion correction to the input images.
                 defisheye_params: Dict = {}
