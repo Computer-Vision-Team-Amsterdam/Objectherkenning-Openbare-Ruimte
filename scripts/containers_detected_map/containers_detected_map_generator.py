@@ -59,39 +59,43 @@ class ContainersDetectedMapGenerator:
         frame_csv_files, full_frame_csv_files, detection_csv_files = (
             self._find_all_csv_files()
         )
+        print(f"Full frame csv files: {full_frame_csv_files}")
         detection_data = pd.concat([pd.read_csv(file) for file in detection_csv_files])
 
         initial_location = None
         detections_map = None
-        for file_path in frame_csv_files:
-            frame_data = pd.read_csv(file_path)
-            full_frame_path = self._get_full_metadata_file_path(
-                full_frame_csv_files=full_frame_csv_files,
-                frame_metadata_file_path=file_path,
-            )
-            if (
-                "gps_lat" not in frame_data.columns
-                or "gps_lon" not in frame_data.columns
-                or "image_name" not in frame_data.columns
-                or full_frame_path is None
-            ):
-                print(
-                    f"Skipping {file_path}: Missing 'gps_lat', 'gps_lon', 'image_name' columns, or full_frame_path is None."
-                )
-                continue
-
-            full_frame_data = pd.read_csv(full_frame_path)
+        for all_frames_file_path in full_frame_csv_files:
+            print(f"Processing file_path: {all_frames_file_path}")
+            all_frames_data = pd.read_csv(all_frames_file_path)
             locations = list(
-                zip(full_frame_data["gps_lat"], full_frame_data["gps_lon"])
+                zip(all_frames_data["gps_lat"], all_frames_data["gps_lon"])
             )
             if initial_location is None:
                 initial_location = locations[0]
                 detections_map = folium.Map(location=initial_location, zoom_start=18)
-
-            detections_map = self._add_bike_path_to_map(locations, detections_map)
-            detections_map = self._add_dots_and_images_to_map(
-                frame_data, detection_data, detections_map
+            detections_map = self._add_bike_path_to_map(
+                locations, detections_map, all_frames_file_path
             )
+
+            detected_frames_path = self._get_full_metadata_file_path(
+                full_frame_csv_files=frame_csv_files,
+                frame_metadata_file_path=all_frames_file_path,
+            )
+            if detected_frames_path:
+                print(f"Detected frames path: {detected_frames_path}")
+                detected_frames_data = pd.read_csv(detected_frames_path)
+                if (
+                    "gps_lat" not in detected_frames_data.columns
+                    or "gps_lon" not in detected_frames_data.columns
+                    or "image_name" not in detected_frames_data.columns
+                ):
+                    print(
+                        f"Skipping {detected_frames_path}: Missing 'gps_lat', 'gps_lon', 'image_name' columns."
+                    )
+                    continue
+                detections_map = self._add_dots_and_images_to_map(
+                    detected_frames_data, detection_data, detections_map
+                )
         return detections_map
 
     def _save_map(self, detections_map):
@@ -142,11 +146,22 @@ class ContainersDetectedMapGenerator:
                 ).add_to(detections_map)
         return detections_map
 
-    def _add_bike_path_to_map(self, locations, detections_map):
+    def _add_bike_path_to_map(self, locations, detections_map, file_name):
         color = self._get_random_color()
-        folium.PolyLine(locations, color=color, weight=7, opacity=0.9).add_to(
-            detections_map
-        )
+
+        html = f"""
+        <b>File Name:</b> {file_name}<br>
+        """
+
+        iframe = folium.IFrame(html, width=400, height=100)
+        popup = folium.Popup(iframe, min_width=400)
+        locations = [i for i in locations if i != (0.0, 0.0)]
+        if not locations:
+            print(f"File {file_name} has no GPS coordinates.")
+        else:
+            folium.PolyLine(
+                locations, color=color, weight=7, opacity=0.9, popup=popup
+            ).add_to(detections_map)
         return detections_map
 
     @staticmethod

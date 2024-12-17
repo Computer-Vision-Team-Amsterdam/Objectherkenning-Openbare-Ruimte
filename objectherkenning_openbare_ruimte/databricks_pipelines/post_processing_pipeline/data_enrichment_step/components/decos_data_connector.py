@@ -1,6 +1,5 @@
 import json
 import re
-from difflib import get_close_matches
 from typing import List, Tuple
 
 import geopy.distance
@@ -20,7 +19,8 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         self.spark = spark
         self.query_result_df = None
 
-    def is_container_permit(self, objects):
+    @staticmethod
+    def is_container_permit(objects):
         """
         Check whether permit is for a container based on the 'objecten' column.
         """
@@ -31,11 +31,11 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             "cabin",
         ]
 
+        regex_pattern = re.compile(r"(?i)(" + "|".join(container_words) + r")")
         try:
             for obj in objects:
-                for word in container_words:
-                    if any(get_close_matches(word, obj["object"].split())):
-                        return True
+                if bool(regex_pattern.search(obj["object"])):
+                    return True
         except Exception as e:
             print(f"There was an exception in the is_container_permit function: {e}")
 
@@ -171,8 +171,14 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 results = json.loads(response.content)["results"]
                 for result in results:
                     if "centroid" in result:
-                        bag_coords_lon_and_lat = result["centroid"]
-                        return [bag_coords_lon_and_lat[0], bag_coords_lon_and_lat[1]]
+                        coordinates = result["centroid"]
+                        if coordinates[0] > coordinates[1]:
+                            latitude = coordinates[0]
+                            longitude = coordinates[1]
+                        else:
+                            latitude = coordinates[1]
+                            longitude = coordinates[0]
+                        return [latitude, longitude]
                 # If no centroid is found in any result
                 return None
         except Exception as e:
@@ -191,8 +197,8 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         for address in addresses:
             coordinates = self.convert_address_to_coordinates(address)
             if coordinates:
-                longitudes.append(coordinates[0])
-                latitudes.append(coordinates[1])
+                latitudes.append(coordinates[0])
+                longitudes.append(coordinates[1])
             else:  # None, because there was an exception while converting the address into coordinates
                 longitudes.append(None)
                 latitudes.append(None)

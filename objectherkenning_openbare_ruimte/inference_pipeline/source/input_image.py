@@ -1,42 +1,18 @@
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import cv2
 import numpy as np
+from yolo_model_development_kit.inference_pipeline.source.input_image import InputImage
 
 logger = logging.getLogger("inference_pipeline")
 
 
-class InputImage:
+class OORInputImage(InputImage):
     mapxy: List[Optional[cv2.typing.MatLike]] = [
         None,
         None,
     ]  # Class variable so we only need to compute it once
-
-    def __init__(self, image_full_path: str) -> None:
-        """
-        This class is used to load, resize, and de-fisheye an input image.
-
-        Parameters
-        ----------
-        image_full_path: str
-            Path to the input image.
-        """
-        self.image = cv2.imread(str(image_full_path))
-
-    def resize(self, output_image_size: Tuple[int, int]) -> None:
-        """
-        Resize the image if needed.
-
-        Parameters
-        ----------
-        output_image_size: Tuple[int, int]
-            Output size as Tuple `(width, height)`.
-        """
-        if (self.image.shape[0] != output_image_size[1]) or (
-            self.image.shape[1] != output_image_size[0]
-        ):
-            self.image = cv2.resize(self.image, output_image_size)
 
     def defisheye(self, defisheye_params: Dict[str, List]) -> None:
         """
@@ -68,7 +44,7 @@ class InputImage:
         # images will have the same size and distortion correction params.
         if (self.mapxy[0] is None) or (self.mapxy[1] is None):
             old_w, old_h = defisheye_params["input_image_size"]
-            new_h, new_w = self.image.shape[:2]
+            new_h, new_w = self.image.shape[:2]  # type: ignore
 
             cam_mtx = np.array(defisheye_params["camera_matrix"])
             cam_mtx[0, :] = cam_mtx[0, :] * (float(new_w) / float(old_w))
@@ -94,5 +70,5 @@ class InputImage:
             )
 
         self.image = cv2.remap(
-            self.image, self.mapxy[0], self.mapxy[1], cv2.INTER_LINEAR
+            self.image, self.mapxy[0], self.mapxy[1], cv2.INTER_LINEAR  # type: ignore
         )
