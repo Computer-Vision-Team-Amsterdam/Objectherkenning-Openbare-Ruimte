@@ -12,7 +12,7 @@ import numpy.typing as npt
 sys.path.append(os.getcwd())
 
 from objectherkenning_openbare_ruimte.inference_pipeline.source.output_image import (  # noqa: E402
-    OutputImage,
+    OOROutputImage,
 )
 from objectherkenning_openbare_ruimte.settings.settings import (  # noqa: E402
     ObjectherkenningOpenbareRuimteSettings,
@@ -69,7 +69,7 @@ class DataMinimisation:
         annotations_folder : Union[str, os.PathLike]
             Path to folder where annotations can be found.
         """
-        self.image = OutputImage(cv2.imread(image_path, cv2.IMREAD_COLOR))
+        self.image = OOROutputImage(cv2.imread(image_path, cv2.IMREAD_COLOR))
 
         filename = pathlib.Path(image_path).stem
         label_file = os.path.join(annotations_folder, filename + ".txt")
