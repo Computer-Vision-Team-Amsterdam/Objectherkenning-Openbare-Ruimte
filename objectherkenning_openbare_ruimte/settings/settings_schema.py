@@ -32,6 +32,21 @@ class ConvertAnnotations(SettingsSpecModel):
     label_folder: str = None
 
 
+class DataMinimisation(SettingsSpecModel):
+    sensitive_classes: List[int]
+    target_classes: List[int]
+    blur_kernel_size_outside: int
+    blur_kernel_size_inside: int
+    blur_outside_padding: int
+    crop_padding: int
+
+
+class DataMinimisationExperiment(SettingsSpecModel):
+    inputs: Dict[str, str]
+    outputs: Dict[str, str]
+    image_format: str
+
+
 class DataSampling(SettingsSpecModel):
     inputs: Dict[str, str]
     outputs: Dict[str, str]
@@ -170,7 +185,9 @@ class ObjectherkenningOpenbareRuimteSettingsSpec(SettingsSpecModel):
     aml_experiment_details: AMLExperimentDetailsSpec
     convert_dataset: ConvertDataset = None
     convert_annotations: ConvertAnnotations = None
-    data_sampling: DataSampling
+    data_minimisation: DataMinimisation = None
+    data_minimisation_experiment: DataMinimisationExperiment = None
+    data_sampling: DataSampling = None
     distortion_correction: DistortionCorrectionSpec = None
     frame_extraction: FrameExtractionSpec = None
     inference_pipeline: InferencePipelineSpec = None

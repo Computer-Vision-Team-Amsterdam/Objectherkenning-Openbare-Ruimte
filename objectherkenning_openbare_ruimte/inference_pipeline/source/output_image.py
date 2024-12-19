@@ -9,6 +9,11 @@ from yolo_model_development_kit.inference_pipeline.source.output_image import (
 
 
 class OOROutputImage(OutputImage):
+
+    def __init__(self, image: npt.NDArray):
+        super().__init__(image)
+        self.shape = image.shape
+
     def blur_outside_boxes(
         self,
         boxes: Union[List[Tuple[float, float, float, float]], npt.NDArray[np.float_]],
