@@ -50,7 +50,9 @@ def run_submit_to_signalen_step(
         base_url,
     )
 
-    top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(limit=10)
+    top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
+        limit=1
+    )  # TODO change back to 10
 
     if top_scores_df.count() == 0:
         print("No data found for creating notifications. Stopping execution.")

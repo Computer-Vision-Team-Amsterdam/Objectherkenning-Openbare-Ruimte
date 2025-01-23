@@ -298,7 +298,7 @@ class SignalHandler:
             "Instructie ASC:\n"
             "(i) Foto bekijken en alleen signalen doorzetten naar THOR indien er inderdaad een "
             "bouwcontainer of bouwkeet op de foto staat. \n "
-            "(ii) De urgentie voor dit signaal moet 'laag' blijven, zodat BOA's dit "
+            "(ii) De bron voor dit signaal moet op 'Automatische signalering' blijven staan, zodat BOA's dit "
             "signaal herkennen in City Control onder 'Signalering'."
         )
 
@@ -425,8 +425,9 @@ class SignalHandler:
             },
             "reporter": {"email": "cvt@amsterdam.nl"},
             "priority": {
-                "priority": "low",
+                "priority": "normal",
             },
+            "source": "Automatische signalering",
             "incident_date_start": date_now.strftime("%Y-%m-%d %H:%M"),
         }
         if bag_address:
