@@ -270,7 +270,6 @@ class SignalHandler:
         Text we send when creating a notification.
         """
         return (
-            "=== TEST SIGNAL CVT, please IGNORE === \n\n"
             "Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
             "bouwkeet gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
             "adres betreft een schatting van het dichtstbijzijnde adres bij de containerlocatie, er is geen "
@@ -482,6 +481,9 @@ class SignalHandler:
                 notification_json = self.fill_incident_details(
                     incident_date=date_of_notification, lon=LON, lat=LAT
                 )
+                print("JSON content:")  # TODO remove
+                print(notification_json)  # TODO remove
+
                 signal_id = self.post_signal_with_image_attachment(
                     json_content=notification_json, filename=image_upload_path
                 )
