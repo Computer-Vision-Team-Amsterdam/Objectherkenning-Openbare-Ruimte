@@ -97,7 +97,7 @@ class Clustering:
         # # Add cluster labels to the DataFrame
         # labels = [int(v) for v in db.labels_]
         #
-        labels = [i for i in range(len(containers_df))]
+        labels = [i for i in range(containers_df.count())]
 
         self.joined_metadata = self.add_column_to_df(
             df=self.joined_metadata, column_name="tracking_id", values=labels
