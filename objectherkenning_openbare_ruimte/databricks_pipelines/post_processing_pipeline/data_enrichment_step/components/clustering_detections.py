@@ -1,8 +1,9 @@
-import numpy as np
+# import numpy as np
 from databricks.sdk.runtime import sqlContext
 from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_number
-from sklearn.cluster import DBSCAN
+
+# from sklearn.cluster import DBSCAN
 
 MS_PER_RAD = 6371008.8  # Earth radius in meters
 MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are a cluster of their own
@@ -81,18 +82,23 @@ class Clustering:
         """
 
         containers_df = self.get_containers_coordinates_with_detection_id()
-        coordinates = np.array(
-            containers_df.select("gps_lat", "gps_lon")
-            .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
-            .collect()
-        )
 
-        db = DBSCAN(
-            eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
-        ).fit(np.radians(coordinates))
+        # NOTE: disable clustering for manual runs
+        # coordinates = np.array(
+        #     containers_df.select("gps_lat", "gps_lon")
+        #     .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
+        #     .collect()
+        # )
 
-        # Add cluster labels to the DataFrame
-        labels = [int(v) for v in db.labels_]
+        # db = DBSCAN(
+        #     eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
+        # ).fit(np.radians(coordinates))
+
+        # # Add cluster labels to the DataFrame
+        # labels = [int(v) for v in db.labels_]
+        #
+        labels = [i for i in range(len(containers_df))]
+
         self.joined_metadata = self.add_column_to_df(
             df=self.joined_metadata, column_name="tracking_id", values=labels
         )
