@@ -2,11 +2,12 @@ from functools import reduce
 from operator import or_
 from typing import Dict
 
-import numpy as np
+# import numpy as np
 from databricks.sdk.runtime import sqlContext
 from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_number
-from sklearn.cluster import DBSCAN
+
+# from sklearn.cluster import DBSCAN
 
 MS_PER_RAD = 6371008.8  # Earth radius in meters
 MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are a cluster of their own
@@ -179,31 +180,43 @@ class Clustering:
         Returns:
             tuple: (clustered DataFrame with new 'tracking_id' column, updated cluster_id_counter)
         """
-        # Extract coordinates as a numpy array.
-        coordinates = np.array(
-            df_metadata_by_class.select("gps_lat", "gps_lon")
-            .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
-            .collect()
-        )
+        # NOTE: disable clustering for manual runs
+        # # Extract coordinates as a numpy array.
+        # coordinates = np.array(
+        #     df_metadata_by_class.select("gps_lat", "gps_lon")
+        #     .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
+        #     .collect()
+        # )
 
-        # Skip if there are no valid coordinates.
-        if coordinates.size == 0 or coordinates.ndim != 2 or coordinates.shape[1] != 2:
+        # # Skip if there are no valid coordinates.
+        # if coordinates.size == 0 or coordinates.ndim != 2 or coordinates.shape[1] != 2:
+        #     return None, cluster_id_counter
+
+        # # Apply DBSCAN clustering.
+        # db = DBSCAN(
+        #     eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
+        # ).fit(np.radians(coordinates))
+
+        # # Remap raw labels to new unique tracking IDs using dictionary comprehension.
+        # raw_labels = [int(v) for v in db.labels_]
+        # unique_labels = sorted(set(raw_labels))
+        # local_mapping = {
+        #     label: cluster_id_counter + i for i, label in enumerate(unique_labels)
+        # }
+        # cluster_id_counter += len(unique_labels)
+
+        # Skip if there are no valid objects.
+        if (
+            df_metadata_by_class.size == 0
+            or df_metadata_by_class.ndim != 2
+            or df_metadata_by_class.shape[1] != 2
+        ):
             return None, cluster_id_counter
 
-        # Apply DBSCAN clustering.
-        db = DBSCAN(
-            eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
-        ).fit(np.radians(coordinates))
-
-        # Remap raw labels to new unique tracking IDs using dictionary comprehension.
-        raw_labels = [int(v) for v in db.labels_]
-        unique_labels = sorted(set(raw_labels))
-        local_mapping = {
-            label: cluster_id_counter + i for i, label in enumerate(unique_labels)
-        }
-        cluster_id_counter += len(unique_labels)
-
-        new_labels = [local_mapping[label] for label in raw_labels]
+        new_labels = [
+            i + cluster_id_counter for i in range(df_metadata_by_class.count())
+        ]
+        cluster_id_counter += df_metadata_by_class.count()
 
         # Add the new 'tracking_id' column to this category's DataFrame.
         df_clustered = self.add_column_to_df(
