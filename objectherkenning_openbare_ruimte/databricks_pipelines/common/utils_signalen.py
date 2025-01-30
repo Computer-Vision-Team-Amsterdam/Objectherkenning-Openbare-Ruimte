@@ -270,6 +270,7 @@ class SignalHandler:
         Text we send when creating a notification.
         """
         return (
+            "===== TEST SIGNAAL CVT / THOR ===== "
             "Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
             "bouwkeet gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
             "adres betreft een schatting van het dichtstbijzijnde adres bij de containerlocatie, er is geen "
