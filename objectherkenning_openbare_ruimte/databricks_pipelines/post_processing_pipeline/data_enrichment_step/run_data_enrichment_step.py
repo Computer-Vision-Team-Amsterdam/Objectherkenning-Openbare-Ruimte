@@ -50,6 +50,7 @@ def run_data_enrichment_step(
     db_host,
     db_name,
     job_process_time,
+    active_object_categories
 ):
     # Setup clustering
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
@@ -60,7 +61,9 @@ def run_data_enrichment_step(
         schema=schema,
         detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
         frames=SilverFrameMetadataManager.load_pending_rows_from_table(),
+        active_object_categories=active_object_categories
     )
+
     clustering.setup()
     containers_coordinates_df = (
         clustering.get_containers_coordinates_with_detection_id()
@@ -83,7 +86,9 @@ def run_data_enrichment_step(
         db_port=5432,
     )
 
-    print(f"Number of containers: {containers_coordinates_df.count()}.")
+    category_counts = sorted(containers_coordinates_df.groupBy("object_class").count().collect())
+    for row in category_counts:
+        print(f"Object category '{active_object_categories[row['object_class']]}': {row['count']} objects")
 
     # Enrich with bridges data
     closest_bridges_df = (
@@ -106,11 +111,8 @@ def run_data_enrichment_step(
     decosDataHandler.run(query)
     decosDataHandler.process_query_result()
 
-    closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
-        permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
-        permits_ids=decosDataHandler.get_permits_ids(),
-        permits_coordinates=decosDataHandler.get_permits_coordinates(),
-        containers_coordinates_df=containers_coordinates_df,
+    closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits_by_category(
+        containers_coordinates_df
     )
 
     containers_coordinates_with_closest_bridge_and_closest_permit_df = (
@@ -120,6 +122,7 @@ def run_data_enrichment_step(
     )
 
     # Enrich with score
+    # TODO add scoring logic per category
     containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
         containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
             "score",
@@ -154,7 +157,7 @@ def run_data_enrichment_step(
     selected_casted_df = (
         joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
             F.col("a.detection_id").cast("int"),
-            F.col("object_class"),
+            F.col("a.object_class"),
             F.col("b.gps_lat").alias("object_lat").cast("string"),
             F.col("b.gps_lon").alias("object_lon").cast("string"),
             F.col("closest_bridge_distance")
@@ -199,4 +202,5 @@ if __name__ == "__main__":
         job_process_time=get_job_process_time(
             is_first_pipeline_step=False,
         ),
+        active_object_categories=settings["object_categories"]["active"],
     )

@@ -4,7 +4,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 
 class SilverDetectionMetadataManager(TableManager):
-    table_name: str = "silver_detection_metadata"
+    table_name: str = "silver_detection_metadata_bcv_1576"
 
     @classmethod
     def get_image_name_from_detection_id(cls, detection_id: int) -> str:

@@ -4,7 +4,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 
 class SilverFrameMetadataManager(TableManager):
-    table_name: str = "silver_frame_metadata"
+    table_name: str = "silver_frame_metadata_bcv_1576"
 
     @classmethod
     def get_gps_internal_timestamp_from_image_name(cls, image_name: str) -> str:

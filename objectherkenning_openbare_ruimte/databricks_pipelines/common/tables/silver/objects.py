@@ -6,7 +6,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 
 class SilverObjectsPerDayManager(TableManager):
-    table_name: str = "silver_objects_per_day"
+    table_name: str = "silver_objects_per_day_bcv_1576"
 
     @classmethod
     def get_top_pending_records(cls, limit=20):
