@@ -177,6 +177,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie_wgs_84 from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and huisletter = '{number_extension}' and postcode = '{postcode}'"  # nosec B608
                 print(f"Querying the database for address: {query}...")
                 result_df = self.run(query)
+                print(f"Result: {result_df}")
                 if result_df.empty:
                     print(
                         f"Warning: No results found for Dutch street address: {address}"
@@ -189,6 +190,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 coordinates = self.convert_EWKB_geometry_to_coordinates(
                     result_df["adresseerbaar_object_punt_geometrie_wgs_84"].iloc[0]
                 )
+                print(f"Coordinates: {coordinates}")
                 latitude = coordinates[0]
                 longitude = coordinates[1]
                 return [latitude, longitude]
