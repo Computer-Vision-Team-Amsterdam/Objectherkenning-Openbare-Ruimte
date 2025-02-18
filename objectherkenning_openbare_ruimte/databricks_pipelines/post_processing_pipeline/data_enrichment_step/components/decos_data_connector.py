@@ -142,10 +142,16 @@ class DecosDataHandler(ReferenceDatabaseConnector):
     def convert_EWKB_geometry_to_coordinates(self, ewkb_geometry):
         # Convert the hex string to binary and load it as a Shapely geometry.
         # (Note: Shapely will ignore the embedded SRID so you must know it.)
-        point = wkb.loads(bytes.fromhex(ewkb_geometry))
+        geometry = wkb.loads(bytes.fromhex(ewkb_geometry))
 
         # Extract the X and Y coordinates (these are in EPSG:28992, Dutch RD New)
-        x, y = point.x, point.y
+        if geometry.geom_type == "Point":
+            x, y = geometry.x, geometry.y
+        elif geometry.geom_type in ["Polygon", "MultiPolygon"]:
+            rep_point = geometry.representative_point()
+            x, y = rep_point.x, rep_point.y
+        else:
+            raise ValueError(f"Unsupported geometry type: {geometry.geom_type}")
 
         # Create a transformer from EPSG:28992 to EPSG:4326 (lat/lon)
         transformer = Transformer.from_crs("EPSG:28992", "EPSG:4326", always_xy=True)
