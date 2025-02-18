@@ -136,7 +136,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         X*  X, zero or more times
         X+  X, one or more times
         """
-        regex = r"(\D+)\s+(\d+)\s?(\S*)\s+(\d{4}\s*?[A-z]{2})?"
+        regex = r"^(.+?)\s+(\d+)(?:\s+([A-Za-z0-9-]+))?\s*(\d{4}\s*[A-Za-z]{2})?$"
         return re.findall(regex, raw_address)
 
     def convert_EWKB_geometry_to_coordinates(self, ewkb_geometry):
