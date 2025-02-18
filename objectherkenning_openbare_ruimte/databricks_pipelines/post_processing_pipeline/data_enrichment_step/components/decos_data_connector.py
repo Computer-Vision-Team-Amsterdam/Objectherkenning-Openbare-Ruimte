@@ -150,7 +150,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         if geometry.geom_type == "Point":
             x, y = geometry.x, geometry.y
         elif geometry.geom_type in ["Polygon", "MultiPolygon"]:
-            rep_point = geometry.representative_point()
+            rep_point = geometry.centroid
             x, y = rep_point.x, rep_point.y
         else:
             raise ValueError(f"Unsupported geometry type: {geometry.geom_type}")
