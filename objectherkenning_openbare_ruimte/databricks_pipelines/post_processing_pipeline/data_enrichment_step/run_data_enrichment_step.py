@@ -5,7 +5,6 @@ import os  # noqa: E402
 from datetime import datetime  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
-from pyspark.sql import functions as F  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
@@ -17,15 +16,17 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (  # noqa: E402
     SilverFrameMetadataManager,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
-    SilverObjectsPerDayManager,
-)
+
+# from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
+#     SilverObjectsPerDayManager,
+# )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
     setup_tables,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
-    utils_visualization,
-)
+
+# from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
+#     utils_visualization,
+# )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.clustering_detections import (  # noqa: E402
     Clustering,
 )
@@ -38,6 +39,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
+
+# from pyspark.sql import functions as F  # noqa: E402
 
 
 def run_data_enrichment_step(
@@ -100,81 +103,78 @@ def run_data_enrichment_step(
     )
 
     # Enrich with decos data
-    date_to_query = datetime.today().strftime("%Y-%m-%d")
-    query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
-    print(f"Querying the database for date {date_to_query}...")
-    decosDataHandler.run(query)
-    decosDataHandler.process_query_result()
+    decosDataHandler.query_and_process_object_permits(
+        date_to_query=datetime.today().strftime("%Y-%m-%d")
+    )
 
     closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
-        permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
-        permits_ids=decosDataHandler.get_permits_ids(),
-        permits_coordinates=decosDataHandler.get_permits_coordinates(),
         containers_coordinates_df=containers_coordinates_df,
     )
+    print(closest_permits_df)
 
     containers_coordinates_with_closest_bridge_and_closest_permit_df = (
         containers_coordinates_with_closest_bridge_df.join(
             closest_permits_df, "detection_id"
         )
     )
+    print(containers_coordinates_with_closest_bridge_and_closest_permit_df)
 
-    # Enrich with score
-    containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
-        containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
-            "score",
-            F.when(
-                (F.col("closest_permit_distance") >= 40)
-                & (F.col("closest_bridge_distance") < 25),
-                1 + F.greatest((25 - F.col("closest_bridge_distance")) / 25, F.lit(0)),
-            )
-            .when(
-                (F.col("closest_permit_distance") >= 40)
-                & (F.col("closest_bridge_distance") >= 25),
-                F.least(F.lit(1.0), F.col("closest_permit_distance") / 100),
-            )
-            .otherwise(0),
-        )
-    )
+    # # Enrich with score
+    # containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
+    #     containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
+    #         "score",
+    #         F.when(
+    #             (F.col("closest_permit_distance") >= 40)
+    #             & (F.col("closest_bridge_distance") < 25),
+    #             1 + F.greatest((25 - F.col("closest_bridge_distance")) / 25, F.lit(0)),
+    #         )
+    #         .when(
+    #             (F.col("closest_permit_distance") >= 40)
+    #             & (F.col("closest_bridge_distance") >= 25),
+    #             F.least(F.lit(1.0), F.col("closest_permit_distance") / 100),
+    #         )
+    #         .otherwise(0),
+    #     )
+    # )
 
-    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
-        "a"
-    ).join(
-        clustering.joined_metadata.alias("b"),
-        on=F.col("a.detection_id") == F.col("b.detection_id"),
-    )
+    # joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
+    #     "a"
+    # ).join(
+    #     clustering.joined_metadata.alias("b"),
+    #     on=F.col("a.detection_id") == F.col("b.detection_id"),
+    # )
 
-    # Gather data to visualize
-    utils_visualization.generate_map(
-        dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
-        name=f"{job_process_time}-map",
-        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
-    )
+    # # Gather data to visualize
+    # utils_visualization.generate_map(
+    #     dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
+    #     name=f"{job_process_time}-map",
+    #     path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
+    # )
 
-    selected_casted_df = (
-        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
-            F.col("a.detection_id").cast("int"),
-            F.col("object_class"),
-            F.col("b.gps_lat").alias("object_lat").cast("string"),
-            F.col("b.gps_lon").alias("object_lon").cast("string"),
-            F.col("closest_bridge_distance")
-            .alias("distance_closest_bridge")
-            .cast("float"),
-            F.col("closest_bridge_id").cast("string"),
-            F.col("closest_permit_distance")
-            .alias("distance_closest_permit")
-            .cast("float"),
-            F.col("closest_permit_id"),
-            F.col("closest_permit_lat").cast("float"),
-            F.col("closest_permit_lon").cast("float"),
-            F.col("score").cast("float"),
-            F.lit("Pending").alias("status"),
-        )
-    )
+    # selected_casted_df = (
+    #     joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
+    #         F.col("a.detection_id").cast("int"),
+    #         F.col("object_class"),
+    #         F.col("b.gps_lat").alias("object_lat").cast("string"),
+    #         F.col("b.gps_lon").alias("object_lon").cast("string"),
+    #         F.col("closest_bridge_distance")
+    #         .alias("distance_closest_bridge")
+    #         .cast("float"),
+    #         F.col("closest_bridge_id").cast("string"),
+    #         F.col("closest_permit_distance")
+    #         .alias("distance_closest_permit")
+    #         .cast("float"),
+    #         F.col("closest_permit_id"),
+    #         F.col("closest_permit_lat").cast("float"),
+    #         F.col("closest_permit_lon").cast("float"),
+    #         F.col("score").cast("float"),
+    #         F.lit("Pending").alias("status"),
+    #     )
+    # )
 
-    SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
-    SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
-    SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+    # SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":

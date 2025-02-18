@@ -2,6 +2,7 @@ import json
 import subprocess
 from abc import ABC, abstractmethod
 
+import pandas as pd
 import psycopg2
 from databricks.sdk.runtime import *  # noqa: F403
 
@@ -23,7 +24,6 @@ class ReferenceDatabaseConnector(ABC):
         )
         self.spn_refDb_username = "cvision_databricks"
         self.spn_refDb_password = None
-        self._query_result_df = None  # set in run_query()
 
     def azure_login(self):
         command = [
@@ -65,9 +65,23 @@ class ReferenceDatabaseConnector(ABC):
         """
         pass
 
-    def run_query(self, conn, query):
+    def run_query(
+        self, conn: psycopg2.extensions.connection, query: str
+    ) -> pd.DataFrame:
         """
         Run the SQL query and process the results.
+
+        Parameters
+        ----------
+        conn : psycopg2.extensions.connection
+            The connection object to the PostgreSQL database.
+        query : str
+            The SQL query to be executed.
+
+        Returns
+        -------
+        DataFrame
+            A DataFrame containing the query results.
         """
         try:
             cursor = conn.cursor()
@@ -75,23 +89,33 @@ class ReferenceDatabaseConnector(ABC):
             rows = cursor.fetchall()
             colnames = [desc[0] for desc in cursor.description]
             cursor.close()
-            self._query_result_df = self.create_dataframe(rows, colnames)
+            return self.create_dataframe(rows, colnames)
         except psycopg2.Error as e:
             print(f"Error executing query: {e}")
 
-    def run(self, query):
+    def run(self, query: str) -> pd.DataFrame:
         """
         Execute the full workflow: Azure login, retrieve token, connect to DB, run query.
+
+        Parameters
+        ----------
+        query : str
+            The SQL query to be executed.
+
+        Returns
+        -------
+        DataFrame
+            A DataFrame containing the query results.
         """
         try:
             self.azure_login()
             self.retrieve_access_token()
             conn = self.connect_to_database()
             if conn:
-                self.run_query(conn, query)
+                result = self.run_query(conn, query)
                 print(f"{len(self.get_query_result_df())} object permits found.")
-
                 conn.close()
+                return result
         except Exception as e:
             print(f"Error: {e}")
 

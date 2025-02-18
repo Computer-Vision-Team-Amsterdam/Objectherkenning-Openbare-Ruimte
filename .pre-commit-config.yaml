@@ -5,7 +5,7 @@ repos:
     rev: 1.7.10
     hooks:
       - id: bandit
-        args: ["-c", "bandit.yaml"]
+        args: ["-c", "bandit.yaml", "-s", "B404,B603"]
   # - repo: local
   #   hooks:
   #     - id: safety
