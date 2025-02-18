@@ -9,12 +9,14 @@ MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are
 
 
 class Clustering:
-    def __init__(self, spark: SparkSession, catalog, schema, detections, frames):
+    def __init__(self, spark: SparkSession, catalog, schema, detections, frames, 
+                 active_object_categories):
         self.spark = spark
         self.catalog = catalog
         self.schema = schema
         self.detection_metadata = detections
         self.frame_metadata = frames
+        self.active_object_categories = active_object_categories
         self.joined_metadata = self._join_frame_and_detection_metadata()
         self._containers_coordinates_with_detection_id = None
 
@@ -69,12 +71,16 @@ class Clustering:
 
         joined_df = joined_df.select(columns)
 
+        # Only keep active objects
+        joined_df = joined_df.where(col("object_class").
+                                    isin(list(self.active_object_categories.keys())))
+
         return joined_df
 
     def _extract_containers_coordinates_with_detection_id(self):
 
         containers_df = self.joined_metadata.select(
-            "detection_id", "gps_lat", "gps_lon"
+            "detection_id", "gps_lat", "gps_lon", "object_class"
         )
 
         return containers_df
@@ -88,23 +94,52 @@ class Clustering:
         eps (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
         min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
         """
+        # Get distinct object categories
+        object_categories = [row["object_class"] for row in self.joined_metadata.select(
+            "object_class").distinct().collect()]
+        
+        new_dfs = []
+        global_offset = 0
 
-        containers_df = self.get_containers_coordinates_with_detection_id()
-        coordinates = np.array(
-            containers_df.select("gps_lat", "gps_lon")
-            .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
-            .collect()
-        )
+        # Apply clustering per object category
+        for cat in object_categories:
+            df_cat = self.joined_metadata.filter(col("object_class") == cat)
+            coords = np.array(
+                df_cat.select("gps_lat", "gps_lon")
+                .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
+                .collect()
+            )
+            # Skip if there are no valid coordinates
+            if coords.size == 0 or coords.ndim != 2 or coords.shape[1] != 2:
+                continue
+            
+            db = DBSCAN(
+                eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
+            ).fit(np.radians(coords))
+            
+            # Build a local mapping from each unique raw label to a new unique tracking_id.
+            raw_labels = [int(v) for v in db.labels_]
+            unique_labels = sorted(set(raw_labels))
+            local_mapping = {}
+            for label in unique_labels:
+                local_mapping[label] = global_offset
+                global_offset += 1
 
-        db = DBSCAN(
-            eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
-        ).fit(np.radians(coordinates))
+            # Remap the raw labels using the local mapping.
+            new_labels = [local_mapping[label] for label in raw_labels]
 
-        # Add cluster labels to the DataFrame
-        labels = [int(v) for v in db.labels_]
-        self.joined_metadata = self.add_column_to_df(
-            df=self.joined_metadata, column_name="tracking_id", values=labels
-        )
+            # Add the new tracking_id column to this category's DataFrame.
+            df_cat = self.add_column_to_df(df_cat, "tracking_id", new_labels)
+            new_dfs.append(df_cat)
+        
+        if new_dfs:
+            # Union all per-category clustered DataFrames into joined_metadata.
+            self.joined_metadata = new_dfs[0]
+            for df in new_dfs[1:]:
+                self.joined_metadata = self.joined_metadata.union(df)
+        else:
+            print("No data to cluster after filtering.")
+
 
     def cluster_and_select_images(self, distance=10):
         # Cluster the points based on distance
