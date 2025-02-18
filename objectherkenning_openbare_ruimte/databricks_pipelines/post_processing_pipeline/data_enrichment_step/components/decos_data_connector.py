@@ -170,11 +170,11 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             if split_dutch_address:
                 street = split_dutch_address[0][0]
                 house_number = split_dutch_address[0][1]
-                number_extension = (
-                    split_dutch_address[0][2] if split_dutch_address[0][2] else None
-                )
+                # number_extension = (
+                #     split_dutch_address[0][2] if split_dutch_address[0][2] else None
+                # )
                 postcode = split_dutch_address[0][3]
-                query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie_wgs_84 from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and huisletter = '{number_extension}' and postcode = '{postcode}'"  # nosec B608
+                query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie_wgs_84 from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
                 print(f"Querying the database for address: {query}...")
                 result_df = self.run(query)
                 print(f"Result: {result_df}")
