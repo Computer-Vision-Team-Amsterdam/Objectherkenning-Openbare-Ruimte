@@ -113,11 +113,8 @@ class ReferenceDatabaseConnector(ABC):
             conn = self.connect_to_database()
             if conn:
                 result = self.run_query(conn, query)
-                print(f"{len(self.get_query_result_df())} object permits found.")
+                print(f"{len(result)} object permits found.")
                 conn.close()
                 return result
         except Exception as e:
             print(f"Error: {e}")
-
-    def get_query_result_df(self):
-        return self.query_result_df
