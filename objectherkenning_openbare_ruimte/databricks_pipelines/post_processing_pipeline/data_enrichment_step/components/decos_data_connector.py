@@ -208,7 +208,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         coords = [
             (
                 self.convert_EWKB_geometry_to_coordinates(geom)
-                if pd.notnull(geom)
+                if False
                 else self.convert_address_to_coordinates(addr)
             )
             for geom, addr in zip(df["geometrie_locatie"], df["locatie"])
