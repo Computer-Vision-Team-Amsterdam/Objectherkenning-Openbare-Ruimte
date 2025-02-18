@@ -174,7 +174,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 #     split_dutch_address[0][2] if split_dutch_address[0][2] else None
                 # )
                 postcode = split_dutch_address[0][3]
-                query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie_wgs_84 from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
+                query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
                 print(f"Querying the database for address: {query}...")
                 result_df = self.run(query)
                 print(f"Result: {result_df}")
@@ -188,7 +188,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                         f"Warning: Multiple results found for Dutch street address: {address}"
                     )
                 coordinates = self.convert_EWKB_geometry_to_coordinates(
-                    result_df["adresseerbaar_object_punt_geometrie_wgs_84"].iloc[0]
+                    result_df["adresseerbaar_object_punt_geometrie"].iloc[0]
                 )
                 print(f"Coordinates: {coordinates}")
                 latitude = coordinates[0]
