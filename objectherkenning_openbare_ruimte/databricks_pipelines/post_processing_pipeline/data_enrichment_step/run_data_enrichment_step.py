@@ -50,7 +50,7 @@ def run_data_enrichment_step(
     db_host,
     db_name,
     job_process_time,
-    active_object_categories
+    active_object_categories,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     clustering = Clustering(
@@ -59,14 +59,18 @@ def run_data_enrichment_step(
         schema=schema,
         detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
         frames=SilverFrameMetadataManager.load_pending_rows_from_table(),
-        active_object_categories=active_object_categories
+        active_object_categories=active_object_categories,
     )
     containers_coordinates_df = (
         clustering.get_containers_coordinates_with_detection_id()
     )
-    category_counts = sorted(containers_coordinates_df.groupBy("object_class").count().collect())
+    category_counts = sorted(
+        containers_coordinates_df.groupBy("object_class").count().collect()
+    )
     for row in category_counts:
-        print(f"Object category '{active_object_categories[row['object_class']]}': {row['count']} objects")
+        print(
+            f"Detected '{active_object_categories[row['object_class']]}': {row['count']}"
+        )
 
     bridgesHandler = VulnerableBridgesHandler(
         spark=sparkSession,
@@ -92,12 +96,15 @@ def run_data_enrichment_step(
         db_host=db_host,
         db_name=db_name,
         db_port=5432,
+        active_object_categories=active_object_categories,
     )
     decosDataHandler.query_and_process_object_permits(
         date_to_query=datetime.today().strftime("%Y-%m-%d")
     )
-    closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
-        containers_coordinates_df=containers_coordinates_df,
+    closest_permits_df = (
+        decosDataHandler.calculate_distances_to_closest_permits_by_category(
+            containers_coordinates_df=containers_coordinates_df,
+        )
     )
     containers_coordinates_with_closest_bridge_and_closest_permit_df = (
         containers_coordinates_with_closest_bridge_df.join(

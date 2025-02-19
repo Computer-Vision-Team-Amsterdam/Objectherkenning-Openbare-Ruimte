@@ -7,19 +7,22 @@ import numpy as np
 import pandas as pd
 from pyproj import Transformer
 from pyspark.sql import Row
-from shapely import wkb
 from pyspark.sql.functions import col
+from shapely import wkb
 from shapely.geometry import Point
 
 from .reference_db_connector import ReferenceDatabaseConnector
 
 
 class DecosDataHandler(ReferenceDatabaseConnector):
-    def __init__(self, spark, az_tenant_id, db_host, db_name, db_port):
+    def __init__(
+        self, spark, az_tenant_id, db_host, db_name, db_port, active_object_categories
+    ):
         super().__init__(az_tenant_id, db_host, db_name, db_port)
         self.spark = spark
+        self.active_object_categories = active_object_categories
 
-    def process_query_result(self):
+    def query_and_process_object_permits(self, date_to_query):
         """
         Process the results of the query.
         """
@@ -32,7 +35,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 return json.loads(x)
             except json.JSONDecodeError:
                 return []
-            
+
         def get_object_category(objects):
             mapping = self.get_keyword_mapping()
             for category, keywords in mapping.items():
@@ -51,7 +54,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
         # Keep only permits that match at least one of the keywords (i.e. have a valid category)
         result_df = result_df[result_df["object_category"].notnull()]
-        
+
         # Only keep rows where location of the permit is not null
         result_df = result_df[result_df["locatie"].notnull()]
 
@@ -66,7 +69,9 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         # Reset the healthy DataFrame index (to ensure alignment with internal lists)
         self._healthy_df = self._healthy_df.reset_index(drop=True)
 
-        print(f"{len(self._healthy_df)} permits with valid coordinates.")
+        print(
+            f"{len(self._healthy_df)} permits for active object categories with valid coordinates."
+        )
         if len(self._healthy_df) == 0:
             raise ValueError("No permit coordinates could be converted from addresses.")
 
@@ -74,7 +79,9 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         self._quarantine_df = result_df[
             result_df["permit_lat"].isnull() | result_df["permit_lon"].isnull()
         ]
-        print(f"{len(self._quarantine_df)} permits with invalid coordinates.")
+        print(
+            f"{len(self._quarantine_df)} permits for active object categories with invalid coordinates."
+        )
 
         stats = self._healthy_df["object_category"].value_counts()
         print("Permit counts per object category:")
@@ -267,19 +274,18 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
     def get_quarantine_df(self):
         return self._quarantine_df
-    
+
     def get_keyword_mapping(self):
-        full_mapping =  {
+        full_mapping = {
             2: ["puinbak", "container", "keet", "cabin"],
             3: ["toilet"],  # TODO: check with BOR if more are relevant
-            4: ["steiger"]   # TODO: check with BOR if more are relevant
+            4: ["steiger"],  # TODO: check with BOR if more are relevant
         }
         active_keys = set(self.active_object_categories.keys())
         return {k: full_mapping[k] for k in active_keys}
-    
+
     def calculate_distances_to_closest_permits_by_category(
-        self, 
-        containers_coordinates_df
+        self, containers_coordinates_df
     ):
         # Define the keyword lists per category.
         # These keywords determine which permits are considered relevant for each object category.
@@ -303,17 +309,18 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 union_df = union_df.union(df)
             return union_df
         else:
-            return self.spark.createDataFrame([], schema=self.spark.table("your_schema_here").schema)
+            return self.spark.createDataFrame(
+                [], schema=self.spark.table("your_schema_here").schema
+            )
 
     def calculate_distances_to_closest_permits_for_category(
-        self,
-        containers_df,
-        word_list: List[str]
+        self, containers_df, word_list: List[str]
     ):
         results = []
 
         # Filter permits to keep only those whose 'objecten' match.
         if word_list:
+
             def contains_keyword(permit_objs):
                 try:
                     regex_pattern = re.compile(r"(?i)(" + "|".join(word_list) + r")")
@@ -331,10 +338,13 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             filtered_indices = self._healthy_df.index.tolist()
 
         if not filtered_indices:
-            return self.spark.createDataFrame([], 
-                                              schema=self.spark.table("your_schema_here").schema)
+            return self.spark.createDataFrame(
+                [], schema=self.spark.table("your_schema_here").schema
+            )
 
-        filtered_points = [self._permits_coordinates_geometry[i] for i in filtered_indices]
+        filtered_points = [
+            self._permits_coordinates_geometry[i] for i in filtered_indices
+        ]
         filtered_ids = self._healthy_df.loc[filtered_indices, "id"].tolist()
         filtered_coords = [self._permits_coordinates[i] for i in filtered_indices]
 
@@ -376,4 +386,3 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         results_df = self.spark.createDataFrame(results)
 
         return results_df
-    
