@@ -495,6 +495,7 @@ class SignalHandler:
                 notification_json = self.fill_incident_details(
                     incident_date=date_of_notification, lon=LON, lat=LAT
                 )
+                print(f"notification_json: {notification_json}")
 
                 signal_id = self.post_signal_with_image_attachment(
                     json_content=notification_json, filename=image_upload_path
