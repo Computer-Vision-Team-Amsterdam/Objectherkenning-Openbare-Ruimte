@@ -79,7 +79,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         stats = self._healthy_df["object_category"].value_counts()
         print("Permit counts per object category:")
         for category, count in stats.items():
-            print(f"  Category {category}: {count}")
+            print(f"  Category {int(category)}: {count}")
 
         self._permits_coordinates = self._extract_permits_coordinates()
         self._permits_coordinates_geometry = self._convert_coordinates_to_point()
@@ -271,8 +271,8 @@ class DecosDataHandler(ReferenceDatabaseConnector):
     def get_keyword_mapping(self):
         return {
                 2: ["puinbak", "container", "keet", "cabin"],
-                3: ["toilet"],  # TODO: update keywords for category 3
-                4: ["steiger"]   # TODO: update keywords for category 4
+                3: ["toilet"],  # TODO: check with BOR if more are relevant
+                4: ["steiger"]   # TODO: check with BOR if more are relevant
             }
     
     def calculate_distances_to_closest_permits_by_category(

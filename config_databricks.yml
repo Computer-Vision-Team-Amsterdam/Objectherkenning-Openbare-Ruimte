@@ -19,11 +19,11 @@ databricks_pipelines:
       object_categories:
         available:
           2: "container"
-          3: "dixie"
+          3: "mobiel toilet"
           4: "steiger"
         active:
           2: "container"
-          3: "dixie"
+          3: "mobiel toilet"
           4: "steiger"
     Productie: 
       catalog: "dpcv_prd"
@@ -45,9 +45,9 @@ databricks_pipelines:
       object_categories:
         available:
           2: "container"
-          3: "dixie"
+          3: "mobiel toilet"
           4: "steiger"
         active:
           2: "container"
-          3: "dixie"
+          3: "mobiel toilet"
           4: "steiger"
