@@ -14,7 +14,6 @@ from .reference_db_connector import ReferenceDatabaseConnector
 
 
 class DecosDataHandler(ReferenceDatabaseConnector):
-
     def __init__(self, spark, az_tenant_id, db_host, db_name, db_port):
         super().__init__(az_tenant_id, db_host, db_name, db_port)
         self.spark = spark
@@ -158,6 +157,16 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
         return lat, lon
 
+    def get_benkagg_adresseerbareobjecten_by_address(
+        self, street, house_number, postcode
+    ):
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
+        return self.run(query)
+
+    def get_benkagg_adresseerbareobjecten_by_id(self, id):
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where identificatie='{id}'"  # nosec B608
+        return self.run(query)
+
     def convert_address_to_coordinates(self, address):
         """
         Convert address to coordinates using benkagg_adresseerbareobjecten table.
@@ -165,11 +174,11 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         try:
             split_dutch_address = self.split_dutch_street_address(address)
             if split_dutch_address:
-                street = split_dutch_address[0][0]
-                house_number = split_dutch_address[0][1]
-                postcode = split_dutch_address[0][3]
-                query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
-                result_df = self.run(query)
+                result_df = self.get_benkagg_adresseerbareobjecten_by_address(
+                    street=split_dutch_address[0][0],
+                    house_number=split_dutch_address[0][1],
+                    postcode=split_dutch_address[0][3],
+                )
                 if result_df.empty:
                     print(
                         f"Warning: No results found for Dutch street address: {address}"
