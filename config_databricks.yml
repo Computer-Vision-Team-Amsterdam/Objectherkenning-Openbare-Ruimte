@@ -23,8 +23,8 @@ databricks_pipelines:
           4: "steiger"
         active:
           2: "container"
-          3: "mobiel toilet"
-          4: "steiger"
+          # 3: "mobiel toilet"
+          # 4: "steiger"
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -49,5 +49,5 @@ databricks_pipelines:
           4: "steiger"
         active:
           2: "container"
-          3: "mobiel toilet"
-          4: "steiger"
+          # 3: "mobiel toilet"
+          # 4: "steiger"
