@@ -23,4 +23,4 @@ class SilverFrameMetadataManager(TableManager):
 
 
 class SilverFrameMetadataQuarantineManager(TableManager):
-    table_name: str = "silver_frame_metadata_quarantine_bcv_1576"
+    table_name: str = "silver_frame_metadata_quarantine"
