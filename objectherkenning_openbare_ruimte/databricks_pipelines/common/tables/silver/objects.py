@@ -43,4 +43,4 @@ class SilverObjectsPerDayManager(TableManager):
 
 
 class SilverObjectsPerDayQuarantineManager(TableManager):
-    table_name: str = "silver_objects_per_day_quarantine"
+    table_name: str = "silver_objects_per_day_quarantine_bcv_1576"

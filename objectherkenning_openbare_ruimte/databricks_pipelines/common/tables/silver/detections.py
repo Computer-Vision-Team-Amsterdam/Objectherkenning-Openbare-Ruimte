@@ -32,4 +32,4 @@ class SilverDetectionMetadataManager(TableManager):
 
 
 class SilverDetectionMetadataQuarantineManager(TableManager):
-    table_name: str = "silver_detection_metadata_quarantine"
+    table_name: str = "silver_detection_metadata_quarantine_bcv_1576"
