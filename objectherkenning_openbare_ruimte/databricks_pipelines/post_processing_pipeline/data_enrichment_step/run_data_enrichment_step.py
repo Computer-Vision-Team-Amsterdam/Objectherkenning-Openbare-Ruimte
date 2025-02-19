@@ -105,6 +105,7 @@ def run_data_enrichment_step(
     )
 
     # Enrich with decos data
+    decosDataHandler.active_object_categories = active_object_categories
     date_to_query = datetime.today().strftime("%Y-%m-%d")
     query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
     print(f"Querying the database for date {date_to_query}...")
@@ -122,7 +123,6 @@ def run_data_enrichment_step(
     )
 
     # Enrich with score
-    # TODO add scoring logic per category
     containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
         containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
             "score",
