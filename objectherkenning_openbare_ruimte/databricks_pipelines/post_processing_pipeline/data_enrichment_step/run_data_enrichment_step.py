@@ -128,7 +128,7 @@ def run_data_enrichment_step(
     utils_visualization.generate_map(
         dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
         name=f"{job_process_time}-map",
-        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime("%Y-%m-%d")}/",
+        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
     )
 
     selected_casted_df = (
