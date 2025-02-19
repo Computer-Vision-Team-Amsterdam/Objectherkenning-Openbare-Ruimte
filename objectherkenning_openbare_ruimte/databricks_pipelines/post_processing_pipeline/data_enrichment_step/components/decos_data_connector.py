@@ -48,9 +48,6 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
         print(f"Querying the database for date {date_to_query}...")
         result_df = self.run(query)
-        print(
-            "Processing object permits (filter by object name, convert address to coordinates)..."
-        )
 
         def _safe_json_load(x):
             try:
@@ -170,14 +167,9 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             if split_dutch_address:
                 street = split_dutch_address[0][0]
                 house_number = split_dutch_address[0][1]
-                # number_extension = (
-                #     split_dutch_address[0][2] if split_dutch_address[0][2] else None
-                # )
                 postcode = split_dutch_address[0][3]
                 query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
-                print(f"Querying the database for address: {query}...")
                 result_df = self.run(query)
-                print(f"Result: {result_df}")
                 if result_df.empty:
                     print(
                         f"Warning: No results found for Dutch street address: {address}"
@@ -208,19 +200,15 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         If 'geometrie_locatie' is present (not null), use convert_EWKB_geometry_to_coordinates;
         otherwise, fall back to convert_address_to_coordinates on the 'locatie' field.
         """
-        # Use a list comprehension to process rows efficiently
         coords = [
             (
                 self.convert_EWKB_geometry_to_coordinates(geom)
-                if False
+                if pd.notnull(geom)
                 else self.convert_address_to_coordinates(addr)
             )
             for geom, addr in zip(df["geometrie_locatie"], df["locatie"])
         ]
-        print(f"Converted {len(coords)} addresses to coordinates.")
-        print(f"Coordinates: {coords}")
 
-        # Unpack the coordinate tuples into separate lists; handle None cases
         df["permit_lat"] = [coord[0] if coord is not None else None for coord in coords]
         df["permit_lon"] = [coord[1] if coord is not None else None for coord in coords]
 
@@ -309,7 +297,6 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                         closest_permit_distances[min_distance_idx]
                     ),
                     closest_permit_id=self.get_permits_ids()[min_distance_idx],
-                    # closest_permit_coordinates=permits_coordinates[min_distance_idx],
                     closest_permit_lat=self._permits_coordinates[min_distance_idx][0],
                     closest_permit_lon=self._permits_coordinates[min_distance_idx][1],
                 )

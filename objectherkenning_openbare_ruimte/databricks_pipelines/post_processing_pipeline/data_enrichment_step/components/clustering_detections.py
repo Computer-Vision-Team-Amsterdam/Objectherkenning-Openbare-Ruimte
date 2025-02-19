@@ -18,6 +18,15 @@ class Clustering:
         self.joined_metadata = self._join_frame_and_detection_metadata()
         self._containers_coordinates_with_detection_id = None
 
+        self.filter_by_confidence_score(0.8)
+        self.filter_by_bounding_box_size(0.003)
+
+        if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
+            print("Missing or incomplete data to run clustering. Stopping execution.")
+            return
+
+        self.cluster_and_select_images()
+
     def filter_by_confidence_score(self, min_conf_score: float):
         self.joined_metadata = self.joined_metadata.where(
             col("confidence") > min_conf_score
@@ -126,16 +135,6 @@ class Clustering:
         self._containers_coordinates_with_detection_id = (
             self._extract_containers_coordinates_with_detection_id()
         )
-
-    def setup(self):
-        self.filter_by_confidence_score(0.8)
-        self.filter_by_bounding_box_size(0.003)
-
-        if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
-            print("Missing or incomplete data to run clustering. Stopping execution.")
-            return
-
-        self.cluster_and_select_images()
 
     def add_column_to_df(self, df, column_name, values):
         # Ensure the length of the values matches the number of rows in the dataframe

@@ -463,8 +463,8 @@ class SignalHandler:
         unsuccessful_notifications = []
 
         for entry in top_scores_df_with_date.collect():
-            LAT = float(entry["object_lat"])
-            LON = float(entry["object_lon"])
+            # LAT = float(entry["object_lat"])
+            # LON = float(entry["object_lon"])
             detection_id = entry["detection_id"]
             image_upload_path = (
                 silverFrameAndDetectionMetadata.get_image_upload_path_from_detection_id(
@@ -478,17 +478,17 @@ class SignalHandler:
 
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405
-                notification_json = self.fill_incident_details(
-                    incident_date=date_of_notification, lon=LON, lat=LAT
-                )
+                # notification_json = self.fill_incident_details(
+                #     incident_date=date_of_notification, lon=LON, lat=LAT
+                # )
 
-                signal_id = self.post_signal_with_image_attachment(
-                    json_content=notification_json, filename=image_upload_path
-                )
-                print(
-                    f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
-                )
-                entry_dict["signal_id"] = signal_id
+                # signal_id = self.post_signal_with_image_attachment(
+                #     json_content=notification_json, filename=image_upload_path
+                # )
+                # print(
+                #     f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
+                # )
+                # entry_dict["signal_id"] = signal_id
                 updated_entry = Row(**entry_dict)
                 successful_notifications.append(updated_entry)
             except Exception as e:
