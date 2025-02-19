@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 import requests
 from databricks.sdk.runtime import *  # noqa: F403
@@ -329,7 +329,7 @@ class SignalHandler:
 
     def get_bag_address_in_range(
         self, longitude: float, latitude: float, max_building_search_radius=50
-    ) -> List[Optional[str]]:
+    ) -> List[Union[str, int]]:
         """
         Retrieves the nearest building information in BAG for a given location point within a specified search radius.
 
@@ -381,7 +381,7 @@ class SignalHandler:
                     print(f"Warning: Multiple results found for id: {first_element_id}")
                 return [
                     result_df["openbareruimte_naam"].iloc[0],
-                    result_df["huisnummer"].iloc[0],
+                    int(result_df["huisnummer"].iloc[0]),
                     result_df["postcode"].iloc[0],
                 ]
             else:
@@ -495,7 +495,6 @@ class SignalHandler:
                 notification_json = self.fill_incident_details(
                     incident_date=date_of_notification, lon=LON, lat=LAT
                 )
-                print(f"notification_json: {notification_json}")
 
                 signal_id = self.post_signal_with_image_attachment(
                     json_content=notification_json, filename=image_upload_path
