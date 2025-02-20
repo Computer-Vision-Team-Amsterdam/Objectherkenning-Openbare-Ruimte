@@ -24,8 +24,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
     setup_tables,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
-    utils_visualization,
     utils_scoring,
+    utils_visualization,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.clustering_detections import (  # noqa: E402
     Clustering,
@@ -158,9 +158,9 @@ def run_data_enrichment_step(
         )
     )
 
-    # SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
-    # SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
-    # SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
+    SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+    SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":
