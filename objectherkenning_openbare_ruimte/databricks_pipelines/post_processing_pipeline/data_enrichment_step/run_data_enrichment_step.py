@@ -25,6 +25,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components import (  # noqa: E402
     utils_visualization,
+    utils_scoring,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.clustering_detections import (  # noqa: E402
     Clustering,
@@ -116,20 +117,10 @@ def run_data_enrichment_step(
         )
     )
 
+    score_expr = utils_scoring.get_score_expr()
     containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
         containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
-            "score",
-            F.when(
-                (F.col("closest_permit_distance") >= 40)
-                & (F.col("closest_bridge_distance") < 25),
-                1 + F.greatest((25 - F.col("closest_bridge_distance")) / 25, F.lit(0)),
-            )
-            .when(
-                (F.col("closest_permit_distance") >= 40)
-                & (F.col("closest_bridge_distance") >= 25),
-                F.least(F.lit(1.0), F.col("closest_permit_distance") / 100),
-            )
-            .otherwise(0),
+            "score", score_expr
         )
     )
 
@@ -167,9 +158,9 @@ def run_data_enrichment_step(
         )
     )
 
-    SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
-    SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
-    SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+    # SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":
