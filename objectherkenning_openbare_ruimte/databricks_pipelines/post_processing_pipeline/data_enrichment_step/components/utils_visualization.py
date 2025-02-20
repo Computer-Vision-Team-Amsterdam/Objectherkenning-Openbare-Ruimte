@@ -57,6 +57,8 @@ def generate_map(
         "priority_id", row_number().over(window_spec)
     )
 
+    shape_map = {2: "marker", 3: "circle", 4: "square"}
+
     # display(dataframe_with_priority)
 
     # Function to find the closest point on a linestring to a given point
@@ -91,10 +93,13 @@ def generate_map(
         # Determine marker color based on the score
         marker_color = get_marker_color(detection_score)
 
+        # Determine icon shape based on object class
+        icon_shape = shape_map.get(row["object_class"], "marker")
+
         # Create a custom DivIcon for the marker with the priority_id
         detection_icon = BeautifyIcon(
             icon="arrow-down",
-            icon_shape="marker",
+            icon_shape=icon_shape,
             number=str(detection_priority_id),
             border_color="#000000",
             background_color=marker_color,
