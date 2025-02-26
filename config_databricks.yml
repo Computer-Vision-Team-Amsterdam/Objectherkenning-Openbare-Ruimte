@@ -17,10 +17,10 @@ databricks_pipelines:
         client_secret_name: "sia-password-acc"
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
       object_categories:
-        available:
-          2: "container"
-          3: "mobiel toilet"
-          4: "steiger"
+        # available:
+        #   2: "container"
+        #   3: "mobiel toilet"
+        #   4: "steiger"
         active:
           2: "container"
           # 3: "mobiel toilet"
@@ -43,10 +43,10 @@ databricks_pipelines:
         client_secret_name: "sia-password-prd"
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
       object_categories:
-        available:
-          2: "container"
-          3: "mobiel toilet"
-          4: "steiger"
+        # available:
+        #   2: "container"
+        #   3: "mobiel toilet"
+        #   4: "steiger"
         active:
           2: "container"
           # 3: "mobiel toilet"

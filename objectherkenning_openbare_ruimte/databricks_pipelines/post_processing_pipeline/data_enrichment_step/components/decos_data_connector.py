@@ -293,7 +293,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         result_dfs = []
 
         # Loop through each target object category.
-        for cat in [2, 3, 4]:
+        for cat in set(self.active_object_categories.keys()):
             df_cat = containers_coordinates_df.filter(col("object_class") == cat)
             if df_cat.count() == 0:
                 continue
@@ -309,8 +309,10 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 union_df = union_df.union(df)
             return union_df
         else:
+            # Return an empty Spark DataFrame with the same schema as containers_coordinates_df.
+            empty_rdd = self.spark.sparkContext.emptyRDD()
             return self.spark.createDataFrame(
-                [], schema=self.spark.table("your_schema_here").schema
+                empty_rdd, schema=containers_coordinates_df.schema
             )
 
     def calculate_distances_to_closest_permits_for_category(
