@@ -16,7 +16,7 @@ databricks_pipelines:
         client_id: "sia-cvt"
         client_secret_name: "sia-password-acc"
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
-      object_categories:
+      object_classes:
         # available:
         #   2: "container"
         #   3: "mobiel toilet"
@@ -42,7 +42,7 @@ databricks_pipelines:
         client_id: "sia-cvt"
         client_secret_name: "sia-password-prd"
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
-      object_categories:
+      object_classes:
         # available:
         #   2: "container"
         #   3: "mobiel toilet"

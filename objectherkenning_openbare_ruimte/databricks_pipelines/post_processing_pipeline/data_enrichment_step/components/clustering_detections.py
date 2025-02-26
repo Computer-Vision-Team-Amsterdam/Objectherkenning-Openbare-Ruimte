@@ -1,6 +1,9 @@
+from functools import reduce
+from typing import Any, Dict
+
 import numpy as np
 from databricks.sdk.runtime import sqlContext
-from pyspark.sql import SparkSession, Window
+from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql.functions import col, mean, monotonically_increasing_id, row_number
 from sklearn.cluster import DBSCAN
 
@@ -9,14 +12,22 @@ MIN_SAMPLES = 1  # avoid noise points. All points are either in a cluster or are
 
 
 class Clustering:
-    def __init__(self, spark: SparkSession, catalog, schema, detections, frames, 
-                 active_object_categories):
+
+    def __init__(
+        self,
+        spark: SparkSession,
+        catalog: str,
+        schema: str,
+        detections: DataFrame,
+        frames: DataFrame,
+        active_object_classes: Dict[str, Any],
+    ):
         self.spark = spark
         self.catalog = catalog
         self.schema = schema
         self.detection_metadata = detections
         self.frame_metadata = frames
-        self.active_object_categories = active_object_categories
+        self.active_object_classes = active_object_classes
         self.joined_metadata = self._join_frame_and_detection_metadata()
         self._containers_coordinates_with_detection_id = None
 
@@ -72,8 +83,9 @@ class Clustering:
         joined_df = joined_df.select(columns)
 
         # Only keep active objects
-        joined_df = joined_df.where(col("object_class").
-                                    isin(list(self.active_object_categories.keys())))
+        joined_df = joined_df.where(
+            col("object_class").isin(list(self.active_object_classes.keys()))
+        )
 
         return joined_df
 
@@ -85,61 +97,88 @@ class Clustering:
 
         return containers_df
 
-    def _cluster_points(self, eps, min_samples=MIN_SAMPLES):
+    def _cluster_points(self, eps):
         """
-        Cluster points in a DataFrame using DBSCAN.
+        Cluster points in a DataFrame using DBSCAN across different object classes.
 
         Parameters:
-        points (np.ndarray): [lon, lat] coordinates for each point
-        eps (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
-        min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
+            eps (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+            min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
         """
-        # Get distinct object categories
-        object_categories = [row["object_class"] for row in self.joined_metadata.select(
-            "object_class").distinct().collect()]
-        
-        new_dfs = []
-        global_offset = 0
+        # Get distinct object classes
+        detected_classes = [
+            row["object_class"]
+            for row in self.joined_metadata.select("object_class").distinct().collect()
+        ]
 
-        # Apply clustering per object category
-        for cat in object_categories:
-            df_cat = self.joined_metadata.filter(col("object_class") == cat)
-            coords = np.array(
-                df_cat.select("gps_lat", "gps_lon")
-                .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
-                .collect()
+        dfs_clustered = []
+        cluster_id_counter = 0
+
+        # Apply clustering per object class
+        for detected_class in detected_classes:
+            df_class = self.joined_metadata.filter(
+                col("object_class") == detected_class
             )
-            # Skip if there are no valid coordinates
-            if coords.size == 0 or coords.ndim != 2 or coords.shape[1] != 2:
-                continue
-            
-            db = DBSCAN(
-                eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
-            ).fit(np.radians(coords))
-            
-            # Build a local mapping from each unique raw label to a new unique tracking_id.
-            raw_labels = [int(v) for v in db.labels_]
-            unique_labels = sorted(set(raw_labels))
-            local_mapping = {}
-            for label in unique_labels:
-                local_mapping[label] = global_offset
-                global_offset += 1
+            df_clustered, cluster_id_counter = self._cluster_points_for_class(
+                df_class, eps, cluster_id_counter, min_samples=MIN_SAMPLES
+            )
+            if df_clustered is not None:
+                dfs_clustered.append(df_clustered)
 
-            # Remap the raw labels using the local mapping.
-            new_labels = [local_mapping[label] for label in raw_labels]
-
-            # Add the new tracking_id column to this category's DataFrame.
-            df_cat = self.add_column_to_df(df_cat, "tracking_id", new_labels)
-            new_dfs.append(df_cat)
-        
-        if new_dfs:
-            # Union all per-category clustered DataFrames into joined_metadata.
-            self.joined_metadata = new_dfs[0]
-            for df in new_dfs[1:]:
-                self.joined_metadata = self.joined_metadata.union(df)
+        if dfs_clustered:
+            # Union all per-category clustered DataFrames using reduce.
+            self.joined_metadata = reduce(
+                lambda df1, df2: df1.union(df2), dfs_clustered
+            )
         else:
             print("No data to cluster after filtering.")
 
+    def _cluster_points_for_class(
+        self, df_metadata_by_class, eps, min_samples, cluster_id_counter
+    ):
+        """
+        Perform DBSCAN clustering on a single class DataFrame.
+
+        Parameters:
+            df_metadata_by_class (DataFrame): DataFrame filtered for one object class.
+            eps (float): Maximum distance between two samples for them to be considered neighbors.
+            min_samples (int): Minimum number of samples for a point to be considered a core point.
+            cluster_id_counter (int): Current counter to assign unique tracking IDs.
+
+        Returns:
+            tuple: (clustered DataFrame with new 'tracking_id' column, updated cluster_id_counter)
+        """
+        # Extract coordinates as a numpy array.
+        coordinates = np.array(
+            df_metadata_by_class.select("gps_lat", "gps_lon")
+            .rdd.map(lambda row: (row["gps_lat"], row["gps_lon"]))
+            .collect()
+        )
+
+        # Skip if there are no valid coordinates.
+        if coordinates.size == 0 or coordinates.ndim != 2 or coordinates.shape[1] != 2:
+            return None, cluster_id_counter
+
+        # Apply DBSCAN clustering.
+        db = DBSCAN(
+            eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
+        ).fit(np.radians(coordinates))
+
+        # Remap raw labels to new unique tracking IDs using dictionary comprehension.
+        raw_labels = [int(v) for v in db.labels_]
+        unique_labels = sorted(set(raw_labels))
+        local_mapping = {
+            label: cluster_id_counter + i for i, label in enumerate(unique_labels)
+        }
+        cluster_id_counter += len(unique_labels)
+
+        new_labels = [local_mapping[label] for label in raw_labels]
+
+        # Add the new 'tracking_id' column to this category's DataFrame.
+        df_clustered = self.add_column_to_df(
+            df_metadata_by_class, "tracking_id", new_labels
+        )
+        return df_clustered, cluster_id_counter
 
     def cluster_and_select_images(self, distance=10):
         # Cluster the points based on distance
