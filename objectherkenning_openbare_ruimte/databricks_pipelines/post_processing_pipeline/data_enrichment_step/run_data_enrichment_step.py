@@ -51,9 +51,7 @@ def run_data_enrichment_step(
     db_name,
     job_process_time,
 ):
-    # Setup clustering
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
-
     clustering = Clustering(
         spark=sparkSession,
         catalog=catalog,
@@ -61,31 +59,17 @@ def run_data_enrichment_step(
         detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
         frames=SilverFrameMetadataManager.load_pending_rows_from_table(),
     )
-    clustering.setup()
     containers_coordinates_df = (
         clustering.get_containers_coordinates_with_detection_id()
     )
+    print(f"Number of containers: {containers_coordinates_df.count()}.")
 
-    # Setup bridges data
     bridgesHandler = VulnerableBridgesHandler(
         spark=sparkSession,
         root_source=root_source,
         vuln_bridges_relative_path=vuln_bridges_relative_path,
     )
     bridges_coordinates_geometry = bridgesHandler.get_bridges_coordinates_geometry()
-
-    # Setup permit data
-    decosDataHandler = DecosDataHandler(
-        spark=sparkSession,
-        az_tenant_id=az_tenant_id,
-        db_host=db_host,
-        db_name=db_name,
-        db_port=5432,
-    )
-
-    print(f"Number of containers: {containers_coordinates_df.count()}.")
-
-    # Enrich with bridges data
     closest_bridges_df = (
         bridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
             bridges_locations_as_linestrings=bridges_coordinates_geometry,
@@ -94,32 +78,29 @@ def run_data_enrichment_step(
             bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
         )
     )
-
     containers_coordinates_with_closest_bridge_df = containers_coordinates_df.join(
         closest_bridges_df, "detection_id"
     )
 
-    # Enrich with decos data
-    date_to_query = datetime.today().strftime("%Y-%m-%d")
-    query = f"SELECT id, kenmerk, locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
-    print(f"Querying the database for date {date_to_query}...")
-    decosDataHandler.run(query)
-    decosDataHandler.process_query_result()
-
+    decosDataHandler = DecosDataHandler(
+        spark=sparkSession,
+        az_tenant_id=az_tenant_id,
+        db_host=db_host,
+        db_name=db_name,
+        db_port=5432,
+    )
+    decosDataHandler.query_and_process_object_permits(
+        date_to_query=datetime.today().strftime("%Y-%m-%d")
+    )
     closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
-        permits_locations_as_points=decosDataHandler.get_permits_coordinates_geometry(),
-        permits_ids=decosDataHandler.get_permits_ids(),
-        permits_coordinates=decosDataHandler.get_permits_coordinates(),
         containers_coordinates_df=containers_coordinates_df,
     )
-
     containers_coordinates_with_closest_bridge_and_closest_permit_df = (
         containers_coordinates_with_closest_bridge_df.join(
             closest_permits_df, "detection_id"
         )
     )
 
-    # Enrich with score
     containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
         containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
             "score",
@@ -144,11 +125,10 @@ def run_data_enrichment_step(
         on=F.col("a.detection_id") == F.col("b.detection_id"),
     )
 
-    # Gather data to visualize
     utils_visualization.generate_map(
         dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
         name=f"{job_process_time}-map",
-        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{date_to_query}/",
+        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
     )
 
     selected_casted_df = (

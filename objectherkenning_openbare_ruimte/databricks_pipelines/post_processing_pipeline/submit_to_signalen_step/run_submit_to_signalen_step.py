@@ -37,6 +37,9 @@ def run_submit_to_signalen_step(
     access_token_url,
     base_url,
     job_process_time,
+    az_tenant_id,
+    db_host,
+    db_name,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
@@ -48,6 +51,9 @@ def run_submit_to_signalen_step(
         client_secret_name,
         access_token_url,
         base_url,
+        az_tenant_id,
+        db_host,
+        db_name,
     )
 
     top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(limit=10)
@@ -108,4 +114,7 @@ if __name__ == "__main__":
         job_process_time=get_job_process_time(
             is_first_pipeline_step=False,
         ),
+        az_tenant_id=settings["azure_tenant_id"],
+        db_host=settings["reference_database"]["host"],
+        db_name=settings["reference_database"]["name"],
     )
