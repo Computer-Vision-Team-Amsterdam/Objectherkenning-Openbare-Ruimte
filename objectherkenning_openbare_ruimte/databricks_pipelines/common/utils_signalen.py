@@ -329,7 +329,7 @@ class SignalHandler:
 
     def get_bag_address_in_range(
         self, longitude: float, latitude: float, max_building_search_radius=50
-    ) -> List[Union[str, int]]:
+    ) -> Union[List[Union[str, int]], None]:
         """
         Retrieves the nearest building information in BAG for a given location point within a specified search radius.
 
@@ -388,12 +388,11 @@ class SignalHandler:
                 print(
                     f"No BAG address in the range of {max_building_search_radius} found."
                 )
-                return []
         else:
             print(
                 f"Failed to get address from BAG, status code {response.status_code}."
             )
-            return []
+        return None
 
     def fill_incident_details(self, incident_date: str, lon: float, lat: float) -> Any:
         """
@@ -423,8 +422,6 @@ class SignalHandler:
         """
 
         date_now = datetime.strptime(incident_date, "%Y-%m-%d").date()
-        bag_address = self.get_bag_address_in_range(longitude=lon, latitude=lat)
-
         json_to_send = {
             "text": SignalHandler.get_signal_description(),
             "location": {
@@ -444,6 +441,8 @@ class SignalHandler:
             "source": "Automatische signalering",
             "incident_date_start": date_now.strftime("%Y-%m-%d %H:%M"),
         }
+
+        bag_address = self.get_bag_address_in_range(longitude=lon, latitude=lat)
         if bag_address:
             location_json = {
                 "location": {
