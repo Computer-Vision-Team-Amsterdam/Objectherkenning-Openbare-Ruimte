@@ -123,5 +123,5 @@ if __name__ == "__main__":
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
         active_object_classes=settings["object_classes"]["active"],
-        send_limits=settings["object_categories"]["send_limit"],
+        send_limits=settings["object_classes"]["send_limit"],
     )
