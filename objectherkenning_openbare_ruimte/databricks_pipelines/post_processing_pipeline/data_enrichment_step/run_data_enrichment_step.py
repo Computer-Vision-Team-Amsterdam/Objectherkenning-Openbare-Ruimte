@@ -52,6 +52,8 @@ def run_data_enrichment_step(
     job_process_time,
     active_object_classes,
     permit_mapping,
+    confidence_thresholds,
+    bbox_size_thresholds,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     clustering = Clustering(
@@ -61,6 +63,8 @@ def run_data_enrichment_step(
         detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
         frames=SilverFrameMetadataManager.load_pending_rows_from_table(),
         active_object_classes=active_object_classes,
+        confidence_thresholds=confidence_thresholds,
+        bbox_size_thresholds=bbox_size_thresholds,
     )
     containers_coordinates_df = (
         clustering.get_containers_coordinates_with_detection_id()
@@ -192,4 +196,6 @@ if __name__ == "__main__":
         ),
         active_object_classes=settings["object_classes"]["active"],
         permit_mapping=settings["object_classes"]["permit_mapping"],
+        confidence_thresholds=settings["object_classes"]["confidence_threshold"],
+        bbox_size_thresholds=settings["object_classes"]["bbox_size_threshold"],
     )

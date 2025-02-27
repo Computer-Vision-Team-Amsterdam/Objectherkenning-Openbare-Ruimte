@@ -29,6 +29,14 @@ databricks_pipelines:
           2: ["puinbak", "container", "keet", "cabin"]
           3: ["toilet"]  # TODO: check with BOR if more are relevant
           4: ["steiger"]  # TODO: check with BOR if more are relevant
+        confidence_threshold:
+          2: 0.8
+          3: 0.8
+          4: 0.8
+        bbox_size_threshold:
+          2: 0.03
+          3: 0.03
+          4: 0.03
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -59,3 +67,11 @@ databricks_pipelines:
           2: ["puinbak", "container", "keet", "cabin"]
           3: ["toilet"]  # TODO: check with BOR if more are relevant
           4: ["steiger"]  # TODO: check with BOR if more are relevant
+        confidence_threshold:
+          2: 0.8
+          3: 0.8
+          4: 0.8
+        bbox_size_threshold:
+          2: 0.03
+          3: 0.03
+          4: 0.03
