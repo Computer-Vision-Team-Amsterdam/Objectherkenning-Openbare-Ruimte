@@ -113,7 +113,6 @@ class Clustering:
 
         Parameters:
             eps (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
-            min_samples (int): The number of samples in a neighborhood for a point to be considered as a core point.
         """
         # Get distinct object classes
         detected_classes = [
@@ -130,7 +129,7 @@ class Clustering:
                 col("object_class") == detected_class
             )
             df_clustered, cluster_id_counter = self._cluster_points_for_class(
-                df_class, eps, cluster_id_counter, min_samples=MIN_SAMPLES
+                df_class, eps, cluster_id_counter
             )
             if df_clustered is not None:
                 dfs_clustered.append(df_clustered)
@@ -144,7 +143,7 @@ class Clustering:
             print("No data to cluster after filtering.")
 
     def _cluster_points_for_class(
-        self, df_metadata_by_class, eps, min_samples, cluster_id_counter
+        self, df_metadata_by_class, eps, cluster_id_counter, min_samples=MIN_SAMPLES
     ):
         """
         Perform DBSCAN clustering on a single class DataFrame.

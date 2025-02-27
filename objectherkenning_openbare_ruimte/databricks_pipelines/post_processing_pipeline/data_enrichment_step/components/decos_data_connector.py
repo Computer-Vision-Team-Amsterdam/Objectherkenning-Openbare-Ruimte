@@ -45,7 +45,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             except json.JSONDecodeError:
                 return []
 
-        def _get_object_classes(self, objects: List[Dict[str, str]]) -> List[str]:
+        def _get_object_classes(objects: List[Dict[str, str]]) -> List[int]:
             """
             Determine matching object classes for permits from a list
             of permit keywords based on a keyword mapping.

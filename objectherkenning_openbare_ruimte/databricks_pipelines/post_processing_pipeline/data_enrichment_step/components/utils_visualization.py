@@ -90,13 +90,9 @@ def generate_map(
         permit_location = Point(row["closest_permit_lat"], row["closest_permit_lon"])
         closest_permit_id = row["closest_permit_id"]
 
-        # Determine marker color based on the score
-        marker_color = get_marker_color(detection_score)
-
-        # Determine icon shape based on object class
-        icon_shape = shape_map.get(row["object_class"], "marker")
-
         # Create a custom DivIcon for the marker with the priority_id
+        marker_color = get_marker_color(detection_score)
+        icon_shape = shape_map.get(row["object_class"], "marker")
         detection_icon = BeautifyIcon(
             icon="arrow-down",
             icon_shape=icon_shape,
