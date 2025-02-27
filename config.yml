@@ -32,7 +32,7 @@ data_minimisation_experiment:
   inputs:
     datastore: "data_minimisation_experiment"
     images_rel_path: "images"
-    labels_rel_Path: "labels"
+    labels_rel_path: "labels"
   outputs:
     datastore: "data_minimisation_experiment"
     rel_path: "blurred"

@@ -30,7 +30,7 @@ if __name__ == "__main__":
     ]
     input_images_path = os.path.join(input_datastore_path, input_images_rel_path)
     input_labels_rel_path = settings["data_minimisation_experiment"]["inputs"][
-        "labels_rel_Path"
+        "labels_rel_path"
     ]
     input_labels_path = os.path.join(input_datastore_path, input_labels_rel_path)
 
