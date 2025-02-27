@@ -86,13 +86,13 @@ class SignalHandler:
         az_tenant_id,
         db_host,
         db_name,
-        active_object_categories,
+        active_object_classes,
     ):
         self.sparkSession = sparkSession
         self.device_id = device_id
         self.catalog_name = catalog
         self.schema = schema
-        self.active_object_categories = active_object_categories
+        self.active_object_classes = active_object_classes
 
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
         signalConnectionConfigurer = SignalConnectionConfigurer(
@@ -485,7 +485,7 @@ class SignalHandler:
             LON = float(entry["object_lon"])
             detection_id = entry["detection_id"]
             object_class = entry["object_class"]
-            object_class_str = self.active_object_categories.get(object_class)
+            object_class_str = self.active_object_classes.get(object_class)
             image_upload_path = (
                 silverFrameAndDetectionMetadata.get_image_upload_path_from_detection_id(
                     detection_id=detection_id,
