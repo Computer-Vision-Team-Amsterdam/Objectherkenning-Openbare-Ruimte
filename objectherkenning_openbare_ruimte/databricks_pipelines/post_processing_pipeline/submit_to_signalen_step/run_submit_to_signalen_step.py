@@ -41,6 +41,7 @@ def run_submit_to_signalen_step(
     db_host,
     db_name,
     active_object_classes,
+    permit_mapping,
     send_limits,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
@@ -57,6 +58,7 @@ def run_submit_to_signalen_step(
         db_host,
         db_name,
         active_object_classes,
+        permit_mapping,
     )
 
     top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
@@ -123,5 +125,6 @@ if __name__ == "__main__":
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
         active_object_classes=settings["object_classes"]["active"],
-        send_limits=settings["object_categories"]["send_limit"],
+        permit_mapping=settings["object_classes"]["permit_mapping"],
+        send_limits=settings["object_classes"]["send_limit"],
     )

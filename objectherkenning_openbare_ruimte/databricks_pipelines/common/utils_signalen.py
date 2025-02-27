@@ -87,6 +87,7 @@ class SignalHandler:
         db_host,
         db_name,
         active_object_classes,
+        permit_mapping,
     ):
         self.sparkSession = sparkSession
         self.device_id = device_id
@@ -108,6 +109,8 @@ class SignalHandler:
             db_host=db_host,
             db_name=db_name,
             db_port=5432,
+            active_object_classes=active_object_classes,
+            permit_mapping=permit_mapping,
         )
 
     def get_signal(self, sig_id: str) -> Any:
