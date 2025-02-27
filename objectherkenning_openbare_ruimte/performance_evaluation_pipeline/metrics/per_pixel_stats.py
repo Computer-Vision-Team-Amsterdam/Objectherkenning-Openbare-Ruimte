@@ -153,6 +153,9 @@ class PerPixelEvaluator:
         self.upper_half = upper_half
         self.decimals = decimals
         img_area = self.img_shape[0] * self.img_shape[1]
+        if not confidence_threshold:
+            confidence_threshold = 0.0
+
         if ground_truth_path.endswith(".json"):
             self.gt_dataset = YoloLabelsDataset.from_yolo_validation_json(
                 yolo_val_json=ground_truth_path,

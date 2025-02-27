@@ -20,6 +20,24 @@ convert_annotations:
   separate_labels: True
   label_folder: dataset_folder/labels
 
+data_minimisation:
+  sensitive_classes: [0, 1]  # Classes to anonymise
+  target_classes:  [2]  # Classes to keep
+  blur_kernel_size_outside: 55
+  blur_kernel_size_inside: 165  # BaaS setting
+  blur_outside_padding: 25  # Padding in pixels
+  crop_padding: 25  # Padding in pixels
+
+data_minimisation_experiment:
+  inputs:
+    datastore: "data_minimisation_experiment"
+    images_rel_path: "images"
+    labels_rel_path: "labels"
+  outputs:
+    datastore: "data_minimisation_experiment"
+    rel_path: "blurred"
+  image_format: "png"
+
 data_sampling:
   inputs:
     datastore: "oor_velotech"
