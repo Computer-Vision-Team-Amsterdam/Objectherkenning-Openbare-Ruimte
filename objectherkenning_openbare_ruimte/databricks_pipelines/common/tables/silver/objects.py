@@ -27,19 +27,21 @@ class SilverObjectsPerDayManager(TableManager):
 
         # Prepare a window to rank rows within each object_class.
         window_spec = Window.partitionBy("object_class").orderBy(F.col("score").desc())
-        df_with_rn = filtered_df.withColumn("rn", F.row_number().over(window_spec))
+        df_with_row_number = filtered_df.withColumn(
+            "row_number", F.row_number().over(window_spec)
+        )
 
         # Build a condition that applies the appropriate limit for each object_class.
         condition = None
         for obj_class, limit in send_limits.items():
             obj_condition = (F.col("object_class") == obj_class) & (
-                F.col("rn") <= limit
+                F.col("row_number") <= limit
             )
             condition = (
                 obj_condition if condition is None else condition | obj_condition
             )
 
-        results = df_with_rn.filter(condition).drop("rn")
+        results = df_with_row_number.filter(condition).drop("row_number")
 
         print(
             f"Loaded {results.count()} rows with top {send_limits} scores from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
