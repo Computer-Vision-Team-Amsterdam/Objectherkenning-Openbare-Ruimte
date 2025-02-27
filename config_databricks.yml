@@ -25,6 +25,10 @@ databricks_pipelines:
           2: "container"
           # 3: "mobiel toilet"
           # 4: "steiger"
+        permit_mapping:
+          2: ["puinbak", "container", "keet", "cabin"]
+          3: ["toilet"]  # TODO: check with BOR if more are relevant
+          4: ["steiger"]  # TODO: check with BOR if more are relevant
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -51,3 +55,7 @@ databricks_pipelines:
           2: "container"
           # 3: "mobiel toilet"
           # 4: "steiger"
+        permit_mapping:
+          2: ["puinbak", "container", "keet", "cabin"]
+          3: ["toilet"]  # TODO: check with BOR if more are relevant
+          4: ["steiger"]  # TODO: check with BOR if more are relevant

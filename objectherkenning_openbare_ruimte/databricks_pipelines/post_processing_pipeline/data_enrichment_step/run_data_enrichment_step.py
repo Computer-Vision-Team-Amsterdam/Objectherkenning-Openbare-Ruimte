@@ -51,6 +51,7 @@ def run_data_enrichment_step(
     db_name,
     job_process_time,
     active_object_classes,
+    permit_mapping,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     clustering = Clustering(
@@ -97,6 +98,7 @@ def run_data_enrichment_step(
         db_name=db_name,
         db_port=5432,
         active_object_classes=active_object_classes,
+        permit_mapping=permit_mapping,
     )
     decosDataHandler.query_and_process_object_permits(
         date_to_query=datetime.today().strftime("%Y-%m-%d")
@@ -189,4 +191,5 @@ if __name__ == "__main__":
             is_first_pipeline_step=False,
         ),
         active_object_classes=settings["object_classes"]["active"],
+        permit_mapping=settings["object_classes"]["permit_mapping"],
     )

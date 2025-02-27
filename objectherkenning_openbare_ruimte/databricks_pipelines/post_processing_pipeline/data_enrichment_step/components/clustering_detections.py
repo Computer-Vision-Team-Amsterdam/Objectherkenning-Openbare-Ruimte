@@ -1,5 +1,5 @@
 from functools import reduce
-from typing import Any, Dict
+from typing import Dict
 
 import numpy as np
 from databricks.sdk.runtime import sqlContext
@@ -20,8 +20,8 @@ class Clustering:
         schema: str,
         detections: DataFrame,
         frames: DataFrame,
-        active_object_classes: Dict[str, Any],
-    ):
+        active_object_classes: Dict[int, str],
+    ) -> None:
         self.spark = spark
         self.catalog = catalog
         self.schema = schema
@@ -60,9 +60,24 @@ class Clustering:
         return self._containers_coordinates_with_detection_id
 
     def _join_frame_and_detection_metadata(self):
+        """
+        Join frame and detection metadata, keeping only active objects.
+
+        Returns
+        -------
+        DataFrame
+            A Spark DataFrame containing joined metadata with the following columns:
+            'detection_date', 'detection_id', 'object_class', 'image_name', 'x_center', 'y_center',
+            'width', 'height', 'confidence', 'gps_lat', 'gps_lon'.
+        """
+        active_object_classes = list(self.active_object_classes.keys())
+        # Filter detection metadata for active object classes before joining.
+        active_detection_metadata = self.detection_metadata.where(
+            col("object_class").isin(active_object_classes)
+        )
 
         joined_df = self.frame_metadata.alias("fm").join(
-            self.detection_metadata.alias("dm"),
+            active_detection_metadata.alias("dm"),
             col("fm.image_name") == col("dm.image_name"),
         )
 
@@ -81,11 +96,6 @@ class Clustering:
         ]
 
         joined_df = joined_df.select(columns)
-
-        # Only keep active objects
-        joined_df = joined_df.where(
-            col("object_class").isin(list(self.active_object_classes.keys()))
-        )
 
         return joined_df
 
