@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 import requests
 from databricks.sdk.runtime import *  # noqa: F403
@@ -10,6 +10,9 @@ from pyspark.sql import functions as F
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators.silver_metadata_aggregator import (
     SilverMetadataAggregator,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (
+    DecosDataHandler,
 )
 
 
@@ -32,13 +35,13 @@ class SignalConnectionConfigurer:
 
     def __init__(
         self,
-        spark: SparkSession,
+        sparkSession: SparkSession,
         client_id,
         client_secret_name,
         access_token_url,
         base_url,
     ):
-        self.spark = spark
+        self.sparkSession = sparkSession
         self._client_id = client_id
         self._client_secret_name = client_secret_name
         self.access_token_url = access_token_url
@@ -70,10 +73,9 @@ class SignalConnectionConfigurer:
 
 
 class SignalHandler:
-
     def __init__(
         self,
-        spark,
+        sparkSession,
         catalog,
         schema,
         device_id,
@@ -81,21 +83,30 @@ class SignalHandler:
         client_secret_name,
         access_token_url,
         base_url,
+        az_tenant_id,
+        db_host,
+        db_name,
     ):
-
-        self.spark = spark
+        self.sparkSession = sparkSession
         self.device_id = device_id
         self.catalog_name = catalog
         self.schema = schema
 
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
         signalConnectionConfigurer = SignalConnectionConfigurer(
-            spark, client_id, client_secret_name, access_token_url, base_url
+            sparkSession, client_id, client_secret_name, access_token_url, base_url
         )
         self.base_url: str = signalConnectionConfigurer.get_base_url()  # type: ignore
         access_token = signalConnectionConfigurer.get_access_token()
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}  # type: ignore
         self.verify_ssl = True
+        self.decosDataHandler = DecosDataHandler(
+            spark=sparkSession,
+            az_tenant_id=az_tenant_id,
+            db_host=db_host,
+            db_name=db_name,
+            db_port=5432,
+        )
 
     def get_signal(self, sig_id: str) -> Any:
         """
@@ -298,7 +309,7 @@ class SignalHandler:
             "Instructie ASC:\n"
             "(i) Foto bekijken en alleen signalen doorzetten naar THOR indien er inderdaad een "
             "bouwcontainer of bouwkeet op de foto staat. \n "
-            "(ii) De urgentie voor dit signaal moet 'laag' blijven, zodat BOA's dit "
+            "(ii) De bron voor dit signaal moet op 'Automatische signalering' blijven staan, zodat BOA's dit "
             "signaal herkennen in City Control onder 'Signalering'."
         )
 
@@ -316,10 +327,9 @@ class SignalHandler:
             "(iii) Indien geen geldige vergunning, volg dan het reguliere handhavingsproces."
         )
 
-    @staticmethod
     def get_bag_address_in_range(
-        longitude: float, latitude: float, max_building_search_radius=50
-    ) -> List[Optional[str]]:
+        self, longitude: float, latitude: float, max_building_search_radius=50
+    ) -> Union[List[Union[str, int]], None]:
         """
         Retrieves the nearest building information in BAG for a given location point within a specified search radius.
 
@@ -346,40 +356,45 @@ class SignalHandler:
         --------
         lat = 52.3702
         lon = 4.8952
-        _get_bag_address_in_range(lat, lon)
+        get_bag_address_in_range(lat, lon)
         ['Dam Square', '1', '1012 JS']
         """
-        location_point = {"lat": latitude, "lon": longitude}
         bag_url = (
-            f"https://api.data.amsterdam.nl/bag/v1.1/nummeraanduiding/"
-            f"?format=json&locatie={location_point['lat']},{location_point['lon']},"
-            f"{max_building_search_radius}&srid=4326&detailed=1"
+            f"https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
+            f"&lat={latitude}&lon={longitude}&radius={max_building_search_radius}"
         )
 
         response = requests.get(bag_url, timeout=60)
         if response.status_code == 200:
             response_content = json.loads(response.content)
-            if response_content["count"] > 0:
-                # Get first element
-                first_element = json.loads(response.content)["results"][0]
+            if len(response_content["features"]) > 0:
+                first_element_id = response_content["features"][0]["properties"]["id"]
+                result_df = (
+                    self.decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
+                        first_element_id
+                    )
+                )
+                if result_df.empty:
+                    print(f"Warning: No results found for id: {first_element_id}")
+                    return None
+                if result_df.shape[0] > 1:
+                    print(f"Warning: Multiple results found for id: {first_element_id}")
                 return [
-                    first_element["openbare_ruimte"]["_display"],
-                    first_element["huisnummer"],
-                    first_element["postcode"],
+                    result_df["openbareruimte_naam"].iloc[0],
+                    int(result_df["huisnummer"].iloc[0]),
+                    result_df["postcode"].iloc[0],
                 ]
             else:
                 print(
                     f"No BAG address in the range of {max_building_search_radius} found."
                 )
-                return []
         else:
             print(
                 f"Failed to get address from BAG, status code {response.status_code}."
             )
-            return []
+        return None
 
-    @staticmethod
-    def fill_incident_details(incident_date: str, lon: float, lat: float) -> Any:
+    def fill_incident_details(self, incident_date: str, lon: float, lat: float) -> Any:
         """
         Fills in the details of an incident and returns a JSON object representing the incident.
 
@@ -407,10 +422,6 @@ class SignalHandler:
         """
 
         date_now = datetime.strptime(incident_date, "%Y-%m-%d").date()
-        bag_address = SignalHandler.get_bag_address_in_range(
-            longitude=lon, latitude=lat
-        )
-
         json_to_send = {
             "text": SignalHandler.get_signal_description(),
             "location": {
@@ -425,10 +436,13 @@ class SignalHandler:
             },
             "reporter": {"email": "cvt@amsterdam.nl"},
             "priority": {
-                "priority": "low",
+                "priority": "normal",
             },
+            "source": "Automatische signalering",
             "incident_date_start": date_now.strftime("%Y-%m-%d %H:%M"),
         }
+
+        bag_address = self.get_bag_address_in_range(longitude=lon, latitude=lat)
         if bag_address:
             location_json = {
                 "location": {
@@ -456,7 +470,7 @@ class SignalHandler:
             "notification_date", F.to_date(F.lit(date_of_notification))
         )
         silverFrameAndDetectionMetadata = SilverMetadataAggregator(
-            spark=self.spark, catalog=self.catalog_name, schema=self.schema
+            spark=self.sparkSession, catalog=self.catalog_name, schema=self.schema
         )
         successful_notifications = []
         unsuccessful_notifications = []
@@ -480,6 +494,7 @@ class SignalHandler:
                 notification_json = self.fill_incident_details(
                     incident_date=date_of_notification, lon=LON, lat=LAT
                 )
+
                 signal_id = self.post_signal_with_image_attachment(
                     json_content=notification_json, filename=image_upload_path
                 )

@@ -94,6 +94,6 @@ class OORInference(YOLOInference):
 
     def _load_image(self, image_path: Union[os.PathLike, str]) -> OORInputImage:
         image = super()._load_image(image_path=image_path, child_class=OORInputImage)
-        if self.defisheye_flag:
+        if (image is not None) and self.defisheye_flag:
             image.defisheye(defisheye_params=self.defisheye_params)
         return image
