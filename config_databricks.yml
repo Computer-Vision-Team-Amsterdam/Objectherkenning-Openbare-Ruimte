@@ -18,11 +18,11 @@ databricks_pipelines:
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
       object_classes:
         # available:
-        #   2: "container"
+        #   2: "container of bouwkeet"
         #   3: "mobiel toilet"
         #   4: "steiger"
         active:
-          2: "container"
+          2: "container of bouwkeet"
           # 3: "mobiel toilet"
           # 4: "steiger"
         permit_mapping:
@@ -37,6 +37,10 @@ databricks_pipelines:
           2: 0.03
           3: 0.03
           4: 0.03
+        send_limit:
+          2: 10
+          3: 10
+          4: 10
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -56,11 +60,11 @@ databricks_pipelines:
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
       object_classes:
         # available:
-        #   2: "container"
+        #   2: "container of bouwkeet"
         #   3: "mobiel toilet"
         #   4: "steiger"
         active:
-          2: "container"
+          2: "container of bouwkeet"
           # 3: "mobiel toilet"
           # 4: "steiger"
         permit_mapping:
@@ -75,3 +79,7 @@ databricks_pipelines:
           2: 0.03
           3: 0.03
           4: 0.03
+        send_limit:
+          2: 10
+          3: 10
+          4: 10
