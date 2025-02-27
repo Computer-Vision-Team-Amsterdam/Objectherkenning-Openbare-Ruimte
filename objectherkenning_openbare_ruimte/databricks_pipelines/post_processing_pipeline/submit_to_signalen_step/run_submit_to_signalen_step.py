@@ -40,7 +40,7 @@ def run_submit_to_signalen_step(
     az_tenant_id,
     db_host,
     db_name,
-    active_object_categories,
+    active_object_classes,
     send_limits,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
@@ -56,7 +56,7 @@ def run_submit_to_signalen_step(
         az_tenant_id,
         db_host,
         db_name,
-        active_object_categories,
+        active_object_classes,
     )
 
     top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
@@ -122,6 +122,6 @@ if __name__ == "__main__":
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
-        active_object_categories=settings["object_categories"]["active"],
+        active_object_classes=settings["object_classes"]["active"],
         send_limits=settings["object_categories"]["send_limit"],
     )
