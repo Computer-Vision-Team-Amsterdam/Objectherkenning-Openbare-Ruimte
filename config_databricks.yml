@@ -23,8 +23,8 @@ databricks_pipelines:
         #   4: "steiger"
         active:
           2: "container of bouwkeet"
-          # 3: "mobiel toilet"
-          # 4: "steiger"
+          3: "mobiel toilet"
+          4: "steiger"
         permit_mapping:
           2: ["puinbak", "container", "keet", "cabin"]
           3: ["toilet"]  # TODO: check with BOR if more are relevant
@@ -65,8 +65,8 @@ databricks_pipelines:
         #   4: "steiger"
         active:
           2: "container of bouwkeet"
-          # 3: "mobiel toilet"
-          # 4: "steiger"
+          3: "mobiel toilet"
+          4: "steiger"
         permit_mapping:
           2: ["puinbak", "container", "keet", "cabin"]
           3: ["toilet"]  # TODO: check with BOR if more are relevant
