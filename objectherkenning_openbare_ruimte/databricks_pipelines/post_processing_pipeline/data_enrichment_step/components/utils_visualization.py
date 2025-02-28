@@ -57,7 +57,7 @@ def generate_map(
         "priority_id", row_number().over(window_spec)
     )
 
-    shape_map = {2: "marker", 3: "circle", 4: "square"}
+    shape_map = {2: "marker", 3: "circle", 4: "rectangle"}
 
     # display(dataframe_with_priority)
 
@@ -166,6 +166,26 @@ def generate_map(
         )
 
     folium.LayerControl().add_to(Map)
+
+    object_class_legend = """
+     <div style="
+         position: fixed;
+         top: 80px;
+         right: 10px;
+         width: 220px;
+         border:2px solid grey;
+         z-index:9999;
+         font-size:14px;
+         background-color:white;
+         padding: 10px;
+     ">
+       <b>Legend</b><br>
+       <i class="fa fa-map-marker" style="font-size:20px; color: black;"></i>&nbsp; Container / Bouwkeet<br>
+       <i class="fa fa-circle" style="font-size:20px; color: black;"></i>&nbsp; Mobiel Toilet<br>
+       <i class="fa fa-square" style="font-size:20px; color: black;"></i>&nbsp; Steiger
+     </div>
+    """
+    Map.get_root().html.add_child(folium.Element(object_class_legend))
 
     # create name for the map
     print(f"Map is saved at {name}")
