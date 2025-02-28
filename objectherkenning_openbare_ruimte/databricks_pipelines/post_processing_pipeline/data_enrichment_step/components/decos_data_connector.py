@@ -1,12 +1,13 @@
 import json
 import re
-from typing import List
+from typing import Dict, List, Optional
 
 import geopy.distance
 import numpy as np
 import pandas as pd
 from pyproj import Transformer
-from pyspark.sql import Row
+from pyspark.sql import DataFrame, Row, SparkSession
+from pyspark.sql.functions import col
 from shapely import wkb
 from shapely.geometry import Point
 
@@ -14,31 +15,21 @@ from .reference_db_connector import ReferenceDatabaseConnector
 
 
 class DecosDataHandler(ReferenceDatabaseConnector):
-    def __init__(self, spark, az_tenant_id, db_host, db_name, db_port):
+
+    def __init__(
+        self,
+        spark: SparkSession,
+        az_tenant_id: str,
+        db_host: str,
+        db_name: str,
+        db_port: int,
+        active_object_classes: Dict[int, str],
+        permit_mapping: Dict[int, List],
+    ) -> None:
         super().__init__(az_tenant_id, db_host, db_name, db_port)
         self.spark = spark
-
-    @staticmethod
-    def is_container_permit(objects):
-        """
-        Check whether permit is for a container based on the 'objecten' column.
-        """
-        container_words = [
-            "puinbak",
-            "container",
-            "keet",
-            "cabin",
-        ]
-
-        regex_pattern = re.compile(r"(?i)(" + "|".join(container_words) + r")")
-        try:
-            for obj in objects:
-                if bool(regex_pattern.search(obj["object"])):
-                    return True
-        except Exception as e:
-            print(f"There was an exception in the is_container_permit function: {e}")
-
-        return False
+        self.active_object_classes = active_object_classes
+        self.permit_mapping = permit_mapping
 
     def query_and_process_object_permits(self, date_to_query):
         """
@@ -54,12 +45,35 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             except json.JSONDecodeError:
                 return []
 
+        def _get_object_classes(objects: List[Dict[str, str]]) -> List[int]:
+            """
+            Determine matching object classes for permits from a list
+            of permit keywords based on a keyword mapping.
+
+            Parameters:
+                objects (List[Dict[str, str]]): A list of dictionaries, each representing an object. Each dictionary
+                                                should contain an "object" key with a string value.
+
+            Returns:
+                List[str]: A list of object classes that match the permit based on the keyword mapping.
+            """
+            mapping = self.get_keyword_mapping()
+            matched = []
+            for category, keywords in mapping.items():
+                regex_pattern = re.compile(r"(?i)(" + "|".join(keywords) + r")")
+                if any(regex_pattern.search(obj.get("object", "")) for obj in objects):
+                    matched.append(category)
+            return matched
+
         result_df["objecten"] = result_df["objecten"].apply(
             lambda x: _safe_json_load(x) if x else []
         )
 
-        # Only keep rows with permits about containers
-        result_df = result_df[result_df["objecten"].apply(self.is_container_permit)]
+        # Assign object category to each permit
+        result_df["object_classes"] = result_df["objecten"].apply(_get_object_classes)
+
+        # Keep only permits that match at least one of the keywords (i.e. have a valid category)
+        result_df = result_df[result_df["object_classes"].apply(lambda x: len(x) > 0)]
 
         # Only keep rows where location of the permit is not null
         result_df = result_df[result_df["locatie"].notnull()]
@@ -72,7 +86,12 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             result_df["permit_lat"].notnull() & result_df["permit_lon"].notnull()
         ]
 
-        print(f"{len(self._healthy_df)} container permits with valid coordinates.")
+        # Reset the healthy DataFrame index (to ensure alignment with internal lists)
+        self._healthy_df = self._healthy_df.reset_index(drop=True)
+
+        print(
+            f"{len(self._healthy_df)} permits for active object categories with valid coordinates."
+        )
         if len(self._healthy_df) == 0:
             raise ValueError("No permit coordinates could be converted from addresses.")
 
@@ -80,7 +99,15 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         self._quarantine_df = result_df[
             result_df["permit_lat"].isnull() | result_df["permit_lon"].isnull()
         ]
-        print(f"{len(self._quarantine_df)} container permits with invalid coordinates.")
+        print(
+            f"{len(self._quarantine_df)} permits for active object categories with invalid coordinates."
+        )
+
+        exploded = self._healthy_df.explode("object_classes")
+        stats = exploded["object_classes"].value_counts()
+        print("Matching permits per category:")
+        for category, count in stats.items():
+            print(f"  Category {self.active_object_classes[category]}: {count}")
 
         self._permits_coordinates = self._extract_permits_coordinates()
         self._permits_coordinates_geometry = self._convert_coordinates_to_point()
@@ -269,20 +296,95 @@ class DecosDataHandler(ReferenceDatabaseConnector):
     def get_quarantine_df(self):
         return self._quarantine_df
 
-    def calculate_distances_to_closest_permits(
-        self,
-        containers_coordinates_df,
-    ):
-        results = []
+    def get_keyword_mapping(self) -> Dict[int, List[str]]:
+        """
+        Return a mapping of active object class keys to their permit mapping values.
 
-        for row in containers_coordinates_df.collect():
+        Returns:
+            Dict[int, str]: Dictionary with active object class keys and corresponding permit mapping values.
+        """
+        active_keys = set(self.active_object_classes.keys())
+        return {k: self.permit_mapping[k] for k in active_keys}
+
+    def calculate_distances_to_closest_permits(
+        self, containers_coordinates_df: DataFrame
+    ) -> DataFrame:
+        """
+        Calculate distances to the closest permits for each active object class and union the results.
+
+        Parameters:
+            containers_coordinates_df (DataFrame): A Spark DataFrame containing object coordinates.
+
+        Returns:
+            DataFrame: A Spark DataFrame with calculated distances or an empty DataFrame if no results.
+        """
+        dfs_closest_permits: List[DataFrame] = []
+
+        # Loop through each target object category.
+        for object_class in set(self.active_object_classes.keys()):
+            df_object_class = containers_coordinates_df.filter(
+                col("object_class") == object_class
+            )
+            if not df_object_class.take(1):
+                continue
+            # Calculate the distances for the current object_class using the corresponding keyword list.
+            df_closest_permit = (
+                self.calculate_distances_to_closest_permits_for_object_class(
+                    df_object_class, object_class
+                )
+            )
+            if df_closest_permit:
+                dfs_closest_permits.append(df_closest_permit)
+
+        if dfs_closest_permits:
+            union_dfs_closest_permits = dfs_closest_permits[0]
+            for df in dfs_closest_permits[1:]:
+                union_dfs_closest_permits = union_dfs_closest_permits.union(df)
+            return union_dfs_closest_permits
+        else:
+            # Return an empty Spark DataFrame with the same schema as containers_coordinates_df.
+            empty_rdd = self.spark.sparkContext.emptyRDD()
+            return self.spark.createDataFrame(
+                empty_rdd, schema=containers_coordinates_df.schema
+            )
+
+    def calculate_distances_to_closest_permits_for_object_class(
+        self, containers_df: DataFrame, category: int
+    ) -> Optional[DataFrame]:
+        """
+        Calculate the closest permit distances for a given object category.
+
+        Parameters:
+            containers_df (DataFrame): Spark DataFrame with container data including 'gps_lat', 'gps_lon', and 'detection_id'.
+            category (int): The target object category used to filter healthy permits.
+
+        Returns:
+            Optional[DataFrame]: A Spark DataFrame with columns 'detection_id', 'closest_permit_distance',
+                                'closest_permit_id', 'closest_permit_lat', and 'closest_permit_lon'.
+                                Returns None if no healthy permits match the category.
+        """
+        # Filter healthy permits whose object_classes (a list) contains the target category.
+        mask = self._healthy_df["object_classes"].apply(lambda cats: category in cats)
+        filtered_indices = self._healthy_df.index[mask].tolist()
+
+        if not filtered_indices:
+            return None
+
+        filtered_points = [
+            self._permits_coordinates_geometry[i] for i in filtered_indices
+        ]
+        filtered_ids = self._healthy_df.loc[filtered_indices, "id"].tolist()
+        filtered_coords = [self._permits_coordinates[i] for i in filtered_indices]
+
+        results = []
+        for row in containers_df.collect():
             container_lat = row.gps_lat
             container_lon = row.gps_lon
 
             container_location = Point(container_lat, container_lon)
 
             closest_permit_distances = []
-            for permit_location in self._permits_coordinates_geometry:
+            for permit_location in filtered_points:
                 try:
                     # calculate distance between container point and permit point
                     permit_dist = geopy.distance.distance(
@@ -305,9 +407,9 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                     closest_permit_distance=float(
                         closest_permit_distances[min_distance_idx]
                     ),
-                    closest_permit_id=self.get_permits_ids()[min_distance_idx],
-                    closest_permit_lat=self._permits_coordinates[min_distance_idx][0],
-                    closest_permit_lon=self._permits_coordinates[min_distance_idx][1],
+                    closest_permit_id=filtered_ids[min_distance_idx],
+                    closest_permit_lat=filtered_coords[min_distance_idx][0],
+                    closest_permit_lon=filtered_coords[min_distance_idx][1],
                 )
             )
         results_df = self.spark.createDataFrame(results)

@@ -57,6 +57,8 @@ def generate_map(
         "priority_id", row_number().over(window_spec)
     )
 
+    icon_map = {2: "box", 3: "toilet-portable", 4: "table-cells"}
+
     # display(dataframe_with_priority)
 
     # Function to find the closest point on a linestring to a given point
@@ -88,16 +90,14 @@ def generate_map(
         permit_location = Point(row["closest_permit_lat"], row["closest_permit_lon"])
         closest_permit_id = row["closest_permit_id"]
 
-        # Determine marker color based on the score
-        marker_color = get_marker_color(detection_score)
-
         # Create a custom DivIcon for the marker with the priority_id
+        marker_color = get_marker_color(detection_score)
+        icon_type = icon_map.get(row["object_class"], "info-sign")
         detection_icon = BeautifyIcon(
-            icon="arrow-down",
+            icon=icon_type,
             icon_shape="marker",
-            number=str(detection_priority_id),
-            border_color="#000000",
-            background_color=marker_color,
+            border_color=marker_color,
+            background_color="white",
             text_color="#000000",
         )
 
@@ -116,11 +116,9 @@ def generate_map(
         # Add container locations to the map
         folium.Marker(
             location=[detection.x, detection.y],
-            color=marker_color,
             popup=f"Detection ID: {detection_id}<br>"
+            f"Detection Priority ID: {detection_priority_id}<br>"
             f"Image Name: {detection_image_name}<br>",
-            # popup=popup,
-            radius=5,
             icon=detection_icon,
         ).add_to(Map)
 
@@ -165,6 +163,26 @@ def generate_map(
         )
 
     folium.LayerControl().add_to(Map)
+
+    object_class_legend = """
+    <div style="
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        width: 220px;
+        border:2px solid grey;
+        z-index:9999;
+        font-size:14px;
+        background-color:white;
+        padding: 10px;
+    ">
+    <b>Legend</b><br>
+    <i class="fa fa-box" style="font-size:20px; color: black;"></i>&nbsp; Container / Bouwkeet<br>
+    <i class="fa fa-toilet-portable" style="font-size:20px; color: black;"></i>&nbsp; Mobiel Toilet<br>
+    <i class="fa fa-table-cells" style="font-size:20px; color: black;"></i>&nbsp; Steiger
+    </div>
+    """
+    Map.get_root().html.add_child(folium.Element(object_class_legend))
 
     # create name for the map
     print(f"Map is saved at {name}")
