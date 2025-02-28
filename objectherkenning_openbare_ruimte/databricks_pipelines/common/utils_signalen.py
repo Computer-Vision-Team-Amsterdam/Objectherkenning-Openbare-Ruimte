@@ -288,8 +288,8 @@ class SignalHandler:
         return (
             f"Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een {object_class_str} "
             "gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
-            "adres betreft een schatting van het dichtstbijzijnde adres bij de containerlocatie, er is geen "
-            "informatie bekend in hoeverre dit het adres is van de containereigenaar."
+            "adres betreft een schatting van het dichtstbijzijnde adres bij de objectlocatie, er is geen "
+            "informatie bekend in hoeverre dit het adres is van de objecteigenaar."
         )
 
     @staticmethod
