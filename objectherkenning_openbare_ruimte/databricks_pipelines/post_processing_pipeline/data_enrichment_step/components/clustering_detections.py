@@ -1,4 +1,5 @@
 from functools import reduce
+from operator import or_
 from typing import Dict
 
 import numpy as np
@@ -32,11 +33,13 @@ class Clustering:
         self.active_object_classes = active_object_classes
         self.joined_metadata = self._join_frame_and_detection_metadata()
         self._containers_coordinates_with_detection_id = None
-        self.confidence_thresholds = confidence_thresholds
-        self.bbox_size_thresholds = bbox_size_thresholds
 
-        self.filter_by_confidence_score()
-        self.filter_by_bounding_box_size()
+        self.filter_by_threshold(confidence_thresholds, "confidence")
+        self.filter_by_threshold(
+            bbox_size_thresholds,
+            "area",
+            column_computation=col("width") * col("height"),
+        )
 
         if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
             print("Missing or incomplete data to run clustering. Stopping execution.")
@@ -44,35 +47,31 @@ class Clustering:
 
         self.cluster_and_select_images()
 
-    def filter_by_confidence_score(self):
+    def filter_by_threshold(
+        self, thresholds: dict, column_name: str, column_computation=None
+    ):
         """
-        Filter the joined metadata such that for each object class, only rows with a confidence
-        above the threshold for that class are kept.
-        """
-        conditions = []
-        for obj_class, threshold in self.confidence_thresholds.items():
-            conditions.append(
-                (col("object_class") == obj_class) & (col("confidence") > threshold)
-            )
-        if conditions:
-            combined_condition = reduce(lambda a, b: a | b, conditions)
-            self.joined_metadata = self.joined_metadata.where(combined_condition)
+        Filter the joined metadata such that for each object class, only rows with a value above
+        the given threshold for the specified column are kept.
 
-    def filter_by_bounding_box_size(self):
+        Parameters:
+            thresholds: A dictionary mapping object classes to threshold values.
+            column_name: The name of the column to filter on.
+            column_computation: Optional; if provided, should be a function that returns a Column
+                                instance to be added (or overwritten) in joined_metadata.
         """
-        Calculate the area and filter the joined metadata such that for each object class, only rows with an area
-        above the threshold for that class are kept.
-        """
-        self.joined_metadata = self.joined_metadata.withColumn(
-            "area", col("width") * col("height")
-        )
-        conditions = []
-        for obj_class, threshold in self.bbox_size_thresholds.items():
-            conditions.append(
-                (col("object_class") == obj_class) & (col("area") > threshold)
+        if column_computation is not None:
+            self.joined_metadata = self.joined_metadata.withColumn(
+                column_name, column_computation
             )
+
+        conditions = [
+            (col("object_class") == obj_class) & (col(column_name) > threshold)
+            for obj_class, threshold in thresholds.items()
+        ]
+
         if conditions:
-            combined_condition = reduce(lambda a, b: a | b, conditions)
+            combined_condition = reduce(or_, conditions)
             self.joined_metadata = self.joined_metadata.where(combined_condition)
 
     def get_containers_coordinates_with_detection_id(self):
