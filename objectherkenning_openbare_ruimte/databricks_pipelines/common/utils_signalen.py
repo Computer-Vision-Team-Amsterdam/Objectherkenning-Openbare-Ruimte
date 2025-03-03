@@ -86,11 +86,14 @@ class SignalHandler:
         az_tenant_id,
         db_host,
         db_name,
+        active_object_classes,
+        permit_mapping,
     ):
         self.sparkSession = sparkSession
         self.device_id = device_id
         self.catalog_name = catalog
         self.schema = schema
+        self.active_object_classes = active_object_classes
 
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
         signalConnectionConfigurer = SignalConnectionConfigurer(
@@ -106,6 +109,8 @@ class SignalHandler:
             db_host=db_host,
             db_name=db_name,
             db_port=5432,
+            active_object_classes=active_object_classes,
+            permit_mapping=permit_mapping,
         )
 
     def get_signal(self, sig_id: str) -> Any:
@@ -276,15 +281,15 @@ class SignalHandler:
         return signal_id
 
     @staticmethod
-    def get_signal_description() -> str:
+    def get_signal_description(object_class_str: str) -> str:
         """
         Text we send when creating a notification.
         """
         return (
-            "Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een bouwcontainer of "
-            "bouwkeet gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
-            "adres betreft een schatting van het dichtstbijzijnde adres bij de containerlocatie, er is geen "
-            "informatie bekend in hoeverre dit het adres is van de containereigenaar."
+            f"Dit is een automatisch gegenereerd signaal: Met behulp van beeldherkenning is een {object_class_str} "
+            "gedetecteerd op onderstaande locatie, waar waarschijnlijk geen vergunning voor is. N.B. Het "
+            "adres betreft een schatting van het dichtstbijzijnde adres bij de objectlocatie, er is geen "
+            "informatie bekend in hoeverre dit het adres is van de objecteigenaar."
         )
 
     @staticmethod
@@ -394,7 +399,9 @@ class SignalHandler:
             )
         return None
 
-    def fill_incident_details(self, incident_date: str, lon: float, lat: float) -> Any:
+    def fill_incident_details(
+        self, incident_date: str, lon: float, lat: float, object_class_str: str
+    ) -> Any:
         """
         Fills in the details of an incident and returns a JSON object representing the incident.
 
@@ -423,7 +430,7 @@ class SignalHandler:
 
         date_now = datetime.strptime(incident_date, "%Y-%m-%d").date()
         json_to_send = {
-            "text": SignalHandler.get_signal_description(),
+            "text": SignalHandler.get_signal_description(object_class_str),
             "location": {
                 "geometrie": {
                     "type": "Point",
@@ -479,6 +486,8 @@ class SignalHandler:
             LAT = float(entry["object_lat"])
             LON = float(entry["object_lon"])
             detection_id = entry["detection_id"]
+            object_class = entry["object_class"]
+            object_class_str = self.active_object_classes.get(object_class)
             image_upload_path = (
                 silverFrameAndDetectionMetadata.get_image_upload_path_from_detection_id(
                     detection_id=detection_id,
@@ -492,7 +501,10 @@ class SignalHandler:
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405
                 notification_json = self.fill_incident_details(
-                    incident_date=date_of_notification, lon=LON, lat=LAT
+                    incident_date=date_of_notification,
+                    lon=LON,
+                    lat=LAT,
+                    object_class_str=object_class_str,
                 )
 
                 signal_id = self.post_signal_with_image_attachment(

@@ -18,17 +18,17 @@ databricks_pipelines:
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
       object_classes:
         # available:
-        #   2: "container"
+        #   2: "container of bouwkeet"
         #   3: "mobiel toilet"
         #   4: "steiger"
         active:
-          2: "container"
-          # 3: "mobiel toilet"
-          # 4: "steiger"
+          2: "container of bouwkeet"
+          3: "mobiel toilet"
+          4: "steiger"
         permit_mapping:
           2: ["puinbak", "container", "keet", "cabin"]
-          3: ["toilet"]  # TODO: check with BOR if more are relevant
-          4: ["steiger"]  # TODO: check with BOR if more are relevant
+          3: ["toilet", "dixi"]
+          4: ["steiger"]
         confidence_threshold:
           2: 0.8
           3: 0.8
@@ -37,6 +37,10 @@ databricks_pipelines:
           2: 0.03
           3: 0.03
           4: 0.03
+        send_limit:
+          2: 10
+          3: 10
+          4: 10
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -56,17 +60,17 @@ databricks_pipelines:
       azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
       object_classes:
         # available:
-        #   2: "container"
+        #   2: "container of bouwkeet"
         #   3: "mobiel toilet"
         #   4: "steiger"
         active:
-          2: "container"
-          # 3: "mobiel toilet"
-          # 4: "steiger"
+          2: "container of bouwkeet"
+          3: "mobiel toilet"
+          4: "steiger"
         permit_mapping:
           2: ["puinbak", "container", "keet", "cabin"]
-          3: ["toilet"]  # TODO: check with BOR if more are relevant
-          4: ["steiger"]  # TODO: check with BOR if more are relevant
+          3: ["toilet", "dixi"]
+          4: ["steiger"]
         confidence_threshold:
           2: 0.8
           3: 0.8
@@ -75,3 +79,7 @@ databricks_pipelines:
           2: 0.03
           3: 0.03
           4: 0.03
+        send_limit:
+          2: 10
+          3: 10
+          4: 10
