@@ -45,32 +45,14 @@ class DecosDataHandler(ReferenceDatabaseConnector):
             except json.JSONDecodeError:
                 return []
 
-        def _get_object_classes(objects: List[Dict[str, str]]) -> List[int]:
-            """
-            Determine matching object classes for permits from a list
-            of permit keywords based on a keyword mapping.
-
-            Parameters:
-                objects (List[Dict[str, str]]): A list of dictionaries, each representing an object. Each dictionary
-                                                should contain an "object" key with a string value.
-
-            Returns:
-                List[str]: A list of object classes that match the permit based on the keyword mapping.
-            """
-            mapping = self.get_keyword_mapping()
-            matched = []
-            for category, keywords in mapping.items():
-                regex_pattern = re.compile(r"(?i)(" + "|".join(keywords) + r")")
-                if any(regex_pattern.search(obj.get("object", "")) for obj in objects):
-                    matched.append(category)
-            return matched
-
         result_df["objecten"] = result_df["objecten"].apply(
             lambda x: _safe_json_load(x) if x else []
         )
 
         # Assign object category to each permit
-        result_df["object_classes"] = result_df["objecten"].apply(_get_object_classes)
+        result_df["object_classes"] = result_df["objecten"].apply(
+            self.get_object_classes
+        )
 
         # Keep only permits that match at least one of the keywords (i.e. have a valid category)
         result_df = result_df[result_df["object_classes"].apply(lambda x: len(x) > 0)]
@@ -295,6 +277,26 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
     def get_quarantine_df(self):
         return self._quarantine_df
+
+    def get_object_classes(self, objects: List[Dict[str, str]]) -> List[int]:
+        """
+        Determine matching object classes for permits from a list
+        of permit keywords based on a keyword mapping.
+
+        Parameters:
+            objects (List[Dict[str, str]]): A list of dictionaries, each representing an object. Each dictionary
+                                            should contain an "object" key with a string value.
+
+        Returns:
+            List[str]: A list of object classes that match the permit based on the keyword mapping.
+        """
+        mapping = self.get_keyword_mapping()
+        matched = []
+        for category, keywords in mapping.items():
+            regex_pattern = re.compile(r"(?i)(" + "|".join(keywords) + r")")
+            if any(regex_pattern.search(obj.get("object", "")) for obj in objects):
+                matched.append(category)
+        return matched
 
     def get_keyword_mapping(self) -> Dict[int, List[str]]:
         """
