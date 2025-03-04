@@ -18,7 +18,7 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_ingest_metadata_step(
-    sparkSesssion,
+    sparkSession,
     catalog,
     schema,
     root_source,
@@ -28,7 +28,7 @@ def run_ingest_metadata_step(
     job_process_time,
 ):
     dataLoader = DataLoader(
-        sparkSesssion,
+        sparkSession,
         catalog,
         schema,
         root_source,
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     ]
 
     run_ingest_metadata_step(
-        sparkSesssion=sparkSession,
+        sparkSession=sparkSession,
         catalog=settings["catalog"],
         schema=settings["schema"],
         root_source=settings["storage_account_root_path"],
