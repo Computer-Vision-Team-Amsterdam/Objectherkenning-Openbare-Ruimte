@@ -18,9 +18,24 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_healthcheck_step(
-    sparkSession,
-    settings,
-):
+    sparkSession: SparkSession,
+    settings: dict,
+) -> None:
+    """
+    Run the health check step.
+
+    Parameters
+    ----------
+    sparkSession : SparkSession
+        The Spark session to use for the health check.
+    settings : dict
+        The settings dictionary containing configuration parameters.
+
+    Raises
+    ------
+    ValueError
+        If the Decos data handler or BAG API is down.
+    """
     decosDataHandler = DecosDataHandler(
         spark=sparkSession,
         az_tenant_id=settings["azure_tenant_id"],
@@ -37,16 +52,18 @@ def run_healthcheck_step(
         print("Decos data handler is up and running")
     else:
         raise ValueError("Decos data handler is down")
+
     bag_url = (
-        f"https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
-        f"&lat={'52.3782197'}&lon={'4.8834705'}&radius=25"
+        "https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
+        "&lat=52.3782197&lon=4.8834705&radius=25"
     )
 
-    response = requests.get(bag_url, timeout=60)
-    if response.status_code == 200:
+    try:
+        response = requests.get(bag_url, timeout=60)
+        response.raise_for_status()
         print("BAG API is up and running")
-    else:
-        raise ValueError("BAG API is down")
+    except requests.RequestException as e:
+        raise ValueError("BAG API is down") from e
 
 
 if __name__ == "__main__":
