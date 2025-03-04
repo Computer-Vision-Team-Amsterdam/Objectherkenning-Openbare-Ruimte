@@ -32,7 +32,7 @@ class Clustering:
         self.frame_metadata = frames
         self.active_object_classes = active_object_classes
         self.joined_metadata = self._join_frame_and_detection_metadata()
-        self._containers_coordinates_with_detection_id = None
+        self._objects_coordinates_with_detection_id = None
 
         self.filter_by_threshold(confidence_thresholds, "confidence")
         self.filter_by_threshold(
@@ -74,12 +74,12 @@ class Clustering:
             combined_condition = reduce(or_, conditions)
             self.joined_metadata = self.joined_metadata.where(combined_condition)
 
-    def get_containers_coordinates_with_detection_id(self):
-        if not self._containers_coordinates_with_detection_id:
-            self._containers_coordinates_with_detection_id = (
-                self._extract_containers_coordinates_with_detection_id()
+    def get_objects_coordinates_with_detection_id(self):
+        if not self._objects_coordinates_with_detection_id:
+            self._objects_coordinates_with_detection_id = (
+                self._extract_objects_coordinates_with_detection_id()
             )
-        return self._containers_coordinates_with_detection_id
+        return self._objects_coordinates_with_detection_id
 
     def _join_frame_and_detection_metadata(self):
         """
@@ -121,13 +121,13 @@ class Clustering:
 
         return joined_df
 
-    def _extract_containers_coordinates_with_detection_id(self):
+    def _extract_objects_coordinates_with_detection_id(self):
 
-        containers_df = self.joined_metadata.select(
+        objects_df = self.joined_metadata.select(
             "detection_id", "gps_lat", "gps_lon", "object_class"
         )
 
-        return containers_df
+        return objects_df
 
     def _cluster_points(self, eps):
         """
@@ -236,9 +236,9 @@ class Clustering:
             "row_number", "mean_confidence", "area"
         )
 
-        # Update container coordinates after clustering
-        self._containers_coordinates_with_detection_id = (
-            self._extract_containers_coordinates_with_detection_id()
+        # Update object coordinates after clustering
+        self._objects_coordinates_with_detection_id = (
+            self._extract_objects_coordinates_with_detection_id()
         )
 
     def add_column_to_df(self, df, column_name, values):

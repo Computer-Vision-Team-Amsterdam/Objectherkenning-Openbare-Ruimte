@@ -309,13 +309,13 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         return {k: self.permit_mapping[k] for k in active_keys}
 
     def calculate_distances_to_closest_permits(
-        self, containers_coordinates_df: DataFrame
+        self, objects_coordinates_df: DataFrame
     ) -> DataFrame:
         """
         Calculate distances to the closest permits for each active object class and union the results.
 
         Parameters:
-            containers_coordinates_df (DataFrame): A Spark DataFrame containing object coordinates.
+            objects_coordinates_df (DataFrame): A Spark DataFrame containing object coordinates.
 
         Returns:
             DataFrame: A Spark DataFrame with calculated distances or an empty DataFrame if no results.
@@ -324,7 +324,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
         # Loop through each target object category.
         for object_class in set(self.active_object_classes.keys()):
-            df_object_class = containers_coordinates_df.filter(
+            df_object_class = objects_coordinates_df.filter(
                 col("object_class") == object_class
             )
             if not df_object_class.take(1):
@@ -344,20 +344,20 @@ class DecosDataHandler(ReferenceDatabaseConnector):
                 union_dfs_closest_permits = union_dfs_closest_permits.union(df)
             return union_dfs_closest_permits
         else:
-            # Return an empty Spark DataFrame with the same schema as containers_coordinates_df.
+            # Return an empty Spark DataFrame with the same schema as objects_coordinates_df.
             empty_rdd = self.spark.sparkContext.emptyRDD()
             return self.spark.createDataFrame(
-                empty_rdd, schema=containers_coordinates_df.schema
+                empty_rdd, schema=objects_coordinates_df.schema
             )
 
     def calculate_distances_to_closest_permits_for_object_class(
-        self, containers_df: DataFrame, category: int
+        self, objects_df: DataFrame, category: int
     ) -> Optional[DataFrame]:
         """
         Calculate the closest permit distances for a given object category.
 
         Parameters:
-            containers_df (DataFrame): Spark DataFrame with container data including 'gps_lat', 'gps_lon', and 'detection_id'.
+            objects_df (DataFrame): Spark DataFrame with object data including 'gps_lat', 'gps_lon', and 'detection_id'.
             category (int): The target object category used to filter healthy permits.
 
         Returns:
@@ -379,24 +379,24 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         filtered_coords = [self._permits_coordinates[i] for i in filtered_indices]
 
         results = []
-        for row in containers_df.collect():
-            container_lat = row.gps_lat
-            container_lon = row.gps_lon
+        for row in objects_df.collect():
+            object_lat = row.gps_lat
+            object_lon = row.gps_lon
 
-            container_location = Point(container_lat, container_lon)
+            object_location = Point(object_lat, object_lon)
 
             closest_permit_distances = []
             for permit_location in filtered_points:
                 try:
-                    # calculate distance between container point and permit point
+                    # calculate distance between object point and permit point
                     permit_dist = geopy.distance.distance(
-                        container_location.coords, permit_location.coords
+                        object_location.coords, permit_location.coords
                     ).meters
                 except Exception:
                     permit_dist = 0
                     print("Error occurred:")
                     print(
-                        f"Container location: {container_location}, {container_location.coords}"
+                        f"Container location: {object_location}, {object_location.coords}"
                     )
                     print(
                         f"Permit location: {permit_location}, {permit_location.coords}"

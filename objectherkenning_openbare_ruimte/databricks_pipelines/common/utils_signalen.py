@@ -306,29 +306,29 @@ class SignalHandler:
         )
 
     @staticmethod
-    def get_text_asc_instruction_note() -> str:
+    def get_text_asc_instruction_note(object_class_str: str) -> str:
         """
         Text we send when editing a notification by adding a note.
         """
         return (
             "Instructie ASC:\n"
             "(i) Foto bekijken en alleen signalen doorzetten naar THOR indien er inderdaad een "
-            "bouwcontainer of bouwkeet op de foto staat. \n "
+            f"{object_class_str} op de foto staat. \n "
             "(ii) De bron voor dit signaal moet op 'Automatische signalering' blijven staan, zodat BOA's dit "
             "signaal herkennen in City Control onder 'Signalering'."
         )
 
     @staticmethod
-    def get_text_boa_instruction_note() -> str:
+    def get_text_boa_instruction_note(object_class_str: str) -> str:
         """
         Text we send when editing a notification by adding a note.
         """
         return (
             "Instructie BOA’s:\n "
-            "(i) Foto bekijken en beoordelen of dit een bouwcontainer of bouwkeet is waar vergunningsonderzoek "
+            f"(i) Foto bekijken en beoordelen of dit een {object_class_str} is waar vergunningsonderzoek "
             "ter plaatse nodig is.\n"
             "(ii) Check Decos op aanwezige vergunning voor deze locatie of vraag de vergunning op bij "
-            "containereigenaar.\n "
+            "objecteigenaar.\n "
             "(iii) Indien geen geldige vergunning, volg dan het reguliere handhavingsproces."
         )
 

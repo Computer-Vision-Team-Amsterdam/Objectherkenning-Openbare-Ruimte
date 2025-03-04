@@ -67,11 +67,9 @@ def run_data_enrichment_step(
         confidence_thresholds=confidence_thresholds,
         bbox_size_thresholds=bbox_size_thresholds,
     )
-    containers_coordinates_df = (
-        clustering.get_containers_coordinates_with_detection_id()
-    )
+    objects_coordinates_df = clustering.get_objects_coordinates_with_detection_id()
     category_counts = sorted(
-        containers_coordinates_df.groupBy("object_class").count().collect()
+        objects_coordinates_df.groupBy("object_class").count().collect()
     )
     for row in category_counts:
         print(
@@ -87,12 +85,12 @@ def run_data_enrichment_step(
     closest_bridges_df = (
         bridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
             bridges_locations_as_linestrings=bridges_coordinates_geometry,
-            containers_coordinates_df=containers_coordinates_df,
+            objects_coordinates_df=objects_coordinates_df,
             bridges_ids=bridgesHandler.get_bridges_ids(),
             bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
         )
     )
-    containers_coordinates_with_closest_bridge_df = containers_coordinates_df.join(
+    objects_coordinates_with_closest_bridge_df = objects_coordinates_df.join(
         closest_bridges_df, "detection_id"
     )
 
@@ -109,26 +107,28 @@ def run_data_enrichment_step(
         date_to_query=datetime.today().strftime("%Y-%m-%d")
     )
     closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
-        containers_coordinates_df=containers_coordinates_df,
+        objects_coordinates_df=objects_coordinates_df,
     )
-    containers_coordinates_with_closest_bridge_and_closest_permit_df = (
-        containers_coordinates_with_closest_bridge_df.join(
+    objects_coordinates_with_closest_bridge_and_closest_permit_df = (
+        objects_coordinates_with_closest_bridge_df.join(
             closest_permits_df, "detection_id"
         )
     )
 
     score_expr = utils_scoring.get_score_expr()
-    containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
-        containers_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
+    objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
+        objects_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
             "score", score_expr
         )
     )
 
-    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = containers_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
-        "a"
-    ).join(
-        clustering.joined_metadata.alias("b"),
-        on=F.col("a.detection_id") == F.col("b.detection_id"),
+    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
+        objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
+            "a"
+        ).join(
+            clustering.joined_metadata.alias("b"),
+            on=F.col("a.detection_id") == F.col("b.detection_id"),
+        )
     )
 
     utils_visualization.generate_map(
