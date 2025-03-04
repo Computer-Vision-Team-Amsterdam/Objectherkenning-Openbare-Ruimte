@@ -9,6 +9,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_databricks_environment,
     get_job_process_time,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (  # noqa: E402
+    DecosDataHandler,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.ingest_metadata_step.components.data_ingestion import (  # noqa: E402
     DataLoader,
 )
@@ -26,7 +29,23 @@ def run_ingest_metadata_step(
     ckpt_frames_relative_path,
     ckpt_detections_relative_path,
     job_process_time,
+    settings,
 ):
+    def healthcheck(sparkSession, settings):
+        decosDataHandler = DecosDataHandler(
+            spark=sparkSession,
+            az_tenant_id=settings["azure_tenant_id"],
+            db_host=settings["reference_database"]["host"],
+            db_name=settings["reference_database"]["name"],
+            db_port=5432,
+            active_object_classes=settings["object_classes"]["active"],
+            permit_mapping=settings["object_classes"]["permit_mapping"],
+        )
+        result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(1)
+        print(result)
+
+    healthcheck(sparkSesssion, settings)
+
     dataLoader = DataLoader(
         sparkSesssion,
         catalog,
@@ -69,4 +88,5 @@ if __name__ == "__main__":
         job_process_time=get_job_process_time(
             is_first_pipeline_step=True,
         ),
+        settings=settings,
     )
