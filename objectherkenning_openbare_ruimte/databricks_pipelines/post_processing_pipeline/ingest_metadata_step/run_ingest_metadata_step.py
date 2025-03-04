@@ -3,6 +3,7 @@ dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import os  # noqa: E402
 
+import requests  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
@@ -41,8 +42,20 @@ def run_ingest_metadata_step(
             active_object_classes=settings["object_classes"]["active"],
             permit_mapping=settings["object_classes"]["permit_mapping"],
         )
-        result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(1)
+        result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
+            "0363200000006110"
+        )
         print(result)
+        bag_url = (
+            f"https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
+            f"&lat={"52.3782197"}&lon={"4.8834705"}&radius={25}"
+        )
+
+        response = requests.get(bag_url, timeout=60)
+        if response.status_code == 200:
+            print("BAG API is up and running")
+        else:
+            print("BAG API is down")
 
     healthcheck(sparkSesssion, settings)
 
