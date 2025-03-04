@@ -48,7 +48,7 @@ def run_ingest_metadata_step(
         print(result)
         bag_url = (
             f"https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
-            f"&lat={"52.3782197"}&lon={"4.8834705"}&radius={25}"
+            f"&lat={'52.3782197'}&lon={'4.8834705'}&radius=25"
         )
 
         response = requests.get(bag_url, timeout=60)
