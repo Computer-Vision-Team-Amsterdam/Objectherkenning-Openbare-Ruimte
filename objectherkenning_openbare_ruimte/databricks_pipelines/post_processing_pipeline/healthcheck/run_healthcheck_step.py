@@ -48,7 +48,7 @@ def run_healthcheck_step(
     result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
         "0363200000006110"
     )
-    if result.iloc[0]["postcode"] == "1":
+    if result.iloc[0]["postcode"] == "1015NR":
         print("Decos data handler is up and running")
     else:
         raise ValueError("Decos data handler is down")
