@@ -45,8 +45,10 @@ def run_ingest_metadata_step(
         result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
             "0363200000006110"
         )
-        print(result.iloc[0])
-        print(result.columns)
+        if result.iloc[0]["postcode"] == "1015NR":
+            print("Decos data handler is up and running")
+        else:
+            raise ValueError("Decos data handler is down")
         bag_url = (
             f"https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
             f"&lat={'52.3782197'}&lon={'4.8834705'}&radius=25"
@@ -56,7 +58,7 @@ def run_ingest_metadata_step(
         if response.status_code == 200:
             print("BAG API is up and running")
         else:
-            print("BAG API is down")
+            raise ValueError("BAG API is down")
 
     healthcheck(sparkSesssion, settings)
 
