@@ -45,8 +45,8 @@ def run_ingest_metadata_step(
         result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
             "0363200000006110"
         )
-        print(result[0])
-        print(result[0].columns)
+        print(result.iloc[0])
+        print(result.columns)
         bag_url = (
             f"https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
             f"&lat={'52.3782197'}&lon={'4.8834705'}&radius=25"
