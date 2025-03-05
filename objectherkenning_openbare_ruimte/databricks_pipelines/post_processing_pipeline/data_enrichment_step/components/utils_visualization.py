@@ -19,7 +19,7 @@ def generate_map(
 ) -> None:
     """
     This method generates an HTML page with a map containing a path line and randomly chosen points on the line
-    corresponding to detected containers on the path.
+    corresponding to detected objects on the path.
 
     :param vulnerable_bridges: list of line string coordinates.
     :param permit_locations: list of point coordinates.
@@ -113,7 +113,7 @@ def generate_map(
         popup = """<div><img src=""" + image_path + """></div>"""
         print(f'Popup html: {popup})')'''
 
-        # Add container locations to the map
+        # Add object locations to the map
         folium.Marker(
             location=[detection.x, detection.y],
             popup=f"Detection ID: {detection_id}<br>"
@@ -132,7 +132,7 @@ def generate_map(
             tooltip=f"Bridge ID: {closest_bridge_id}",
         ).add_to(vulnerable_bridges_group)
 
-        # Add closest container permit
+        # Add closest object permit
         folium.CircleMarker(
             location=[permit_location.x, permit_location.y],
             color="red",
@@ -141,7 +141,7 @@ def generate_map(
             tooltip=f"Permit ID: {closest_permit_id}",
         ).add_to(Map)
 
-        # Add distances between container and closest vulnerable bridge
+        # Add distances between object and closest vulnerable bridge
         point_on_bridge = closest_point_on_linestring(detection, vulnerable_bridge)
         # distance = detection.distance(point_on_bridge)
         polyline_coords = [
@@ -152,7 +152,7 @@ def generate_map(
             closest_bridges_group
         )
 
-        # Add distances between container and closest permit
+        # Add distances between object and closest permit
         # distance = detection.distance(permit_location)
         polyline_coords = [
             (detection.x, detection.y),
