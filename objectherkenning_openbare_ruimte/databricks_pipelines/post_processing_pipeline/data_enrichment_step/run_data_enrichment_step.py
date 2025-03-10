@@ -33,6 +33,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (  # noqa: E402
     DecosDataHandler,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.private_terrain_handler import (  # noqa: E402
+    PrivateTerrainHandler,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.vulnerable_bridges_handler import (  # noqa: E402
     VulnerableBridgesHandler,
 )
@@ -131,31 +134,41 @@ def run_data_enrichment_step(
         )
     )
 
+    TerrainHandler = PrivateTerrainHandler()
+    joined_metadata_with_details_df = (
+        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.withColumn(
+            "private_terrain_details",
+            TerrainHandler.checker.get_private_terrain_expr(
+                lat_column="object_lat", lon_column="object_lon"
+            ),
+        ).withColumn(
+            "is_private_terrain",
+            F.get_json_object(
+                F.col("private_terrain_details"), "$.is_private_terrain"
+            ).cast("boolean"),
+        )
+    )
+
     utils_visualization.generate_map(
-        dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
+        dataframe=joined_metadata_with_details_df,
         name=f"{job_process_time}-map",
         path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
     )
 
-    selected_casted_df = (
-        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
-            F.col("a.detection_id").cast("int"),
-            F.col("a.object_class"),
-            F.col("b.gps_lat").alias("object_lat").cast("string"),
-            F.col("b.gps_lon").alias("object_lon").cast("string"),
-            F.col("closest_bridge_distance")
-            .alias("distance_closest_bridge")
-            .cast("float"),
-            F.col("closest_bridge_id").cast("string"),
-            F.col("closest_permit_distance")
-            .alias("distance_closest_permit")
-            .cast("float"),
-            F.col("closest_permit_id"),
-            F.col("closest_permit_lat").cast("float"),
-            F.col("closest_permit_lon").cast("float"),
-            F.col("score").cast("float"),
-            F.lit("Pending").alias("status"),
-        )
+    selected_casted_df = joined_metadata_with_details_df.select(
+        F.col("a.detection_id").cast("int"),
+        F.col("a.object_class"),
+        F.col("b.gps_lat").alias("object_lat").cast("string"),
+        F.col("b.gps_lon").alias("object_lon").cast("string"),
+        F.col("closest_bridge_distance").alias("distance_closest_bridge").cast("float"),
+        F.col("closest_bridge_id").cast("string"),
+        F.col("closest_permit_distance").alias("distance_closest_permit").cast("float"),
+        F.col("closest_permit_id"),
+        F.col("closest_permit_lat").cast("float"),
+        F.col("closest_permit_lon").cast("float"),
+        F.col("score").cast("float"),
+        F.col("is_private_terrain"),
+        F.lit("Pending").alias("status"),
     )
 
     SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
