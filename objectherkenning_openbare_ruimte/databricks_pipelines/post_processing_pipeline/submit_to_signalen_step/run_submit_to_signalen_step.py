@@ -37,6 +37,12 @@ def run_submit_to_signalen_step(
     access_token_url,
     base_url,
     job_process_time,
+    az_tenant_id,
+    db_host,
+    db_name,
+    active_object_classes,
+    permit_mapping,
+    send_limits,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
@@ -48,9 +54,16 @@ def run_submit_to_signalen_step(
         client_secret_name,
         access_token_url,
         base_url,
+        az_tenant_id,
+        db_host,
+        db_name,
+        active_object_classes,
+        permit_mapping,
     )
 
-    top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(limit=10)
+    top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
+        send_limits=send_limits
+    )
 
     if top_scores_df.count() == 0:
         print("No data found for creating notifications. Stopping execution.")
@@ -108,4 +121,10 @@ if __name__ == "__main__":
         job_process_time=get_job_process_time(
             is_first_pipeline_step=False,
         ),
+        az_tenant_id=settings["azure_tenant_id"],
+        db_host=settings["reference_database"]["host"],
+        db_name=settings["reference_database"]["name"],
+        active_object_classes=settings["object_classes"]["active"],
+        permit_mapping=settings["object_classes"]["permit_mapping"],
+        send_limits=settings["object_classes"]["send_limit"],
     )

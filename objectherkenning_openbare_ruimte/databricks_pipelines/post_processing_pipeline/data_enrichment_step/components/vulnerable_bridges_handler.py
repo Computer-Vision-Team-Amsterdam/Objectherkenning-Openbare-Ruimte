@@ -99,32 +99,32 @@ class VulnerableBridgesHandler:
     def calculate_distances_to_closest_vulnerable_bridges(
         self,
         bridges_locations_as_linestrings: List[LineString],
-        containers_coordinates_df,
+        objects_coordinates_df,
         bridges_ids: List[int],
         bridges_coordinates: List[List[List[float]]],
     ):
         results = []
 
-        for row in containers_coordinates_df.collect():
-            container_lat = row.gps_lat
-            container_lon = row.gps_lon
+        for row in objects_coordinates_df.collect():
+            object_lat = row.gps_lat
+            object_lon = row.gps_lon
 
-            container_location = Point(container_lat, container_lon)
-            bridge_container_distances = []
+            object_location = Point(object_lat, object_lon)
+            bridge_object_distances = []
             for idx, bridge_location in enumerate(bridges_locations_as_linestrings):
                 try:
-                    # calculate distance between container point and bridge linestring
+                    # calculate distance between object point and bridge linestring
                     bridge_dist = VulnerableBridgesHandler._line_to_point_in_meters(
-                        bridge_location, container_location
+                        bridge_location, object_location
                     )
                 except Exception:
                     bridge_dist = 10000
                     print("Error occurred:")
                     print(
-                        f"Container location: {container_location}, {container_location.coords}"
+                        f"Container location: {object_location}, {object_location.coords}"
                     )
                     print(f"Bridge location: {bridge_location}")
-                bridge_container_distances.append(
+                bridge_object_distances.append(
                     (
                         bridge_dist,
                         bridges_ids[idx],  # ID of the bridge
@@ -137,7 +137,7 @@ class VulnerableBridgesHandler:
                 closest_bridge_id,
                 closest_bridge_coord,
                 closest_bridge_linestring,
-            ) = min(bridge_container_distances, key=lambda x: x[0])
+            ) = min(bridge_object_distances, key=lambda x: x[0])
             results.append(
                 Row(
                     detection_id=row.detection_id,  # retain the detection id for joining
