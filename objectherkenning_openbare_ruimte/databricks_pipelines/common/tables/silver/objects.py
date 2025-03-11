@@ -15,7 +15,9 @@ class SilverObjectsPerDayManager(TableManager):
             f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
         )
         filtered_df = TableManager.spark.table(table_full_name).filter(
-            (F.col("status") == "Pending") & (F.col("score") >= 0.4)
+            (F.col("status") == "Pending")
+            & (F.col("score") >= 0.4)
+            & (F.col("is_private_terrain") == False)
         )
 
         if not send_limits:
