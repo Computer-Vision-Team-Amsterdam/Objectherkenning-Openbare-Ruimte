@@ -58,6 +58,7 @@ class PrivateTerrainHandler:
             object_location_with_buffer = object_location_with_buffer.simplify(
                 self.simplify_tolerance
             )
+            print(object_location_with_buffer.wkt)
 
             params = {
                 "aggIndicatieBelastRecht": "true",
@@ -79,13 +80,12 @@ class PrivateTerrainHandler:
             )
 
         except Exception as e:
-            print("Error in private_terrain_details API query:", e)
+            print("Error in is_private_terrain API query:", e)
             return json.dumps({"is_private": False, "features": []})
 
     def get_udf(self) -> UserDefinedFunction:
         """
-        Wraps the is_private_terrain function as a Spark UDF.
-        (Caution: Calling external APIs in a UDF may be very slow.)
+        Wraps the is_private_terrain function as a Spark UserDefinedFunction.
         """
         return udf(self.is_private_terrain, BooleanType())
 
@@ -93,7 +93,7 @@ class PrivateTerrainHandler:
         self, lat_column: str = "object_lat", lon_column: str = "object_lon"
     ) -> Column:
         """
-        Returns a Spark Column expression that applies the UDF to the specified latitude and longitude columns.
+        Returns a Spark Column expression that applies the UserDefinedFunction to the specified latitude and longitude columns.
 
         :param lat_column: Name of the column with the latitude.
         :param lon_column: Name of the column with the longitude.
