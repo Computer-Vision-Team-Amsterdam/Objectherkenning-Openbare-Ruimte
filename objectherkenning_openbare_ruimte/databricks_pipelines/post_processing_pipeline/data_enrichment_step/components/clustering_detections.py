@@ -206,11 +206,7 @@ class Clustering:
         # cluster_id_counter += len(unique_labels)
 
         # Skip if there are no valid objects.
-        if (
-            df_metadata_by_class.size == 0
-            or df_metadata_by_class.ndim != 2
-            or df_metadata_by_class.shape[1] != 2
-        ):
+        if not df_metadata_by_class.take(1) or len(df_metadata_by_class.columns) != 2:
             return None, cluster_id_counter
 
         new_labels = [
