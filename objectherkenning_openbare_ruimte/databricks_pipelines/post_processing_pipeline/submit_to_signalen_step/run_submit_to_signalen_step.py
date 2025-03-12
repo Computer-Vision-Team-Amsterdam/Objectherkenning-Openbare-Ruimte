@@ -71,11 +71,11 @@ def run_submit_to_signalen_step(
         print("No data found for creating notifications. Stopping execution.")
         return
 
-    successful_notifications, unsuccessful_notifications = (
-        signalHandler.process_notifications(top_scores_df)
-    )
     go = False
     if go == True:
+        successful_notifications, unsuccessful_notifications = (
+            signalHandler.process_notifications(top_scores_df)
+        )
         if successful_notifications:
             modified_schema = (
                 GoldSignalNotificationsManager.remove_fields_from_table_schema(
@@ -98,8 +98,7 @@ def run_submit_to_signalen_step(
             )
             SilverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
 
-    if go == True:
-        SilverObjectsPerDayManager.update_status(job_process_time=job_process_time)
+    SilverObjectsPerDayManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":
