@@ -18,6 +18,8 @@ class SilverObjectsPerDayManager(TableManager):
             (F.col("status") == "Pending") & (F.col("score") >= 0.4)
         )
 
+        filtered_df = filtered_df.dropDuplicates(["detection_id"])
+
         if not send_limits:
             loaded_count = filtered_df.count()
             print(
