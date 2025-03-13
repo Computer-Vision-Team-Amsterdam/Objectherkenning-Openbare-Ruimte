@@ -1,5 +1,6 @@
 import os
 
+import base64
 import folium
 from databricks.sdk.runtime import *  # noqa: F403, F401
 from folium.plugins import BeautifyIcon
@@ -9,6 +10,16 @@ from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
+    get_job_process_time,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
+    BronzeFrameMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
+    unix_to_yyyy_mm_dd,
+)
+
 
 def generate_map(
     dataframe,
@@ -16,6 +27,9 @@ def generate_map(
     name=None,
     path=None,
     colors=None,
+    catalog=None,
+    device_id=None,
+    job_process_time=None,
 ) -> None:
     """
     This method generates an HTML page with a map containing a path line and randomly chosen points on the line
@@ -113,12 +127,35 @@ def generate_map(
         popup = """<div><img src=""" + image_path + """></div>"""
         print(f'Popup html: {popup})')'''
 
+        job_date = job_process_time.split("T")[0]
+        stlanding_image_folder = unix_to_yyyy_mm_dd(
+            BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
+                job_date=job_date
+            )
+        )
+        image_path = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}/{detection_image_name}"
+        # Read the image file (ensure the path is accessible from your driver)
+        with open(image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Create a data URI
+        data_uri = f"data:image/jpeg;base64,{encoded_image}"
+
+        popup_html = f"""
+        <div style="width:200px;">
+            <strong>Detection ID:</strong> {detection_id}<br>
+            <strong>Priority ID:</strong> {detection_priority_id}<br>
+            <img src="{data_uri}" alt="Detection image" style="width:300px;height:auto;">
+        </div>
+        """
+
         # Add object locations to the map
         folium.Marker(
             location=[detection.x, detection.y],
-            popup=f"Detection ID: {detection_id}<br>"
-            f"Detection Priority ID: {detection_priority_id}<br>"
-            f"Image Name: {detection_image_name}<br>",
+            popup=popup_html,
+            # popup=f"Detection ID: {detection_id}<br>"
+            # f"Detection Priority ID: {detection_priority_id}<br>"
+            # f"Image Name: {detection_image_name}<br>",
             icon=detection_icon,
         ).add_to(Map)
 

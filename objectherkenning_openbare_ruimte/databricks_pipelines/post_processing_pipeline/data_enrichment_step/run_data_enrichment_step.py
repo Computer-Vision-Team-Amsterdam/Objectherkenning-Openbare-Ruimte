@@ -50,6 +50,7 @@ def run_data_enrichment_step(
     az_tenant_id,
     db_host,
     db_name,
+    device_id,
     job_process_time,
     active_object_classes,
     permit_mapping,
@@ -135,6 +136,9 @@ def run_data_enrichment_step(
         dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
         name=f"{job_process_time}-map",
         path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
+        catalog=catalog,
+        device_id=device_id,
+        job_process_time = job_process_time,
     )
 
     selected_casted_df = (
@@ -182,6 +186,7 @@ if __name__ == "__main__":
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
+        device_id=settings["device_id"],
         job_process_time=get_job_process_time(
             is_first_pipeline_step=False,
         ),
