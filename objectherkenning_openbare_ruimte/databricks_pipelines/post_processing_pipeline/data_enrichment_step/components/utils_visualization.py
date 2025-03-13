@@ -1,6 +1,6 @@
+import base64
 import os
 
-import base64
 import folium
 from databricks.sdk.runtime import *  # noqa: F403, F401
 from folium.plugins import BeautifyIcon
@@ -10,9 +10,6 @@ from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
-    get_job_process_time,
-)
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
     BronzeFrameMetadataManager,
 )
@@ -74,7 +71,12 @@ def generate_map(
     icon_map = {2: "box", 3: "toilet-portable", 4: "table-cells"}
 
     # Get image folder path
-    job_date = str(job_process_time).split(" ")[0]
+    job_process_str = str(job_process_time)
+    job_date = (
+        job_process_str.split("T")[0]
+        if "T" in job_process_str
+        else job_process_str.split(" ")[0]
+    )
     stlanding_image_folder = unix_to_yyyy_mm_dd(
         BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
             job_date=job_date
@@ -132,6 +134,7 @@ def generate_map(
         <div style="width:400px;">
             <strong>Detection ID:</strong> {detection_id}<br>
             <strong>Priority ID:</strong> {detection_priority_id}<br>
+            <strong>Closest Permit ID:</strong> {closest_permit_id}<br>
             <img src="{data_uri}" alt="Detection image" style="max-width:100%; height:auto;">
         </div>
         """
