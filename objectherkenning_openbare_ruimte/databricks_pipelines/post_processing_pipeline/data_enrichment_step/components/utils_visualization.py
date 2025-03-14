@@ -1,3 +1,4 @@
+import base64
 import os
 
 import folium
@@ -9,6 +10,13 @@ from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
+    BronzeFrameMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
+    unix_to_yyyy_mm_dd,
+)
+
 
 def generate_map(
     dataframe,
@@ -16,6 +24,9 @@ def generate_map(
     name=None,
     path=None,
     colors=None,
+    catalog=None,
+    device_id=None,
+    job_process_time=None,
 ) -> None:
     """
     This method generates an HTML page with a map containing a path line and randomly chosen points on the line
@@ -59,7 +70,19 @@ def generate_map(
 
     icon_map = {2: "box", 3: "toilet-portable", 4: "table-cells"}
 
-    # display(dataframe_with_priority)
+    # Get image folder path
+    job_process_str = str(job_process_time)
+    job_date = (
+        job_process_str.split("T")[0]
+        if "T" in job_process_str
+        else job_process_str.split(" ")[0]
+    )
+    stlanding_image_folder = unix_to_yyyy_mm_dd(
+        BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
+            job_date=job_date
+        )
+    )
+    image_folder = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}"
 
     # Function to find the closest point on a linestring to a given point
     def closest_point_on_linestring(point, linestring):
@@ -101,24 +124,25 @@ def generate_map(
             text_color="#000000",
         )
 
-        '''# Path for the image
-        image_path = f'Volumes/dpcv_dev/default/landingzone/test-diana/images/{formatted_detection_date}/{detection_image_name}'
-        image_path = f'abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net/test-diana/images/{formatted_detection_date}/{detection_image_name}'
-        test_image_path = f'abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net/test-diana/images/{formatted_detection_date}/'
-        print(f'Testing path system works: {dbutils.fs.ls(test_image_path)}')
-        print(f'Image path: {image_path}')
-        print('Testing image path:')
-        display(spark.read.format("image").load(image_path))
-        #popup = f'Detection ID: {detection_id}<br>Image: <img src="{image_path}"><br>'
-        popup = """<div><img src=""" + image_path + """></div>"""
-        print(f'Popup html: {popup})')'''
+        # Encode image for map visualization
+        image_path = os.path.join(image_folder, detection_image_name)
+        with open(image_path, "rb") as image_file:
+            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+        data_uri = f"data:image/jpeg;base64,{encoded_image}"
+
+        popup_html = f"""
+        <div style="width:400px;">
+            <strong>Detection ID:</strong> {detection_id}<br>
+            <strong>Priority ID:</strong> {detection_priority_id}<br>
+            <strong>Closest Permit ID:</strong> {closest_permit_id}<br>
+            <img src="{data_uri}" alt="Detection image" style="max-width:100%; height:auto;">
+        </div>
+        """
 
         # Add object locations to the map
         folium.Marker(
             location=[detection.x, detection.y],
-            popup=f"Detection ID: {detection_id}<br>"
-            f"Detection Priority ID: {detection_priority_id}<br>"
-            f"Image Name: {detection_image_name}<br>",
+            popup=popup_html,
             icon=detection_icon,
         ).add_to(Map)
 
