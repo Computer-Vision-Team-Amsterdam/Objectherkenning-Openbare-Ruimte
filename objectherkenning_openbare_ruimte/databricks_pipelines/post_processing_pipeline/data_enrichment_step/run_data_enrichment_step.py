@@ -33,9 +33,6 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (  # noqa: E402
     DecosDataHandler,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.private_terrain_handler import (  # noqa: E402
-    PrivateTerrainHandler,
-)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.vulnerable_bridges_handler import (  # noqa: E402
     VulnerableBridgesHandler,
 )
@@ -125,27 +122,12 @@ def run_data_enrichment_step(
         )
     )
 
-    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
+    joined_metadata_with_details_df = (
         objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
             "a"
         ).join(
             clustering.joined_metadata.alias("b"),
             on=F.col("a.detection_id") == F.col("b.detection_id"),
-        )
-    )
-
-    TerrainHandler = PrivateTerrainHandler()
-    joined_metadata_with_details_df = (
-        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.withColumn(
-            "private_terrain_details",
-            TerrainHandler.checker.get_private_terrain_expr(
-                lat_column="object_lat", lon_column="object_lon"
-            ),
-        ).withColumn(
-            "is_private_terrain",
-            F.get_json_object(
-                F.col("private_terrain_details"), "$.is_private_terrain"
-            ).cast("boolean"),
         )
     )
 
@@ -167,7 +149,6 @@ def run_data_enrichment_step(
         F.col("closest_permit_lat").cast("float"),
         F.col("closest_permit_lon").cast("float"),
         F.col("score").cast("float"),
-        F.col("is_private_terrain"),
         F.lit("Pending").alias("status"),
     )
 

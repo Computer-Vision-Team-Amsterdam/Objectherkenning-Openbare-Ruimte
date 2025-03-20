@@ -1,6 +1,7 @@
 import json
 import subprocess
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import pandas as pd
 import psycopg2
@@ -93,7 +94,7 @@ class ReferenceDatabaseConnector(ABC):
         except psycopg2.Error as e:
             print(f"Error executing query: {e}")
 
-    def run(self, query: str) -> pd.DataFrame:
+    def run(self, query: str, query_info_str: Optional[str] = None) -> pd.DataFrame:
         """
         Execute the full workflow: Azure login, retrieve token, connect to DB, run query.
 
@@ -113,7 +114,8 @@ class ReferenceDatabaseConnector(ABC):
             conn = self.connect_to_database()
             if conn:
                 result = self.run_query(conn, query)
-                print(f"{len(result)} object permits found.")
+                if query_info_str:
+                    print(f"{len(result)} {query_info_str} found.")
                 conn.close()
                 return result
         except Exception as e:

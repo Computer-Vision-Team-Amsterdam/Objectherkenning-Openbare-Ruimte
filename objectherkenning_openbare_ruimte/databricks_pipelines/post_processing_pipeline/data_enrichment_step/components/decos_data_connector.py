@@ -11,7 +11,9 @@ from pyspark.sql.functions import col
 from shapely import wkb
 from shapely.geometry import Point
 
-from .reference_db_connector import ReferenceDatabaseConnector
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.reference_db_connector import (  # noqa: E402
+    ReferenceDatabaseConnector,
+)
 
 
 class DecosDataHandler(ReferenceDatabaseConnector):
@@ -37,7 +39,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         """
         query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
         print(f"Querying the database for date {date_to_query}...")
-        result_df = self.run(query)
+        result_df = self.run(query, "object permits")
 
         def _safe_json_load(x):
             try:
