@@ -153,8 +153,8 @@ def run_data_enrichment_step(
     )
 
     SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
-    SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
-    SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
+    # SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":

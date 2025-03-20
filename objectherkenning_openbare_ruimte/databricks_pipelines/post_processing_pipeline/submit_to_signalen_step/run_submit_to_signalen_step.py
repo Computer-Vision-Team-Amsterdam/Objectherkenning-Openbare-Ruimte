@@ -79,33 +79,36 @@ def run_submit_to_signalen_step(
         print("No data found for creating notifications. Stopping execution.")
         return
 
-    successful_notifications, unsuccessful_notifications = (
-        signalHandler.process_notifications(top_scores_df)
-    )
+    go = False
+    if go == True:
 
-    if successful_notifications:
-        modified_schema = (
-            GoldSignalNotificationsManager.remove_fields_from_table_schema(
-                fields_to_remove={"id", "processed_at"},
+        successful_notifications, unsuccessful_notifications = (
+            signalHandler.process_notifications(top_scores_df)
+        )
+
+        if successful_notifications:
+            modified_schema = (
+                GoldSignalNotificationsManager.remove_fields_from_table_schema(
+                    fields_to_remove={"id", "processed_at"},
+                )
             )
-        )
-        successful_df = sparkSession.createDataFrame(
-            successful_notifications, schema=modified_schema
-        )
-        GoldSignalNotificationsManager.insert_data(df=successful_df)
-
-    if unsuccessful_notifications:
-        modified_schema = (
-            SilverObjectsPerDayQuarantineManager.remove_fields_from_table_schema(
-                fields_to_remove={"id", "processed_at"},
+            successful_df = sparkSession.createDataFrame(
+                successful_notifications, schema=modified_schema
             )
-        )
-        unsuccessful_df = sparkSession.createDataFrame(
-            unsuccessful_notifications, schema=modified_schema
-        )
-        SilverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
+            GoldSignalNotificationsManager.insert_data(df=successful_df)
 
-    SilverObjectsPerDayManager.update_status(job_process_time=job_process_time)
+        if unsuccessful_notifications:
+            modified_schema = (
+                SilverObjectsPerDayQuarantineManager.remove_fields_from_table_schema(
+                    fields_to_remove={"id", "processed_at"},
+                )
+            )
+            unsuccessful_df = sparkSession.createDataFrame(
+                unsuccessful_notifications, schema=modified_schema
+            )
+            SilverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
+
+        SilverObjectsPerDayManager.update_status(job_process_time=job_process_time)
 
 
 if __name__ == "__main__":
