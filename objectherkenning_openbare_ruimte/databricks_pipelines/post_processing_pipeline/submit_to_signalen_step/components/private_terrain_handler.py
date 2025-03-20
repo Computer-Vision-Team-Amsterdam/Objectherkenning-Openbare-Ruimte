@@ -48,17 +48,19 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
             self._private_terrains = []
             return
 
-        def _convert_wkb(hex_str):
-            try:
-                return wkb.loads(bytes.fromhex(hex_str))
-            except Exception as e:
-                print(f"Error converting geometry {hex_str}: {e}")
-                return None
-
-        result_df["polygon"] = result_df["geometrie"].apply(lambda x: _convert_wkb(x))
+        result_df["polygon"] = result_df["geometrie"].apply(
+            lambda x: self.convert_wkb(x)
+        )
         result_df = result_df[result_df["polygon"].notnull()]
         self._private_terrains = result_df.to_dict()
         print(f"Loaded {len(self._private_terrains)} non-private terrain features.")
+
+    def convert_wkb(self, hex_str):
+        try:
+            return wkb.loads(bytes.fromhex(hex_str))
+        except Exception as e:
+            print(f"Error converting geometry {hex_str}: {e}")
+            return None
 
     def check_private_terrain(self, detection_row: Row) -> Tuple[bool, List[str]]:
         """
