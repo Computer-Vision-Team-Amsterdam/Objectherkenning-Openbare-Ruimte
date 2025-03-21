@@ -22,6 +22,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
     SignalHandler,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.private_terrain_handler import (  # noqa: E402
+    PrivateTerrainHandler,
+)
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
@@ -60,9 +63,16 @@ def run_submit_to_signalen_step(
         active_object_classes,
         permit_mapping,
     )
+    privateTerrainHandler = PrivateTerrainHandler(
+        spark=sparkSession,
+        az_tenant_id=az_tenant_id,
+        db_host=db_host,
+        db_name=db_name,
+        db_port=5432,
+    )
 
     top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
-        send_limits=send_limits
+        privateTerrainHandler, send_limits=send_limits
     )
 
     if top_scores_df.count() == 0:
