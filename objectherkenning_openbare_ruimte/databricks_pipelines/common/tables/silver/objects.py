@@ -19,7 +19,7 @@ class SilverObjectsPerDayManager(TableManager):
         signals_to_send_ids = []
 
         print(
-            f"Loading top pending detections on public terrain to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}..."
+            f"Loading top pending detections on public terrain to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name} ..."
         )
         for obj_class, send_limit in send_limits.items():
             candidates = cls.get_pending_candidates(table_full_name, obj_class)
