@@ -18,6 +18,9 @@ class SilverObjectsPerDayManager(TableManager):
         )
         signals_to_send_ids = []
 
+        print(
+            f"Loading top pending detections on public terrain to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}..."
+        )
         for obj_class, send_limit in send_limits.items():
             candidates = cls.get_pending_candidates(table_full_name, obj_class)
             public_terrain_ids = cls.get_public_terrain_ids(
@@ -25,18 +28,18 @@ class SilverObjectsPerDayManager(TableManager):
             )
             signals_to_send_ids.extend(public_terrain_ids)
 
-            if signals_to_send_ids:
-                final_df = TableManager.spark.table(table_full_name).filter(
-                    F.col("detection_id").isin(signals_to_send_ids)
-                )
-                final_count: int = final_df.count()
-                print(
-                    f"Loaded {final_count} rows to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
-                )
-                return final_df
-            else:
-                print("No public detections found across all object classes.")
-                return None
+        if signals_to_send_ids:
+            final_df = TableManager.spark.table(table_full_name).filter(
+                F.col("detection_id").isin(signals_to_send_ids)
+            )
+            final_count: int = final_df.count()
+            print(
+                f"Loaded {final_count} detections on public terrain to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
+            )
+            return final_df
+        else:
+            print("No public detections found across all object classes.")
+            return None
 
     @classmethod
     def get_pending_candidates(cls, table_full_name: str, obj_class: str) -> List[Row]:
@@ -76,9 +79,6 @@ class SilverObjectsPerDayManager(TableManager):
             if len(valid_ids) >= send_limit:
                 break
 
-        print(
-            f"Filtered out {filtered_private_count} detections for object_class '{obj_class}' due to private terrain."
-        )
         if valid_ids:
             if len(valid_ids) < send_limit:
                 print(
