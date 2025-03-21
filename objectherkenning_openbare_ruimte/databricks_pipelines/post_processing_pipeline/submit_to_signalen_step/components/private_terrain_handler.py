@@ -1,10 +1,8 @@
-from typing import List, Tuple
-
+import pandas as pd
 from pyproj import Transformer
 from pyspark.sql import Row, SparkSession
 from shapely import wkb
 from shapely.geometry import Point
-import pandas as pd
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.reference_db_connector import (  # noqa: E402
     ReferenceDatabaseConnector,
@@ -55,7 +53,7 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         except Exception as e:
             print(f"Error converting geometry {hex_str}: {e}")
             return None
-        
+
     def create_dataframe(self, rows, colnames):
         """
         Create a DataFrame .
@@ -64,7 +62,7 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         df = pd.DataFrame(data, columns=colnames)
         return df
 
-    def check_private_terrain(self, detection_row: Row) -> Tuple[bool, List[str]]:
+    def check_private_terrain(self, detection_row: Row) -> bool:
         """
         Check whether a single detection is on private terrain.
         A detection is on private terrain if its buffer does not intersect with any public terrain polygons.
@@ -78,6 +76,8 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         pt = Point(x, y)
         buffered = pt.buffer(self.detection_buffer_distance)
 
-        # If there are no overlapping public polygons, assume the detection is on private property.
-        is_on_private_terrain = not any(buffered.intersects(rec["polygon"]) for rec in self._public_terrains)
+        # If there are no overlapping public polygons, assume the detection is on private terrain.
+        is_on_private_terrain = not any(
+            buffered.intersects(rec["polygon"]) for rec in self._public_terrains
+        )
         return is_on_private_terrain
