@@ -32,9 +32,8 @@ class SilverObjectsPerDayManager(TableManager):
             final_df = TableManager.spark.table(table_full_name).filter(
                 F.col("detection_id").isin(signals_to_send_ids)
             )
-            final_count: int = final_df.count()
             print(
-                f"Loaded {final_count} detections on public terrain to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
+                f"Loaded {final_df.count()} detections on public terrain to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
             )
             return final_df
         else:
