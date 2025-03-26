@@ -1,3 +1,5 @@
+from typing import Any, List, Optional
+
 import pandas as pd
 from pyproj import Transformer
 from pyspark.sql import Row, SparkSession
@@ -29,9 +31,13 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         )
         self.query_and_process_public_terrains()
 
-    def query_and_process_public_terrains(self):
+    def query_and_process_public_terrains(self) -> None:
         """
         Query the database for public terrain geometries and process the results.
+
+        The function runs a query to fetch geometries for public terrain and converts them
+        from WKB hex strings to Shapely geometry objects. Processed geometries are stored
+        in the _public_terrains attribute.
         """
         query = "SELECT geometrie FROM beheerkaart_basis_kaart WHERE agg_indicatie_belast_recht = FALSE"
         print("Querying public terrain data from the database...")
@@ -47,28 +53,49 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         result_df = result_df[result_df["polygon"].notnull()]
         self._public_terrains = result_df.to_dict(orient="records")
 
-    def convert_wkb(self, hex_str):
+    def convert_wkb(self, hex_str: str) -> Optional[Any]:
+        """
+        Convert a WKB hex string to a Shapely geometry object.
+
+        Parameters:
+            hex_str: A hexadecimal string representing the WKB geometry.
+
+        Returns:
+            A Shapely geometry object if the conversion is successful; None otherwise.
+        """
         try:
             return wkb.loads(bytes.fromhex(hex_str))
         except Exception as e:
             print(f"Error converting geometry {hex_str}: {e}")
             return None
 
-    def create_dataframe(self, rows, colnames):
+    def create_dataframe(self, rows: List[Any], colnames: List[str]) -> pd.DataFrame:
         """
-        Create a DataFrame .
+        Create a pandas DataFrame from provided row data and column names.
+
+        Parameters:
+            rows: A list of row data, where each row is an iterable of values.
+            colnames: A list of column names corresponding to the row data.
+
+        Returns:
+            A pandas DataFrame constructed from the provided data.
         """
         data = [dict(zip(colnames, row)) for row in rows]
         df = pd.DataFrame(data, columns=colnames)
         return df
 
-    def check_private_terrain(self, detection_row: Row) -> bool:
+    def on_private_terrain(self, detection_row: Row) -> bool:
         """
-        Check whether a single detection is on private terrain.
-        A detection is on private terrain if its buffer does not intersect with any public terrain polygons.
+        Check whether a detection is on private terrain.
+
+        A detection is considered to be on private terrain if its buffered point does not
+        intersect with any public terrain polygon.
+
+        Parameters:
+            detection_row: A Row object containing detection data including longitude and latitude.
+
         Returns:
-        is_on_private (bool): True if the detection is likely on private property.
-        overlapping_polygons (list): List of overlapping polygons as WKT strings.
+            True if the detection is on private terrain; False otherwise.
         """
         object_lon = detection_row.object_lon
         object_lat = detection_row.object_lat
