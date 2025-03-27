@@ -9,11 +9,6 @@ class OutputImage:
         Initialize with the original image.
         """
         self.image = image
-        self.color_mapping = {
-            2: (255, 0, 0),  # Blue
-            3: (0, 255, 0),  # Green
-            4: (0, 0, 255),  # Red
-        }
 
     def get_image(self) -> npt.NDArray:
         """
@@ -27,7 +22,6 @@ class OutputImage:
         y_center_norm: float,
         width_norm: float,
         height_norm: float,
-        object_class: int,
         line_thickness: int = 3,
     ) -> None:
         """
@@ -47,10 +41,11 @@ class OutputImage:
         x_max = min(img_width, x_center + box_width // 2)
         y_max = min(img_height, y_center + box_height // 2)
 
-        cv2.rectangle(
-            self.image,
-            (x_min, y_min),
-            (x_max, y_max),
-            color=self.color_mapping.get(object_class, (255, 255, 255)),
-            thickness=line_thickness,
-        )
+        if x_min != x_max and y_min != y_max:
+            cv2.rectangle(
+                self.image,
+                (x_min, y_min),
+                (x_max, y_max),
+                color=(0, 0, 255),
+                thickness=line_thickness,
+            )

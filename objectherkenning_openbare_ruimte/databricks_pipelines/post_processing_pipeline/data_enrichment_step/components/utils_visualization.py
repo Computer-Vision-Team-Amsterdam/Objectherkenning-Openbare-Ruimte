@@ -141,7 +141,7 @@ def generate_map(
         image = cv2.imread(image_path)
         annotated_image = OutputImage(image)
         annotated_image.draw_bounding_boxes(
-            x_center_norm, y_center_norm, width_norm, height_norm, object_class
+            x_center_norm, y_center_norm, width_norm, height_norm
         )
         base, ext = os.path.splitext(image_path)
         annotated_image_path = f"{base}_annotated_{object_class}{ext}"
