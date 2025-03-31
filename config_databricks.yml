@@ -41,7 +41,7 @@ databricks_pipelines:
           2: 10
           3: 10
           4: 10
-      exclude_private_terrain_detections: True
+      exclude_private_terrain_detections: False
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -84,4 +84,4 @@ databricks_pipelines:
           2: 10
           3: 10
           4: 10
-      exclude_private_terrain_detections: True
+      exclude_private_terrain_detections: False

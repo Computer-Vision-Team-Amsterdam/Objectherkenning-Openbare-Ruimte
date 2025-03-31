@@ -41,7 +41,7 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         """
         query = "SELECT geometrie FROM beheerkaart_basis_kaart WHERE agg_indicatie_belast_recht = FALSE"
         print("Querying public terrain data from the database...")
-        result_df = self.run(query, "public terrain polygons")
+        result_df = self.run(query)
         if result_df.empty:
             print("No public terrain data found.")
             self._public_terrains = {}

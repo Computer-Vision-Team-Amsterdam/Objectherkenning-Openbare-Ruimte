@@ -1,10 +1,13 @@
 from typing import Any, Dict, List, Optional
 
 import pyspark.sql.functions as F
-from pyspark.sql import DataFrame, Row
+from pyspark.sql import DataFrame, Row, SparkSession
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.private_terrain_handler import (  # noqa: E402
+    PrivateTerrainHandler,
 )
 
 
@@ -13,7 +16,13 @@ class SilverObjectsPerDayManager(TableManager):
 
     @classmethod
     def get_top_pending_records(
-        cls, privateTerrainHandler: Any, send_limits: Dict[int, int] = {}
+        cls,
+        exclude_private_terrain_detections: bool,
+        sparkSession: SparkSession,
+        az_tenant_id: str,
+        db_host: str,
+        db_name: str,
+        send_limits: Dict[int, int] = {},
     ) -> Optional[DataFrame]:
         """
         Collects and returns top pending records for each active object class within send limits.
@@ -28,26 +37,47 @@ class SilverObjectsPerDayManager(TableManager):
         table_full_name = (
             f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
         )
-        signals_to_send_ids = []
+        detections_to_send_ids = []
 
-        print(
-            f"Loading top pending detections to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name} ..."
+        if exclude_private_terrain_detections:
+            privateTerrainHandler = PrivateTerrainHandler(
+                spark=sparkSession,
+                az_tenant_id=az_tenant_id,
+                db_host=db_host,
+                db_name=db_name,
+                db_port=5432,
+            )
+        else:
+            privateTerrainHandler = None
+
+        print(f"Loading top pending detections to send from {table_full_name} ...")
+
+        # Retrieve all distinct object classes that have pending candidates.
+        pending_obj_classes = (
+            TableManager.spark.table(table_full_name)
+            .filter((F.col("status") == "Pending") & (F.col("score") >= 0.4))
+            .select("object_class")
+            .distinct()
+            .rdd.flatMap(lambda x: x)
+            .collect()
         )
-        for obj_class, send_limit in send_limits.items():
+
+        for obj_class in pending_obj_classes:
+            send_limit = send_limits.get(obj_class, None)
             candidates = cls.get_pending_candidates(table_full_name, obj_class)
             valid_detection_ids = cls.get_valid_detection_ids(
                 candidates, privateTerrainHandler, send_limit, obj_class
             )
-            signals_to_send_ids.extend(valid_detection_ids)
+            detections_to_send_ids.extend(valid_detection_ids)
 
-        if signals_to_send_ids:
-            final_df = TableManager.spark.table(table_full_name).filter(
-                F.col("detection_id").isin(signals_to_send_ids)
+        if detections_to_send_ids:
+            detections_to_send_df = TableManager.spark.table(table_full_name).filter(
+                F.col("detection_id").isin(detections_to_send_ids)
             )
             print(
-                f"Loaded {final_df.count()} valid detections to send from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
+                f"Loaded {detections_to_send_df.count()} valid detections to send from {table_full_name}."
             )
-            return final_df
+            return detections_to_send_df
         else:
             print("No valid detections to send found across all object classes.")
             return None
@@ -64,7 +94,7 @@ class SilverObjectsPerDayManager(TableManager):
         Returns:
             A list of Rows representing candidate detections.
         """
-        base_df = (
+        pending_candidates_df = (
             TableManager.spark.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
@@ -73,13 +103,13 @@ class SilverObjectsPerDayManager(TableManager):
             )
             .orderBy(F.col("score").desc())
         )
-        return base_df.collect()
+        return pending_candidates_df.collect()
 
     @classmethod
     def get_valid_detection_ids(
         cls,
         candidates: List[Row],
-        privateTerrainHandler: Any,
+        privateTerrainHandler: Optional[PrivateTerrainHandler],
         send_limit: int,
         obj_class: int,
     ) -> List[Any]:
@@ -106,7 +136,8 @@ class SilverObjectsPerDayManager(TableManager):
                 or not privateTerrainHandler.on_private_terrain(candidate)
             ):
                 valid_ids.append(candidate.detection_id)
-                if len(valid_ids) >= send_limit:
+                # If a send limit is specified, break once it is reached.
+                if send_limit is not None and len(valid_ids) >= send_limit:
                     break
             else:
                 filtered_private_count += 1
@@ -116,7 +147,7 @@ class SilverObjectsPerDayManager(TableManager):
                 continue
 
         if valid_ids:
-            if len(valid_ids) < send_limit:
+            if send_limit is not None and len(valid_ids) < send_limit:
                 print(
                     f"  Only {len(valid_ids)} detections found for '{obj_class}' (send limit {send_limit})."
                 )
