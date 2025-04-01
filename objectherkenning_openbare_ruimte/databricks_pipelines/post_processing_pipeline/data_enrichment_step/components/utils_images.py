@@ -41,7 +41,7 @@ class OutputImage:
         x_max = min(img_width, x_center + box_width // 2)
         y_max = min(img_height, y_center + box_height // 2)
 
-        if x_min != x_max and y_min != y_max:
+        if x_min < x_max and y_min < y_max:
             cv2.rectangle(
                 self.image,
                 (x_min, y_min),
