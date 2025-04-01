@@ -1,13 +1,16 @@
 from typing import Any, Dict, List, Optional
 
 import pyspark.sql.functions as F
-from pyspark.sql import DataFrame, Row, SparkSession
+from pyspark.sql import DataFrame, Row
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.private_terrain_handler import (  # noqa: E402
     PrivateTerrainHandler,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.terrain_data_connector import (  # noqa: E402
+    TerrainDatabaseConnector,
 )
 
 
@@ -18,7 +21,6 @@ class SilverObjectsPerDayManager(TableManager):
     def get_top_pending_records(
         cls,
         exclude_private_terrain_detections: bool,
-        sparkSession: SparkSession,
         az_tenant_id: str,
         db_host: str,
         db_name: str,
@@ -28,7 +30,10 @@ class SilverObjectsPerDayManager(TableManager):
         Collects and returns top pending records for each active object class within send limits.
 
         Parameters:
-            privateTerrainHandler: An object that provides the on_private_terrain method to check if a candidate is on private terrain.
+            exclude_private_terrain_detections (bool): Flag indicating whether to exclude detections on private terrain.
+            az_tenant_id (str): Azure tenant ID required for database access.
+            db_host (str): Host address of the database.
+            db_name (str): Name of the database.
             send_limits: A dictionary mapping each object class to its maximum number of records to send.
 
         Returns:
@@ -37,18 +42,15 @@ class SilverObjectsPerDayManager(TableManager):
         table_full_name = (
             f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
         )
-        detections_to_send_ids = []
+        detection_ids_to_send = []
 
-        if exclude_private_terrain_detections:
-            privateTerrainHandler = PrivateTerrainHandler(
-                spark=sparkSession,
-                az_tenant_id=az_tenant_id,
-                db_host=db_host,
-                db_name=db_name,
-                db_port=5432,
-            )
-        else:
-            privateTerrainHandler = None
+        # Get the handler for detections on private terrain if needed.
+        privateTerrainHandler = cls.get_private_terrain_handler(
+            exclude_private_terrain_detections,
+            az_tenant_id,
+            db_host,
+            db_name,
+        )
 
         print(f"Loading top pending detections to send from {table_full_name} ...")
 
@@ -68,11 +70,11 @@ class SilverObjectsPerDayManager(TableManager):
             valid_detection_ids = cls.get_valid_detection_ids(
                 candidates, privateTerrainHandler, send_limit, obj_class
             )
-            detections_to_send_ids.extend(valid_detection_ids)
+            detection_ids_to_send.extend(valid_detection_ids)
 
-        if detections_to_send_ids:
+        if detection_ids_to_send:
             detections_to_send_df = TableManager.spark.table(table_full_name).filter(
-                F.col("detection_id").isin(detections_to_send_ids)
+                F.col("detection_id").isin(detection_ids_to_send)
             )
             print(
                 f"Loaded {detections_to_send_df.count()} valid detections to send from {table_full_name}."
@@ -81,6 +83,39 @@ class SilverObjectsPerDayManager(TableManager):
         else:
             print("No valid detections to send found across all object classes.")
             return None
+
+    @classmethod
+    def get_private_terrain_handler(
+        cls,
+        exclude_private_terrain_detections: bool,
+        az_tenant_id: str,
+        db_host: str,
+        db_name: str,
+    ) -> Optional[PrivateTerrainHandler]:
+        """
+        Instantiate and return a PrivateTerrainHandler if private terrain detections should be excluded.
+
+        Parameters:
+            exclude_private_terrain_detections (bool): Flag indicating whether to exclude detections on private terrain.
+            az_tenant_id (str): Azure tenant ID required for database access.
+            db_host (str): Host address of the database.
+            db_name (str): Name of the database.
+
+        Returns:
+            Optional[PrivateTerrainHandler]: An instance of PrivateTerrainHandler if exclusion is enabled, otherwise None.
+        """
+        if exclude_private_terrain_detections:
+            terrainDatabaseConnector = TerrainDatabaseConnector(
+                az_tenant_id=az_tenant_id,
+                db_host=db_host,
+                db_name=db_name,
+                db_port=5432,
+            )
+            public_terrains = (
+                terrainDatabaseConnector.query_and_process_public_terrains()
+            )
+            return PrivateTerrainHandler(public_terrains=public_terrains)
+        return None
 
     @classmethod
     def get_pending_candidates(cls, table_full_name: str, obj_class: int) -> List[Row]:
