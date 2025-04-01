@@ -40,11 +40,7 @@ class PrivateTerrainHandler:
         buffered = pt.buffer(self.detection_buffer_distance)
 
         # If there are no overlapping public polygons, assume the detection is on private terrain.
-        if self.public_terrains:
-            is_on_private_terrain = not any(
-                buffered.intersects(rec["polygon"]) for rec in self.public_terrains
-            )
-            return is_on_private_terrain
-        else:
-            # return False if no public terrains are available to avoid filtering out all detections.
-            return False
+        is_on_private_terrain = not any(
+            buffered.intersects(rec["polygon"]) for rec in self.public_terrains
+        )
+        return is_on_private_terrain

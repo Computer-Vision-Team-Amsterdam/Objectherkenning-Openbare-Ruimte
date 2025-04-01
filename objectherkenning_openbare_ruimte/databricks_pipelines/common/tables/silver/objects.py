@@ -102,7 +102,8 @@ class SilverObjectsPerDayManager(TableManager):
             db_name (str): Name of the database.
 
         Returns:
-            Optional[PrivateTerrainHandler]: An instance of PrivateTerrainHandler if exclusion is enabled, otherwise None.
+            Optional[PrivateTerrainHandler]: An instance of PrivateTerrainHandler if exclusion is enabled. None
+            if exclusion is disabled or no public terrain polgyons were retrieved by terrainDatabaseConnector.
         """
         if exclude_private_terrain_detections:
             terrainDatabaseConnector = TerrainDatabaseConnector(
@@ -114,7 +115,8 @@ class SilverObjectsPerDayManager(TableManager):
             public_terrains = (
                 terrainDatabaseConnector.query_and_process_public_terrains()
             )
-            return PrivateTerrainHandler(public_terrains=public_terrains)
+            if public_terrains:
+                return PrivateTerrainHandler(public_terrains=public_terrains)
         return None
 
     @classmethod
