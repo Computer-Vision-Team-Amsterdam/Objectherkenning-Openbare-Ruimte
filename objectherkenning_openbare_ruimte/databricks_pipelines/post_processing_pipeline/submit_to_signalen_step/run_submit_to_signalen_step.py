@@ -43,6 +43,7 @@ def run_submit_to_signalen_step(
     active_object_classes,
     permit_mapping,
     send_limits,
+    exclude_private_terrain_detections,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
@@ -62,7 +63,11 @@ def run_submit_to_signalen_step(
     )
 
     top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
-        send_limits=send_limits
+        exclude_private_terrain_detections,
+        az_tenant_id,
+        db_host,
+        db_name,
+        send_limits=send_limits,
     )
 
     if top_scores_df.count() == 0:
@@ -127,4 +132,7 @@ if __name__ == "__main__":
         active_object_classes=settings["object_classes"]["active"],
         permit_mapping=settings["object_classes"]["permit_mapping"],
         send_limits=settings["object_classes"]["send_limit"],
+        exclude_private_terrain_detections=settings[
+            "exclude_private_terrain_detections"
+        ],
     )
