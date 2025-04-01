@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pandas as pd
 from pyproj import Transformer
 from pyspark.sql import Row
@@ -10,7 +8,7 @@ class PrivateTerrainHandler:
 
     def __init__(
         self,
-        public_terrains: Optional[pd.DataFrame],
+        public_terrains: pd.DataFrame,
     ) -> None:
         self.detection_buffer_distance = 20
         self.detection_crs = "EPSG:4326"
