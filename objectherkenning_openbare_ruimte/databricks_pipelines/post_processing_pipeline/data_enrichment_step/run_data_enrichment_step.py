@@ -56,6 +56,7 @@ def run_data_enrichment_step(
     permit_mapping,
     confidence_thresholds,
     bbox_size_thresholds,
+    annotate_detection_images,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     clustering = Clustering(
@@ -134,11 +135,12 @@ def run_data_enrichment_step(
 
     utils_visualization.generate_map(
         dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
+        annotate_detection_images=annotate_detection_images,
         name=f"{job_process_time}-map",
         path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
         catalog=catalog,
         device_id=device_id,
-        job_process_time = job_process_time,
+        job_process_time=job_process_time,
     )
 
     selected_casted_df = (
@@ -194,4 +196,5 @@ if __name__ == "__main__":
         permit_mapping=settings["object_classes"]["permit_mapping"],
         confidence_thresholds=settings["object_classes"]["confidence_threshold"],
         bbox_size_thresholds=settings["object_classes"]["bbox_size_threshold"],
+        annotate_detection_images=settings["annotate_detection_images"],
     )

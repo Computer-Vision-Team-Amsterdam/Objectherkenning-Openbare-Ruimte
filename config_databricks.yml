@@ -41,6 +41,7 @@ databricks_pipelines:
           2: 10
           3: 10
           4: 10
+      annotate_detection_images: False
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -83,3 +84,4 @@ databricks_pipelines:
           2: 10
           3: 10
           4: 10
+      annotate_detection_images: False
