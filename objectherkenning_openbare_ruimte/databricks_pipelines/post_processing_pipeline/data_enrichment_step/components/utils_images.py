@@ -16,7 +16,7 @@ class OutputImage:
         """
         return self.image
 
-    def draw_bounding_boxes(
+    def draw_bounding_box(
         self,
         x_center_norm: float,
         y_center_norm: float,

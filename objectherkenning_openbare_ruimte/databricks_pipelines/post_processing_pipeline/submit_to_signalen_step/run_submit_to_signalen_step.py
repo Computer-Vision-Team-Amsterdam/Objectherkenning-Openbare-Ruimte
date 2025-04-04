@@ -43,6 +43,7 @@ def run_submit_to_signalen_step(
     active_object_classes,
     permit_mapping,
     send_limits,
+    annotate_detection_images,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
@@ -70,7 +71,7 @@ def run_submit_to_signalen_step(
         return
 
     successful_notifications, unsuccessful_notifications = (
-        signalHandler.process_notifications(top_scores_df)
+        signalHandler.process_notifications(top_scores_df, annotate_detection_images)
     )
 
     if successful_notifications:
@@ -127,4 +128,5 @@ if __name__ == "__main__":
         active_object_classes=settings["object_classes"]["active"],
         permit_mapping=settings["object_classes"]["permit_mapping"],
         send_limits=settings["object_classes"]["send_limit"],
+        annotate_detection_images=settings["annotate_detection_images"],
     )

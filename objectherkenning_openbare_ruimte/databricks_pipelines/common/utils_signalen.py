@@ -471,7 +471,7 @@ class SignalHandler:
 
         return json_to_send
 
-    def process_notifications(self, top_scores_df):
+    def process_notifications(self, top_scores_df, annotate_detection_images):
         date_of_notification = datetime.today().strftime("%Y-%m-%d")
         top_scores_df_with_date = top_scores_df.withColumn(
             "notification_date", F.to_date(F.lit(date_of_notification))
@@ -494,14 +494,16 @@ class SignalHandler:
                     device_id=self.device_id,
                 )
             )
-            base, ext = os.path.splitext(image_upload_path)
-            annotated_image_upload_path = f"{base}_annotated_{object_class}{ext}"
+            if annotate_detection_images:
+                base, ext = os.path.splitext(image_upload_path)
+                image_upload_path = f"{base}_annotated_{object_class}{ext}"
+
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)
             entry_dict.pop("id", None)
 
             try:
-                dbutils.fs.head(annotated_image_upload_path)  # noqa: F405
+                dbutils.fs.head(image_upload_path)  # noqa: F405
                 notification_json = self.fill_incident_details(
                     incident_date=date_of_notification,
                     lon=LON,
@@ -510,7 +512,7 @@ class SignalHandler:
                 )
 
                 signal_id = self.post_signal_with_image_attachment(
-                    json_content=notification_json, filename=annotated_image_upload_path
+                    json_content=notification_json, filename=image_upload_path
                 )
                 print(
                     f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
@@ -523,7 +525,7 @@ class SignalHandler:
                 updated_failed_entry = Row(**entry_dict)
                 if "java.io.FileNotFoundException" in str(e):
                     print(
-                        f"Image not found: {annotated_image_upload_path}. Skip creating notification...\n\n"
+                        f"Image not found: {image_upload_path}. Skip creating notification...\n\n"
                     )
                 else:
                     print(f"An error occurred: {e}\n\n")

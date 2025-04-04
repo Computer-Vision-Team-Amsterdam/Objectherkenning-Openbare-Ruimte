@@ -24,6 +24,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 
 def generate_map(
     dataframe,
+    annotate_detection_images,
     name=None,
     path=None,
     catalog=None,
@@ -136,19 +137,21 @@ def generate_map(
             text_color="#000000",
         )
 
-        # Add bounding boxes to image and save
         image_path = os.path.join(image_folder, detection_image_name)
-        image = cv2.imread(image_path)
-        annotated_image = OutputImage(image)
-        annotated_image.draw_bounding_boxes(
-            x_center_norm, y_center_norm, width_norm, height_norm
-        )
-        base, ext = os.path.splitext(image_path)
-        annotated_image_path = f"{base}_annotated_{object_class}{ext}"
-        cv2.imwrite(annotated_image_path, annotated_image.get_image())
+
+        # Add bounding boxes to image and save
+        if annotate_detection_images:
+            image = cv2.imread(image_path)
+            annotated_image = OutputImage(image)
+            annotated_image.draw_bounding_box(
+                x_center_norm, y_center_norm, width_norm, height_norm
+            )
+            base, ext = os.path.splitext(image_path)
+            image_path = f"{base}_annotated_{object_class}{ext}"
+            cv2.imwrite(image_path, annotated_image.get_image())
 
         # Add image to map
-        with open(annotated_image_path, "rb") as image_file:
+        with open(image_path, "rb") as image_file:
             encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
         data_uri = f"data:image/jpeg;base64,{encoded_image}"
 
