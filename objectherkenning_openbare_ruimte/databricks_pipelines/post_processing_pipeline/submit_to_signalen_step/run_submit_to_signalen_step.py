@@ -44,6 +44,7 @@ def run_submit_to_signalen_step(
     permit_mapping,
     send_limits,
     exclude_private_terrain_detections,
+    annotate_detection_images,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
@@ -75,7 +76,7 @@ def run_submit_to_signalen_step(
         return
 
     successful_notifications, unsuccessful_notifications = (
-        signalHandler.process_notifications(top_scores_df)
+        signalHandler.process_notifications(top_scores_df, annotate_detection_images)
     )
 
     if successful_notifications:
@@ -135,4 +136,5 @@ if __name__ == "__main__":
         exclude_private_terrain_detections=settings[
             "exclude_private_terrain_detections"
         ],
+        annotate_detection_images=settings["annotate_detection_images"],
     )

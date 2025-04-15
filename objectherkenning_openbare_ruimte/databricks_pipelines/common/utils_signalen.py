@@ -471,7 +471,7 @@ class SignalHandler:
 
         return json_to_send
 
-    def process_notifications(self, top_scores_df):
+    def process_notifications(self, top_scores_df, annotate_detection_images):
         date_of_notification = datetime.today().strftime("%Y-%m-%d")
         top_scores_df_with_date = top_scores_df.withColumn(
             "notification_date", F.to_date(F.lit(date_of_notification))
@@ -494,6 +494,10 @@ class SignalHandler:
                     device_id=self.device_id,
                 )
             )
+            if annotate_detection_images:
+                base, ext = os.path.splitext(image_upload_path)
+                image_upload_path = f"{base}_annotated_{object_class}{ext}"
+
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)
             entry_dict.pop("id", None)
