@@ -73,6 +73,7 @@ class JsonFrameDetAdapter:
         return (
             self.spark.readStream.format("cloudFiles")
             .option("cloudFiles.format", "json")
+            .option("cloudFiles.includePattern", ".*\\.json$")
             .schema(self.json_schema)
             .load(self.json_source)
         )
