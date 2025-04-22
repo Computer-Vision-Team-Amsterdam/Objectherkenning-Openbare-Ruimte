@@ -39,7 +39,7 @@ def run_ingest_metadata_step(
     )
     # dataLoader.ingest_frame_metadata()
     # dataLoader.ingest_detection_metadata()
-    dataLoader.ingest_json_metadata()
+    dataLoader.ingest_json_metadata_separately()
     dbutils.jobs.taskValues.set(  # type: ignore[name-defined] # noqa: F821
         key="job_process_time", value=dataLoader.job_process_time.isoformat()
     )

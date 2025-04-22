@@ -83,6 +83,46 @@ class DataLoader:
             target=self.detection_metadata_table,
         )
 
+    def ingest_json_metadata_separately(self):
+
+        json_source = f"{self.root_source}/{self.device_id}/detection_metadata"
+        adapter = JsonFrameDetAdapter(spark=self.spark, json_source=json_source)
+
+        # 1) Generate two schema-tracking locations
+        frame_schema_loc = self._get_schema_path(self.frame_metadata_table)
+        det_schema_loc = self._get_schema_path(self.detection_metadata_table)
+
+        # 2) Read JSON twice, each with its own schemaLocation
+        raw_frames = (
+            self.spark.readStream.format("cloudFiles")
+            .option("cloudFiles.format", "json")
+            .option("cloudFiles.schemaLocation", frame_schema_loc)
+            .load(json_source)
+        )
+        raw_dets = (
+            self.spark.readStream.format("cloudFiles")
+            .option("cloudFiles.format", "json")
+            .option("cloudFiles.schemaLocation", det_schema_loc)
+            .load(json_source)
+        )
+
+        print("Loaded JSON metadata.")
+
+        # 3) Transform
+        frames_df = adapter.to_frame_df(raw_frames)
+        dets_df = adapter.to_det_df(raw_dets)
+
+        self._store_new_data(
+            frames_df,
+            checkpoint_path=self.checkpoint_frames,
+            target=self.frame_metadata_table,
+        )
+        self._store_new_data(
+            dets_df,
+            checkpoint_path=self.checkpoint_detections,
+            target=self.detection_metadata_table,
+        )
+
     def ingest_frame_metadata(self):
 
         source = f"{self.root_source}/{self.device_id}/frame_metadata"
