@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, date_format, explode, lit
+from pyspark.sql.functions import col, date_format, explode, lit, unix_timestamp
 from pyspark.sql.types import (
     ArrayType,
     DoubleType,
@@ -81,13 +81,19 @@ class JsonFrameDetAdapter:
     def to_frame_df(self, raw):
         # Produce exactly the columns in bronze_frame_metadata
         df = raw.select(
-            col("record_timestamp").alias("timestamp"),
+            unix_timestamp(col("record_timestamp")).cast("double").alias("timestamp"),
             col("frame_number").alias("pylon0_frame_counter"),
-            col("image_file_timestamp").alias("pylon0_frame_timestamp"),
-            col("gps_data.coordinate_time_stamp").alias("gps_timestamp"),
-            col("gps_data.coordinate_time_stamp").alias("gps_internal_timestamp"),
-            col("gps_data.latitude").alias("gps_lat"),
-            col("gps_data.longitude").alias("gps_lon"),
+            unix_timestamp(col("image_file_timestamp"))
+            .cast("double")
+            .alias("pylon0_frame_timestamp"),
+            unix_timestamp(col("gps_data.coordinate_time_stamp"))
+            .cast("double")
+            .alias("gps_timestamp"),
+            unix_timestamp(col("gps_data.coordinate_time_stamp"))
+            .cast("double")
+            .alias("gps_internal_timestamp"),
+            col("gps_data.latitude").cast("string").alias("gps_lat"),
+            col("gps_data.longitude").cast("string").alias("gps_lon"),
             col("image_file_name").alias("image_name"),
             col("project.model_name").alias("model_name"),
             col("project.aml_model_version").alias("model_version"),
@@ -100,14 +106,14 @@ class JsonFrameDetAdapter:
 
         # add all the missing columns as NULL/defaults:
         df = (
-            df.withColumn("imu_state", lit(None).cast("int"))
+            df.withColumn("imu_state", lit(None).cast("integer"))
             .withColumn("imu_pitch", lit(None).cast("float"))
             .withColumn("imu_roll", lit(None).cast("float"))
             .withColumn("imu_heading", lit(None).cast("float"))
-            .withColumn("imu_gx", lit(None).cast("int"))
-            .withColumn("imu_gy", lit(None).cast("int"))
-            .withColumn("imu_gz", lit(None).cast("int"))
-            .withColumn("gps_state", lit(None).cast("int"))
+            .withColumn("imu_gx", lit(None).cast("float"))
+            .withColumn("imu_gy", lit(None).cast("float"))
+            .withColumn("imu_gz", lit(None).cast("float"))
+            .withColumn("gps_state", lit(None).cast("integer"))
             .withColumn("status", lit("Pending").cast("string"))
         )
         return df
@@ -120,14 +126,14 @@ class JsonFrameDetAdapter:
         )
         return exploded.select(
             col("image_name"),
-            col("det.object_class").alias("object_class"),
-            col("det.boundingBox.x_center").alias("x_center"),
-            col("det.boundingBox.y_center").alias("y_center"),
-            col("det.boundingBox.width").alias("width"),
-            col("det.boundingBox.height").alias("height"),
-            col("det.confidence").alias("confidence"),
-            col("det.tracking_id").alias("tracking_id"),
-        ).withColumn("status", lit("Pending"))
+            col("det.object_class").cast("integer").alias("object_class"),
+            col("det.boundingBox.x_center").cast("float").alias("x_center"),
+            col("det.boundingBox.y_center").cast("float").alias("y_center"),
+            col("det.boundingBox.width").cast("float").alias("width"),
+            col("det.boundingBox.height").cast("float").alias("height"),
+            col("det.confidence").cast("float").alias("confidence"),
+            col("det.tracking_id").cast("integer").alias("tracking_id"),
+        ).withColumn("status", lit("Pending").cast("string"))
 
     def load(self):
         raw = self.load_raw()
