@@ -38,9 +38,9 @@ databricks_pipelines:
           3: 0.03
           4: 0.03
         send_limit:
-          2: 5
-          3: 5
-          4: 5
+          2: 4
+          3: 3
+          4: 3
     Productie: 
       catalog: "dpcv_prd"
       schema: "oor"
@@ -80,6 +80,6 @@ databricks_pipelines:
           3: 0.03
           4: 0.03
         send_limit:
-          2: 5
-          3: 5
-          4: 5
+          2: 4
+          3: 3
+          4: 3
