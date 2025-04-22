@@ -3,6 +3,8 @@ import tempfile
 
 from pyspark.sql.functions import col, lit
 
+from .jsonframedetadapter import JsonFrameDetAdapter
+
 
 class DataLoader:
 
@@ -58,6 +60,28 @@ class DataLoader:
 
         self.temp_files.append(path_table_schema)
         return path_table_schema
+
+    def ingest_json_metadata(self):
+
+        json_source = f"{self.root_source}/{self.device_id}/detection_metadata"
+
+        adapter = JsonFrameDetAdapter(
+            spark=self.spark,
+            json_source=json_source,
+        )
+        frames_df, dets_df = adapter.load()
+
+        print("Loaded JSON metadata.")
+        self._store_new_data(
+            frames_df,
+            checkpoint_path=self.checkpoint_frames,
+            target=self.frame_metadata_table,
+        )
+        self._store_new_data(
+            dets_df,
+            checkpoint_path=self.checkpoint_detections,
+            target=self.detection_metadata_table,
+        )
 
     def ingest_frame_metadata(self):
 

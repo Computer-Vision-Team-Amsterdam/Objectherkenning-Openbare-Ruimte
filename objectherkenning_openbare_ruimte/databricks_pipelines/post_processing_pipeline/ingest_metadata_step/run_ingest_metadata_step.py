@@ -37,8 +37,9 @@ def run_ingest_metadata_step(
         ckpt_detections_relative_path,
         job_process_time,
     )
-    dataLoader.ingest_frame_metadata()
-    dataLoader.ingest_detection_metadata()
+    # dataLoader.ingest_frame_metadata()
+    # dataLoader.ingest_detection_metadata()
+    dataLoader.ingest_json_metadata()
     dbutils.jobs.taskValues.set(  # type: ignore[name-defined] # noqa: F821
         key="job_process_time", value=dataLoader.job_process_time.isoformat()
     )
