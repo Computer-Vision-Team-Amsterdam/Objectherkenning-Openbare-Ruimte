@@ -1,4 +1,11 @@
-from pyspark.sql.functions import col, date_format, explode, lit, unix_timestamp
+from pyspark.sql.functions import (
+    col,
+    date_format,
+    explode,
+    lit,
+    monotonically_increasing_id,
+    unix_timestamp,
+)
 from pyspark.sql.types import (
     ArrayType,
     DoubleType,
@@ -125,6 +132,7 @@ class JsonFrameDetAdapter:
             explode("detections").alias("det"),
         )
         return exploded.select(
+            monotonically_increasing_id().alias("id"),
             col("image_name"),
             col("det.object_class").cast("integer").alias("object_class"),
             col("det.boundingBox.x_center").cast("float").alias("x_center"),
