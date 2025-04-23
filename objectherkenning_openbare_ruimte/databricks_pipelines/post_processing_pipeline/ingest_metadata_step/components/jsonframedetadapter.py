@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, date_format, explode, expr, lit, unix_timestamp
+from pyspark.sql.functions import col, date_format, explode, lit, unix_timestamp
 from pyspark.sql.types import (
     ArrayType,
     DoubleType,
@@ -82,7 +82,7 @@ class JsonFrameDetAdapter:
         # Produce exactly the columns in bronze_frame_metadata
         df = raw.select(
             unix_timestamp(col("record_timestamp")).cast("double").alias("timestamp"),
-            col("frame_number").alias("pylon0_frame_counter"),
+            col("frame_number").cast("integer").alias("pylon0_frame_counter"),
             unix_timestamp(col("image_file_timestamp"))
             .cast("double")
             .alias("pylon0_frame_timestamp"),
@@ -125,7 +125,6 @@ class JsonFrameDetAdapter:
             explode("detections").alias("det"),
         )
         return exploded.select(
-            expr("uuid()").alias("id"),
             col("image_name"),
             col("det.object_class").cast("integer").alias("object_class"),
             col("det.boundingBox.x_center").cast("float").alias("x_center"),

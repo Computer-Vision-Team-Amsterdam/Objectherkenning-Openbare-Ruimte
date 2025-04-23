@@ -96,13 +96,17 @@ class DataLoader:
         raw_frames = (
             self.spark.readStream.format("cloudFiles")
             .option("cloudFiles.format", "json")
+            .option("pathGlobFilter", "*.json")
             .option("cloudFiles.schemaLocation", frame_schema_loc)
+            .option("cloudFiles.inferColumnTypes", "true")
             .load(json_source)
         )
         raw_dets = (
             self.spark.readStream.format("cloudFiles")
             .option("cloudFiles.format", "json")
+            .option("pathGlobFilter", "*.json")
             .option("cloudFiles.schemaLocation", det_schema_loc)
+            .option("cloudFiles.inferColumnTypes", "true")
             .load(json_source)
         )
 
