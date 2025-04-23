@@ -35,7 +35,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         """
         Process the results of the query.
         """
-        query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
+        query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat_v2 WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
         print(f"Querying the database for date {date_to_query}...")
         result_df = self.run(query)
 
