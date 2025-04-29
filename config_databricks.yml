@@ -41,6 +41,7 @@ databricks_pipelines:
           2: 10
           3: 10
           4: 10
+      exclude_private_terrain_detections: False
       annotate_detection_images: False
     Productie: 
       catalog: "dpcv_prd"
@@ -84,4 +85,5 @@ databricks_pipelines:
           2: 10
           3: 10
           4: 10
+      exclude_private_terrain_detections: False
       annotate_detection_images: False

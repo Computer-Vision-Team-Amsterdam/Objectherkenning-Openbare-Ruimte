@@ -124,7 +124,7 @@ def run_data_enrichment_step(
         )
     )
 
-    joined_metadata_with_closest_bridge_and_closest_permit_and_score_df = (
+    joined_metadata_with_details_df = (
         objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
             "a"
         ).join(
@@ -134,7 +134,7 @@ def run_data_enrichment_step(
     )
 
     utils_visualization.generate_map(
-        dataframe=joined_metadata_with_closest_bridge_and_closest_permit_and_score_df,
+        dataframe=joined_metadata_with_details_df,
         annotate_detection_images=annotate_detection_images,
         name=f"{job_process_time}-map",
         path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
@@ -143,25 +143,19 @@ def run_data_enrichment_step(
         job_process_time=job_process_time,
     )
 
-    selected_casted_df = (
-        joined_metadata_with_closest_bridge_and_closest_permit_and_score_df.select(
-            F.col("a.detection_id").cast("int"),
-            F.col("a.object_class"),
-            F.col("b.gps_lat").alias("object_lat").cast("string"),
-            F.col("b.gps_lon").alias("object_lon").cast("string"),
-            F.col("closest_bridge_distance")
-            .alias("distance_closest_bridge")
-            .cast("float"),
-            F.col("closest_bridge_id").cast("string"),
-            F.col("closest_permit_distance")
-            .alias("distance_closest_permit")
-            .cast("float"),
-            F.col("closest_permit_id"),
-            F.col("closest_permit_lat").cast("float"),
-            F.col("closest_permit_lon").cast("float"),
-            F.col("score").cast("float"),
-            F.lit("Pending").alias("status"),
-        )
+    selected_casted_df = joined_metadata_with_details_df.select(
+        F.col("a.detection_id").cast("int"),
+        F.col("a.object_class"),
+        F.col("b.gps_lat").alias("object_lat").cast("string"),
+        F.col("b.gps_lon").alias("object_lon").cast("string"),
+        F.col("closest_bridge_distance").alias("distance_closest_bridge").cast("float"),
+        F.col("closest_bridge_id").cast("string"),
+        F.col("closest_permit_distance").alias("distance_closest_permit").cast("float"),
+        F.col("closest_permit_id"),
+        F.col("closest_permit_lat").cast("float"),
+        F.col("closest_permit_lon").cast("float"),
+        F.col("score").cast("float"),
+        F.lit("Pending").alias("status"),
     )
 
     SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
