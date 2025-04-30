@@ -4,7 +4,7 @@ from pyspark.sql.functions import (
     explode,
     lit,
     to_timestamp,
-    unix_timestamp,
+    to_unix_timestamp,
 )
 from pyspark.sql.types import (
     ArrayType,
@@ -72,6 +72,8 @@ class JsonFrameDetAdapter:
         ]
     )
 
+    time_format = "yyyy-MM-ddTHH:mm:ss.S"
+
     def __init__(self, spark, json_source):
         self.spark = spark
         self.json_source = json_source
@@ -88,15 +90,17 @@ class JsonFrameDetAdapter:
     def to_frame_df(self, raw):
         # Produce exactly the columns in bronze_frame_metadata
         df = raw.select(
-            unix_timestamp(col("record_timestamp")).cast("double").alias("timestamp"),
+            to_unix_timestamp(col("record_timestamp"), self.time_format)
+            .cast("double")
+            .alias("timestamp"),
             col("frame_number").cast("integer").alias("pylon0_frame_counter"),
-            unix_timestamp(col("image_file_timestamp"))
+            to_unix_timestamp(col("image_file_timestamp"), self.time_format)
             .cast("double")
             .alias("pylon0_frame_timestamp"),
-            unix_timestamp(col("gps_data.coordinate_time_stamp"))
+            to_unix_timestamp(col("gps_data.coordinate_time_stamp"), self.time_format)
             .cast("double")
             .alias("gps_timestamp"),
-            unix_timestamp(col("gps_data.coordinate_time_stamp"))
+            to_unix_timestamp(col("gps_data.coordinate_time_stamp"), self.time_format)
             .cast("double")
             .alias("gps_internal_timestamp"),
             col("gps_data.latitude").cast("string").alias("gps_lat"),
@@ -108,7 +112,9 @@ class JsonFrameDetAdapter:
             date_format(col("gps_data.coordinate_time_stamp"), "yyyy-MM-dd").alias(
                 "gps_date"
             ),
-            to_timestamp(col("gps_data.coordinate_time_stamp")).alias("gps_time"),
+            to_timestamp(col("gps_data.coordinate_time_stamp"), self.time_format).alias(
+                "gps_time"
+            ),
         )
 
         # add all the missing columns as NULL/defaults:
