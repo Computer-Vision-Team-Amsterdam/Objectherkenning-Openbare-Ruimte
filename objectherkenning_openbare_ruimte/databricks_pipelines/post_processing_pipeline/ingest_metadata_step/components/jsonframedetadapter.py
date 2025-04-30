@@ -103,7 +103,7 @@ class JsonFrameDetAdapter:
             col("gps_data.longitude").cast("string").alias("gps_lon"),
             col("image_file_name").alias("image_name"),
             col("project.model_name").alias("model_name"),
-            col("project.aml_model_version").alias("model_version"),
+            col("project.aml_model_version").cast("int").alias("model_version"),
             col("project.project_version").alias("code_version"),
             date_format(col("gps_data.coordinate_time_stamp"), "yyyy-MM-dd").alias(
                 "gps_date"
