@@ -95,6 +95,7 @@ class DataLoader:
         # 2) Read JSON twice, each with its own schemaLocation
         raw_frames = (
             self.spark.readStream.format("cloudFiles")
+            .option("multiline", "true")
             .option("cloudFiles.format", "json")
             .option("pathGlobFilter", "*.json")
             .option("cloudFiles.schemaLocation", frame_schema_loc)
@@ -103,6 +104,7 @@ class DataLoader:
         )
         raw_dets = (
             self.spark.readStream.format("cloudFiles")
+            .option("multiline", "true")
             .option("cloudFiles.format", "json")
             .option("pathGlobFilter", "*.json")
             .option("cloudFiles.schemaLocation", det_schema_loc)
