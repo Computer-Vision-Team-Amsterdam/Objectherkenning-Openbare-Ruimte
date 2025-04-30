@@ -1,4 +1,11 @@
-from pyspark.sql.functions import col, date_format, explode, lit, unix_timestamp
+from pyspark.sql.functions import (
+    col,
+    date_format,
+    explode,
+    lit,
+    to_timestamp,
+    unix_timestamp,
+)
 from pyspark.sql.types import (
     ArrayType,
     DoubleType,
@@ -101,7 +108,7 @@ class JsonFrameDetAdapter:
             date_format(col("gps_data.coordinate_time_stamp"), "yyyy-MM-dd").alias(
                 "gps_date"
             ),
-            col("gps_data.coordinate_time_stamp").alias("gps_time"),
+            to_timestamp(col("gps_data.coordinate_time_stamp")).alias("gps_time"),
         )
 
         # add all the missing columns as NULL/defaults:
