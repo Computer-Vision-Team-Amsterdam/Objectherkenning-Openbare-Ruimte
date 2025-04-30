@@ -171,11 +171,11 @@ class DecosDataHandler(ReferenceDatabaseConnector):
     def get_benkagg_adresseerbareobjecten_by_address(
         self, street, house_number, postcode
     ):
-        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten_v1 where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
         return self.run(query)
 
     def get_benkagg_adresseerbareobjecten_by_id(self, id):
-        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where identificatie='{id}'"  # nosec B608
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten_v1 where identificatie='{id}'"  # nosec B608
         return self.run(query)
 
     def convert_address_to_coordinates(self, address):
