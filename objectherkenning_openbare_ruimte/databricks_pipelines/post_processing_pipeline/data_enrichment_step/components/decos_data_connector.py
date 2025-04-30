@@ -11,7 +11,9 @@ from pyspark.sql.functions import col
 from shapely import wkb
 from shapely.geometry import Point
 
-from .reference_db_connector import ReferenceDatabaseConnector
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.reference_db_connector import (  # noqa: E402
+    ReferenceDatabaseConnector,
+)
 
 
 class DecosDataHandler(ReferenceDatabaseConnector):
