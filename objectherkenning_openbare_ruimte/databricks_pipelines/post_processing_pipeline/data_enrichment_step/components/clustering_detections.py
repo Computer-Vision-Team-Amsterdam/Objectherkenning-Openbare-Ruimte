@@ -31,6 +31,11 @@ class Clustering:
         self.detection_metadata = detections
         self.frame_metadata = frames
         self.active_object_classes = active_object_classes
+
+        if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
+            print("Missing or incomplete data to run clustering. Stopping execution.")
+            return
+
         self.joined_metadata = self._join_frame_and_detection_metadata()
         self._objects_coordinates_with_detection_id = None
 
@@ -41,8 +46,8 @@ class Clustering:
             column_computation=col("width") * col("height"),
         )
 
-        if self.detection_metadata.count() == 0 or self.frame_metadata.count() == 0:
-            print("Missing or incomplete data to run clustering. Stopping execution.")
+        if self.joined_metadata.count() == 0:
+            print("No data left to cluster after join and filter. Stopping execution.")
             return
 
         self.cluster_and_select_images()
