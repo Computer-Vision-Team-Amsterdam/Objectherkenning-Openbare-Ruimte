@@ -1,16 +1,17 @@
 [project]
 name = "objectherkenning_openbare_ruimte"
-version = "1.0.0"
+version = "1.1.0"
 
 [tool.poetry]
 name = "objectherkenning_openbare_ruimte"
-version = "1.0.0"
+version = "1.1.0"
 description = "Objectherkenning Openbare Ruimte is a project about recognising objects from public space images."
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
     "Diana Epureanu <d.epureanu@amsterdam.nl>",
     "Andrea Lombardo <a.lombardo@amsterdam.nl>",
-    "Daan Bloembergen <d.bloembergen@amsterdam.nl>"
+    "Daan Bloembergen <d.bloembergen@amsterdam.nl>",
+    "Niek IJzerman <n.ijzerman@amsterdam.nl>"
 ]
 
 [tool.poetry.dependencies]
