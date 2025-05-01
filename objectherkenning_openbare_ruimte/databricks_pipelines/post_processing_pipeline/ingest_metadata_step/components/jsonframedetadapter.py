@@ -1,12 +1,4 @@
-from pyspark.sql.functions import (
-    col,
-    date_format,
-    explode,
-    lit,
-    to_timestamp,
-    to_unix_timestamp,
-    unix_seconds,
-)
+from pyspark.sql.functions import col, date_format, explode, lit, to_timestamp
 from pyspark.sql.types import (
     ArrayType,
     DoubleType,
@@ -89,17 +81,15 @@ class JsonFrameDetAdapter:
     def to_frame_df(self, raw):
         # Produce exactly the columns in bronze_frame_metadata
         df = raw.select(
-            unix_seconds(to_timestamp(col("record_timestamp")))
-            .cast("double")
-            .alias("timestamp"),
+            to_timestamp(col("record_timestamp")).cast("double").alias("timestamp"),
             col("frame_number").cast("integer").alias("pylon0_frame_counter"),
-            unix_seconds(to_timestamp(col("image_file_timestamp")))
+            to_timestamp(col("image_file_timestamp"))
             .cast("double")
             .alias("pylon0_frame_timestamp"),
-            unix_seconds(to_timestamp(col("gps_data.coordinate_time_stamp")))
+            to_timestamp(col("gps_data.coordinate_time_stamp"))
             .cast("double")
             .alias("gps_timestamp"),
-            unix_seconds(to_timestamp(col("gps_data.coordinate_time_stamp")))
+            to_timestamp(col("gps_data.coordinate_time_stamp"))
             .cast("double")
             .alias("gps_internal_timestamp"),
             col("gps_data.latitude").cast("string").alias("gps_lat"),
@@ -111,9 +101,7 @@ class JsonFrameDetAdapter:
             date_format(col("gps_data.coordinate_time_stamp"), "yyyy-MM-dd").alias(
                 "gps_date"
             ),
-            to_timestamp(col("gps_data.coordinate_time_stamp")).alias(
-                "gps_time"
-            ),
+            to_timestamp(col("gps_data.coordinate_time_stamp")).alias("gps_time"),
         )
 
         # add all the missing columns as NULL/defaults:
