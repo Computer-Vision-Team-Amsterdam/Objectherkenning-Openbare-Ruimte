@@ -1,86 +1,47 @@
+from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, date_format, explode, lit, to_timestamp
-from pyspark.sql.types import (
-    ArrayType,
-    DoubleType,
-    IntegerType,
-    StringType,
-    StructField,
-    StructType,
-    TimestampType,
-)
 
 
 class JsonFrameDetAdapter:
-    json_schema = StructType(
-        [
-            StructField("frame_number", IntegerType()),
-            StructField("record_timestamp", TimestampType()),
-            StructField("image_file_timestamp", TimestampType()),
-            StructField("image_file_name", StringType()),
-            StructField(
-                "gps_data",
-                StructType(
-                    [
-                        StructField("latitude", DoubleType()),
-                        StructField("longitude", DoubleType()),
-                        StructField("altitude", DoubleType()),
-                        StructField("coordinate_time_stamp", TimestampType()),
-                    ]
-                ),
-            ),
-            StructField(
-                "project",
-                StructType(
-                    [
-                        StructField("model_name", StringType()),
-                        StructField("aml_model_version", IntegerType()),
-                        StructField("project_version", StringType()),
-                        StructField("customer", StringType()),
-                    ]
-                ),
-            ),
-            StructField(
-                "detections",
-                ArrayType(
-                    StructType(
-                        [
-                            StructField("object_class", IntegerType()),
-                            StructField("confidence", DoubleType()),
-                            StructField("tracking_id", IntegerType()),
-                            StructField(
-                                "boundingBox",
-                                StructType(
-                                    [
-                                        StructField("x_center", DoubleType()),
-                                        StructField("y_center", DoubleType()),
-                                        StructField("width", DoubleType()),
-                                        StructField("height", DoubleType()),
-                                    ]
-                                ),
-                            ),
-                        ]
-                    )
-                ),
-            ),
-        ]
-    )
+    """
+    Reads JSON files from landingzone stream. Provides methods to convert JSON
+    metadata to the required formats for bronze_frame_metadata and
+    bronze_detection_metadata.
+    """
 
-    def __init__(self, spark, json_source):
-        self.spark = spark
-        self.json_source = json_source
-
-    def load_raw(self):
-        return (
-            self.spark.readStream.format("cloudFiles")
+    def __init__(
+        self,
+        spark: SparkSession,
+        json_source: str,
+        frame_schema_loc: str,
+        det_schema_loc: str,
+    ):
+        # Read JSON data twice, each with its own schemaLocation
+        self.raw_frames = (
+            spark.readStream.format("cloudFiles")
+            .option("multiline", "true")
             .option("cloudFiles.format", "json")
             .option("pathGlobFilter", "*.json")
-            .schema(self.json_schema)
-            .load(self.json_source)
+            .option("cloudFiles.schemaLocation", frame_schema_loc)
+            .option("cloudFiles.inferColumnTypes", "true")
+            .load(json_source)
+        )
+        self.raw_dets = (
+            spark.readStream.format("cloudFiles")
+            .option("multiline", "true")
+            .option("cloudFiles.format", "json")
+            .option("pathGlobFilter", "*.json")
+            .option("cloudFiles.schemaLocation", det_schema_loc)
+            .option("cloudFiles.inferColumnTypes", "true")
+            .load(json_source)
         )
 
-    def to_frame_df(self, raw):
+    def to_frame_df(self):
+        """
+        Return dataframe matching the bronze_frame_metadata format
+        """
         # Produce exactly the columns in bronze_frame_metadata
-        df = raw.select(
+        df = self.raw_frames.select(
             to_timestamp(col("record_timestamp")).cast("double").alias("timestamp"),
             col("frame_number").cast("integer").alias("pylon0_frame_counter"),
             to_timestamp(col("image_file_timestamp"))
@@ -118,9 +79,12 @@ class JsonFrameDetAdapter:
         )
         return df
 
-    def to_det_df(self, raw):
+    def to_det_df(self):
+        """
+        Return dataframe matching the bronze_detection_metadata format
+        """
         # Produce exactly the columns in bronze_detection_metadata
-        exploded = raw.select(
+        exploded = self.raw_dets.select(
             col("image_file_name").alias("image_name"),
             explode("detections").alias("det"),
         )
@@ -134,7 +98,3 @@ class JsonFrameDetAdapter:
             col("det.confidence").cast("float").alias("confidence"),
             col("det.tracking_id").cast("integer").alias("tracking_id"),
         ).withColumn("status", lit("Pending").cast("string"))
-
-    def load(self):
-        raw = self.load_raw()
-        return self.to_frame_df(raw), self.to_det_df(raw)

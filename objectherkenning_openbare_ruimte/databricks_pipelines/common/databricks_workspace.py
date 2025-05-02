@@ -1,11 +1,12 @@
 import json
 from datetime import datetime
+from typing import Union
 
 from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import SparkSession
 
 
-def get_databricks_environment(spark: SparkSession):
+def get_databricks_environment(spark: SparkSession) -> Union[str, None]:
     """
     Returns Productie, Ontwikkel or None based on the tags set in the subscription
     """
@@ -24,7 +25,7 @@ def get_databricks_environment(spark: SparkSession):
     raise ValueError("Databricks environment is not set.")
 
 
-def get_job_process_time(is_first_pipeline_step: bool):
+def get_job_process_time(is_first_pipeline_step: bool) -> datetime:
     current_timestamp = datetime.now()
     if is_first_pipeline_step:
         print(f"Job process time: {type(current_timestamp)} {current_timestamp}")
