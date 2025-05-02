@@ -1,4 +1,6 @@
-from pyspark.sql import SparkSession
+from typing import Tuple
+
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, date_format, explode, lit, to_timestamp
 
 
@@ -36,7 +38,10 @@ class JsonFrameDetAdapter:
             .load(json_source)
         )
 
-    def to_frame_df(self):
+    def get_load_counts(self) -> Tuple[int, int]:
+        return (self.raw_frames.count(), self.raw_dets.count())
+
+    def to_frame_df(self) -> DataFrame:
         """
         Return dataframe matching the bronze_frame_metadata format
         """
@@ -79,7 +84,7 @@ class JsonFrameDetAdapter:
         )
         return df
 
-    def to_det_df(self):
+    def to_det_df(self) -> DataFrame:
         """
         Return dataframe matching the bronze_detection_metadata format
         """

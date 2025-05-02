@@ -83,7 +83,11 @@ class DataLoader:
             det_schema_loc=det_schema_loc,
         )
 
-        print("Loaded JSON metadata.")
+        load_counts = adapter.get_load_counts()
+
+        print(
+            f"Loaded JSON metadata: {load_counts[0]} frames, {load_counts[1]} detections"
+        )
 
         # 3) Transform data
         frames_df = adapter.to_frame_df()
@@ -116,7 +120,9 @@ class DataLoader:
             rows_processed = stream_query.lastProgress["numInputRows"]
             print(f"Stored {rows_processed} new rows into {target}.")
         else:
-            print("Query did not terminate properly.")
+            print(
+                f"Query did not terminate properly for checkpointLocation {checkpoint_path} and target table {target}."
+            )
 
     def cleanup_temp_files(self):
         """
