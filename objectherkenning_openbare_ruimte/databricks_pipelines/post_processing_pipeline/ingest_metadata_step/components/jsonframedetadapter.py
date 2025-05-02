@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, date_format, explode, lit, to_timestamp
 
@@ -37,9 +35,6 @@ class JsonFrameDetAdapter:
             .option("cloudFiles.inferColumnTypes", "true")
             .load(json_source)
         )
-
-    def get_load_counts(self) -> Tuple[int, int]:
-        return (self.raw_frames.count(), self.raw_dets.count())
 
     def to_frame_df(self) -> DataFrame:
         """
