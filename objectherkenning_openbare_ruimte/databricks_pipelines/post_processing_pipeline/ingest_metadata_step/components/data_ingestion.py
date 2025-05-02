@@ -87,9 +87,7 @@ class DataLoader:
         frames_df = adapter.to_frame_df()
         dets_df = adapter.to_det_df()
 
-        print(
-            f"Loaded JSON metadata: {frames_df.count()} frames, {dets_df.count()} detections"
-        )
+        print("Loaded JSON metadata.")
 
         # 4) Store new data
         self._store_new_data(
