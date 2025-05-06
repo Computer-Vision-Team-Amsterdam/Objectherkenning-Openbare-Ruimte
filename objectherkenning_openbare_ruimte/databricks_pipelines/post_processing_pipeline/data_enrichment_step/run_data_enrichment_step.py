@@ -70,95 +70,101 @@ def run_data_enrichment_step(
         bbox_size_thresholds=bbox_size_thresholds,
     )
     objects_coordinates_df = clustering.get_objects_coordinates_with_detection_id()
-    category_counts = sorted(
-        objects_coordinates_df.groupBy("object_class").count().collect()
-    )
-    for row in category_counts:
-        print(
-            f"Detected '{active_object_classes[row['object_class']]}': {row['count']}"
+    
+    if objects_coordinates_df.count() > 0:
+        category_counts = sorted(
+            objects_coordinates_df.groupBy("object_class").count().collect()
+        )
+        for row in category_counts:
+            print(
+                f"Detected '{active_object_classes[row['object_class']]}': {row['count']}"
+            )
+
+        bridgesHandler = VulnerableBridgesHandler(
+            spark=sparkSession,
+            root_source=root_source,
+            vuln_bridges_relative_path=vuln_bridges_relative_path,
         )
 
-    bridgesHandler = VulnerableBridgesHandler(
-        spark=sparkSession,
-        root_source=root_source,
-        vuln_bridges_relative_path=vuln_bridges_relative_path,
-    )
-    bridges_coordinates_geometry = bridgesHandler.get_bridges_coordinates_geometry()
-    closest_bridges_df = (
-        bridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
-            bridges_locations_as_linestrings=bridges_coordinates_geometry,
+        bridges_coordinates_geometry = bridgesHandler.get_bridges_coordinates_geometry()
+        closest_bridges_df = (
+            bridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
+                bridges_locations_as_linestrings=bridges_coordinates_geometry,
+                objects_coordinates_df=objects_coordinates_df,
+                bridges_ids=bridgesHandler.get_bridges_ids(),
+                bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
+            )
+        )
+        objects_coordinates_with_closest_bridge_df = objects_coordinates_df.join(
+            closest_bridges_df, "detection_id"
+        )
+
+        decosDataHandler = DecosDataHandler(
+            spark=sparkSession,
+            az_tenant_id=az_tenant_id,
+            db_host=db_host,
+            db_name=db_name,
+            db_port=5432,
+            active_object_classes=active_object_classes,
+            permit_mapping=permit_mapping,
+        )
+        decosDataHandler.query_and_process_object_permits(
+            date_to_query=datetime.today().strftime("%Y-%m-%d")
+        )
+        closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
             objects_coordinates_df=objects_coordinates_df,
-            bridges_ids=bridgesHandler.get_bridges_ids(),
-            bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
         )
-    )
-    objects_coordinates_with_closest_bridge_df = objects_coordinates_df.join(
-        closest_bridges_df, "detection_id"
-    )
-
-    decosDataHandler = DecosDataHandler(
-        spark=sparkSession,
-        az_tenant_id=az_tenant_id,
-        db_host=db_host,
-        db_name=db_name,
-        db_port=5432,
-        active_object_classes=active_object_classes,
-        permit_mapping=permit_mapping,
-    )
-    decosDataHandler.query_and_process_object_permits(
-        date_to_query=datetime.today().strftime("%Y-%m-%d")
-    )
-    closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
-        objects_coordinates_df=objects_coordinates_df,
-    )
-    objects_coordinates_with_closest_bridge_and_closest_permit_df = (
-        objects_coordinates_with_closest_bridge_df.join(
-            closest_permits_df, "detection_id"
+        objects_coordinates_with_closest_bridge_and_closest_permit_df = (
+            objects_coordinates_with_closest_bridge_df.join(
+                closest_permits_df, "detection_id"
+            )
         )
-    )
 
-    score_expr = utils_scoring.get_score_expr()
-    objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
-        objects_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
-            "score", score_expr
+        score_expr = utils_scoring.get_score_expr()
+        objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
+            objects_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
+                "score", score_expr
+            )
         )
-    )
 
-    joined_metadata_with_details_df = (
-        objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
-            "a"
-        ).join(
-            clustering.joined_metadata.alias("b"),
-            on=F.col("a.detection_id") == F.col("b.detection_id"),
+        joined_metadata_with_details_df = (
+            objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
+                "a"
+            ).join(
+                clustering.joined_metadata.alias("b"),
+                on=F.col("a.detection_id") == F.col("b.detection_id"),
+            )
         )
-    )
 
-    utils_visualization.generate_map(
-        dataframe=joined_metadata_with_details_df,
-        annotate_detection_images=annotate_detection_images,
-        name=f"{job_process_time}-map",
-        path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
-        catalog=catalog,
-        device_id=device_id,
-        job_process_time=job_process_time,
-    )
+        utils_visualization.generate_map(
+            dataframe=joined_metadata_with_details_df,
+            annotate_detection_images=annotate_detection_images,
+            name=f"{job_process_time}-map",
+            path=f"/Volumes/{catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
+            catalog=catalog,
+            device_id=device_id,
+            job_process_time=job_process_time,
+        )
 
-    selected_casted_df = joined_metadata_with_details_df.select(
-        F.col("a.detection_id").cast("int"),
-        F.col("a.object_class"),
-        F.col("b.gps_lat").alias("object_lat").cast("string"),
-        F.col("b.gps_lon").alias("object_lon").cast("string"),
-        F.col("closest_bridge_distance").alias("distance_closest_bridge").cast("float"),
-        F.col("closest_bridge_id").cast("string"),
-        F.col("closest_permit_distance").alias("distance_closest_permit").cast("float"),
-        F.col("closest_permit_id"),
-        F.col("closest_permit_lat").cast("float"),
-        F.col("closest_permit_lon").cast("float"),
-        F.col("score").cast("float"),
-        F.lit("Pending").alias("status"),
-    )
+        selected_casted_df = joined_metadata_with_details_df.select(
+            F.col("a.detection_id").cast("int"),
+            F.col("a.object_class"),
+            F.col("b.gps_lat").alias("object_lat").cast("string"),
+            F.col("b.gps_lon").alias("object_lon").cast("string"),
+            F.col("closest_bridge_distance").alias("distance_closest_bridge").cast("float"),
+            F.col("closest_bridge_id").cast("string"),
+            F.col("closest_permit_distance").alias("distance_closest_permit").cast("float"),
+            F.col("closest_permit_id"),
+            F.col("closest_permit_lat").cast("float"),
+            F.col("closest_permit_lon").cast("float"),
+            F.col("score").cast("float"),
+            F.lit("Pending").alias("status"),
+        )
 
-    SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+        SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+    else:
+        print("Nothing to do after clustering and filtering. Exiting.")
+    
     SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
     SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 

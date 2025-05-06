@@ -1,23 +1,27 @@
 import os
 import tempfile
+from datetime import datetime
+from typing import List
 
-from pyspark.sql.functions import col, lit
+from pyspark.sql import SparkSession
+
+from .json_frame_detection_adapter import JsonFrameDetectionAdapter
 
 
 class DataLoader:
 
     def __init__(
         self,
-        spark,
-        catalog,
-        schema,
-        root_source,
-        device_id,
-        ckpt_frames_relative_path,
-        ckpt_detections_relative_path,
-        job_process_time,
+        spark_session: SparkSession,
+        catalog: str,
+        schema: str,
+        root_source: str,
+        device_id: str,
+        ckpt_frames_relative_path: str,
+        ckpt_detections_relative_path: str,
+        job_process_time: datetime,
     ):
-        self.spark = spark
+        self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
         self.root_source = root_source
@@ -34,10 +38,10 @@ class DataLoader:
         self.detection_metadata_table = (
             f"{self.catalog}.{self.schema}.bronze_detection_metadata"
         )
-        self.temp_files = []
+        self.temp_files: List[str] = []
         self.job_process_time = job_process_time
 
-    def _get_schema_path(self, table_name):
+    def _get_schema_path(self, table_name: str) -> str:
         """
         Retrieves the schema of the specified table and saves it to a temporary file.
 
@@ -48,7 +52,7 @@ class DataLoader:
             str: The path to the temporary file containing the schema JSON.
         """
         # Retrieve the schema of the specified table
-        existing_table_schema = self.spark.table(table_name).schema
+        existing_table_schema = self.spark_session.table(table_name).schema
         schema_json = existing_table_schema.json()
 
         # Save the JSON schema to a temporary file
@@ -59,82 +63,46 @@ class DataLoader:
         self.temp_files.append(path_table_schema)
         return path_table_schema
 
-    def ingest_frame_metadata(self):
+    def ingest_json_metadata(self):
+        """
+        Ingest metadata from JSON files, convert to the old frame_metadata
+        and detection_metadata format, and store in bronze tables.
+        """
 
-        source = f"{self.root_source}/{self.device_id}/frame_metadata"
-        path_table_schema = self._get_schema_path(self.frame_metadata_table)
-        df = self._load_new_frame_metadata(
-            source, path_table_schema=path_table_schema, format="csv"
+        json_source = f"{self.root_source}/{self.device_id}/detection_metadata"
+
+        # 1) Generate two schema-tracking locations
+        frame_schema_loc = self._get_schema_path(self.frame_metadata_table)
+        detection_schema_loc = self._get_schema_path(self.detection_metadata_table)
+
+        # 2) Read JSON data twice, each with its own schemaLocation
+        adapter = JsonFrameDetectionAdapter(
+            spark=self.spark_session,
+            json_source=json_source,
+            frame_schema_loc=frame_schema_loc,
+            detection_schema_loc=detection_schema_loc,
         )
-        print("Loaded frame metadata.")
+
+        # 3) Transform data
+        frames_df = adapter.to_frame_df()
+        detections_df = adapter.to_det_df()
+
+        print("Loaded JSON metadata.")
+
+        # 4) Store new data
         self._store_new_data(
-            df, checkpoint_path=self.checkpoint_frames, target=self.frame_metadata_table
+            frames_df,
+            checkpoint_path=self.checkpoint_frames,
+            target=self.frame_metadata_table,
         )
-
-    def ingest_detection_metadata(self):
-
-        source = f"{self.root_source}/{self.device_id}/detection_metadata"
-        path_table_schema = self._get_schema_path(self.detection_metadata_table)
-        df = self._load_new_detection_metadata(
-            source, path_table_schema=path_table_schema, format="csv"
-        )
-        print("Loaded detection metadata.")
         self._store_new_data(
-            df,
+            detections_df,
             checkpoint_path=self.checkpoint_detections,
             target=self.detection_metadata_table,
         )
 
-    def _load_new_frame_metadata(
-        self, source: str, path_table_schema: str, format: str
-    ):
-
-        bronze_df_frame = (
-            self.spark.readStream.format("cloudFiles")
-            .option("cloudFiles.format", format)
-            .option("cloudFiles.schemaLocation", path_table_schema)
-            .option("cloudFiles.inferColumnTypes", "true")
-            .option(
-                "cloudFiles.schemaHints",
-                "timestamp double, imu_pitch float, imu_roll float, imu_heading float, imu_gx float, imu_gy float, imu_gz float, code_version string, gps_lat string, gps_lon string, gps_date string, gps_time timestamp",
-            )
-            .option("cloudFiles.schemaEvolutionMode", "none")
-            .load(source)
-            .withColumnRenamed("pylon://0_frame_counter", "pylon0_frame_counter")
-            .withColumnRenamed("pylon://0_frame_timestamp", "pylon0_frame_timestamp")
-            .withColumn(
-                "pylon0_frame_timestamp", col("pylon0_frame_timestamp").cast("double")
-            )
-            .withColumn("gps_timestamp", col("gps_timestamp").cast("double"))
-            .withColumn(
-                "gps_internal_timestamp", col("gps_internal_timestamp").cast("double")
-            )
-            .withColumn("status", lit("Pending"))
-        )
-
-        return bronze_df_frame
-
-    def _load_new_detection_metadata(
-        self, source: str, path_table_schema: str, format: str
-    ):
-        bronze_df_detection = (
-            self.spark.readStream.format("cloudFiles")
-            .option("cloudFiles.format", format)
-            .option("cloudFiles.schemaLocation", path_table_schema)
-            .option("cloudFiles.inferColumnTypes", "true")
-            .option(
-                "cloudFiles.schemaHints",
-                "x_center float, y_center float, width float, height float, confidence float, tracking_id int",
-            )
-            .option("cloudFiles.schemaEvolutionMode", "none")
-            .load(source)
-            .withColumn("status", lit("Pending"))
-        )
-
-        return bronze_df_detection
-
-    # availableNow = process all files that have been added before the time when this query ran. Used with batch processing
-    def _store_new_data(self, df, checkpoint_path, target):
+    def _store_new_data(self, df, checkpoint_path: str, target: str):
+        # availableNow = process all files that have been added before the time when this query ran. Used with batch processing
         stream_query = (
             df.writeStream.option("checkpointLocation", checkpoint_path)
             .trigger(availableNow=True)
@@ -148,7 +116,9 @@ class DataLoader:
             rows_processed = stream_query.lastProgress["numInputRows"]
             print(f"Stored {rows_processed} new rows into {target}.")
         else:
-            print("Query did not terminate properly.")
+            print(
+                f"Query did not terminate properly for checkpointLocation {checkpoint_path} and target table {target}."
+            )
 
     def cleanup_temp_files(self):
         """

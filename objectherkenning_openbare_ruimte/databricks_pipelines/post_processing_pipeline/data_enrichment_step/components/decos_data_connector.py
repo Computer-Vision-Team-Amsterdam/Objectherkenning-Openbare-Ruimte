@@ -15,6 +15,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.reference_db_c
     ReferenceDatabaseConnector,
 )
 
+bankagg_table_name = "benkagg_adresseerbareobjecten_v1"
+vergunningen_table_name = "vergunningen_werk_en_vervoer_op_straat_v2"
+
 
 class DecosDataHandler(ReferenceDatabaseConnector):
 
@@ -37,7 +40,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         """
         Process the results of the query.
         """
-        query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM vergunningen_werk_en_vervoer_op_straat_v2 WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
+        query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM {vergunningen_table_name} WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
         print(f"Querying the database for date {date_to_query}...")
         result_df = self.run(query)
 
@@ -171,11 +174,11 @@ class DecosDataHandler(ReferenceDatabaseConnector):
     def get_benkagg_adresseerbareobjecten_by_address(
         self, street, house_number, postcode
     ):
-        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {bankagg_table_name} where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
         return self.run(query)
 
     def get_benkagg_adresseerbareobjecten_by_id(self, id):
-        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from benkagg_adresseerbareobjecten where identificatie='{id}'"  # nosec B608
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {bankagg_table_name} where identificatie='{id}'"  # nosec B608
         return self.run(query)
 
     def convert_address_to_coordinates(self, address):
