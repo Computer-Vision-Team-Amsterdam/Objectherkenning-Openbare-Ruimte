@@ -5,7 +5,7 @@ from typing import List
 
 from pyspark.sql import SparkSession
 
-from .jsonframedetadapter import JsonFrameDetAdapter
+from .json_frame_detection_adapter import JsonFrameDetectionAdapter
 
 
 class DataLoader:
@@ -73,19 +73,19 @@ class DataLoader:
 
         # 1) Generate two schema-tracking locations
         frame_schema_loc = self._get_schema_path(self.frame_metadata_table)
-        det_schema_loc = self._get_schema_path(self.detection_metadata_table)
+        detection_schema_loc = self._get_schema_path(self.detection_metadata_table)
 
         # 2) Read JSON data twice, each with its own schemaLocation
-        adapter = JsonFrameDetAdapter(
+        adapter = JsonFrameDetectionAdapter(
             spark=self.spark_session,
             json_source=json_source,
             frame_schema_loc=frame_schema_loc,
-            det_schema_loc=det_schema_loc,
+            detection_schema_loc=detection_schema_loc,
         )
 
         # 3) Transform data
         frames_df = adapter.to_frame_df()
-        dets_df = adapter.to_det_df()
+        detections_df = adapter.to_det_df()
 
         print("Loaded JSON metadata.")
 
@@ -96,7 +96,7 @@ class DataLoader:
             target=self.frame_metadata_table,
         )
         self._store_new_data(
-            dets_df,
+            detections_df,
             checkpoint_path=self.checkpoint_detections,
             target=self.detection_metadata_table,
         )

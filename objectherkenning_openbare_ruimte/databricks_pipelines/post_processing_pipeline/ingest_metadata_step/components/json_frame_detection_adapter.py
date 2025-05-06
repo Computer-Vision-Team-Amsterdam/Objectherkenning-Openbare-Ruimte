@@ -2,7 +2,7 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, date_format, explode, lit, to_timestamp
 
 
-class JsonFrameDetAdapter:
+class JsonFrameDetectionAdapter:
     """
     Reads JSON files from landingzone stream. Provides methods to convert JSON
     metadata to the required formats for bronze_frame_metadata and
@@ -14,7 +14,7 @@ class JsonFrameDetAdapter:
         spark: SparkSession,
         json_source: str,
         frame_schema_loc: str,
-        det_schema_loc: str,
+        detection_schema_loc: str,
     ):
         # Read JSON data twice, each with its own schemaLocation
         self.raw_frames = (
@@ -31,7 +31,7 @@ class JsonFrameDetAdapter:
             .option("multiline", "true")
             .option("cloudFiles.format", "json")
             .option("pathGlobFilter", "*.json")
-            .option("cloudFiles.schemaLocation", det_schema_loc)
+            .option("cloudFiles.schemaLocation", detection_schema_loc)
             .option("cloudFiles.inferColumnTypes", "true")
             .load(json_source)
         )
