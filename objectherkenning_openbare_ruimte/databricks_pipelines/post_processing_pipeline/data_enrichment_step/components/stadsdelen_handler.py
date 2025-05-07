@@ -8,6 +8,9 @@ from shapely.geometry import Point
 
 
 class StadsdelenHandler:
+    """
+    Query the API for stadsdelen geometries and process the results.
+    """
 
     def __init__(self, spark_session: SparkSession) -> None:
         self.spark_session = spark_session
@@ -21,10 +24,10 @@ class StadsdelenHandler:
 
     def _query_and_process_stadsdelen(self) -> bool:
         """
-        Query the database for stadsdelen geometries and process the results.
+        Query the API for stadsdelen geometries and process the results.
 
-        The function runs a query to fetch geometries for stadsdelen and converts them
-        from WKB hex strings to Shapely geometry objects.
+        The function runs a query to fetch geometries for stadsdelen and
+        converts them to Shapely geometry objects.
         """
         success = False
         url = "https://api.data.amsterdam.nl/v1/gebieden/stadsdelen/"
@@ -49,19 +52,18 @@ class StadsdelenHandler:
         return success
 
     def _get_stadsdeel_name_and_code(
-        self, detection_row: Row
+        self, lat_lon: Tuple[float, float]
     ) -> Optional[Tuple[str, str]]:
         """
-        Get the stadsdeel name and code for the given detection.
+        Get the stadsdeel name and code for the given detection location.
 
         Parameters:
-            detection_row: A Row object containing detection data including longitude and latitude.
+            lat_lon: A Tuple (lat, lon) with teh GPS coordinates
 
         Returns:
             A tuple ("name", "code") if the point is inside a stadsdeel, or None otherwise
         """
-        object_lon = detection_row.gps_lon
-        object_lat = detection_row.gps_lat
+        (object_lat, object_lon) = lat_lon
         x, y = self.transformer.transform(object_lon, object_lat)
         pt = Point(x, y)
 
@@ -75,10 +77,16 @@ class StadsdelenHandler:
         self,
         objects_coordinates_df: DataFrame,
     ) -> DataFrame:
+        """
+        Look up the stadsdeel for each detection location. Returns a DataFrame
+        with the columns `stadsdeel` and `stadsdeel_code` for each row in
+        objects_coordinates_df.
+        """
         results = []
 
         for row in objects_coordinates_df.collect():
-            result = self._get_stadsdeel_name_and_code(row)
+            lat_lon = (row.gps_lat, row.gps_lon)
+            result = self._get_stadsdeel_name_and_code(lat_lon)
             if result:
                 results.append(
                     Row(
@@ -87,6 +95,8 @@ class StadsdelenHandler:
                         stadsdeel_code=result[1],
                     )
                 )
+            else:
+                print(f"Object at location {lat_lon} not within a known Stadsdeel.")
 
         if results:
             results_df = self.spark_session.createDataFrame(results)
