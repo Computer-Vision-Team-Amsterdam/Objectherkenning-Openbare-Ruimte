@@ -3,7 +3,7 @@ dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import os  # noqa: E402
 from datetime import datetime  # noqa: E402
-from typing import Optional  # noqa: E402
+from typing import Any, Optional  # noqa: E402
 
 from pyspark.sql import DataFrame, SparkSession  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
@@ -38,40 +38,34 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 class DataEnrichment:
-    def __init__(self):
-        self.sparkSession = SparkSession.builder.appName("DataEnrichment").getOrCreate()
-        databricks_environment = get_databricks_environment(self.sparkSession)
-        project_root = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-        )
-        config_file_path = os.path.join(project_root, "config_databricks.yml")
-        settings = load_settings(config_file_path)["databricks_pipelines"][
-            f"{databricks_environment}"
-        ]
-        self.catalog = (settings["catalog"],)
-        self.schema = (settings["schema"],)
-        self.root_source = (settings["storage_account_root_path"],)
-        self.vuln_bridges_relative_path = (settings["vuln_bridges_relative_path"],)
-        self.az_tenant_id = (settings["azure_tenant_id"],)
-        self.db_host = (settings["reference_database"]["host"],)
-        self.db_name = (settings["reference_database"]["name"],)
-        self.device_id = (settings["device_id"],)
+    def __init__(
+        self,
+        sparkSession: SparkSession,
+        catalog: str,
+        schema: str,
+        settings: dict[str, Any],
+    ):
+        self.sparkSession = sparkSession
+        self.catalog = catalog
+        self.schema = schema
+        self.root_source = settings["storage_account_root_path"]
+        self.vuln_bridges_relative_path = settings["vuln_bridges_relative_path"]
+        self.az_tenant_id = settings["azure_tenant_id"]
+        self.db_host = settings["reference_database"]["host"]
+        self.db_name = settings["reference_database"]["name"]
+        self.device_id = settings["device_id"]
         self.job_process_time = (
             get_job_process_time(
                 is_first_pipeline_step=False,
             ),
         )
-        self.active_object_classes = (settings["object_classes"]["active"],)
-        self.permit_mapping = (settings["object_classes"]["permit_mapping"],)
-        self.confidence_thresholds = (
-            settings["object_classes"]["confidence_threshold"],
-        )
-        self.bbox_size_thresholds = (settings["object_classes"]["bbox_size_threshold"],)
-        self.annotate_detection_images = (settings["annotate_detection_images"],)
+        self.active_object_classes = settings["object_classes"]["active"]
+        self.permit_mapping = settings["object_classes"]["permit_mapping"]
+        self.confidence_thresholds = settings["object_classes"]["confidence_threshold"]
+        self.bbox_size_thresholds = settings["object_classes"]["bbox_size_threshold"]
+        self.annotate_detection_images = settings["annotate_detection_images"]
 
     def run_data_enrichment_step(self):
-        setup_tables(spark=self.sparkSession, catalog=self.catalog, schema=self.schema)
-
         objects_coordinates_df = self._run_clustering()
 
         if objects_coordinates_df and (objects_coordinates_df.count() > 0):
@@ -229,6 +223,27 @@ class DataEnrichment:
         )
 
 
-if __name__ == "__main__":
-    data_enrichment = DataEnrichment()
+def main():
+    sparkSession = SparkSession.builder.appName("DataEnrichment").getOrCreate()
+    databricks_environment = get_databricks_environment(sparkSession)
+
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+    )
+    config_file_path = os.path.join(project_root, "config_databricks.yml")
+    settings = load_settings(config_file_path)["databricks_pipelines"][
+        f"{databricks_environment}"
+    ]
+
+    catalog = settings["catalog"]
+    schema = settings["schema"]
+    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+
+    data_enrichment = DataEnrichment(
+        sparkSession=sparkSession, catalog=catalog, schema=schema, settings=settings
+    )
     data_enrichment.run_data_enrichment_step()
+
+
+if __name__ == "__main__":
+    main()
