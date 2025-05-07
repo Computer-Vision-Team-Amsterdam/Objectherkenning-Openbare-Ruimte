@@ -12,9 +12,6 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_wor
     get_databricks_environment,
     get_job_process_time,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
-    BronzeFrameMetadataManager,
-)
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: E402
     SilverDetectionMetadataManager,
 )
@@ -26,7 +23,6 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
     setup_tables,
-    unix_to_yyyy_mm_dd,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (  # noqa: E402
     Clustering,
@@ -216,18 +212,6 @@ class DataEnrichment:
         return stadsdelen_df
 
     def _create_map(self, enriched_df: DataFrame) -> None:
-        # Get image folder path
-        job_process_str = str(self.job_process_time)
-        job_date = (
-            job_process_str.split("T")[0]
-            if "T" in job_process_str
-            else job_process_str.split(" ")[0]
-        )
-        stlanding_image_folder = unix_to_yyyy_mm_dd(
-            BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
-                job_date=job_date
-            )
-        )
         utils_visualization.generate_map(
             dataframe=enriched_df,
             annotate_detection_images=self.annotate_detection_images,
@@ -235,7 +219,6 @@ class DataEnrichment:
             path=f"/Volumes/{self.catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
             catalog=self.catalog,
             device_id=self.device_id,
-            stlanding_image_folder=stlanding_image_folder,
         )
 
 

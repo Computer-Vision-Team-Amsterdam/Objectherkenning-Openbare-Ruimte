@@ -11,6 +11,12 @@ from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
+    SilverFrameMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
+    unix_to_yyyy_mm_dd,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.utils_images import (  # noqa: E402
     OutputImage,
 )
@@ -23,7 +29,6 @@ def generate_map(
     path,
     catalog,
     device_id,
-    stlanding_image_folder,
 ) -> None:
     """
     Generates an interactive HTML map visualizing object detections, their closest vulnerable bridges,
@@ -74,9 +79,6 @@ def generate_map(
 
     icon_map = {2: "box", 3: "toilet-portable", 4: "table-cells"}
 
-    # Get image folder path
-    image_folder = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}"
-
     # Function to find the closest point on a linestring to a given point
     def closest_point_on_linestring(point, linestring):
         return nearest_points(point, linestring)[1]
@@ -120,6 +122,13 @@ def generate_map(
             text_color="#000000",
         )
 
+        # Get image folder path
+        stlanding_image_folder = unix_to_yyyy_mm_dd(
+            SilverFrameMetadataManager.get_gps_internal_timestamp_from_image_name(
+                detection_image_name
+            )
+        )
+        image_folder = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}"
         image_path = os.path.join(image_folder, detection_image_name)
 
         # Add bounding boxes to image and save
@@ -219,5 +228,13 @@ def generate_map(
     # create name for the map
     print(f"Map is saved at {name}")
     full_path = path + name + ".html"
+    print(f"Saving at {full_path}")
+    Map.save(full_path)
+    print(f"Saving at {full_path}")
+    Map.save(full_path)
+    print(f"Saving at {full_path}")
+    Map.save(full_path)
+    print(f"Saving at {full_path}")
+    Map.save(full_path)
     print(f"Saving at {full_path}")
     Map.save(full_path)
