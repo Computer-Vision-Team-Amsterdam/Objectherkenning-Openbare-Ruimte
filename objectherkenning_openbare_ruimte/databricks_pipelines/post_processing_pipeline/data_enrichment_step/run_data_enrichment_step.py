@@ -124,7 +124,7 @@ def run_data_enrichment_step(
         )
 
         stadsdelenHandler = StadsdelenHandler(spark_session=sparkSession)
-        stadsdelen_df = stadsdelenHandler.lookup_stadsdeel_for_detections()
+        stadsdelen_df = stadsdelenHandler.lookup_stadsdeel_for_detections(objects_coordinates_df=objects_coordinates_df)
         objects_coordinates_with_closest_bridge_permit_stadsdeel_df = (
             objects_coordinates_with_closest_bridge_permit_df.join(
                 stadsdelen_df, "detection_id"

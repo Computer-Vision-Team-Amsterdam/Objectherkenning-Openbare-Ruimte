@@ -36,11 +36,12 @@ class StadsdelenHandler:
             for stadsdeel in result.json()["_embedded"]["stadsdelen"]:
                 self.stadsdelen.append(
                     {
-                        "naam": stadsdeel["naam"],
+                        "name": stadsdeel["naam"],
                         "code": stadsdeel["code"],
                         "polygon": Polygon(stadsdeel["geometrie"]["coordinates"][0]),
                     }
                 )
+            print(f"Query successful, {len(self.stadsdelen)} stadsdelen returned.")
             success = True
         except requests.exceptions.RequestException as e:
             print(f"Error querying stadsdelen API: {e}")
@@ -59,8 +60,8 @@ class StadsdelenHandler:
         Returns:
             A tuple ("name", "code") if the point is inside a stadsdeel, or None otherwise
         """
-        object_lon = detection_row.object_lon
-        object_lat = detection_row.object_lat
+        object_lon = detection_row.gps_lon
+        object_lat = detection_row.gps_lat
         x, y = self.transformer.transform(object_lon, object_lat)
         pt = Point(x, y)
 
