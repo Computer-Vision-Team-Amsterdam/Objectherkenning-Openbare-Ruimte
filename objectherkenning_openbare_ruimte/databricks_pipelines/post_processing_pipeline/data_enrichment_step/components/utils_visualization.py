@@ -230,11 +230,3 @@ def generate_map(
     full_path = path + name + ".html"
     print(f"Saving at {full_path}")
     Map.save(full_path)
-    print(f"Saving at {full_path}")
-    Map.save(full_path)
-    print(f"Saving at {full_path}")
-    Map.save(full_path)
-    print(f"Saving at {full_path}")
-    Map.save(full_path)
-    print(f"Saving at {full_path}")
-    Map.save(full_path)

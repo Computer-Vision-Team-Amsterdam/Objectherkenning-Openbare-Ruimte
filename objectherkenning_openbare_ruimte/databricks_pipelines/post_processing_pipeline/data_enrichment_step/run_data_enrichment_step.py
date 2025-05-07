@@ -54,10 +54,8 @@ class DataEnrichment:
         self.db_host = settings["reference_database"]["host"]
         self.db_name = settings["reference_database"]["name"]
         self.device_id = settings["device_id"]
-        self.job_process_time = (
-            get_job_process_time(
-                is_first_pipeline_step=False,
-            ),
+        self.job_process_time = get_job_process_time(
+            is_first_pipeline_step=False,
         )
         self.active_object_classes = settings["object_classes"]["active"]
         self.permit_mapping = settings["object_classes"]["permit_mapping"]
