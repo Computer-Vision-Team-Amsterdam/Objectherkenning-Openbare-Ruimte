@@ -33,6 +33,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (  # noqa: E402
     DecosDataHandler,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.stadsdelen_handler import (  # noqa: E402
+    StadsdelenHandler,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.vulnerable_bridges_handler import (  # noqa: E402
     VulnerableBridgesHandler,
 )
@@ -70,7 +73,7 @@ def run_data_enrichment_step(
         bbox_size_thresholds=bbox_size_thresholds,
     )
     objects_coordinates_df = clustering.get_objects_coordinates_with_detection_id()
-    
+
     if objects_coordinates_df.count() > 0:
         category_counts = sorted(
             objects_coordinates_df.groupBy("object_class").count().collect()
@@ -114,21 +117,29 @@ def run_data_enrichment_step(
         closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
             objects_coordinates_df=objects_coordinates_df,
         )
-        objects_coordinates_with_closest_bridge_and_closest_permit_df = (
+        objects_coordinates_with_closest_bridge_permit_df = (
             objects_coordinates_with_closest_bridge_df.join(
                 closest_permits_df, "detection_id"
             )
         )
 
+        stadsdelenHandler = StadsdelenHandler(spark_session=sparkSession)
+        stadsdelen_df = stadsdelenHandler.lookup_stadsdeel_for_detections()
+        objects_coordinates_with_closest_bridge_permit_stadsdeel_df = (
+            objects_coordinates_with_closest_bridge_permit_df.join(
+                stadsdelen_df, "detection_id"
+            )
+        )
+
         score_expr = utils_scoring.get_score_expr()
-        objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df = (
-            objects_coordinates_with_closest_bridge_and_closest_permit_df.withColumn(
+        objects_coordinates_with_closest_bridge_permit_stadsdeel_score_df = (
+            objects_coordinates_with_closest_bridge_permit_stadsdeel_df.withColumn(
                 "score", score_expr
             )
         )
 
         joined_metadata_with_details_df = (
-            objects_coordinates_with_closest_bridge_and_closest_permit_and_score_df.alias(
+            objects_coordinates_with_closest_bridge_permit_stadsdeel_score_df.alias(
                 "a"
             ).join(
                 clustering.joined_metadata.alias("b"),
@@ -151,12 +162,18 @@ def run_data_enrichment_step(
             F.col("a.object_class"),
             F.col("b.gps_lat").alias("object_lat").cast("string"),
             F.col("b.gps_lon").alias("object_lon").cast("string"),
-            F.col("closest_bridge_distance").alias("distance_closest_bridge").cast("float"),
+            F.col("closest_bridge_distance")
+            .alias("distance_closest_bridge")
+            .cast("float"),
             F.col("closest_bridge_id").cast("string"),
-            F.col("closest_permit_distance").alias("distance_closest_permit").cast("float"),
+            F.col("closest_permit_distance")
+            .alias("distance_closest_permit")
+            .cast("float"),
             F.col("closest_permit_id"),
             F.col("closest_permit_lat").cast("float"),
             F.col("closest_permit_lon").cast("float"),
+            F.col("stadsdeel"),
+            F.col("stadsdeel_code"),
             F.col("score").cast("float"),
             F.lit("Pending").alias("status"),
         )
@@ -164,7 +181,7 @@ def run_data_enrichment_step(
         SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
     else:
         print("Nothing to do after clustering and filtering. Exiting.")
-    
+
     SilverFrameMetadataManager.update_status(job_process_time=job_process_time)
     SilverDetectionMetadataManager.update_status(job_process_time=job_process_time)
 
