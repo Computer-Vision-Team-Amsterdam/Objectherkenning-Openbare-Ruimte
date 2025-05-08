@@ -96,7 +96,9 @@ class StadsdelenHandler:
                     )
                 )
             else:
-                print(f"Object at location {lat_lon} not within a known Stadsdeel.")
+                print(
+                    f"Object with detection_id {row.detection_id} at location {lat_lon} not within a known Stadsdeel."
+                )
 
         if results:
             results_df = self.spark_session.createDataFrame(results)
