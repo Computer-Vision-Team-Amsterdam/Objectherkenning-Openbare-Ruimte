@@ -21,40 +21,44 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 )
 
 
-def run_submit_to_signalen_step(
-    sparkSession,
-    catalog,
-    schema,
-    device_id,
-    client_id,
-    client_secret_name,
-    access_token_url,
-    base_url,
-    job_process_time,
-    az_tenant_id,
-    db_host,
-    db_name,
-    object_classes,
-    permit_mapping,
-    send_limits,
-    exclude_private_terrain_detections,
-    annotate_detection_images,
-):
+def run_submit_to_signalen_step():
+    sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
+    databricks_environment = get_databricks_environment(sparkSession)
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+    )
+    config_file_path = os.path.join(project_root, "config_databricks.yml")
+    settings = load_settings(config_file_path)["databricks_pipelines"][
+        f"{databricks_environment}"
+    ]
+
+    catalog = settings["catalog"]
+    schema = settings["schema"]
+    job_process_time = get_job_process_time(
+        is_first_pipeline_step=False,
+    )
+    az_tenant_id = settings["azure_tenant_id"]
+    db_host = settings["reference_database"]["host"]
+    db_name = settings["reference_database"]["name"]
+    object_classes = settings["job_config"]["object_classes"]["names"]
+    send_limits = settings["job_config"]["object_classes"]["send_limit"]
+    exclude_private_terrain_detections = settings["job_config"][
+        "exclude_private_terrain_detections"
+    ]
+    annotate_detection_images = settings["job_config"]["annotate_detection_images"]
+
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
-        sparkSession,
-        catalog,
-        schema,
-        device_id,
-        client_id,
-        client_secret_name,
-        access_token_url,
-        base_url,
-        az_tenant_id,
-        db_host,
-        db_name,
-        object_classes,
-        permit_mapping,
+        sparkSession=sparkSession,
+        catalog=catalog,
+        schema=schema,
+        device_id=settings["device_id"],
+        signalen_settings=settings["signalen"],
+        az_tenant_id=az_tenant_id,
+        db_host=db_host,
+        db_name=db_name,
+        object_classes=object_classes,
+        permit_mapping=settings["job_config"]["object_classes"]["permit_mapping"],
     )
 
     top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
@@ -100,36 +104,4 @@ def run_submit_to_signalen_step(
 
 
 if __name__ == "__main__":
-    sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
-    databricks_environment = get_databricks_environment(sparkSession)
-    project_root = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-    )
-    config_file_path = os.path.join(project_root, "config_databricks.yml")
-    settings = load_settings(config_file_path)["databricks_pipelines"][
-        f"{databricks_environment}"
-    ]
-
-    run_submit_to_signalen_step(
-        sparkSession=sparkSession,
-        catalog=settings["catalog"],
-        schema=settings["schema"],
-        device_id=settings["device_id"],
-        client_id=settings["signalen"]["client_id"],
-        client_secret_name=settings["signalen"]["client_secret_name"],
-        access_token_url=settings["signalen"]["access_token_url"],
-        base_url=settings["signalen"]["base_url"],
-        job_process_time=get_job_process_time(
-            is_first_pipeline_step=False,
-        ),
-        az_tenant_id=settings["azure_tenant_id"],
-        db_host=settings["reference_database"]["host"],
-        db_name=settings["reference_database"]["name"],
-        object_classes=settings["job_config"]["object_classes"]["names"],
-        permit_mapping=settings["job_config"]["object_classes"]["permit_mapping"],
-        send_limits=settings["job_config"]["object_classes"]["send_limit"],
-        exclude_private_terrain_detections=settings["job_config"][
-            "exclude_private_terrain_detections"
-        ],
-        annotate_detection_images=settings["job_config"]["annotate_detection_images"],
-    )
+    run_submit_to_signalen_step()

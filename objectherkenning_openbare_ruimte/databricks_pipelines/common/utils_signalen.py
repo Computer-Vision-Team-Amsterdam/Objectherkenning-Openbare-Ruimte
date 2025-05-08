@@ -79,10 +79,7 @@ class SignalHandler:
         catalog,
         schema,
         device_id,
-        client_id,
-        client_secret_name,
-        access_token_url,
-        base_url,
+        signalen_settings,
         az_tenant_id,
         db_host,
         db_name,
@@ -94,8 +91,12 @@ class SignalHandler:
         self.catalog_name = catalog
         self.schema = schema
         self.object_classes = object_classes
-
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
+
+        client_id = signalen_settings["client_id"]
+        client_secret_name = signalen_settings["client_secret_name"]
+        access_token_url = signalen_settings["access_token_url"]
+        base_url = signalen_settings["base_url"]
         signalConnectionConfigurer = SignalConnectionConfigurer(
             sparkSession, client_id, client_secret_name, access_token_url, base_url
         )
@@ -103,6 +104,7 @@ class SignalHandler:
         access_token = signalConnectionConfigurer.get_access_token()
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}  # type: ignore
         self.verify_ssl = True
+
         self.decosDataHandler = DecosDataHandler(
             spark=sparkSession,
             az_tenant_id=az_tenant_id,
