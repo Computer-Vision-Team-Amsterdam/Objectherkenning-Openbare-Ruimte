@@ -11,8 +11,8 @@ from pyspark.sql import functions as F
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators.silver_metadata_aggregator import (
     SilverMetadataAggregator,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (
-    DecosDataHandler,
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
+    BENKAGGConnector,
 )
 
 
@@ -84,7 +84,6 @@ class SignalHandler:
         db_host,
         db_name,
         object_classes,
-        permit_mapping,
     ):
         self.sparkSession = sparkSession
         self.device_id = device_id
@@ -105,14 +104,11 @@ class SignalHandler:
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}  # type: ignore
         self.verify_ssl = True
 
-        self.decosDataHandler = DecosDataHandler(
-            spark=sparkSession,
+        self.bankAggConnector = BENKAGGConnector(
             az_tenant_id=az_tenant_id,
             db_host=db_host,
             db_name=db_name,
             db_port=5432,
-            object_classes=object_classes,
-            permit_mapping=permit_mapping,
         )
 
     def get_signal(self, sig_id: str) -> Any:
@@ -377,7 +373,7 @@ class SignalHandler:
             if len(response_content["features"]) > 0:
                 first_element_id = response_content["features"][0]["properties"]["id"]
                 result_df = (
-                    self.decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
+                    self.bankAggConnector.get_benkagg_adresseerbareobjecten_by_id(
                         first_element_id
                     )
                 )
@@ -473,7 +469,11 @@ class SignalHandler:
 
         return json_to_send
 
-    def process_notifications(self, top_scores_df, annotate_detection_images):
+    def process_notifications(
+        self,
+        top_scores_df,
+        annotate_detection_images,
+    ):
         date_of_notification = datetime.today().strftime("%Y-%m-%d")
         top_scores_df_with_date = top_scores_df.withColumn(
             "notification_date", F.to_date(F.lit(date_of_notification))
