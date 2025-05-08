@@ -28,12 +28,12 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         db_host: str,
         db_name: str,
         db_port: int,
-        active_object_classes: Dict[int, str],
+        object_classes: Dict[int, str],
         permit_mapping: Dict[int, List],
     ) -> None:
         super().__init__(az_tenant_id, db_host, db_name, db_port)
         self.spark = spark
-        self.active_object_classes = active_object_classes
+        self.object_classes = object_classes
         self.permit_mapping = permit_mapping
 
     def query_and_process_object_permits(self, date_to_query):
@@ -94,7 +94,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         stats = exploded["object_classes"].value_counts()
         print("Matching permits per category:")
         for category, count in stats.items():
-            print(f"  Category {self.active_object_classes[category]}: {count}")
+            print(f"  Category {self.object_classes[category]}: {count}")
 
         self._permits_coordinates = self._extract_permits_coordinates()
         self._permits_coordinates_geometry = self._convert_coordinates_to_point()
@@ -305,19 +305,19 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
     def get_keyword_mapping(self) -> Dict[int, List[str]]:
         """
-        Return a mapping of active object class keys to their permit mapping values.
+        Return a mapping of object class keys to their permit mapping values.
 
         Returns:
-            Dict[int, str]: Dictionary with active object class keys and corresponding permit mapping values.
+            Dict[int, str]: Dictionary with object class keys and corresponding permit mapping values.
         """
-        active_keys = set(self.active_object_classes.keys())
+        active_keys = set(self.object_classes.keys())
         return {k: self.permit_mapping[k] for k in active_keys}
 
     def calculate_distances_to_closest_permits(
         self, objects_coordinates_df: DataFrame
     ) -> DataFrame:
         """
-        Calculate distances to the closest permits for each active object class and union the results.
+        Calculate distances to the closest permits for each object class and union the results.
 
         Parameters:
             objects_coordinates_df (DataFrame): A Spark DataFrame containing object coordinates.
@@ -328,7 +328,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         dfs_closest_permits: List[DataFrame] = []
 
         # Loop through each target object category.
-        for object_class in set(self.active_object_classes.keys()):
+        for object_class in set(self.object_classes.keys()):
             df_object_class = objects_coordinates_df.filter(
                 col("object_class") == object_class
             )

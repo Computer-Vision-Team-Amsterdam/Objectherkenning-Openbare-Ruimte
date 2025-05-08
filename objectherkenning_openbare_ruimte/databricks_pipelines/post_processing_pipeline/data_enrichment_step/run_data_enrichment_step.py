@@ -51,11 +51,20 @@ class DataEnrichment:
         self.job_process_time = get_job_process_time(
             is_first_pipeline_step=False,
         )
-        self.active_object_classes = settings["object_classes"]["active"]
-        self.permit_mapping = settings["object_classes"]["permit_mapping"]
-        self.confidence_thresholds = settings["object_classes"]["confidence_threshold"]
-        self.bbox_size_thresholds = settings["object_classes"]["bbox_size_threshold"]
-        self.annotate_detection_images = settings["annotate_detection_images"]
+        self.object_classes = settings["job_config"]["object_classes"]["names"]
+        self.permit_mapping = settings["job_config"]["object_classes"]["permit_mapping"]
+        self.confidence_thresholds = settings["job_config"]["object_classes"][
+            "confidence_threshold"
+        ]
+        self.bbox_size_thresholds = settings["job_config"]["object_classes"][
+            "bbox_size_threshold"
+        ]
+        self.annotate_detection_images = settings["job_config"][
+            "annotate_detection_images"
+        ]
+        self.active_object_classes_for_clustering = settings["job_config"][
+            "clustering"
+        ]["active_object_classes"]
 
     def run_data_enrichment_step(self):
         objects_coordinates_df = self._run_clustering()
@@ -66,7 +75,7 @@ class DataEnrichment:
             )
             for row in category_counts:
                 print(
-                    f"Detected '{self.active_object_classes[row['object_class']]}': {row['count']}"
+                    f"Detected '{self.object_classes[row['object_class']]}': {row['count']}"
                 )
 
             enriched_df = self._get_enriched_df(
@@ -155,7 +164,7 @@ class DataEnrichment:
             schema=self.schema,
             detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
             frames=SilverFrameMetadataManager.load_pending_rows_from_table(),
-            active_object_classes=self.active_object_classes,
+            active_object_classes=self.active_object_classes_for_clustering,
             confidence_thresholds=self.confidence_thresholds,
             bbox_size_thresholds=self.bbox_size_thresholds,
         )
@@ -185,7 +194,7 @@ class DataEnrichment:
             db_host=self.db_host,
             db_name=self.db_name,
             db_port=5432,
-            active_object_classes=self.active_object_classes,
+            object_classes=self.object_classes,
             permit_mapping=self.permit_mapping,
         )
         decosDataHandler.query_and_process_object_permits(

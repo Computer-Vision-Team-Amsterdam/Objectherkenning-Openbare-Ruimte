@@ -1,27 +1,41 @@
 databricks_pipelines:
-    Ontwikkel:
-      catalog: "dpcv_dev"
-      schema: "oor"
-      storage_account_root_path: "abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
-      device_id: "Luna"
-      ckpt_frames_relative_path: checkpoints/_checkpoint_frames
-      ckpt_detections_relative_path: checkpoints/_checkpoint_detections
-      vuln_bridges_relative_path: "vuln_bridges.geojson"
-      reference_database:
-        host: "dev-bbn1-01-dbhost.postgres.database.azure.com"
-        name: "mdbdataservices"
-      signalen:  
-        access_token_url: "https://acc.iam.amsterdam.nl/auth/realms/datapunt-ad-acc/protocol/openid-connect/token"
-        base_url: "https://api.acc.meldingen.amsterdam.nl/signals/v1/private/signals"
-        client_id: "sia-cvt"
-        client_secret_name: "sia-password-acc"
-      azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
+
+  Ontwikkel:
+    catalog: "dpcv_dev"
+    schema: "oor"
+    storage_account_root_path: "abfss://landingzone@stlandingdpcvontweu01.dfs.core.windows.net"
+    device_id: "Luna"
+    ckpt_frames_relative_path: checkpoints/_checkpoint_frames
+    ckpt_detections_relative_path: checkpoints/_checkpoint_detections
+    vuln_bridges_relative_path: "vuln_bridges.geojson"
+    reference_database:
+      host: "dev-bbn1-01-dbhost.postgres.database.azure.com"
+      name: "mdbdataservices"
+    signalen:  
+      access_token_url: "https://acc.iam.amsterdam.nl/auth/realms/datapunt-ad-acc/protocol/openid-connect/token"
+      base_url: "https://api.acc.meldingen.amsterdam.nl/signals/v1/private/signals"
+      client_id: "sia-cvt"
+      client_secret_name: "sia-password-acc"
+    azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
+    job_config:
+      annotate_detection_images: True
+      exclude_private_terrain_detections: False
+      active_task:
+        # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
+        Centrum:
+          object_classes: [2, 3, 4]
+          send_limit:
+            2: 4
+            3: 3
+            4: 3
+        Zuid:
+          object_classes: [2]
+          send_limit:
+            2: 10
+      clustering:
+        active_object_classes: [2, 3, 4]
       object_classes:
-        # available:
-        #   2: "container of bouwkeet"
-        #   3: "mobiel toilet"
-        #   4: "steiger"
-        active:
+        names:
           2: "container of bouwkeet"
           3: "mobiel toilet"
           4: "steiger"
@@ -37,35 +51,43 @@ databricks_pipelines:
           2: 0.03
           3: 0.03
           4: 0.03
-        send_limit:
-          2: 10
-          3: 10
-          4: 10
+
+  Productie: 
+    catalog: "dpcv_prd"
+    schema: "oor"
+    storage_account_root_path: "abfss://landingzone@stlandingdpcvprdweu01.dfs.core.windows.net"
+    device_id: "Luna"
+    ckpt_frames_relative_path: checkpoints/_checkpoint_frames
+    ckpt_detections_relative_path: checkpoints/_checkpoint_detections
+    vuln_bridges_relative_path: "vuln_bridges.geojson"
+    reference_database:
+      host: "prd-bbn1-01-dbhost.postgres.database.azure.com"
+      name: "mdbdataservices"
+    signalen:  
+      access_token_url: "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
+      base_url: "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
+      client_id: "sia-cvt"
+      client_secret_name: "sia-password-prd"
+    azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
+    job_config:
+      annotate_detection_images: True
       exclude_private_terrain_detections: False
-      annotate_detection_images: False
-    Productie: 
-      catalog: "dpcv_prd"
-      schema: "oor"
-      storage_account_root_path: "abfss://landingzone@stlandingdpcvprdweu01.dfs.core.windows.net"
-      device_id: "Luna"
-      ckpt_frames_relative_path: checkpoints/_checkpoint_frames
-      ckpt_detections_relative_path: checkpoints/_checkpoint_detections
-      vuln_bridges_relative_path: "vuln_bridges.geojson"
-      reference_database:
-        host: "prd-bbn1-01-dbhost.postgres.database.azure.com"
-        name: "mdbdataservices"
-      signalen:  
-        access_token_url: "https://iam.amsterdam.nl/auth/realms/datapunt-ad/protocol/openid-connect/token"
-        base_url: "https://api.meldingen.amsterdam.nl/signals/v1/private/signals"
-        client_id: "sia-cvt"
-        client_secret_name: "sia-password-prd"
-      azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
+      active_task:
+        # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
+        Centrum:
+          object_classes: [2, 3, 4]
+          send_limit:
+            2: 4
+            3: 3
+            4: 3
+        Zuid:
+          object_classes: [2]
+          send_limit:
+            2: 10
+      clustering:
+        active_object_classes: [2, 3, 4]
       object_classes:
-        # available:
-        #   2: "container of bouwkeet"
-        #   3: "mobiel toilet"
-        #   4: "steiger"
-        active:
+        names:
           2: "container of bouwkeet"
           3: "mobiel toilet"
           4: "steiger"
@@ -81,9 +103,3 @@ databricks_pipelines:
           2: 0.03
           3: 0.03
           4: 0.03
-        send_limit:
-          2: 10
-          3: 10
-          4: 10
-      exclude_private_terrain_detections: False
-      annotate_detection_images: False

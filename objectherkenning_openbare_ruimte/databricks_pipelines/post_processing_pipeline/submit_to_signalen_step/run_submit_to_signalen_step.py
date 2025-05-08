@@ -34,7 +34,7 @@ def run_submit_to_signalen_step(
     az_tenant_id,
     db_host,
     db_name,
-    active_object_classes,
+    object_classes,
     permit_mapping,
     send_limits,
     exclude_private_terrain_detections,
@@ -53,7 +53,7 @@ def run_submit_to_signalen_step(
         az_tenant_id,
         db_host,
         db_name,
-        active_object_classes,
+        object_classes,
         permit_mapping,
     )
 
@@ -125,11 +125,11 @@ if __name__ == "__main__":
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
-        active_object_classes=settings["object_classes"]["active"],
-        permit_mapping=settings["object_classes"]["permit_mapping"],
-        send_limits=settings["object_classes"]["send_limit"],
-        exclude_private_terrain_detections=settings[
+        object_classes=settings["job_config"]["object_classes"]["names"],
+        permit_mapping=settings["job_config"]["object_classes"]["permit_mapping"],
+        send_limits=settings["job_config"]["object_classes"]["send_limit"],
+        exclude_private_terrain_detections=settings["job_config"][
             "exclude_private_terrain_detections"
         ],
-        annotate_detection_images=settings["annotate_detection_images"],
+        annotate_detection_images=settings["job_config"]["annotate_detection_images"],
     )
