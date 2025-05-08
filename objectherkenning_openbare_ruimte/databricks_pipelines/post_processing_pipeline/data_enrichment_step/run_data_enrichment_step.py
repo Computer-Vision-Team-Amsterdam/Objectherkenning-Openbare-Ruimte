@@ -8,21 +8,15 @@ from typing import Any, Optional  # noqa: E402
 from pyspark.sql import DataFrame, SparkSession  # noqa: E402
 from pyspark.sql import functions as F  # noqa: E402
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
     get_job_process_time,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: E402
-    SilverDetectionMetadataManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (  # noqa: E402
-    SilverFrameMetadataManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
-    SilverObjectsPerDayManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
     setup_tables,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (  # noqa: E402
+    SilverDetectionMetadataManager,
+    SilverFrameMetadataManager,
+    SilverObjectsPerDayManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (  # noqa: E402
     Clustering,

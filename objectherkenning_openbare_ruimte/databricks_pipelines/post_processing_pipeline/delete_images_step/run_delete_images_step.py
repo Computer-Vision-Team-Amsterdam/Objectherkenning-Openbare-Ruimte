@@ -5,23 +5,17 @@ import os  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
+    delete_file,
     get_databricks_environment,
     get_job_process_time,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
-    BronzeFrameMetadataManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (  # noqa: E402
-    SilverDetectionMetadataManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
-    SilverObjectsPerDayManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
-    delete_file,
     setup_tables,
     unix_to_yyyy_mm_dd,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (  # noqa: E402
+    BronzeFrameMetadataManager,
+    SilverDetectionMetadataManager,
+    SilverObjectsPerDayManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
