@@ -506,19 +506,16 @@ class SignalHandler:
 
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405
-                # TODO revert
-                # notification_json = self.fill_incident_details(
-                #     incident_date=date_of_notification,
-                #     lon=LON,
-                #     lat=LAT,
-                #     object_class_str=object_class_str,
-                # )
 
-                # signal_id = self.post_signal_with_image_attachment(
-                #     json_content=notification_json, filename=image_upload_path
-                # )
-                signal_id = "XXX"
-                print(f"TEST: (not) sending {object_class_str} notification")
+                notification_json = self.fill_incident_details(
+                    incident_date=date_of_notification,
+                    lon=LON,
+                    lat=LAT,
+                    object_class_str=object_class_str,
+                )
+                signal_id = self.post_signal_with_image_attachment(
+                    json_content=notification_json, filename=image_upload_path
+                )
                 print(
                     f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
                 )
