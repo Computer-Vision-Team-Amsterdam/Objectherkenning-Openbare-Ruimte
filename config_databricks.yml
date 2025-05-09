@@ -18,7 +18,7 @@ databricks_pipelines:
       client_secret_name: "sia-password-acc"
     azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
     job_config:
-      annotate_detection_images: True
+      annotate_detection_images: False
       exclude_private_terrain_detections: False
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
@@ -70,7 +70,7 @@ databricks_pipelines:
       client_secret_name: "sia-password-prd"
     azure_tenant_id: "72fca1b1-2c2e-4376-a445-294d80196804"
     job_config:
-      annotate_detection_images: True
+      annotate_detection_images: False
       exclude_private_terrain_detections: False
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
