@@ -48,9 +48,9 @@ databricks_pipelines:
           3: 0.8
           4: 0.8
         bbox_size_threshold:
-          2: 0.03
-          3: 0.03
-          4: 0.03
+          2: 0.003
+          3: 0.001
+          4: 0.01
 
   Productie: 
     catalog: "dpcv_prd"
@@ -100,6 +100,6 @@ databricks_pipelines:
           3: 0.8
           4: 0.8
         bbox_size_threshold:
-          2: 0.03
-          3: 0.03
-          4: 0.03
+          2: 0.003
+          3: 0.001
+          4: 0.01
