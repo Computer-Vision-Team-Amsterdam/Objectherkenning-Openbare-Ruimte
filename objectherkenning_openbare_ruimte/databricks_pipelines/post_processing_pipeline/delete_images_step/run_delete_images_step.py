@@ -30,7 +30,7 @@ def run_delete_images_step(
     job_process_time,
 ):
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
-    job_date = job_process_time.split("T")[0]
+    job_date = job_process_time.strftime("%Y-%m-%d")
 
     stlanding_image_folder = unix_to_yyyy_mm_dd(
         BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
