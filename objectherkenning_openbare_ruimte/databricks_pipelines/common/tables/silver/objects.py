@@ -64,7 +64,7 @@ class SilverObjectsPerDayManager(TableManager):
                 TableManager.spark.table(table_full_name)
                 .filter(
                     (F.col("status") == "Pending")
-                    & F.lower(F.col("stadsdeel")).equals(F.lower(stadsdeel))
+                    & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
                     & (F.col("score") >= 0.4)
                 )
                 .select("object_class")
@@ -167,7 +167,7 @@ class SilverObjectsPerDayManager(TableManager):
         )
         if stadsdeel:
             pending_candidates_df = pending_candidates_df.filter(
-                F.lower(F.col("stadsdeel")).equals(F.lower(stadsdeel))
+                F.lower(F.col("stadsdeel")) == stadsdeel.lower()
             )
         return pending_candidates_df.collect()
 
@@ -259,7 +259,7 @@ class SilverObjectsPerDayManager(TableManager):
             cls.get_table()
             .filter(
                 (F.col("status") == "Pending")
-                & F.lower(F.col("stadsdeel")).equals(F.lower(stadsdeel))
+                & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
             )
             .select("detection_id")
             .rdd.flatMap(lambda x: x)
