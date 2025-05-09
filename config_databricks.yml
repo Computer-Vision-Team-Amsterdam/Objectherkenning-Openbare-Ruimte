@@ -23,13 +23,13 @@ databricks_pipelines:
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
         Centrum:
-          object_classes: [2, 3, 4]
+          active_object_classes: [2, 3, 4]
           send_limit:
             2: 4
             3: 3
             4: 3
         Zuid:
-          object_classes: [2]
+          active_object_classes: [2]
           send_limit:
             2: 10
       clustering:
@@ -75,13 +75,13 @@ databricks_pipelines:
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
         Centrum:
-          object_classes: [2, 3, 4]
+          active_object_classes: [2, 3, 4]
           send_limit:
             2: 4
             3: 3
             4: 3
         Zuid:
-          object_classes: [2]
+          active_object_classes: [2]
           send_limit:
             2: 10
       clustering:
