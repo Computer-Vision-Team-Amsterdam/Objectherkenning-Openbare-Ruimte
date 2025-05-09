@@ -64,6 +64,7 @@ class SubmitToSignalenStep:
         active_stadsdelen = self.active_task_config.keys()
 
         for stadsdeel in active_stadsdelen:
+            print(f"\n=== Processing detections for stadsdeel {stadsdeel} ===\n")
             self._process_stadsdeel(
                 stadsdeel=stadsdeel, config=self.active_task_config[stadsdeel]
             )

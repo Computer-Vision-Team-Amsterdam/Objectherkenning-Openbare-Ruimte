@@ -82,7 +82,9 @@ class SilverObjectsPerDayManager(TableManager):
                 .collect()
             )
         if active_object_classes:
-            pending_obj_classes = set(pending_obj_classes).union(active_object_classes)
+            pending_obj_classes = set(pending_obj_classes).intersection(
+                active_object_classes
+            )
 
         for obj_class in pending_obj_classes:
             send_limit = send_limits.get(obj_class, None)
