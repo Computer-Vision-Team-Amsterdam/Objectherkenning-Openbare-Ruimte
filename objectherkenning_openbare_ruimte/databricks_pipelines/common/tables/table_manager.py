@@ -1,5 +1,6 @@
 from abc import ABC
 from datetime import datetime
+from typing import List
 
 from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType
@@ -12,7 +13,13 @@ class TableManager(ABC):
     table_name = None
 
     @classmethod
-    def update_status(cls, job_process_time: datetime, exclude_ids=[]):
+    def update_status(
+        cls,
+        job_process_time: datetime,
+        id_column: str = "id",
+        exclude_ids: List[int] = [],
+        only_ids: List[int] = [],
+    ):
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
         FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
@@ -29,7 +36,10 @@ class TableManager(ABC):
         """  # nosec
         if exclude_ids:
             exclude_ids_str = ", ".join(map(str, exclude_ids))
-            update_query += f" AND id NOT IN ({exclude_ids_str})"
+            update_query += f" AND {id_column} NOT IN ({exclude_ids_str})"
+        if only_ids:
+            only_ids_str = ", ".join(map(str, only_ids))
+            update_query += f" AND {id_column} IN ({only_ids_str})"
 
         TableManager.spark.sql(update_query)  # type: ignore
 

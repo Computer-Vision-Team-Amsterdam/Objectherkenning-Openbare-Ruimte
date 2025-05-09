@@ -42,8 +42,8 @@ def run_healthcheck_step(
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
         db_port=5432,
-        active_object_classes=settings["object_classes"]["active"],
-        permit_mapping=settings["object_classes"]["permit_mapping"],
+        object_classes=settings["job_config"]["object_classes"]["names"],
+        permit_mapping=settings["job_config"]["object_classes"]["permit_mapping"],
     )
     result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
         "0363200000006110"

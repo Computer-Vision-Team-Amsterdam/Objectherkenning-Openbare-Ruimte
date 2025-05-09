@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import or_
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 from databricks.sdk.runtime import sqlContext
@@ -21,7 +21,7 @@ class Clustering:
         schema: str,
         detections: DataFrame,
         frames: DataFrame,
-        active_object_classes: Dict[int, str],
+        active_object_classes: List[int],
         confidence_thresholds: Dict[int, float],
         bbox_size_thresholds: Dict[int, float],
     ) -> None:
@@ -97,10 +97,9 @@ class Clustering:
             'detection_date', 'detection_id', 'object_class', 'image_name', 'x_center', 'y_center',
             'width', 'height', 'confidence', 'gps_lat', 'gps_lon'.
         """
-        active_object_classes = list(self.active_object_classes.keys())
         # Filter detection metadata for active object classes before joining.
         active_detection_metadata = self.detection_metadata.where(
-            col("object_class").isin(active_object_classes)
+            col("object_class").isin(self.active_object_classes)
         )
 
         joined_df = self.frame_metadata.alias("fm").join(

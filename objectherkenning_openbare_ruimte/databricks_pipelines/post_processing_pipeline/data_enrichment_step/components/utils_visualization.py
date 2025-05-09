@@ -11,10 +11,10 @@ from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.frames import (  # noqa: E402
-    BronzeFrameMetadataManager,
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
+    SilverFrameMetadataManager,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
     unix_to_yyyy_mm_dd,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.utils_images import (  # noqa: E402
@@ -25,11 +25,10 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 def generate_map(
     dataframe,
     annotate_detection_images,
-    name=None,
-    path=None,
-    catalog=None,
-    device_id=None,
-    job_process_time=None,
+    name,
+    path,
+    catalog,
+    device_id,
 ) -> None:
     """
     Generates an interactive HTML map visualizing object detections, their closest vulnerable bridges,
@@ -80,20 +79,6 @@ def generate_map(
 
     icon_map = {2: "box", 3: "toilet-portable", 4: "table-cells"}
 
-    # Get image folder path
-    job_process_str = str(job_process_time)
-    job_date = (
-        job_process_str.split("T")[0]
-        if "T" in job_process_str
-        else job_process_str.split(" ")[0]
-    )
-    stlanding_image_folder = unix_to_yyyy_mm_dd(
-        BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
-            job_date=job_date
-        )
-    )
-    image_folder = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}"
-
     # Function to find the closest point on a linestring to a given point
     def closest_point_on_linestring(point, linestring):
         return nearest_points(point, linestring)[1]
@@ -137,6 +122,13 @@ def generate_map(
             text_color="#000000",
         )
 
+        # Get image folder path
+        stlanding_image_folder = unix_to_yyyy_mm_dd(
+            SilverFrameMetadataManager.get_gps_internal_timestamp_from_image_name(
+                detection_image_name
+            )
+        )
+        image_folder = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}"
         image_path = os.path.join(image_folder, detection_image_name)
 
         # Add bounding boxes to image and save

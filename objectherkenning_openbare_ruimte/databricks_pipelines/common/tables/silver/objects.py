@@ -24,6 +24,8 @@ class SilverObjectsPerDayManager(TableManager):
         az_tenant_id: str,
         db_host: str,
         db_name: str,
+        stadsdeel: Optional[str] = None,
+        active_object_classes: List[int] = [],
         send_limits: Dict[int, int] = {},
     ) -> Optional[DataFrame]:
         """
@@ -34,6 +36,8 @@ class SilverObjectsPerDayManager(TableManager):
             az_tenant_id (str): Azure tenant ID required for database access.
             db_host (str): Host address of the database.
             db_name (str): Name of the database.
+            stadsdeel (str): Name of stadsdeel or None to get all results
+            active_object_classes (List[int]): list of object classes to filter by
             send_limits: A dictionary mapping each object class to its maximum number of records to send.
 
         Returns:
@@ -55,18 +59,38 @@ class SilverObjectsPerDayManager(TableManager):
         print(f"Loading top pending detections to send from {table_full_name} ...")
 
         # Retrieve all distinct object classes that have pending candidates.
-        pending_obj_classes = (
-            TableManager.spark.table(table_full_name)
-            .filter((F.col("status") == "Pending") & (F.col("score") >= 0.4))
-            .select("object_class")
-            .distinct()
-            .rdd.flatMap(lambda x: x)
-            .collect()
-        )
+        if stadsdeel:
+            pending_obj_classes = (
+                TableManager.spark.table(table_full_name)
+                .filter(
+                    (F.col("status") == "Pending")
+                    & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
+                    & (F.col("score") >= 0.4)
+                )
+                .select("object_class")
+                .distinct()
+                .rdd.flatMap(lambda x: x)
+                .collect()
+            )
+        else:
+            pending_obj_classes = (
+                TableManager.spark.table(table_full_name)
+                .filter((F.col("status") == "Pending") & (F.col("score") >= 0.4))
+                .select("object_class")
+                .distinct()
+                .rdd.flatMap(lambda x: x)
+                .collect()
+            )
+        if active_object_classes:
+            pending_obj_classes = set(pending_obj_classes).intersection(
+                active_object_classes
+            )
 
         for obj_class in pending_obj_classes:
             send_limit = send_limits.get(obj_class, None)
-            candidates = cls.get_pending_candidates(table_full_name, obj_class)
+            candidates = cls.get_pending_candidates(
+                table_full_name, obj_class, stadsdeel
+            )
             valid_detection_ids = cls.get_valid_detection_ids(
                 candidates, privateTerrainHandler, send_limit, obj_class
             )
@@ -120,13 +144,16 @@ class SilverObjectsPerDayManager(TableManager):
         return None
 
     @classmethod
-    def get_pending_candidates(cls, table_full_name: str, obj_class: int) -> List[Row]:
+    def get_pending_candidates(
+        cls, table_full_name: str, obj_class: int, stadsdeel: Optional[str] = None
+    ) -> List[Row]:
         """
         Fetches candidate detections for a given object class that are pending and meet the score criteria.
 
         Parameters:
             table_full_name: The fully-qualified table name.
             obj_class: The object class for which pending detections should be fetched.
+            stadsdeel (str | None): Name of stadsdeel or None to get all results
 
         Returns:
             A list of Rows representing candidate detections.
@@ -140,6 +167,10 @@ class SilverObjectsPerDayManager(TableManager):
             )
             .orderBy(F.col("score").desc())
         )
+        if stadsdeel:
+            pending_candidates_df = pending_candidates_df.filter(
+                F.lower(F.col("stadsdeel")) == stadsdeel.lower()
+            )
         return pending_candidates_df.collect()
 
     @classmethod
@@ -147,7 +178,7 @@ class SilverObjectsPerDayManager(TableManager):
         cls,
         candidates: List[Row],
         privateTerrainHandler: Optional[PrivateTerrainHandler],
-        send_limit: int,
+        send_limit: Optional[int],
         obj_class: int,
     ) -> List[Any]:
         """
@@ -209,6 +240,28 @@ class SilverObjectsPerDayManager(TableManager):
             .filter(
                 (F.col("score") >= 1)
                 & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
+            )
+            .select("detection_id")
+            .rdd.flatMap(lambda x: x)
+            .collect()
+        )
+
+    @classmethod
+    def get_pending_ids_for_stadsdeel(cls, stadsdeel: str) -> List[int]:
+        """
+        Retrieves detection IDs by filtering pending records by stadsdeel name.
+
+        Parameters:
+            stadsdeel: the stadsdeel
+
+        Returns:
+            A list of detection IDs that match the filtering criteria.
+        """
+        return (
+            cls.get_table()
+            .filter(
+                (F.col("status") == "Pending")
+                & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
             )
             .select("detection_id")
             .rdd.flatMap(lambda x: x)

@@ -5,7 +5,9 @@ from typing import List
 
 from pyspark.sql import SparkSession
 
-from .json_frame_detection_adapter import JsonFrameDetectionAdapter
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.ingest_metadata_step.components.json_frame_detection_adapter import (
+    JsonFrameDetectionAdapter,
+)
 
 
 class DataLoader:
