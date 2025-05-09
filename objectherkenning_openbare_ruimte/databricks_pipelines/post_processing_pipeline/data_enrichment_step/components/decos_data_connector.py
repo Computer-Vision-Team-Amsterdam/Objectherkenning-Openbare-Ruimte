@@ -32,6 +32,13 @@ class BENKAGGConnector(ReferenceDatabaseConnector):
         query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {self.bankagg_table_name} where identificatie='{id}'"  # nosec B608
         return self.run(query)
 
+    def create_dataframe(self, rows, colnames):
+        """
+        Create dataframe from query result.
+        """
+        data = dict(zip(colnames, rows))
+        return pd.DataFrame(data=data, columns=colnames)
+
 
 class DecosDataHandler(BENKAGGConnector):
     vergunningen_table_name = "vergunningen_werk_en_vervoer_op_straat_v2"
