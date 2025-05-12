@@ -67,47 +67,55 @@ class DataEnrichment:
         ]["active_object_classes"]
 
     def run_data_enrichment_step(self):
-        objects_coordinates_df = self._run_clustering()
+        pending_detections = (
+            SilverDetectionMetadataManager.load_pending_rows_from_table(),
+        )
+        pending_frames = (SilverFrameMetadataManager.load_pending_rows_from_table(),)
 
-        if objects_coordinates_df and (objects_coordinates_df.count() > 0):
-            category_counts = sorted(
-                objects_coordinates_df.groupBy("object_class").count().collect()
-            )
-            for row in category_counts:
-                print(
-                    f"Detected '{self.object_classes[row['object_class']]}': {row['count']}"
+        if pending_detections.count() == 0 or pending_frames.count() == 0:
+            print("No pending detections. Exiting.")
+        else:
+            objects_coordinates_df = self._run_clustering()
+
+            if objects_coordinates_df and (objects_coordinates_df.count() > 0):
+                category_counts = sorted(
+                    objects_coordinates_df.groupBy("object_class").count().collect()
+                )
+                for row in category_counts:
+                    print(
+                        f"Detected '{self.object_classes[row['object_class']]}': {row['count']}"
+                    )
+
+                enriched_df = self._get_enriched_df(
+                    objects_coordinates_df=objects_coordinates_df
                 )
 
-            enriched_df = self._get_enriched_df(
-                objects_coordinates_df=objects_coordinates_df
-            )
+                self._create_map(enriched_df=enriched_df)
 
-            self._create_map(enriched_df=enriched_df)
+                selected_casted_df = enriched_df.select(
+                    F.col("a.detection_id").cast("int"),
+                    F.col("a.object_class"),
+                    F.col("b.gps_lat").alias("object_lat").cast("string"),
+                    F.col("b.gps_lon").alias("object_lon").cast("string"),
+                    F.col("closest_bridge_distance")
+                    .alias("distance_closest_bridge")
+                    .cast("float"),
+                    F.col("closest_bridge_id").cast("string"),
+                    F.col("closest_permit_distance")
+                    .alias("distance_closest_permit")
+                    .cast("float"),
+                    F.col("closest_permit_id"),
+                    F.col("closest_permit_lat").cast("float"),
+                    F.col("closest_permit_lon").cast("float"),
+                    F.col("stadsdeel"),
+                    F.col("stadsdeel_code"),
+                    F.col("score").cast("float"),
+                    F.lit("Pending").alias("status"),
+                )
 
-            selected_casted_df = enriched_df.select(
-                F.col("a.detection_id").cast("int"),
-                F.col("a.object_class"),
-                F.col("b.gps_lat").alias("object_lat").cast("string"),
-                F.col("b.gps_lon").alias("object_lon").cast("string"),
-                F.col("closest_bridge_distance")
-                .alias("distance_closest_bridge")
-                .cast("float"),
-                F.col("closest_bridge_id").cast("string"),
-                F.col("closest_permit_distance")
-                .alias("distance_closest_permit")
-                .cast("float"),
-                F.col("closest_permit_id"),
-                F.col("closest_permit_lat").cast("float"),
-                F.col("closest_permit_lon").cast("float"),
-                F.col("stadsdeel"),
-                F.col("stadsdeel_code"),
-                F.col("score").cast("float"),
-                F.lit("Pending").alias("status"),
-            )
-
-            SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
-        else:
-            print("Nothing to do after clustering and filtering. Exiting.")
+                SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+            else:
+                print("Nothing to do after clustering and filtering. Exiting.")
 
         SilverFrameMetadataManager.update_status(job_process_time=self.job_process_time)
         SilverDetectionMetadataManager.update_status(
