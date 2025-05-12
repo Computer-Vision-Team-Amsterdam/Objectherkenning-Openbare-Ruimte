@@ -68,9 +68,9 @@ class DataEnrichment:
 
     def run_data_enrichment_step(self):
         pending_detections = (
-            SilverDetectionMetadataManager.load_pending_rows_from_table(),
+            SilverDetectionMetadataManager.load_pending_rows_from_table()
         )
-        pending_frames = (SilverFrameMetadataManager.load_pending_rows_from_table(),)
+        pending_frames = SilverFrameMetadataManager.load_pending_rows_from_table()
 
         if pending_detections.count() == 0 or pending_frames.count() == 0:
             print("No pending detections. Exiting.")
