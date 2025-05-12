@@ -114,11 +114,12 @@ class SubmitToSignalenStep:
         processed_ids = SilverObjectsPerDayManager.get_pending_ids_for_stadsdeel(
             stadsdeel
         )
-        SilverObjectsPerDayManager.update_status(
-            job_process_time=self.job_process_time,
-            id_column="detection_id",
-            only_ids=processed_ids,
-        )
+        print(f"Processed IDs: {processed_ids}")
+        # SilverObjectsPerDayManager.update_status(
+        #     job_process_time=self.job_process_time,
+        #     id_column="detection_id",
+        #     only_ids=processed_ids,
+        # )
 
 
 def main():
