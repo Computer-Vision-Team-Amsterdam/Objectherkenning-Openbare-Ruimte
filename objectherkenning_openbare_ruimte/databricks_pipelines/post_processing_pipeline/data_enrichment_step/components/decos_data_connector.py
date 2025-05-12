@@ -32,12 +32,34 @@ class BENKAGGConnector(ReferenceDatabaseConnector):
         query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {self.bankagg_table_name} where identificatie='{id}'"  # nosec B608
         return self.run(query)
 
+    # TODO create the dataframe with spark!
     def create_dataframe(self, rows, colnames):
         """
         Create dataframe from query result.
         """
-        data = dict(zip(colnames, rows))
-        return pd.DataFrame(data=data, columns=colnames)
+
+        def _load_columns_with_unsupported_data_type():
+            """
+            Pandas is complaining about loading the types of the following columns so we load them as strings.
+            """
+            data = [dict(zip(colnames, row)) for row in rows]
+
+            for record in data:
+                for time_col in [
+                    "tijd_tvm_parkeervakken_van",
+                    "tijd_tvm_parkeervakken_tot",
+                    "tijd_tvm_stremmen_van",
+                    "tijd_tvm_stremmen_tot",
+                ]:
+                    if time_col in record:
+                        record[time_col] = str(record[time_col])
+
+            return data
+
+        data = _load_columns_with_unsupported_data_type()
+        df = pd.DataFrame(data, columns=colnames)
+
+        return df
 
 
 class DecosDataHandler(BENKAGGConnector):
@@ -123,35 +145,6 @@ class DecosDataHandler(BENKAGGConnector):
 
         # self.write_healthy_df_to_table()
         # self.write_qurantine_df_to_table()
-
-    # TODO create the dataframe with spark!
-    def create_dataframe(self, rows, colnames):
-        """
-        Create a DataFrame .
-        """
-
-        def _load_columns_with_unsupported_data_type():
-            """
-            Pandas is complaining about loading the types of the following columns so we load them as strings.
-            """
-            data = [dict(zip(colnames, row)) for row in rows]
-
-            for record in data:
-                for time_col in [
-                    "tijd_tvm_parkeervakken_van",
-                    "tijd_tvm_parkeervakken_tot",
-                    "tijd_tvm_stremmen_van",
-                    "tijd_tvm_stremmen_tot",
-                ]:
-                    if time_col in record:
-                        record[time_col] = str(record[time_col])
-
-            return data
-
-        data = _load_columns_with_unsupported_data_type()
-        df = pd.DataFrame(data, columns=colnames)
-
-        return df
 
     def display_dataframe(self, df):
         """
