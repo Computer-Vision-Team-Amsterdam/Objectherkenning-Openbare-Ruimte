@@ -1,5 +1,6 @@
 from .components import utils_scoring, utils_visualization
 from .components.clustering_detections import Clustering
+from .components.data_enrichment import DataEnrichment
 from .components.decos_data_connector import BENKAGGConnector, DecosDataHandler
 from .components.stadsdelen_handler import StadsdelenHandler
 from .components.vulnerable_bridges_handler import VulnerableBridgesHandler

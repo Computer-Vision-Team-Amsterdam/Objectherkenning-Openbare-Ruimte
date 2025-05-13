@@ -58,10 +58,11 @@ class StadsdelenHandler:
         Get the stadsdeel name and code for the given detection location.
 
         Parameters:
-            lat_lon: A Tuple (lat, lon) with teh GPS coordinates
+            lat_lon: A Tuple (lat, lon) with the GPS coordinates
 
         Returns:
-            A tuple ("name", "code") if the point is inside a stadsdeel, or None otherwise
+            A tuple ("name", "code") if the point is inside a stadsdeel, or None
+            otherwise
         """
         (object_lat, object_lon) = lat_lon
         x, y = self.transformer.transform(object_lon, object_lat)

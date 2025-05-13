@@ -11,15 +11,18 @@ class TableManager(ABC):
     catalog = None
     schema = None
     table_name = None
+    id_column = "id"
 
     @classmethod
     def update_status(
         cls,
         job_process_time: datetime,
-        id_column: str = "id",
+        id_column: Optional[str] = None,
         exclude_ids: List[int] = [],
         only_ids: Optional[List[int]] = None,
     ):
+        if not id_column:
+            id_column = cls.id_column
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
         FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
@@ -40,7 +43,7 @@ class TableManager(ABC):
         if (only_ids is not None) and (len(only_ids) > 0):
             only_ids_str = ", ".join(map(str, only_ids))
             update_query += f" AND {id_column} IN ({only_ids_str})"
-        
+
         # If only_ids is an empty list, it means NO ids should be updated.
         if (only_ids is not None) and (len(only_ids) == 0):
             total_pending_after = total_pending_before
