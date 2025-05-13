@@ -9,7 +9,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # no
     get_databricks_environment,
     setup_tables,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.data_enrichment import (  # noqa: E402
     DataEnrichment,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
