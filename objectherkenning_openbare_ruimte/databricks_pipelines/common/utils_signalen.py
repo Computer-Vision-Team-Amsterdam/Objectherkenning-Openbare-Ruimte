@@ -179,6 +179,10 @@ class SignalHandler:
             )
             return response.json()["id"]
         else:
+            print(f"URL: {self.base_url}")
+            print(f"Headers: {self.headers}")
+            print(f"Verify: {self.verify_ssl}")
+            print(response)
             return response.raise_for_status()
 
     # Patch requests do not work at the moment. Throws 500 Internal Error.
