@@ -1,10 +1,59 @@
+import argparse
+import ast
 from datetime import datetime
+from typing import Any
 
 from databricks.sdk.runtime import *  # noqa: F403
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
 )
+
+
+def parse_task_args_to_settings(
+    settings: dict[str, Any], args: argparse.Namespace
+) -> dict[str, Any]:
+    if args.send_limits and not args.stadsdelen:
+        raise ValueError(
+            "Must provide parameter `stadsdelen` if `send_limits` are given."
+        )
+    if (args.stadsdelen and args.send_limits) and not (
+        len(args.stadsdelen) == len(args.send_limits)
+    ):
+        raise ValueError(
+            f"Argument number mismatch: {len(args.stadsdelen)} stadsdelen with {len(args.send_limits)} send limits."
+        )
+
+    active_tasks = {}
+
+    if args.stadsdelen:
+        stadsdelen = [stadsdeel.uppercase() for stadsdeel in args.stadsdelen]
+    else:
+        print("Using default stadsdelen.")
+        stadsdelen = settings["job_config"]["active_task"].keys()
+    if args.send_limits:
+        send_limits = [ast.literal_eval(limit) for limit in args.send_limits]
+    else:
+        print("Using default send limits.")
+        send_limits = None
+
+    for i, stadsdeel in enumerate(stadsdelen):
+        if send_limits:
+            active_tasks[stadsdeel] = {
+                "active_object_classes": list(send_limits[i].keys()),
+                "send_limit": send_limits[i],
+            }
+        elif stadsdeel not in settings["job_config"]["active_task"].keys():
+            active_tasks[stadsdeel] = {
+                "active_object_classes": [],
+                "send_limit": {},
+            }
+        else:
+            active_tasks[stadsdeel] = settings["job_config"]["active_task"][stadsdeel]
+
+    settings["job_config"]["active_task"] = active_tasks
+
+    return settings
 
 
 def delete_file(databricks_volume_full_path):
