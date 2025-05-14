@@ -1,7 +1,7 @@
 import argparse
 import ast
 from datetime import datetime
-from typing import Any
+from typing import Any, List
 
 from databricks.sdk.runtime import *  # noqa: F403
 
@@ -13,33 +13,43 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 def parse_task_args_to_settings(
     settings: dict[str, Any], args: argparse.Namespace
 ) -> dict[str, Any]:
-
     print(f"args.stadsdelen: {args.stadsdelen}")
     print(f"args.send_limits: {args.send_limits}")
 
-    if args.send_limits and not args.stadsdelen:
-        raise ValueError(
-            "Must provide parameter `stadsdelen` if `send_limits` are given."
-        )
-    if (args.stadsdelen and args.send_limits) and not (
-        len(args.stadsdelen) == len(args.send_limits)
-    ):
-        raise ValueError(
-            f"Argument number mismatch: {len(args.stadsdelen)} stadsdelen with {len(args.send_limits)} send limits."
-        )
+    def _parse_stadsdelen_arg(arg_str: str) -> List[str]:
+        _stadsdelen = ast.literal_eval(arg_str)
+        if isinstance(_stadsdelen, str):
+            _stadsdelen = [_stadsdelen]
+        return [_s.strip().capitalize() for _s in _stadsdelen]
 
-    active_tasks = {}
+    def _parse_send_limits_arg(arg_str: str) -> List[dict[int, int]]:
+        _send_limits = ast.literal_eval(arg_str)
+        if isinstance(_send_limits, dict):
+            _send_limits = [_send_limits]
+        return _send_limits
 
     if args.stadsdelen:
-        stadsdelen = [stadsdeel.capitalize() for stadsdeel in args.stadsdelen]
+        stadsdelen = _parse_stadsdelen_arg(args.stadsdelen)
     else:
         print("Using default stadsdelen.")
         stadsdelen = settings["job_config"]["active_task"].keys()
+
     if args.send_limits:
-        send_limits = [ast.literal_eval(limit) for limit in args.send_limits]
+        send_limits = _parse_send_limits_arg(args.send_limits)
     else:
         print("Using default send limits.")
         send_limits = None
+
+    if send_limits and not stadsdelen:
+        raise ValueError(
+            "Must provide parameter `stadsdelen` if `send_limits` are given."
+        )
+    if (stadsdelen and send_limits) and not (len(stadsdelen) == len(send_limits)):
+        raise ValueError(
+            f"Argument number mismatch: {len(stadsdelen)} stadsdelen with {len(send_limits)} send limits."
+        )
+
+    active_tasks = {}
 
     for i, stadsdeel in enumerate(stadsdelen):
         if send_limits:
