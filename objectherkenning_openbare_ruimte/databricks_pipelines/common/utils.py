@@ -13,6 +13,10 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 def parse_task_args_to_settings(
     settings: dict[str, Any], args: argparse.Namespace
 ) -> dict[str, Any]:
+
+    print(f"args.stadsdelen: {args.stadsdelen}")
+    print(f"args.send_limits: {args.send_limits}")
+
     if args.send_limits and not args.stadsdelen:
         raise ValueError(
             "Must provide parameter `stadsdelen` if `send_limits` are given."
