@@ -27,7 +27,7 @@ def parse_task_args_to_settings(
     active_tasks = {}
 
     if args.stadsdelen:
-        stadsdelen = [stadsdeel.uppercase() for stadsdeel in args.stadsdelen]
+        stadsdelen = [stadsdeel.capitalize() for stadsdeel in args.stadsdelen]
     else:
         print("Using default stadsdelen.")
         stadsdelen = settings["job_config"]["active_task"].keys()
