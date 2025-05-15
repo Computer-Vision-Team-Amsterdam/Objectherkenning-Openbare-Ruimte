@@ -49,12 +49,12 @@ def main(args: argparse.Namespace):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="run_submit_to_signalen.py")
     parser.add_argument(
-        "--stadsdelen", default=[], nargs="*", help='"name1" ["name2"] ...'
+        "--stadsdelen", type=str, default="", help="\"['name1', 'name2', ...]\""
     )
     parser.add_argument(
         "--send_limits",
-        default=[],
-        nargs="*",
-        help='"{2: x, 3: y, 4: z}" ["{2: x2, 3: y2, 4: z2}"]',
+        type=str,
+        default="",
+        help='"[{2: x, 3: y, 4: z}, {2: x2, 3: y2, 4: z2}, ...]"',
     )
     main(parser.parse_args())
