@@ -9,6 +9,7 @@ from pyspark.sql import SparkSession  # noqa: E402
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
     parse_task_args_to_settings,
+    setup_arg_parser,
     setup_tables,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.submit_to_signalen_step import (  # noqa: E402
@@ -47,14 +48,5 @@ def main(args: argparse.Namespace):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="run_submit_to_signalen.py")
-    parser.add_argument(
-        "--stadsdelen", type=str, default="", help="\"['name1', 'name2', ...]\""
-    )
-    parser.add_argument(
-        "--send_limits",
-        type=str,
-        default="",
-        help='"[{2: x, 3: y, 4: z}, {2: x2, 3: y2, 4: z2}, ...]"',
-    )
+    parser = setup_arg_parser(prog="run_submit_to_signalen_step.py")
     main(parser.parse_args())
