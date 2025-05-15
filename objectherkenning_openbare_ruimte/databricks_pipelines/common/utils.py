@@ -11,6 +11,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 
 def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
+    """
+    Setup an ArgumentParser for the command line parameters / job parameters.
+    """
     parser = argparse.ArgumentParser(prog=prog)
     parser.add_argument(
         "--stadsdelen", type=str, default="", help="\"['name1', 'name2', ...]\""
@@ -27,6 +30,20 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
 def parse_task_args_to_settings(
     settings: dict[str, Any], args: argparse.Namespace
 ) -> dict[str, Any]:
+    """
+    Parse the command line arguments and update the active_task settings.
+
+    Parameters
+    ----------
+    settings: dict[str, Any]
+        Full databricks config settings.
+    args: argparse.Namespace
+        Command line arguments
+
+    Returns
+    -------
+    Updated settings dict
+    """
 
     def _parse_stadsdelen_arg(arg_str: str) -> List[str]:
         _stadsdelen = ast.literal_eval(arg_str)

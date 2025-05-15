@@ -21,8 +21,14 @@ class TableManager(ABC):
         exclude_ids: List[int] = [],
         only_ids: Optional[List[int]] = None,
     ):
+        """
+        Update `status` of "pending" rows to "processed". IDs included in
+        `exclude_ids` will be ignored. If `only_ids` is specified, only those
+        IDs will be updated.
+        """
         if not id_column:
             id_column = cls.id_column
+
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
         FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}

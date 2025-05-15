@@ -20,7 +20,10 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 )
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
+    """
+    Setup and run SubmitToSignalenStep.
+    """
     sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
     databricks_environment = get_databricks_environment(sparkSession)
     project_root = os.path.dirname(
@@ -31,11 +34,13 @@ def main(args: argparse.Namespace):
         f"{databricks_environment}"
     ]
 
+    print("Parsing job parameters...")
     settings = parse_task_args_to_settings(settings, args)
-    print("Will use the following active tasks:")
+    print("Will run the following active tasks:")
     for stadsdeel in settings["job_config"]["active_task"].keys():
         stadsdeel_str = str(settings["job_config"]["active_task"][stadsdeel])
         print(f"{stadsdeel}: {stadsdeel_str}")
+    print("\n")
 
     catalog = settings["catalog"]
     schema = settings["schema"]
@@ -49,4 +54,4 @@ def main(args: argparse.Namespace):
 
 if __name__ == "__main__":
     parser = setup_arg_parser(prog="run_submit_to_signalen_step.py")
-    main(parser.parse_args())
+    main(args=parser.parse_args())

@@ -14,6 +14,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import 
 
 
 class SubmitToSignalenStep:
+    """
+    Process pending detections according to the configured active tasks.
+    """
 
     def __init__(
         self,
@@ -52,6 +55,10 @@ class SubmitToSignalenStep:
         )
 
     def run_submit_to_signalen_step(self):
+        """
+        Check which stadsdelen are active for this run, and process them one by
+        one.
+        """
         active_stadsdelen = self.active_task_config.keys()
 
         for stadsdeel in active_stadsdelen:
@@ -61,6 +68,26 @@ class SubmitToSignalenStep:
             )
 
     def _process_stadsdeel(self, stadsdeel: str, config: dict[str, Any]):
+        """
+        Process pending detections for the specified stadsdeel and create
+        signals following the configured send limits.
+
+        Parameters
+        ----------
+        stadsdeel: str
+            Name of the stadsdeel
+        config: dict[str, Any]
+            Configuration for this stadsdeel in the format
+
+            {
+                "active_object_classes": [2, 3, 4]
+                "send_limit": {
+                    2: 4
+                    3: 3
+                    4: 3
+                }
+            }
+        """
         send_limits = config.get("send_limit", {})
 
         top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
@@ -102,6 +129,7 @@ class SubmitToSignalenStep:
                 )
                 SilverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
 
+        # We only want to set to "processed" the rows belonging to this stadsdeel
         processed_ids = SilverObjectsPerDayManager.get_pending_ids_for_stadsdeel(
             stadsdeel
         )
