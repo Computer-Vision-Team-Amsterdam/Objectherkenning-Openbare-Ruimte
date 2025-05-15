@@ -13,8 +13,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 def parse_task_args_to_settings(
     settings: dict[str, Any], args: argparse.Namespace
 ) -> dict[str, Any]:
-    print(f"args.stadsdelen: {args.stadsdelen}")
-    print(f"args.send_limits: {args.send_limits}")
+    print(f"args.stadsdelen: {args.stadsdelen} {type(args.stadsdelen)}")
+    print(f"args.send_limits: {args.send_limits} {type(args.send_limits)}")
 
     def _parse_stadsdelen_arg(arg_str: str) -> List[str]:
         _stadsdelen = ast.literal_eval(arg_str)
@@ -39,6 +39,9 @@ def parse_task_args_to_settings(
     else:
         print("Using default send limits.")
         send_limits = None
+
+    print(f"stadsdelen: {stadsdelen} {type(stadsdelen)}")
+    print(f"send_limits: {send_limits} {type(send_limits)}")
 
     if send_limits and not stadsdelen:
         raise ValueError(
