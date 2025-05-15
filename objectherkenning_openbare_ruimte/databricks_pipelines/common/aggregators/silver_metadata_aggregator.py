@@ -6,9 +6,6 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
     SilverFrameMetadataManager,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
-    unix_to_yyyy_mm_dd,
-)
 
 
 class SilverMetadataAggregator:
@@ -29,13 +26,15 @@ class SilverMetadataAggregator:
                 detection_id
             )
         )
-        gps_internal_timestamp = (
-            SilverFrameMetadataManager.get_gps_timestamp_from_image_name(image_basename)
+        frame_id = SilverDetectionMetadataManager.get_frame_id_from_detection_id(
+            detection_id
         )
-        date_of_image_upload = unix_to_yyyy_mm_dd(unix_timestamp=gps_internal_timestamp)
+        date_of_upload = SilverFrameMetadataManager.get_upload_date_from_frame_id(
+            frame_id
+        )
         image_upload_path = (
             f"/Volumes/{self.catalog}/default/landingzone/{device_id}/images/"
-            f"{date_of_image_upload}/{image_basename}"
+            f"{date_of_upload}/{image_basename}"
         )
 
         return image_upload_path

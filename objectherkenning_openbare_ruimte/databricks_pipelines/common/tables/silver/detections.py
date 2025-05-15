@@ -10,7 +10,8 @@ class SilverDetectionMetadataManager(TableManager):
     @classmethod
     def get_image_name_from_detection_id(cls, detection_id: int) -> str:
         """
-        Fetches the image name corresponding to a specific detection ID from the silver_detection_metadata table.
+        Fetches the image name corresponding to a specific detection ID from the
+        silver_detection_metadata table.
 
         Parameters:
         ----------
@@ -30,6 +31,31 @@ class SilverDetectionMetadataManager(TableManager):
 
         image_name = image_name_result_df.collect()[0]["image_name"]
         return image_name
+
+    @classmethod
+    def get_frame_id_from_detection_id(cls, detection_id: int) -> int:
+        """
+        Fetches the frame ID corresponding to a specific detection ID from the
+        silver_detection_metadata table.
+
+        Parameters:
+        ----------
+        detection_id: int
+            The ID of the detection for which to retrieve the image name.
+
+        Returns:
+        -------
+        int: The frame ID name corresponding to the detection ID.
+        """
+        fetch_frame_id_query = f"""
+            SELECT frame_id
+            FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
+            WHERE {cls.id_column} = {detection_id}
+        """  # nosec
+        frame_id_result_df = TableManager.spark.sql(fetch_frame_id_query)
+
+        frame_id = frame_id_result_df.collect()[0]["frame_id"]
+        return frame_id
 
 
 class SilverDetectionMetadataQuarantineManager(TableManager):

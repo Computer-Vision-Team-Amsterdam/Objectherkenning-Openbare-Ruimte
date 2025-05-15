@@ -14,9 +14,6 @@ from shapely.wkt import loads as wkt_loads
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
     SilverFrameMetadataManager,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (
-    unix_to_yyyy_mm_dd,
-)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.utils_images import (  # noqa: E402
     OutputImage,
 )
@@ -100,6 +97,7 @@ def generate_map(
         # Extract data from the row
         detection = Point(row["gps_lat"], row["gps_lon"])
         detection_id = row["detection_id"]
+        frame_id = row["frame_id"]
         detection_image_name = row["image_name"]
         detection_priority_id = row["priority_id"]
         detection_score = row["score"] if row["score"] else 0
@@ -123,10 +121,8 @@ def generate_map(
         )
 
         # Get image folder path
-        stlanding_image_folder = unix_to_yyyy_mm_dd(
-            SilverFrameMetadataManager.get_gps_timestamp_from_image_name(
-                detection_image_name
-            )
+        stlanding_image_folder = (
+            SilverFrameMetadataManager.get_upload_date_from_frame_id(frame_id)
         )
         image_folder = f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}"
         image_path = os.path.join(image_folder, detection_image_name)
