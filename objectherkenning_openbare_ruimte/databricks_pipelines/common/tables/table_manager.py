@@ -1,5 +1,6 @@
 from abc import ABC
 from datetime import datetime
+from typing import List, Optional
 
 from pyspark.sql import DataFrame
 from pyspark.sql.types import StructType
@@ -10,9 +11,24 @@ class TableManager(ABC):
     catalog = None
     schema = None
     table_name = None
+    id_column = "id"
 
     @classmethod
-    def update_status(cls, job_process_time: datetime, exclude_ids=[]):
+    def update_status(
+        cls,
+        job_process_time: datetime,
+        id_column: Optional[str] = None,
+        exclude_ids: List[int] = [],
+        only_ids: Optional[List[int]] = None,
+    ):
+        """
+        Update `status` of "pending" rows to "processed". IDs included in
+        `exclude_ids` will be ignored. If `only_ids` is specified, only those
+        IDs will be updated.
+        """
+        if not id_column:
+            id_column = cls.id_column
+
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
         FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
@@ -29,15 +45,21 @@ class TableManager(ABC):
         """  # nosec
         if exclude_ids:
             exclude_ids_str = ", ".join(map(str, exclude_ids))
-            update_query += f" AND id NOT IN ({exclude_ids_str})"
+            update_query += f" AND {id_column} NOT IN ({exclude_ids_str})"
+        if (only_ids is not None) and (len(only_ids) > 0):
+            only_ids_str = ", ".join(map(str, only_ids))
+            update_query += f" AND {id_column} IN ({only_ids_str})"
 
-        TableManager.spark.sql(update_query)  # type: ignore
+        # If only_ids is an empty list, it means NO ids should be updated.
+        if (only_ids is not None) and (len(only_ids) == 0):
+            total_pending_after = total_pending_before
+        else:
+            TableManager.spark.sql(update_query)  # type: ignore
+            total_pending_after = TableManager.spark.sql(count_pending_query).collect()[0][  # type: ignore
+                "pending_count"
+            ]
 
-        total_pending_after = TableManager.spark.sql(count_pending_query).collect()[0][  # type: ignore
-            "pending_count"
-        ]
         updated_rows = total_pending_before - total_pending_after
-
         print(
             f"Updated {updated_rows} 'Pending' rows to 'Processed' in {TableManager.catalog}.{TableManager.schema}.{cls.table_name}, {total_pending_after} rows remained 'Pending'."
         )

@@ -15,11 +15,55 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.reference_db_c
     ReferenceDatabaseConnector,
 )
 
-bankagg_table_name = "benkagg_adresseerbareobjecten_v1"
-vergunningen_table_name = "vergunningen_werk_en_vervoer_op_straat_v2"
+
+class BENKAGGConnector(ReferenceDatabaseConnector):
+    bankagg_table_name = "benkagg_adresseerbareobjecten_v1"
+
+    def __init__(self, az_tenant_id, db_host, db_name, db_port) -> None:
+        super().__init__(az_tenant_id, db_host, db_name, db_port)
+
+    def get_benkagg_adresseerbareobjecten_by_address(
+        self, street, house_number, postcode
+    ):
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {self.bankagg_table_name} where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
+        return self.run(query)
+
+    def get_benkagg_adresseerbareobjecten_by_id(self, id):
+        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {self.bankagg_table_name} where identificatie='{id}'"  # nosec B608
+        return self.run(query)
+
+    # TODO create the dataframe with spark!
+    def create_dataframe(self, rows, colnames):
+        """
+        Create dataframe from query result.
+        """
+
+        def _load_columns_with_unsupported_data_type():
+            """
+            Pandas is complaining about loading the types of the following columns so we load them as strings.
+            """
+            data = [dict(zip(colnames, row)) for row in rows]
+
+            for record in data:
+                for time_col in [
+                    "tijd_tvm_parkeervakken_van",
+                    "tijd_tvm_parkeervakken_tot",
+                    "tijd_tvm_stremmen_van",
+                    "tijd_tvm_stremmen_tot",
+                ]:
+                    if time_col in record:
+                        record[time_col] = str(record[time_col])
+
+            return data
+
+        data = _load_columns_with_unsupported_data_type()
+        df = pd.DataFrame(data, columns=colnames)
+
+        return df
 
 
-class DecosDataHandler(ReferenceDatabaseConnector):
+class DecosDataHandler(BENKAGGConnector):
+    vergunningen_table_name = "vergunningen_werk_en_vervoer_op_straat_v2"
 
     def __init__(
         self,
@@ -28,19 +72,19 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         db_host: str,
         db_name: str,
         db_port: int,
-        active_object_classes: Dict[int, str],
+        object_classes: Dict[int, str],
         permit_mapping: Dict[int, List],
     ) -> None:
         super().__init__(az_tenant_id, db_host, db_name, db_port)
         self.spark = spark
-        self.active_object_classes = active_object_classes
+        self.object_classes = object_classes
         self.permit_mapping = permit_mapping
 
     def query_and_process_object_permits(self, date_to_query):
         """
         Process the results of the query.
         """
-        query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM {vergunningen_table_name} WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
+        query = f"SELECT id, kenmerk, locatie, geometrie_locatie, objecten FROM {self.vergunningen_table_name} WHERE datum_object_van <= '{date_to_query}' AND datum_object_tm >= '{date_to_query}'"  # nosec B608
         print(f"Querying the database for date {date_to_query}...")
         result_df = self.run(query)
 
@@ -94,42 +138,13 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         stats = exploded["object_classes"].value_counts()
         print("Matching permits per category:")
         for category, count in stats.items():
-            print(f"  Category {self.active_object_classes[category]}: {count}")
+            print(f"  Category {self.object_classes[category]}: {count}")
 
         self._permits_coordinates = self._extract_permits_coordinates()
         self._permits_coordinates_geometry = self._convert_coordinates_to_point()
 
         # self.write_healthy_df_to_table()
         # self.write_qurantine_df_to_table()
-
-    # TODO create the dataframe with spark!
-    def create_dataframe(self, rows, colnames):
-        """
-        Create a DataFrame .
-        """
-
-        def _load_columns_with_unsupported_data_type():
-            """
-            Pandas is complaining about loading the types of the following columns so we load them as strings.
-            """
-            data = [dict(zip(colnames, row)) for row in rows]
-
-            for record in data:
-                for time_col in [
-                    "tijd_tvm_parkeervakken_van",
-                    "tijd_tvm_parkeervakken_tot",
-                    "tijd_tvm_stremmen_van",
-                    "tijd_tvm_stremmen_tot",
-                ]:
-                    if time_col in record:
-                        record[time_col] = str(record[time_col])
-
-            return data
-
-        data = _load_columns_with_unsupported_data_type()
-        df = pd.DataFrame(data, columns=colnames)
-
-        return df
 
     def display_dataframe(self, df):
         """
@@ -170,16 +185,6 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         lon, lat = transformer.transform(x, y)
 
         return lat, lon
-
-    def get_benkagg_adresseerbareobjecten_by_address(
-        self, street, house_number, postcode
-    ):
-        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {bankagg_table_name} where openbareruimte_naam = '{street}' and huisnummer = '{house_number}' and postcode = '{postcode}'"  # nosec B608
-        return self.run(query)
-
-    def get_benkagg_adresseerbareobjecten_by_id(self, id):
-        query = f"select openbareruimte_naam, huisnummer, huisletter, postcode, adresseerbaar_object_punt_geometrie from {bankagg_table_name} where identificatie='{id}'"  # nosec B608
-        return self.run(query)
 
     def convert_address_to_coordinates(self, address):
         """
@@ -305,19 +310,19 @@ class DecosDataHandler(ReferenceDatabaseConnector):
 
     def get_keyword_mapping(self) -> Dict[int, List[str]]:
         """
-        Return a mapping of active object class keys to their permit mapping values.
+        Return a mapping of object class keys to their permit mapping values.
 
         Returns:
-            Dict[int, str]: Dictionary with active object class keys and corresponding permit mapping values.
+            Dict[int, str]: Dictionary with object class keys and corresponding permit mapping values.
         """
-        active_keys = set(self.active_object_classes.keys())
+        active_keys = set(self.object_classes.keys())
         return {k: self.permit_mapping[k] for k in active_keys}
 
     def calculate_distances_to_closest_permits(
         self, objects_coordinates_df: DataFrame
     ) -> DataFrame:
         """
-        Calculate distances to the closest permits for each active object class and union the results.
+        Calculate distances to the closest permits for each object class and union the results.
 
         Parameters:
             objects_coordinates_df (DataFrame): A Spark DataFrame containing object coordinates.
@@ -328,7 +333,7 @@ class DecosDataHandler(ReferenceDatabaseConnector):
         dfs_closest_permits: List[DataFrame] = []
 
         # Loop through each target object category.
-        for object_class in set(self.active_object_classes.keys()):
+        for object_class in set(self.object_classes.keys()):
             df_object_class = objects_coordinates_df.filter(
                 col("object_class") == object_class
             )

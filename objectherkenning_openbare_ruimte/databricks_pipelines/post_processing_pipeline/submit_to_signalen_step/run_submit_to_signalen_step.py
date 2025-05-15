@@ -1,111 +1,29 @@
 # this fixes the caching issues, reimports all modules
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
+import argparse  # noqa: E402
 import os  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
-    get_job_process_time,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.gold.notifications import (  # noqa E402
-    GoldSignalNotificationsManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.objects import (  # noqa: E402
-    SilverObjectsPerDayManager,
-    SilverObjectsPerDayQuarantineManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
+    parse_task_args_to_settings,
+    setup_arg_parser,
     setup_tables,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
-    SignalHandler,
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.submit_to_signalen_step import (  # noqa: E402
+    SubmitToSignalenStep,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
 
 
-def run_submit_to_signalen_step(
-    sparkSession,
-    catalog,
-    schema,
-    device_id,
-    client_id,
-    client_secret_name,
-    access_token_url,
-    base_url,
-    job_process_time,
-    az_tenant_id,
-    db_host,
-    db_name,
-    active_object_classes,
-    permit_mapping,
-    send_limits,
-    exclude_private_terrain_detections,
-    annotate_detection_images,
-):
-    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
-    signalHandler = SignalHandler(
-        sparkSession,
-        catalog,
-        schema,
-        device_id,
-        client_id,
-        client_secret_name,
-        access_token_url,
-        base_url,
-        az_tenant_id,
-        db_host,
-        db_name,
-        active_object_classes,
-        permit_mapping,
-    )
-
-    top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
-        exclude_private_terrain_detections,
-        az_tenant_id,
-        db_host,
-        db_name,
-        send_limits=send_limits,
-    )
-
-    if (not top_scores_df) or top_scores_df.count() == 0:
-        print("No data found for creating notifications. Stopping execution.")
-    else:
-        successful_notifications, unsuccessful_notifications = (
-            signalHandler.process_notifications(
-                top_scores_df, annotate_detection_images
-            )
-        )
-
-        if successful_notifications:
-            modified_schema = (
-                GoldSignalNotificationsManager.remove_fields_from_table_schema(
-                    fields_to_remove={"id", "processed_at"},
-                )
-            )
-            successful_df = sparkSession.createDataFrame(
-                successful_notifications, schema=modified_schema
-            )
-            GoldSignalNotificationsManager.insert_data(df=successful_df)
-
-        if unsuccessful_notifications:
-            modified_schema = (
-                SilverObjectsPerDayQuarantineManager.remove_fields_from_table_schema(
-                    fields_to_remove={"id", "processed_at"},
-                )
-            )
-            unsuccessful_df = sparkSession.createDataFrame(
-                unsuccessful_notifications, schema=modified_schema
-            )
-            SilverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
-
-    SilverObjectsPerDayManager.update_status(job_process_time=job_process_time)
-
-
-if __name__ == "__main__":
+def main(args: argparse.Namespace) -> None:
+    """
+    Setup and run SubmitToSignalenStep.
+    """
     sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
     databricks_environment = get_databricks_environment(sparkSession)
     project_root = os.path.dirname(
@@ -116,26 +34,24 @@ if __name__ == "__main__":
         f"{databricks_environment}"
     ]
 
-    run_submit_to_signalen_step(
-        sparkSession=sparkSession,
-        catalog=settings["catalog"],
-        schema=settings["schema"],
-        device_id=settings["device_id"],
-        client_id=settings["signalen"]["client_id"],
-        client_secret_name=settings["signalen"]["client_secret_name"],
-        access_token_url=settings["signalen"]["access_token_url"],
-        base_url=settings["signalen"]["base_url"],
-        job_process_time=get_job_process_time(
-            is_first_pipeline_step=False,
-        ),
-        az_tenant_id=settings["azure_tenant_id"],
-        db_host=settings["reference_database"]["host"],
-        db_name=settings["reference_database"]["name"],
-        active_object_classes=settings["object_classes"]["active"],
-        permit_mapping=settings["object_classes"]["permit_mapping"],
-        send_limits=settings["object_classes"]["send_limit"],
-        exclude_private_terrain_detections=settings[
-            "exclude_private_terrain_detections"
-        ],
-        annotate_detection_images=settings["annotate_detection_images"],
+    print("Parsing job parameters...")
+    settings = parse_task_args_to_settings(settings, args)
+    print("Will run the following active tasks:")
+    for stadsdeel in settings["job_config"]["active_task"].keys():
+        stadsdeel_str = str(settings["job_config"]["active_task"][stadsdeel])
+        print(f"{stadsdeel}: {stadsdeel_str}")
+    print("\n")
+
+    catalog = settings["catalog"]
+    schema = settings["schema"]
+    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+
+    submitToSignalenStep = SubmitToSignalenStep(
+        sparkSession=sparkSession, catalog=catalog, schema=schema, settings=settings
     )
+    submitToSignalenStep.run_submit_to_signalen_step()
+
+
+if __name__ == "__main__":
+    parser = setup_arg_parser(prog="run_submit_to_signalen_step.py")
+    main(args=parser.parse_args())

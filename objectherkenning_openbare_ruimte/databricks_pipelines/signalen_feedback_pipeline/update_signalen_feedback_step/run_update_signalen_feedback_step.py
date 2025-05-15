@@ -6,21 +6,15 @@ from datetime import datetime  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
+    SignalHandler,
     get_databricks_environment,
     get_job_process_time,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.bronze.feedback import (  # noqa: E402
-    BronzeSignalNotificationsFeedbackManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.gold.notifications import (  # noqa: E402
-    GoldSignalNotificationsManager,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils import (  # noqa: E402
     setup_tables,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_signalen import (  # noqa: E402
-    SignalHandler,
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (  # noqa: E402
+    BronzeSignalNotificationsFeedbackManager,
+    GoldSignalNotificationsManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,

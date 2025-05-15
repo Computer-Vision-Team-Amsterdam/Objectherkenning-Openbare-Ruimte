@@ -11,8 +11,8 @@ from pyspark.sql import functions as F
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators.silver_metadata_aggregator import (
     SilverMetadataAggregator,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (
-    DecosDataHandler,
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
+    BENKAGGConnector,
 )
 
 
@@ -79,23 +79,23 @@ class SignalHandler:
         catalog,
         schema,
         device_id,
-        client_id,
-        client_secret_name,
-        access_token_url,
-        base_url,
+        signalen_settings,
         az_tenant_id,
         db_host,
         db_name,
-        active_object_classes,
-        permit_mapping,
+        object_classes,
     ):
         self.sparkSession = sparkSession
         self.device_id = device_id
         self.catalog_name = catalog
         self.schema = schema
-        self.active_object_classes = active_object_classes
-
+        self.object_classes = object_classes
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
+
+        client_id = signalen_settings["client_id"]
+        client_secret_name = signalen_settings["client_secret_name"]
+        access_token_url = signalen_settings["access_token_url"]
+        base_url = signalen_settings["base_url"]
         signalConnectionConfigurer = SignalConnectionConfigurer(
             sparkSession, client_id, client_secret_name, access_token_url, base_url
         )
@@ -103,14 +103,12 @@ class SignalHandler:
         access_token = signalConnectionConfigurer.get_access_token()
         self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}  # type: ignore
         self.verify_ssl = True
-        self.decosDataHandler = DecosDataHandler(
-            spark=sparkSession,
+
+        self.bankAggConnector = BENKAGGConnector(
             az_tenant_id=az_tenant_id,
             db_host=db_host,
             db_name=db_name,
             db_port=5432,
-            active_object_classes=active_object_classes,
-            permit_mapping=permit_mapping,
         )
 
     def get_signal(self, sig_id: str) -> Any:
@@ -167,6 +165,9 @@ class SignalHandler:
             If the server responds with a status code other than 201 (Created),
             an HTTPError will be raised with the response status and message.
         """
+        print(
+            f"requests.post({self.base_url}, json={json_content}, headers={self.headers}, verify={self.verify_ssl}, timeout=60)"
+        )
         response = requests.post(
             self.base_url,
             json=json_content,
@@ -174,6 +175,7 @@ class SignalHandler:
             verify=self.verify_ssl,
             timeout=60,
         )
+        print(response)
 
         if response.status_code == 201:
             print(
@@ -375,7 +377,7 @@ class SignalHandler:
             if len(response_content["features"]) > 0:
                 first_element_id = response_content["features"][0]["properties"]["id"]
                 result_df = (
-                    self.decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
+                    self.bankAggConnector.get_benkagg_adresseerbareobjecten_by_id(
                         first_element_id
                     )
                 )
@@ -471,7 +473,11 @@ class SignalHandler:
 
         return json_to_send
 
-    def process_notifications(self, top_scores_df, annotate_detection_images):
+    def process_notifications(
+        self,
+        top_scores_df,
+        annotate_detection_images,
+    ):
         date_of_notification = datetime.today().strftime("%Y-%m-%d")
         top_scores_df_with_date = top_scores_df.withColumn(
             "notification_date", F.to_date(F.lit(date_of_notification))
@@ -487,7 +493,7 @@ class SignalHandler:
             LON = float(entry["object_lon"])
             detection_id = entry["detection_id"]
             object_class = entry["object_class"]
-            object_class_str = self.active_object_classes.get(object_class)
+            object_class_str = self.object_classes.get(object_class)
             image_upload_path = (
                 silverFrameAndDetectionMetadata.get_image_upload_path_from_detection_id(
                     detection_id=detection_id,
@@ -504,13 +510,13 @@ class SignalHandler:
 
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405
+
                 notification_json = self.fill_incident_details(
                     incident_date=date_of_notification,
                     lon=LON,
                     lat=LAT,
                     object_class_str=object_class_str,
                 )
-
                 signal_id = self.post_signal_with_image_attachment(
                     json_content=notification_json, filename=image_upload_path
                 )
