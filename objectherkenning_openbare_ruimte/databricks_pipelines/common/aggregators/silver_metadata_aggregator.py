@@ -30,9 +30,7 @@ class SilverMetadataAggregator:
             )
         )
         gps_internal_timestamp = (
-            SilverFrameMetadataManager.get_gps_internal_timestamp_from_image_name(
-                image_basename
-            )
+            SilverFrameMetadataManager.get_gps_timestamp_from_image_name(image_basename)
         )
         date_of_image_upload = unix_to_yyyy_mm_dd(unix_timestamp=gps_internal_timestamp)
         image_upload_path = (

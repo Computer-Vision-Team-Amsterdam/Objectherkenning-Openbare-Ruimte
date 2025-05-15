@@ -506,7 +506,7 @@ class SignalHandler:
 
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)
-            entry_dict.pop("id", None)
+            # entry_dict.pop("id", None)  # TODO check if this can go
 
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405

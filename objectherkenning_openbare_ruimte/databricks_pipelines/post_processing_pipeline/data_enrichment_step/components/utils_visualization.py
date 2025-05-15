@@ -124,7 +124,7 @@ def generate_map(
 
         # Get image folder path
         stlanding_image_folder = unix_to_yyyy_mm_dd(
-            SilverFrameMetadataManager.get_gps_internal_timestamp_from_image_name(
+            SilverFrameMetadataManager.get_gps_timestamp_from_image_name(
                 detection_image_name
             )
         )

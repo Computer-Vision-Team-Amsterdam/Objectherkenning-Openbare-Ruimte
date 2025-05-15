@@ -5,6 +5,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 class SilverDetectionMetadataManager(TableManager):
     table_name: str = "silver_detection_metadata"
+    id_column: str = "detection_id"
 
     @classmethod
     def get_image_name_from_detection_id(cls, detection_id: int) -> str:
@@ -23,7 +24,7 @@ class SilverDetectionMetadataManager(TableManager):
         fetch_image_name_query = f"""
             SELECT image_name
             FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
-            WHERE id = {detection_id}
+            WHERE {cls.id_column} = {detection_id}
         """  # nosec
         image_name_result_df = TableManager.spark.sql(fetch_image_name_query)
 
@@ -33,3 +34,4 @@ class SilverDetectionMetadataManager(TableManager):
 
 class SilverDetectionMetadataQuarantineManager(TableManager):
     table_name: str = "silver_detection_metadata_quarantine"
+    id_column: str = "detection_id"

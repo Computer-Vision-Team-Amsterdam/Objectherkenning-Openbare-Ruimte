@@ -15,7 +15,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # no
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (  # noqa: E402
     BronzeFrameMetadataManager,
     SilverDetectionMetadataManager,
-    SilverObjectsPerDayManager,
+    SilverEnrichedDetectionMetadataManager,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -33,14 +33,14 @@ def run_delete_images_step(
     job_date = job_process_time.strftime("%Y-%m-%d")
 
     stlanding_image_folder = unix_to_yyyy_mm_dd(
-        BronzeFrameMetadataManager.get_gps_internal_timestamp_of_current_run(
-            job_date=job_date
-        )
+        BronzeFrameMetadataManager.get_gps_timestamp_at_date(job_date=job_date)
     )
     image_files_current_run = dbutils.fs.ls(f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}/")  # type: ignore[name-defined] # noqa: F821, F405
     print(f"{len(image_files_current_run)} images found on {stlanding_image_folder}.")
-    detection_ids = SilverObjectsPerDayManager.get_detection_ids_to_keep_current_run(
-        job_date=job_date
+    detection_ids = (
+        SilverEnrichedDetectionMetadataManager.get_detection_ids_to_keep_current_run(
+            job_date=job_date
+        )
     )
     to_keep_image_names = [
         SilverDetectionMetadataManager.get_image_name_from_detection_id(d)

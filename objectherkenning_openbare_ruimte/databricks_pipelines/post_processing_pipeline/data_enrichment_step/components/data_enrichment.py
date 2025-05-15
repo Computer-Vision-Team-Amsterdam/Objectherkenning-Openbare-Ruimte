@@ -9,8 +9,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
     SilverDetectionMetadataManager,
+    SilverEnrichedDetectionMetadataManager,
     SilverFrameMetadataManager,
-    SilverObjectsPerDayManager,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
     Clustering,
@@ -104,7 +104,9 @@ class DataEnrichment:
                     F.lit("Pending").alias("status"),
                 )
 
-                SilverObjectsPerDayManager.insert_data(df=selected_casted_df)
+                SilverEnrichedDetectionMetadataManager.insert_data(
+                    df=selected_casted_df
+                )
             else:
                 print("Nothing to do after clustering and filtering. Exiting.")
 

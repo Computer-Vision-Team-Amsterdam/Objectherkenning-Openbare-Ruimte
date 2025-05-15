@@ -11,7 +11,7 @@ from .silver.frames import (
     SilverFrameMetadataQuarantineManager,
 )
 from .silver.objects import (
-    SilverObjectsPerDayManager,
-    SilverObjectsPerDayQuarantineManager,
+    SilverEnrichedDetectionMetadataManager,
+    SilverEnrichedDetectionMetadataQuarantineManager,
 )
 from .table_manager import TableManager

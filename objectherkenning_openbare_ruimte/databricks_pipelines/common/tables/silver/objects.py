@@ -14,8 +14,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 )
 
 
-class SilverObjectsPerDayManager(TableManager):
-    table_name: str = "silver_objects_per_day"
+class SilverEnrichedDetectionMetadataManager(TableManager):
+    table_name: str = "silver_enriched_detection_metadata"
+    id_column: str = "detection_id"
 
     @classmethod
     def get_top_pending_records(
@@ -98,7 +99,7 @@ class SilverObjectsPerDayManager(TableManager):
 
         if detection_ids_to_send:
             detections_to_send_df = TableManager.spark.table(table_full_name).filter(
-                F.col("detection_id").isin(detection_ids_to_send)
+                F.col(cls.id_column).isin(detection_ids_to_send)
             )
             print(
                 f"Loaded {detections_to_send_df.count()} valid detections to send from {table_full_name}."
@@ -203,14 +204,14 @@ class SilverObjectsPerDayManager(TableManager):
                 privateTerrainHandler is None
                 or not privateTerrainHandler.on_private_terrain(candidate)
             ):
-                valid_ids.append(candidate.detection_id)
+                valid_ids.append(candidate[cls.id_column])
                 # If a send limit is specified, break once it is reached.
                 if send_limit is not None and len(valid_ids) >= send_limit:
                     break
             else:
                 filtered_private_count += 1
                 print(
-                    f"  Skipping detection {candidate.detection_id} because it is on private terrain."
+                    f"  Skipping detection {candidate[cls.id_column]} because it is on private terrain."
                 )
                 continue
 
@@ -241,7 +242,7 @@ class SilverObjectsPerDayManager(TableManager):
                 (F.col("score") >= 1)
                 & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
             )
-            .select("detection_id")
+            .select(cls.id_column)
             .rdd.flatMap(lambda x: x)
             .collect()
         )
@@ -263,11 +264,12 @@ class SilverObjectsPerDayManager(TableManager):
                 (F.col("status") == "Pending")
                 & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
             )
-            .select("detection_id")
+            .select(cls.id_column)
             .rdd.flatMap(lambda x: x)
             .collect()
         )
 
 
-class SilverObjectsPerDayQuarantineManager(TableManager):
-    table_name: str = "silver_objects_per_day_quarantine"
+class SilverEnrichedDetectionMetadataQuarantineManager(TableManager):
+    table_name: str = "silver_enriched_detection_metadata_quarantine"
+    id_column: str = "detection_id"
