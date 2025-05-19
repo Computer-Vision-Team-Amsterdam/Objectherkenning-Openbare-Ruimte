@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import geopy.distance
 import numpy as np
@@ -220,3 +220,18 @@ class WIORDataHandler(ReferenceDatabaseConnector):
         results_df = self.spark.createDataFrame(results)
 
         return results_df
+
+    def create_dataframe(self, rows: List[Any], colnames: List[str]) -> pd.DataFrame:
+        """
+        Create a pandas DataFrame from provided row data and column names.
+
+        Parameters:
+            rows: A list of row data, where each row is an iterable of values.
+            colnames: A list of column names corresponding to the row data.
+
+        Returns:
+            A pandas DataFrame constructed from the provided data.
+        """
+        data = [dict(zip(colnames, row)) for row in rows]
+        df = pd.DataFrame(data, columns=colnames)
+        return df
