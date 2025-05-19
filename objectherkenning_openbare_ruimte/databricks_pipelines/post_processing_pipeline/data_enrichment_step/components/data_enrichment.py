@@ -20,6 +20,9 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
     utils_scoring,
     utils_visualization,
 )
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.wior_data_connector import (
+    WIORDataHandler,
+)
 
 
 class DataEnrichment:
@@ -58,6 +61,48 @@ class DataEnrichment:
         ]["active_object_classes"]
 
     def run_data_enrichment_step(self):
+        # Test WIOR data connector
+        print("\nTesting WIOR data connector...")
+        wior_handler = WIORDataHandler(
+            spark=self.sparkSession,
+            az_tenant_id=self.az_tenant_id,
+            db_host=self.db_host,
+            db_name=self.db_name,
+            db_port=5432,
+            object_classes=self.object_classes,
+            permit_mapping=self.permit_mapping,
+        )
+
+        # Query WIOR permits for today
+        test_date = datetime.today().strftime("%Y-%m-%d")
+        try:
+            wior_handler.query_and_process_wior_permits(date_to_query=test_date)
+
+            # Get some test coordinates (Amsterdam city center)
+            test_coordinates = self.sparkSession.createDataFrame(
+                [
+                    (1, 52.3676, 4.9041, 0),  # detection_id, lat, lon, object_class
+                ],
+                ["detection_id", "gps_lat", "gps_lon", "object_class"],
+            )
+
+            # Calculate distances to closest permits
+            closest_permits_df = wior_handler.calculate_distances_to_closest_permits(
+                objects_coordinates_df=test_coordinates
+            )
+
+            if closest_permits_df.count() > 0:
+                print("\nFound closest WIOR permits:")
+                closest_permits_df.show()
+            else:
+                print("\nNo WIOR permits found for the test coordinates.")
+
+        except Exception as e:
+            print(f"\nError testing WIOR data connector: {str(e)}")
+
+        print("\nContinuing with normal data enrichment step...")
+        # End of WIOR test code
+
         pending_detections = (
             SilverDetectionMetadataManager.load_pending_rows_from_table()
         )
