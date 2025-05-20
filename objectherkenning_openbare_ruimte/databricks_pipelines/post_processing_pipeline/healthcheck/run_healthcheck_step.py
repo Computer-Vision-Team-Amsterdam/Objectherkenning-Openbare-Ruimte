@@ -9,8 +9,8 @@ from pyspark.sql import SparkSession  # noqa: E402
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
     get_databricks_environment,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.decos_data_connector import (  # noqa: E402
-    DecosDataHandler,
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (  # noqa: E402
+    BENKAGGConnector,
 )
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
@@ -18,7 +18,6 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_healthcheck_step(
-    sparkSession: SparkSession,
     settings: dict,
 ) -> None:
     """
@@ -34,24 +33,22 @@ def run_healthcheck_step(
     Raises
     ------
     ValueError
-        If the Decos data handler or BAG API is down.
+        If the benk_agg data handler or BAG API is down.
     """
-    decosDataHandler = DecosDataHandler(
-        spark=sparkSession,
+    benkAggConnector = BENKAGGConnector(
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
         db_port=5432,
-        object_classes=settings["job_config"]["object_classes"]["names"],
-        permit_mapping=settings["job_config"]["object_classes"]["permit_mapping"],
     )
-    result = decosDataHandler.get_benkagg_adresseerbareobjecten_by_id(
+
+    result = benkAggConnector.get_benkagg_adresseerbareobjecten_by_id(
         "0363200000006110"
     )
     if result.iloc[0]["postcode"] == "1015NR":
-        print("Decos data handler is up and running")
+        print("RefDB benk_agg data handler is up and running")
     else:
-        raise ValueError("Decos data handler is down")
+        raise ValueError("RefDB benk_agg data handler is down")
 
     bag_url = (
         "https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
@@ -66,7 +63,7 @@ def run_healthcheck_step(
         raise ValueError("BAG API is down") from e
 
 
-if __name__ == "__main__":
+def main():
     sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
@@ -78,6 +75,9 @@ if __name__ == "__main__":
     ]
 
     run_healthcheck_step(
-        sparkSession=sparkSession,
         settings=settings,
     )
+
+
+if __name__ == "__main__":
+    main()
