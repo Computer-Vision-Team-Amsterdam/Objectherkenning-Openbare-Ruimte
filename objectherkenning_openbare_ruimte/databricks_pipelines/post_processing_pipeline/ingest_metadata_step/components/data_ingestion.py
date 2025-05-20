@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List
 
 from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import udf
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
     BronzeFrameMetadataManager,
@@ -109,14 +110,17 @@ class DataLoader:
         )
 
     def _match_frame_ids_to_detections(self, detections_df: DataFrame) -> DataFrame:
-        def _get_frame_id_for_row(row):
+        def _get_frame_id(image_name, image_timestamp):
             frame_id = BronzeFrameMetadataManager.get_frame_id_for_image_at_timestamp(
-                image_name=row["image_name"], image_timestamp=row["image_timestamp"]
+                image_name=image_name, image_timestamp=image_timestamp
             )
-            return row + (frame_id,)
+            return frame_id
 
-        return detections_df.rdd.map(_get_frame_id_for_row).toDF(
-            detections_df.columns + ["frame_id"]
+        get_frame_id_udf = udf(_get_frame_id)
+
+        return detections_df.withColumn(
+            "frame_id",
+            get_frame_id_udf(detections_df.image_name, detections_df.image_timestamp),
         )
 
     def _store_new_data(self, df, checkpoint_path: str, target: str):
