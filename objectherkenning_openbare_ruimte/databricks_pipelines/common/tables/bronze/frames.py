@@ -1,4 +1,5 @@
-from pyspark.sql.functions import col, date_format  # noqa: E402
+from pyspark.sql.functions import col, date_format
+from pyspark.sql.types import TimestampType
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
@@ -85,5 +86,17 @@ class BronzeFrameMetadataManager(TableManager):
             cls.get_table()
             .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
             .select("gps_timestamp")
+            .first()[0]
+        )
+
+    @classmethod
+    def get_frame_id_for_image_at_timestamp(
+        cls, image_name: str, image_timestamp: TimestampType
+    ) -> int:
+        return (
+            cls.get_table()
+            .filter(col("image_name") == image_name)
+            .filter(col("image_timestamp") == image_timestamp)
+            .select(cls.id_column)
             .first()[0]
         )

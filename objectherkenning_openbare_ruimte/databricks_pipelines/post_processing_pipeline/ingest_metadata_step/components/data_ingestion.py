@@ -3,8 +3,11 @@ import tempfile
 from datetime import datetime
 from typing import List
 
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
+    BronzeFrameMetadataManager,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.ingest_metadata_step.components.json_frame_detection_adapter import (
     JsonFrameDetectionAdapter,
 )
@@ -97,10 +100,23 @@ class DataLoader:
             checkpoint_path=self.checkpoint_frames,
             target=self.frame_metadata_table,
         )
+
+        detections_df_with_frame_id = self._match_frame_ids_to_detections(detections_df)
         self._store_new_data(
-            detections_df,
+            detections_df_with_frame_id,
             checkpoint_path=self.checkpoint_detections,
             target=self.detection_metadata_table,
+        )
+
+    def _match_frame_ids_to_detections(self, detections_df: DataFrame) -> DataFrame:
+        def _get_frame_id_for_row(row):
+            frame_id = BronzeFrameMetadataManager.get_frame_id_for_image_at_timestamp(
+                image_name=row["image_name"], image_timestamp=row["image_timestamp"]
+            )
+            return row + (frame_id,)
+
+        return detections_df.rdd.map(_get_frame_id_for_row).toDF(
+            detections_df.columns + ["frame_id"]
         )
 
     def _store_new_data(self, df, checkpoint_path: str, target: str):
