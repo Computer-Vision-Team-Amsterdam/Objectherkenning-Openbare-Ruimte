@@ -80,6 +80,6 @@ databricks_pipelines:
           3: 0.03
           4: 0.03
         send_limit:
-          2: 2
-          3: 4
+          2: 3
+          3: 3
           4: 4
