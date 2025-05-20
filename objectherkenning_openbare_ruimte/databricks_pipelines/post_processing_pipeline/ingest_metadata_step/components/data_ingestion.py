@@ -118,9 +118,9 @@ class DataLoader:
 
         get_frame_id_udf = udf(_get_frame_id)
 
-        return detections_df.withColumn(
+        return detections_df.drop("frame_id").withColumn(
             "frame_id",
-            get_frame_id_udf(detections_df.image_name),
+            get_frame_id_udf(detections_df.image_name).cast("bigint"),
         )
 
     def _store_new_data(self, df, checkpoint_path: str, target: str):
