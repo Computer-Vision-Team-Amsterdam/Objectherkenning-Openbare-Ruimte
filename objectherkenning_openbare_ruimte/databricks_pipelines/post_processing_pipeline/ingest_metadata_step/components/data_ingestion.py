@@ -110,9 +110,9 @@ class DataLoader:
         )
 
     def _match_frame_ids_to_detections(self, detections_df: DataFrame) -> DataFrame:
-        def _get_frame_id(image_name, image_timestamp):
-            frame_id = BronzeFrameMetadataManager.get_frame_id_for_image_at_timestamp(
-                image_name=image_name, image_timestamp=image_timestamp
+        def _get_frame_id(image_name):
+            frame_id = BronzeFrameMetadataManager.get_frame_id_for_pending_image(
+                image_name=image_name
             )
             return frame_id
 
@@ -120,7 +120,7 @@ class DataLoader:
 
         return detections_df.withColumn(
             "frame_id",
-            get_frame_id_udf(detections_df.image_name, detections_df.image_timestamp),
+            get_frame_id_udf(detections_df.image_name),
         )
 
     def _store_new_data(self, df, checkpoint_path: str, target: str):

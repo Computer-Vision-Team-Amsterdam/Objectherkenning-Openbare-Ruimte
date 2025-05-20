@@ -1,5 +1,4 @@
 from pyspark.sql.functions import col, date_format
-from pyspark.sql.types import TimestampType
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
@@ -90,13 +89,11 @@ class BronzeFrameMetadataManager(TableManager):
         )
 
     @classmethod
-    def get_frame_id_for_image_at_timestamp(
-        cls, image_name: str, image_timestamp: TimestampType
-    ) -> int:
+    def get_frame_id_for_pending_image(cls, image_name: str) -> int:
         return (
             cls.get_table()
+            .filter(col("status") == "Pending")
             .filter(col("image_name") == image_name)
-            .filter(col("image_timestamp") == image_timestamp)
             .select(cls.id_column)
             .first()[0]
         )
