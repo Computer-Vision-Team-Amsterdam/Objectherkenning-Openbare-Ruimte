@@ -37,14 +37,24 @@ def run_delete_images_step(
     )
     image_files_current_run = dbutils.fs.ls(f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}/")  # type: ignore[name-defined] # noqa: F821, F405
     print(f"{len(image_files_current_run)} images found on {stlanding_image_folder}.")
-    detection_ids = (
-        SilverEnrichedDetectionMetadataManager.get_detection_ids_to_keep_current_run(
+
+    # Must compare candidates for deletion and images to keep, since one image may have multiple detections.
+    delete_candidate_image_names = [
+        SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
+        for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_candidates_for_deletion(
             job_date=job_date
         )
-    )
+    ]
     to_keep_image_names = [
         SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
-        for d in detection_ids
+        for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_to_keep_current_run(
+            job_date=job_date
+        )
+    ]
+    to_delete_image_names = [
+        candidate
+        for candidate in delete_candidate_image_names
+        if candidate not in to_keep_image_names
     ]
     print(f"{len(to_keep_image_names)} images to keep.")
 
@@ -52,7 +62,7 @@ def run_delete_images_step(
     for file in image_files_current_run:
         image_name = file.name
 
-        if image_name not in to_keep_image_names:
+        if image_name in to_delete_image_names:
             print(f"Deleting {image_name}...")
             if delete_file(databricks_volume_full_path=file.path):
                 successful_deletions += 1
