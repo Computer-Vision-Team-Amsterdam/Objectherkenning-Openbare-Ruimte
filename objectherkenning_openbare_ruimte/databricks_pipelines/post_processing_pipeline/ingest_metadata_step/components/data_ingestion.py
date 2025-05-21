@@ -112,7 +112,7 @@ class DataLoader:
         pending_frames_df = BronzeFrameMetadataManager.load_pending_rows_from_table()
 
         detections_df_with_frame_id = detections_df.drop("frame_id").join(
-            pending_frames_df.select("image_name", "fame_id"),
+            pending_frames_df.select("image_name", "frame_id"),
             on="image_name",
             how="left",
         )
