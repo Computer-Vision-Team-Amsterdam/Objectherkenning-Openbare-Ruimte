@@ -112,7 +112,10 @@ class SubmitToSignalenStep:
             if successful_notifications:
                 modified_schema = (
                     GoldSignalNotificationsManager.remove_fields_from_table_schema(
-                        fields_to_remove={"id", "processed_at"},
+                        fields_to_remove={
+                            GoldSignalNotificationsManager.id_column,
+                            "processed_at",
+                        },
                     )
                 )
                 successful_df = self.sparkSession.createDataFrame(
@@ -122,7 +125,10 @@ class SubmitToSignalenStep:
 
             if unsuccessful_notifications:
                 modified_schema = SilverEnrichedDetectionMetadataQuarantineManager.remove_fields_from_table_schema(
-                    fields_to_remove={"id", "processed_at"},
+                    fields_to_remove={
+                        GoldSignalNotificationsManager.id_column,
+                        "processed_at",
+                    },
                 )
                 unsuccessful_df = self.sparkSession.createDataFrame(
                     unsuccessful_notifications, schema=modified_schema

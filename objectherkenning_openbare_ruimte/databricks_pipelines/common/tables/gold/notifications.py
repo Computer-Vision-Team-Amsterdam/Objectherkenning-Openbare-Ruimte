@@ -5,4 +5,4 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 class GoldSignalNotificationsManager(TableManager):
     table_name: str = "gold_signal_notifications"
-    id_column: str = "detection_id"
+    id_column: str = "id"
