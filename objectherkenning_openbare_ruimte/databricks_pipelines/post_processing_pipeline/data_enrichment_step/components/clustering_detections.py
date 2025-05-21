@@ -109,6 +109,7 @@ class Clustering:
 
         columns = [
             col("dm.detection_id"),
+            col("dm.frame_id"),
             col("dm.object_class"),
             col("dm.image_name"),
             col("dm.x_center"),

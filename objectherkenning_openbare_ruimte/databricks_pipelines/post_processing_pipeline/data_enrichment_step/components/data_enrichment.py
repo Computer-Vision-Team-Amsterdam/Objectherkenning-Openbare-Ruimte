@@ -90,12 +90,16 @@ class DataEnrichment:
                     F.col("a.object_class"),
                     F.col("b.gps_lat").alias("object_lat"),
                     F.col("b.gps_lon").alias("object_lon"),
-                    F.col("closest_bridge_distance").alias("distance_closest_bridge"),
+                    F.col("closest_bridge_distance")
+                    .alias("distance_closest_bridge")
+                    .cast("float"),
                     F.col("closest_bridge_id").cast("string"),
-                    F.col("closest_permit_distance").alias("distance_closest_permit"),
+                    F.col("closest_permit_distance")
+                    .alias("distance_closest_permit")
+                    .cast("float"),
                     F.col("closest_permit_id").cast("string"),
-                    F.col("closest_permit_lat").cast("float"),
-                    F.col("closest_permit_lon").cast("float"),
+                    F.col("closest_permit_lat").cast("double"),
+                    F.col("closest_permit_lon").cast("double"),
                     F.col("stadsdeel"),
                     F.col("stadsdeel_code"),
                     F.col("score").cast("float"),
@@ -217,7 +221,7 @@ class DataEnrichment:
             dataframe=enriched_df,
             annotate_detection_images=self.annotate_detection_images,
             name=f"{self.job_process_time}-map",
-            path=f"/Volumes/{self.catalog}/default/landingzone/Luna/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
+            path=f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
             catalog=self.catalog,
             device_id=self.device_id,
         )
