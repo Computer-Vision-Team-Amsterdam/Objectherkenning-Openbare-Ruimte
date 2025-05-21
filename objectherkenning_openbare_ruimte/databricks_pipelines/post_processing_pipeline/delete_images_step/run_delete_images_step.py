@@ -56,7 +56,7 @@ def run_delete_images_step(
         for candidate in delete_candidate_image_names
         if candidate not in to_keep_image_names
     ]
-    print(f"{len(to_keep_image_names)} images to keep.")
+    print(f"{len(to_delete_image_names)} images to delete.")
 
     successful_deletions = 0
     for file in image_files_current_run:
