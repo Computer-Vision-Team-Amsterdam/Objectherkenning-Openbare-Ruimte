@@ -157,9 +157,8 @@ def compare_dataframes(df1, df2, df1_name, df2_name):
     print(50 * "-")
 
 
-def unix_to_yyyy_mm_dd(unix_timestamp) -> str:
-    date_time = datetime.fromtimestamp(unix_timestamp)
-    return date_time.strftime("%Y-%m-%d")
+def get_landingzone_folder_for_timestamp(timestamp: datetime) -> str:
+    return timestamp.strftime("%Y-%m-%d")
 
 
 def setup_tables(spark, catalog, schema):

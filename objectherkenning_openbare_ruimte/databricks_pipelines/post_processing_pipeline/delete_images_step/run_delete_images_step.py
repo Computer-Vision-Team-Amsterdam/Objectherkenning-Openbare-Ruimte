@@ -9,8 +9,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # no
     delete_file,
     get_databricks_environment,
     get_job_process_time,
+    get_landingzone_folder_for_timestamp,
     setup_tables,
-    unix_to_yyyy_mm_dd,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (  # noqa: E402
     BronzeFrameMetadataManager,
@@ -32,7 +32,7 @@ def run_delete_images_step(
     setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
     job_date = job_process_time.strftime("%Y-%m-%d")
 
-    stlanding_image_folder = unix_to_yyyy_mm_dd(
+    stlanding_image_folder = get_landingzone_folder_for_timestamp(
         BronzeFrameMetadataManager.get_gps_timestamp_at_date(job_date=job_date)
     )
     image_files_current_run = dbutils.fs.ls(f"/Volumes/{catalog}/default/landingzone/{device_id}/images/{stlanding_image_folder}/")  # type: ignore[name-defined] # noqa: F821, F405
