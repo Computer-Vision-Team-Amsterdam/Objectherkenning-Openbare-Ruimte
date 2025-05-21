@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List
 
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import udf
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
     BronzeFrameMetadataManager,
@@ -110,18 +109,15 @@ class DataLoader:
         )
 
     def _match_frame_ids_to_detections(self, detections_df: DataFrame) -> DataFrame:
-        def _get_frame_id(image_name):
-            frame_id = BronzeFrameMetadataManager.get_frame_id_for_pending_image(
-                image_name=image_name
-            )
-            return frame_id
+        pending_frames_df = BronzeFrameMetadataManager.load_pending_rows_from_table()
 
-        get_frame_id_udf = udf(_get_frame_id)
-
-        return detections_df.drop("frame_id").withColumn(
-            "frame_id",
-            get_frame_id_udf(detections_df.image_name).cast("bigint"),
+        detections_df_with_frame_id = detections_df.drop("frame_id").join(
+            pending_frames_df.select("image_name", "fame_id"),
+            on="image_name",
+            how="left",
         )
+
+        return detections_df_with_frame_id
 
     def _store_new_data(self, df, checkpoint_path: str, target: str):
         # availableNow = process all files that have been added before the time when this query ran. Used with batch processing

@@ -87,13 +87,3 @@ class BronzeFrameMetadataManager(TableManager):
             .select("gps_timestamp")
             .first()[0]
         )
-
-    @classmethod
-    def get_frame_id_for_pending_image(cls, image_name: str) -> int:
-        return (
-            cls.get_table()
-            .filter(col("status") == "Pending")
-            .filter(col("image_name") == image_name)
-            .select(cls.id_column)
-            .first()[0]
-        )
