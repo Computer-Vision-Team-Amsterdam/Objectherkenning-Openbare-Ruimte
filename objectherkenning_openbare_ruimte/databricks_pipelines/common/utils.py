@@ -63,6 +63,11 @@ def parse_task_args_to_settings(
             _send_limits = [_send_limits]
         return _send_limits
 
+    if args.send_limits and not args.stadsdelen:
+        raise ValueError(
+            "Must provide parameter `--stadsdelen` if `--send_limits` are given."
+        )
+
     if args.stadsdelen:
         stadsdelen = _parse_stadsdelen_arg(args.stadsdelen)
     else:
@@ -75,10 +80,6 @@ def parse_task_args_to_settings(
         print("Using default send limits.")
         send_limits = None
 
-    if send_limits and not stadsdelen:
-        raise ValueError(
-            "Must provide parameter `stadsdelen` if `send_limits` are given."
-        )
     if (stadsdelen and send_limits) and not (len(stadsdelen) == len(send_limits)):
         raise ValueError(
             f"Argument number mismatch: {len(stadsdelen)} stadsdelen with {len(send_limits)} send limits."
