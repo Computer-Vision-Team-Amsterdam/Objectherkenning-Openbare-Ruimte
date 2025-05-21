@@ -21,7 +21,7 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
     parser.add_argument(
         "--send_limits",
         type=str,
-        default="{}",
+        default="",
         help='"[{2: x, 3: y, 4: z}, {2: x2, 3: y2, 4: z2}, ...]"',
     )
     parser.add_argument(
