@@ -50,7 +50,7 @@ def run_update_signalen_feedback_step(
     for (
         entry
     ) in GoldSignalNotificationsManager.load_pending_rows_from_table().collect():
-        id = entry["id"]
+        id = entry[GoldSignalNotificationsManager.id_column]
         signal_status = signalHandler.get_signal(sig_id=entry["signal_id"])["status"]
         if signal_status["state_display"] != "Gemeld":
             status, text, user, status_update_time = (
@@ -76,7 +76,7 @@ def run_update_signalen_feedback_step(
             ids_of_not_updated_status.append(id)
 
     modified_schema = GoldSignalNotificationsManager.remove_fields_from_table_schema(
-        fields_to_remove={"id", "processed_at"}
+        fields_to_remove={GoldSignalNotificationsManager.id_column, "processed_at"}
     )
 
     signalen_feedback_df = sparkSession.createDataFrame(  # noqa: F821
@@ -88,7 +88,7 @@ def run_update_signalen_feedback_step(
     )
 
 
-if __name__ == "__main__":
+def main():
     sparkSession = SparkSession.builder.appName("SignalenFeedback").getOrCreate()
     databricks_environment = get_databricks_environment(sparkSession)
     project_root = os.path.dirname(
@@ -112,3 +112,7 @@ if __name__ == "__main__":
             is_first_pipeline_step=True,
         ),
     )
+
+
+if __name__ == "__main__":
+    main()
