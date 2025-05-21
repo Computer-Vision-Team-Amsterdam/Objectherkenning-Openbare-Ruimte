@@ -23,6 +23,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 
 
 class DataEnrichment:
+    id_column = "detection_id"
+
     def __init__(
         self,
         sparkSession: SparkSession,
@@ -84,18 +86,14 @@ class DataEnrichment:
                 self._create_map(enriched_df=enriched_df)
 
                 selected_casted_df = enriched_df.select(
-                    F.col("a.detection_id").cast("int"),
+                    F.col("a.detection_id"),
                     F.col("a.object_class"),
-                    F.col("b.gps_lat").alias("object_lat").cast("string"),
-                    F.col("b.gps_lon").alias("object_lon").cast("string"),
-                    F.col("closest_bridge_distance")
-                    .alias("distance_closest_bridge")
-                    .cast("float"),
+                    F.col("b.gps_lat").alias("object_lat"),
+                    F.col("b.gps_lon").alias("object_lon"),
+                    F.col("closest_bridge_distance").alias("distance_closest_bridge"),
                     F.col("closest_bridge_id").cast("string"),
-                    F.col("closest_permit_distance")
-                    .alias("distance_closest_permit")
-                    .cast("float"),
-                    F.col("closest_permit_id"),
+                    F.col("closest_permit_distance").alias("distance_closest_permit"),
+                    F.col("closest_permit_id").cast("string"),
                     F.col("closest_permit_lat").cast("float"),
                     F.col("closest_permit_lon").cast("float"),
                     F.col("stadsdeel"),
@@ -120,7 +118,7 @@ class DataEnrichment:
             objects_coordinates_df=objects_coordinates_df
         )
         objects_coordinates_with_closest_bridge_df = objects_coordinates_df.join(
-            closest_bridges_df, "detection_id"
+            closest_bridges_df, self.id_column
         )
 
         closest_permits_df = self._get_decos_df(
@@ -128,7 +126,7 @@ class DataEnrichment:
         )
         objects_coordinates_with_closest_bridge_permit_df = (
             objects_coordinates_with_closest_bridge_df.join(
-                closest_permits_df, "detection_id"
+                closest_permits_df, self.id_column
             )
         )
 
@@ -137,7 +135,7 @@ class DataEnrichment:
         )
         objects_coordinates_with_closest_bridge_permit_stadsdeel_df = (
             objects_coordinates_with_closest_bridge_permit_df.join(
-                stadsdelen_df, "detection_id"
+                stadsdelen_df, self.id_column
             )
         )
 
@@ -153,7 +151,7 @@ class DataEnrichment:
                 "a"
             ).join(
                 self.clustering.joined_metadata.alias("b"),
-                on=F.col("a.detection_id") == F.col("b.detection_id"),
+                on=F.col(f"a.{self.id_column}") == F.col(f"b.{self.id_column}"),
             )
         )
         return joined_metadata_with_details_df
@@ -209,7 +207,8 @@ class DataEnrichment:
     def _get_stadsdelen_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
         stadsdelenHandler = StadsdelenHandler(spark_session=self.sparkSession)
         stadsdelen_df = stadsdelenHandler.lookup_stadsdeel_for_detections(
-            objects_coordinates_df=objects_coordinates_df
+            objects_coordinates_df=objects_coordinates_df,
+            id_column=self.id_column,
         )
         return stadsdelen_df
 
