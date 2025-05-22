@@ -7,7 +7,7 @@ from pyspark.sql.types import StructType
 
 
 class TableManager(ABC):
-    spark = None
+    spark_session = None
     catalog = None
     schema = None
     table_name = None
@@ -34,7 +34,7 @@ class TableManager(ABC):
         FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
         WHERE status = 'Pending'
         """  # nosec
-        total_pending_before = TableManager.spark.sql(count_pending_query).collect()[0][  # type: ignore
+        total_pending_before = TableManager.spark_session.sql(count_pending_query).collect()[0][  # type: ignore
             "pending_count"
         ]
 
@@ -54,8 +54,8 @@ class TableManager(ABC):
         if (only_ids is not None) and (len(only_ids) == 0):
             total_pending_after = total_pending_before
         else:
-            TableManager.spark.sql(update_query)  # type: ignore
-            total_pending_after = TableManager.spark.sql(count_pending_query).collect()[0][  # type: ignore
+            TableManager.spark_session.sql(update_query)  # type: ignore
+            total_pending_after = TableManager.spark_session.sql(count_pending_query).collect()[0][  # type: ignore
                 "pending_count"
             ]
 
@@ -82,7 +82,7 @@ class TableManager(ABC):
         full_table_name = (
             f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
         )
-        table_rows = TableManager.spark.table(full_table_name)  # type: ignore
+        table_rows = TableManager.spark_session.table(full_table_name)  # type: ignore
         print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
 

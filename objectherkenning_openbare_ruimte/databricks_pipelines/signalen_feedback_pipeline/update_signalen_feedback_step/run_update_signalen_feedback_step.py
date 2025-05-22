@@ -22,7 +22,7 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_update_signalen_feedback_step(
-    sparkSession,
+    spark_session,
     catalog,
     schema,
     device_id,
@@ -33,9 +33,9 @@ def run_update_signalen_feedback_step(
     job_process_time,
 ):
 
-    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+    setup_tables(spark_session=spark_session, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
-        sparkSession,
+        spark_session,
         catalog,
         schema,
         device_id,
@@ -50,7 +50,7 @@ def run_update_signalen_feedback_step(
     for (
         entry
     ) in GoldSignalNotificationsManager.load_pending_rows_from_table().collect():
-        id = entry["id"]
+        id = entry[GoldSignalNotificationsManager.id_column]
         signal_status = signalHandler.get_signal(sig_id=entry["signal_id"])["status"]
         if signal_status["state_display"] != "Gemeld":
             status, text, user, status_update_time = (
@@ -76,10 +76,10 @@ def run_update_signalen_feedback_step(
             ids_of_not_updated_status.append(id)
 
     modified_schema = GoldSignalNotificationsManager.remove_fields_from_table_schema(
-        fields_to_remove={"id", "processed_at"}
+        fields_to_remove={GoldSignalNotificationsManager.id_column, "processed_at"}
     )
 
-    signalen_feedback_df = sparkSession.createDataFrame(  # noqa: F821
+    signalen_feedback_df = spark_session.createDataFrame(  # noqa: F821
         signalen_feedback_entries, schema=modified_schema
     )
     BronzeSignalNotificationsFeedbackManager.insert_data(df=signalen_feedback_df)
@@ -88,9 +88,9 @@ def run_update_signalen_feedback_step(
     )
 
 
-if __name__ == "__main__":
-    sparkSession = SparkSession.builder.appName("SignalenFeedback").getOrCreate()
-    databricks_environment = get_databricks_environment(sparkSession)
+def main():
+    spark_session = SparkSession.builder.appName("SignalenFeedback").getOrCreate()
+    databricks_environment = get_databricks_environment(spark_session)
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     ]
 
     run_update_signalen_feedback_step(
-        sparkSession=sparkSession,
+        spark_session=spark_session,
         catalog=settings["catalog"],
         schema=settings["schema"],
         device_id=settings["device_id"],
@@ -112,3 +112,7 @@ if __name__ == "__main__":
             is_first_pipeline_step=True,
         ),
     )
+
+
+if __name__ == "__main__":
+    main()

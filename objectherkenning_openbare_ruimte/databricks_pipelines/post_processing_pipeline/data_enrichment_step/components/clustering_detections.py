@@ -16,7 +16,7 @@ class Clustering:
 
     def __init__(
         self,
-        spark: SparkSession,
+        spark_session: SparkSession,
         catalog: str,
         schema: str,
         detections: DataFrame,
@@ -25,7 +25,7 @@ class Clustering:
         confidence_thresholds: Dict[int, float],
         bbox_size_thresholds: Dict[int, float],
     ) -> None:
-        self.spark = spark
+        self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
         self.detection_metadata = detections
@@ -94,7 +94,7 @@ class Clustering:
         -------
         DataFrame
             A Spark DataFrame containing joined metadata with the following columns:
-            'detection_date', 'detection_id', 'object_class', 'image_name', 'x_center', 'y_center',
+            'detection_id', 'object_class', 'image_name', 'x_center', 'y_center',
             'width', 'height', 'confidence', 'gps_lat', 'gps_lon'.
         """
         # Filter detection metadata for active object classes before joining.
@@ -104,12 +104,12 @@ class Clustering:
 
         joined_df = self.frame_metadata.alias("fm").join(
             active_detection_metadata.alias("dm"),
-            col("fm.image_name") == col("dm.image_name"),
+            col("fm.frame_id") == col("dm.frame_id"),
         )
 
         columns = [
-            col("fm.gps_date").alias("detection_date"),
-            col("dm.id").alias("detection_id"),
+            col("dm.detection_id"),
+            col("dm.frame_id"),
             col("dm.object_class"),
             col("dm.image_name"),
             col("dm.x_center"),
@@ -117,8 +117,8 @@ class Clustering:
             col("dm.width"),
             col("dm.height"),
             col("dm.confidence"),
-            col("fm.gps_lat").cast("float"),
-            col("fm.gps_lon").cast("float"),
+            col("fm.gps_lat"),
+            col("fm.gps_lon"),
         ]
 
         joined_df = joined_df.select(columns)

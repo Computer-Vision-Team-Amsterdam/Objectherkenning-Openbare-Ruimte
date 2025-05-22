@@ -5,22 +5,22 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 class SilverFrameMetadataManager(TableManager):
     table_name: str = "silver_frame_metadata"
+    id_column: str = "frame_id"
 
     @classmethod
-    def get_gps_internal_timestamp_from_image_name(cls, image_name: str) -> str:
-        fetch_date_of_image_upload_query = f"""
-            SELECT gps_internal_timestamp
+    def get_upload_date_from_frame_id(cls, frame_id: int) -> str:
+        fetch_gps_timestamp_query = f"""
+            SELECT DATE(gps_timestamp) AS upload_date
             FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
-            WHERE image_name = '{image_name}'
+            WHERE {cls.id_column} = {frame_id}
         """  # nosec
-        date_of_image_upload_df = TableManager.spark.sql(
-            fetch_date_of_image_upload_query
-        )
-        date_of_image_upload_dmy = date_of_image_upload_df.collect()[0][
-            "gps_internal_timestamp"
-        ]
-        return date_of_image_upload_dmy
+        upload_date_df = TableManager.spark_session.sql(fetch_gps_timestamp_query)
+        row = upload_date_df.first()
+        if row is None:
+            raise ValueError(f"Frame_id {frame_id} not found")
+        return str(row["upload_date"])
 
 
 class SilverFrameMetadataQuarantineManager(TableManager):
     table_name: str = "silver_frame_metadata_quarantine"
+    id_column: str = "frame_id"

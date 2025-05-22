@@ -7,6 +7,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 
 class BronzeDetectionMetadataManager(TableManager):
     table_name: str = "bronze_detection_metadata"
+    id_column: str = "detection_id"
 
     @classmethod
     def filter_valid_metadata(cls, silver_frame_metadata_df):
@@ -15,9 +16,9 @@ class BronzeDetectionMetadataManager(TableManager):
         silver_frame_metadata_df = silver_frame_metadata_df.alias("silver_frame")
         valid_metadata = bronze_detection_metadata.join(
             silver_frame_metadata_df,
-            F.col("bronze_detection.image_name") == F.col("silver_frame.image_name"),
+            F.col("bronze_detection.frame_id") == F.col("silver_frame.frame_id"),
         ).select("bronze_detection.*")
-        print("Processed valid detection metadata.")
+        print("Filtered valid detection metadata.")
 
         return valid_metadata
 
@@ -30,10 +31,9 @@ class BronzeDetectionMetadataManager(TableManager):
         )
         invalid_metadata = bronze_detection_metadata.join(
             silver_frame_metadata_quarantine_df,
-            F.col("bronze_detection.image_name")
-            == F.col("quarantine_frame.image_name"),
+            F.col("bronze_detection.frame_id") == F.col("quarantine_frame.frame_id"),
         ).select("bronze_detection.*")
 
-        print("Processed invalid detection metadata.")
+        print("Filtered invalid detection metadata.")
 
         return invalid_metadata

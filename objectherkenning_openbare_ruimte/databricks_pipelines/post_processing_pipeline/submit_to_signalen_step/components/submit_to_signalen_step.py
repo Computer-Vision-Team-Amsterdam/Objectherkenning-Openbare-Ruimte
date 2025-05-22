@@ -8,8 +8,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
     GoldSignalNotificationsManager,
-    SilverObjectsPerDayManager,
-    SilverObjectsPerDayQuarantineManager,
+    SilverEnrichedDetectionMetadataManager,
+    SilverEnrichedDetectionMetadataQuarantineManager,
 )
 
 
@@ -20,12 +20,12 @@ class SubmitToSignalenStep:
 
     def __init__(
         self,
-        sparkSession: SparkSession,
+        spark_session: SparkSession,
         catalog: str,
         schema: str,
         settings: dict[str, Any],
     ):
-        self.sparkSession = sparkSession
+        self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
         self.job_process_time = get_job_process_time(
@@ -43,7 +43,7 @@ class SubmitToSignalenStep:
         self.active_task_config = settings["job_config"]["active_task"]
 
         self.signalHandler = SignalHandler(
-            sparkSession=sparkSession,
+            spark_session=spark_session,
             catalog=catalog,
             schema=schema,
             device_id=settings["device_id"],
@@ -90,7 +90,7 @@ class SubmitToSignalenStep:
         """
         send_limits = config.get("send_limit", {})
 
-        top_scores_df = SilverObjectsPerDayManager.get_top_pending_records(
+        top_scores_df = SilverEnrichedDetectionMetadataManager.get_top_pending_records(
             self.exclude_private_terrain_detections,
             self.az_tenant_id,
             self.db_host,
@@ -112,28 +112,38 @@ class SubmitToSignalenStep:
             if successful_notifications:
                 modified_schema = (
                     GoldSignalNotificationsManager.remove_fields_from_table_schema(
-                        fields_to_remove={"id", "processed_at"},
+                        fields_to_remove={
+                            GoldSignalNotificationsManager.id_column,
+                            "processed_at",
+                        },
                     )
                 )
-                successful_df = self.sparkSession.createDataFrame(
+                successful_df = self.spark_session.createDataFrame(
                     successful_notifications, schema=modified_schema
                 )
                 GoldSignalNotificationsManager.insert_data(df=successful_df)
 
             if unsuccessful_notifications:
-                modified_schema = SilverObjectsPerDayQuarantineManager.remove_fields_from_table_schema(
-                    fields_to_remove={"id", "processed_at"},
+                modified_schema = SilverEnrichedDetectionMetadataQuarantineManager.remove_fields_from_table_schema(
+                    fields_to_remove={
+                        GoldSignalNotificationsManager.id_column,
+                        "processed_at",
+                    },
                 )
-                unsuccessful_df = self.sparkSession.createDataFrame(
+                unsuccessful_df = self.spark_session.createDataFrame(
                     unsuccessful_notifications, schema=modified_schema
                 )
-                SilverObjectsPerDayQuarantineManager.insert_data(df=unsuccessful_df)
+                SilverEnrichedDetectionMetadataQuarantineManager.insert_data(
+                    df=unsuccessful_df
+                )
 
         # We only want to set to "processed" the rows belonging to this stadsdeel
-        processed_ids = SilverObjectsPerDayManager.get_pending_ids_for_stadsdeel(
-            stadsdeel
+        processed_ids = (
+            SilverEnrichedDetectionMetadataManager.get_pending_ids_for_stadsdeel(
+                stadsdeel
+            )
         )
-        SilverObjectsPerDayManager.update_status(
+        SilverEnrichedDetectionMetadataManager.update_status(
             job_process_time=self.job_process_time,
             id_column="detection_id",
             only_ids=processed_ids,

@@ -6,12 +6,12 @@ from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import SparkSession
 
 
-def get_databricks_environment(spark: SparkSession) -> Union[str, None]:
+def get_databricks_environment(spark_session: SparkSession) -> Union[str, None]:
     """
     Returns Productie, Ontwikkel or None based on the tags set in the subscription
     """
 
-    tags = spark.conf.get("spark.databricks.clusterUsageTags.clusterAllTags")
+    tags = spark_session.conf.get("spark.databricks.clusterUsageTags.clusterAllTags")
     try:
         tags_json = json.loads(tags)
     except json.JSONDecodeError as e:

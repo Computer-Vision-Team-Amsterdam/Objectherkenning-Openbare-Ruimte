@@ -9,8 +9,10 @@ from shapely.wkt import dumps as wkt_dumps
 
 
 class VulnerableBridgesHandler:
-    def __init__(self, spark: SparkSession, root_source, vuln_bridges_relative_path):
-        self.spark = spark
+    def __init__(
+        self, spark_session: SparkSession, root_source, vuln_bridges_relative_path
+    ):
+        self.spark_session = spark_session
         self.file_path = f"{root_source}/{vuln_bridges_relative_path}"
         self._bridges_coordinates: List[List[List[float]]] = []
         self._bridges_ids: List[int] = []
@@ -57,7 +59,7 @@ class VulnerableBridgesHandler:
         """
         # Load the GeoJSON file into a Spark DataFrame
         sparkDataFrame = (
-            self.spark.read.format("json")
+            self.spark_session.read.format("json")
             .option("driverName", "GeoJSON")
             .load(self.file_path)
         )
@@ -148,6 +150,6 @@ class VulnerableBridgesHandler:
                 )
             )
 
-        results_df = self.spark.createDataFrame(results)
+        results_df = self.spark_session.createDataFrame(results)
 
         return results_df
