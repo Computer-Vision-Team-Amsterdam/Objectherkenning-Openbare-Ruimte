@@ -9,8 +9,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.
 
 
 class SilverMetadataAggregator:
-    def __init__(self, spark: SparkSession, catalog: str, schema: str):
-        self.spark = spark
+    def __init__(self, spark_session: SparkSession, catalog: str, schema: str):
+        self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
 

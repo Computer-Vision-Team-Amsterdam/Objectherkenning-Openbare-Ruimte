@@ -24,8 +24,8 @@ def main(args: argparse.Namespace) -> None:
     """
     Setup and run SubmitToSignalenStep.
     """
-    sparkSession = SparkSession.builder.appName("SignalHandler").getOrCreate()
-    databricks_environment = get_databricks_environment(sparkSession)
+    spark_session = SparkSession.builder.appName("SignalHandler").getOrCreate()
+    databricks_environment = get_databricks_environment(spark_session)
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
@@ -44,10 +44,10 @@ def main(args: argparse.Namespace) -> None:
 
     catalog = settings["catalog"]
     schema = settings["schema"]
-    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+    setup_tables(spark_session=spark_session, catalog=catalog, schema=schema)
 
     submitToSignalenStep = SubmitToSignalenStep(
-        sparkSession=sparkSession, catalog=catalog, schema=schema, settings=settings
+        spark_session=spark_session, catalog=catalog, schema=schema, settings=settings
     )
     submitToSignalenStep.run_submit_to_signalen_step()
 

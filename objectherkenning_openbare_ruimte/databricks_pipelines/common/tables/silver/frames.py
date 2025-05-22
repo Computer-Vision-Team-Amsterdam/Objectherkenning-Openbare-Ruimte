@@ -14,7 +14,7 @@ class SilverFrameMetadataManager(TableManager):
             FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
             WHERE {cls.id_column} = {frame_id}
         """  # nosec
-        upload_date_df = TableManager.spark.sql(fetch_gps_timestamp_query)
+        upload_date_df = TableManager.spark_session.sql(fetch_gps_timestamp_query)
         row = upload_date_df.first()
         if row is None:
             raise ValueError(f"Frame_id {frame_id} not found")

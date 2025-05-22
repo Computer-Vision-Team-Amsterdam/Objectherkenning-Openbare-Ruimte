@@ -11,14 +11,14 @@ class JsonFrameDetectionAdapter:
 
     def __init__(
         self,
-        spark: SparkSession,
+        spark_session: SparkSession,
         json_source: str,
         frame_schema_loc: str,
         detection_schema_loc: str,
     ):
         # Read JSON data twice, each with its own schemaLocation
         self.raw_frames = (
-            spark.readStream.format("cloudFiles")
+            spark_session.readStream.format("cloudFiles")
             .option("multiline", "true")
             .option("cloudFiles.format", "json")
             .option("pathGlobFilter", "*.json")
@@ -27,7 +27,7 @@ class JsonFrameDetectionAdapter:
             .load(json_source)
         )
         self.raw_dets = (
-            spark.readStream.format("cloudFiles")
+            spark_session.readStream.format("cloudFiles")
             .option("multiline", "true")
             .option("cloudFiles.format", "json")
             .option("pathGlobFilter", "*.json")

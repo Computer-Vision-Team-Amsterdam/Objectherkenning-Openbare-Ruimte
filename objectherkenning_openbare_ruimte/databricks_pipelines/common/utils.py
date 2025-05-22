@@ -161,7 +161,7 @@ def get_landingzone_folder_for_timestamp(timestamp: datetime) -> str:
     return timestamp.strftime("%Y-%m-%d")
 
 
-def setup_tables(spark, catalog, schema):
-    TableManager.spark = spark
+def setup_tables(spark_session, catalog, schema):
+    TableManager.spark_session = spark_session
     TableManager.catalog = catalog
     TableManager.schema = schema

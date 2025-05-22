@@ -23,13 +23,13 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_delete_images_step(
-    sparkSession,
+    spark_session,
     catalog,
     schema,
     device_id,
     job_process_time,
 ):
-    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+    setup_tables(spark_session=spark_session, catalog=catalog, schema=schema)
     job_date = job_process_time.strftime("%Y-%m-%d")
 
     stlanding_image_folder = get_landingzone_folder_for_timestamp(
@@ -70,17 +70,17 @@ def run_delete_images_step(
 
 
 if __name__ == "__main__":
-    sparkSession = SparkSession.builder.appName("ImageDeletion").getOrCreate()
+    spark_session = SparkSession.builder.appName("ImageDeletion").getOrCreate()
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
     config_file_path = os.path.join(project_root, "config_databricks.yml")
-    databricks_environment = get_databricks_environment(sparkSession)
+    databricks_environment = get_databricks_environment(spark_session)
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
     run_delete_images_step(
-        sparkSession=sparkSession,
+        spark_session=spark_session,
         catalog=settings["catalog"],
         schema=settings["schema"],
         device_id=settings["device_id"],

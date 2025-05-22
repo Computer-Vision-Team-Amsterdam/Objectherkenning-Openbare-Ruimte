@@ -16,7 +16,7 @@ class Clustering:
 
     def __init__(
         self,
-        spark: SparkSession,
+        spark_session: SparkSession,
         catalog: str,
         schema: str,
         detections: DataFrame,
@@ -25,7 +25,7 @@ class Clustering:
         confidence_thresholds: Dict[int, float],
         bbox_size_thresholds: Dict[int, float],
     ) -> None:
-        self.spark = spark
+        self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
         self.detection_metadata = detections

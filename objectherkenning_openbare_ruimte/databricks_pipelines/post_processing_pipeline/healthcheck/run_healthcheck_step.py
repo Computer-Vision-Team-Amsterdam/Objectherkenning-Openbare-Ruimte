@@ -25,8 +25,6 @@ def run_healthcheck_step(
 
     Parameters
     ----------
-    sparkSession : SparkSession
-        The Spark session to use for the health check.
     settings : dict
         The settings dictionary containing configuration parameters.
 
@@ -64,12 +62,12 @@ def run_healthcheck_step(
 
 
 def main():
-    sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
+    spark_session = SparkSession.builder.appName("DataIngestion").getOrCreate()
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
     config_file_path = os.path.join(project_root, "config_databricks.yml")
-    databricks_environment = get_databricks_environment(sparkSession)
+    databricks_environment = get_databricks_environment(spark_session)
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]

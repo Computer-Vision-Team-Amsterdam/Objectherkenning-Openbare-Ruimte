@@ -22,7 +22,7 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_update_signalen_feedback_step(
-    sparkSession,
+    spark_session,
     catalog,
     schema,
     device_id,
@@ -33,9 +33,9 @@ def run_update_signalen_feedback_step(
     job_process_time,
 ):
 
-    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+    setup_tables(spark_session=spark_session, catalog=catalog, schema=schema)
     signalHandler = SignalHandler(
-        sparkSession,
+        spark_session,
         catalog,
         schema,
         device_id,
@@ -79,7 +79,7 @@ def run_update_signalen_feedback_step(
         fields_to_remove={GoldSignalNotificationsManager.id_column, "processed_at"}
     )
 
-    signalen_feedback_df = sparkSession.createDataFrame(  # noqa: F821
+    signalen_feedback_df = spark_session.createDataFrame(  # noqa: F821
         signalen_feedback_entries, schema=modified_schema
     )
     BronzeSignalNotificationsFeedbackManager.insert_data(df=signalen_feedback_df)
@@ -89,8 +89,8 @@ def run_update_signalen_feedback_step(
 
 
 def main():
-    sparkSession = SparkSession.builder.appName("SignalenFeedback").getOrCreate()
-    databricks_environment = get_databricks_environment(sparkSession)
+    spark_session = SparkSession.builder.appName("SignalenFeedback").getOrCreate()
+    databricks_environment = get_databricks_environment(spark_session)
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
@@ -100,7 +100,7 @@ def main():
     ]
 
     run_update_signalen_feedback_step(
-        sparkSession=sparkSession,
+        spark_session=spark_session,
         catalog=settings["catalog"],
         schema=settings["schema"],
         device_id=settings["device_id"],

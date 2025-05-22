@@ -62,7 +62,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         # Retrieve all distinct object classes that have pending candidates.
         if stadsdeel:
             pending_obj_classes = (
-                TableManager.spark.table(table_full_name)
+                TableManager.spark_session.table(table_full_name)
                 .filter(
                     (F.col("status") == "Pending")
                     & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
@@ -75,7 +75,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             )
         else:
             pending_obj_classes = (
-                TableManager.spark.table(table_full_name)
+                TableManager.spark_session.table(table_full_name)
                 .filter((F.col("status") == "Pending") & (F.col("score") >= 0.4))
                 .select("object_class")
                 .distinct()
@@ -98,9 +98,9 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             detection_ids_to_send.extend(valid_detection_ids)
 
         if detection_ids_to_send:
-            detections_to_send_df = TableManager.spark.table(table_full_name).filter(
-                F.col(cls.id_column).isin(detection_ids_to_send)
-            )
+            detections_to_send_df = TableManager.spark_session.table(
+                table_full_name
+            ).filter(F.col(cls.id_column).isin(detection_ids_to_send))
             print(
                 f"Loaded {detections_to_send_df.count()} valid detections to send from {table_full_name}."
             )
@@ -160,7 +160,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             A list of Rows representing candidate detections.
         """
         pending_candidates_df = (
-            TableManager.spark.table(table_full_name)
+            TableManager.spark_session.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
                 & (F.col("score") >= 0.4)

@@ -67,7 +67,7 @@ class DecosDataHandler(BENKAGGConnector):
 
     def __init__(
         self,
-        spark: SparkSession,
+        spark_session: SparkSession,
         az_tenant_id: str,
         db_host: str,
         db_name: str,
@@ -76,7 +76,7 @@ class DecosDataHandler(BENKAGGConnector):
         permit_mapping: Dict[int, List],
     ) -> None:
         super().__init__(az_tenant_id, db_host, db_name, db_port)
-        self.spark = spark
+        self.spark_session = spark_session
         self.object_classes = object_classes
         self.permit_mapping = permit_mapping
 
@@ -355,8 +355,8 @@ class DecosDataHandler(BENKAGGConnector):
             return union_dfs_closest_permits
         else:
             # Return an empty Spark DataFrame with the same schema as objects_coordinates_df.
-            empty_rdd = self.spark.sparkContext.emptyRDD()
-            return self.spark.createDataFrame(
+            empty_rdd = self.spark_session.sparkContext.emptyRDD()
+            return self.spark_session.createDataFrame(
                 empty_rdd, schema=objects_coordinates_df.schema
             )
 
@@ -424,6 +424,6 @@ class DecosDataHandler(BENKAGGConnector):
                     closest_permit_lon=filtered_coords[min_distance_idx][1],
                 )
             )
-        results_df = self.spark.createDataFrame(results)
+        results_df = self.spark_session.createDataFrame(results)
 
         return results_df

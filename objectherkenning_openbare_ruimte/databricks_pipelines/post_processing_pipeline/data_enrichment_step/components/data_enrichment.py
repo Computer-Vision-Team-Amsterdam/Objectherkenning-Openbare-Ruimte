@@ -27,12 +27,12 @@ class DataEnrichment:
 
     def __init__(
         self,
-        sparkSession: SparkSession,
+        spark_session: SparkSession,
         catalog: str,
         schema: str,
         settings: dict[str, Any],
     ):
-        self.sparkSession = sparkSession
+        self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
         self.root_source = settings["storage_account_root_path"]
@@ -162,7 +162,7 @@ class DataEnrichment:
 
     def _run_clustering(self) -> Optional[DataFrame]:
         self.clustering = Clustering(
-            spark=self.sparkSession,
+            spark_session=self.spark_session,
             catalog=self.catalog,
             schema=self.schema,
             detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
@@ -175,7 +175,7 @@ class DataEnrichment:
 
     def _get_bridges_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
         bridgesHandler = VulnerableBridgesHandler(
-            spark=self.sparkSession,
+            spark_session=self.spark_session,
             root_source=self.root_source,
             vuln_bridges_relative_path=self.vuln_bridges_relative_path,
         )
@@ -192,7 +192,7 @@ class DataEnrichment:
 
     def _get_decos_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
         decosDataHandler = DecosDataHandler(
-            spark=self.sparkSession,
+            spark_session=self.spark_session,
             az_tenant_id=self.az_tenant_id,
             db_host=self.db_host,
             db_name=self.db_name,
@@ -209,7 +209,7 @@ class DataEnrichment:
         return closest_permits_df
 
     def _get_stadsdelen_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        stadsdelenHandler = StadsdelenHandler(spark_session=self.sparkSession)
+        stadsdelenHandler = StadsdelenHandler(spark_session=self.spark_session)
         stadsdelen_df = stadsdelenHandler.lookup_stadsdeel_for_detections(
             objects_coordinates_df=objects_coordinates_df,
             id_column=self.id_column,

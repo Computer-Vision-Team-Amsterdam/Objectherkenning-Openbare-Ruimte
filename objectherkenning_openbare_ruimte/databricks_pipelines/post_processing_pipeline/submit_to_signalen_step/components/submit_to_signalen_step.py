@@ -20,12 +20,12 @@ class SubmitToSignalenStep:
 
     def __init__(
         self,
-        sparkSession: SparkSession,
+        spark_session: SparkSession,
         catalog: str,
         schema: str,
         settings: dict[str, Any],
     ):
-        self.sparkSession = sparkSession
+        self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
         self.job_process_time = get_job_process_time(
@@ -43,7 +43,7 @@ class SubmitToSignalenStep:
         self.active_task_config = settings["job_config"]["active_task"]
 
         self.signalHandler = SignalHandler(
-            sparkSession=sparkSession,
+            spark_session=spark_session,
             catalog=catalog,
             schema=schema,
             device_id=settings["device_id"],
@@ -118,7 +118,7 @@ class SubmitToSignalenStep:
                         },
                     )
                 )
-                successful_df = self.sparkSession.createDataFrame(
+                successful_df = self.spark_session.createDataFrame(
                     successful_notifications, schema=modified_schema
                 )
                 GoldSignalNotificationsManager.insert_data(df=successful_df)
@@ -130,7 +130,7 @@ class SubmitToSignalenStep:
                         "processed_at",
                     },
                 )
-                unsuccessful_df = self.sparkSession.createDataFrame(
+                unsuccessful_df = self.spark_session.createDataFrame(
                     unsuccessful_notifications, schema=modified_schema
                 )
                 SilverEnrichedDetectionMetadataQuarantineManager.insert_data(

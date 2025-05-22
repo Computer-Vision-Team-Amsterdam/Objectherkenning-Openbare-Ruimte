@@ -27,7 +27,7 @@ class SilverDetectionMetadataManager(TableManager):
             FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
             WHERE {cls.id_column} = {detection_id}
         """  # nosec
-        image_name_result_df = TableManager.spark.sql(fetch_image_name_query)
+        image_name_result_df = TableManager.spark_session.sql(fetch_image_name_query)
 
         image_name = image_name_result_df.collect()[0]["image_name"]
         return image_name
@@ -52,7 +52,7 @@ class SilverDetectionMetadataManager(TableManager):
             FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
             WHERE {cls.id_column} = {detection_id}
         """  # nosec
-        frame_id_result_df = TableManager.spark.sql(fetch_frame_id_query)
+        frame_id_result_df = TableManager.spark_session.sql(fetch_frame_id_query)
 
         frame_id = frame_id_result_df.collect()[0]["frame_id"]
         return frame_id

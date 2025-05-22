@@ -82,7 +82,7 @@ class DataLoader:
 
         # 2) Read JSON data twice, each with its own schemaLocation
         adapter = JsonFrameDetectionAdapter(
-            spark=self.spark_session,
+            spark_session=self.spark_session,
             json_source=json_source,
             frame_schema_loc=frame_schema_loc,
             detection_schema_loc=detection_schema_loc,

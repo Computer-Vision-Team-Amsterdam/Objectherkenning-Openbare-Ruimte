@@ -19,22 +19,22 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_ingest_metadata_step():
-    sparkSession = SparkSession.builder.appName("DataIngestion").getOrCreate()
+    spark_session = SparkSession.builder.appName("DataIngestion").getOrCreate()
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
     config_file_path = os.path.join(project_root, "config_databricks.yml")
-    databricks_environment = get_databricks_environment(sparkSession)
+    databricks_environment = get_databricks_environment(spark_session)
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
 
     catalog = settings["catalog"]
     schema = settings["schema"]
-    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+    setup_tables(spark_session=spark_session, catalog=catalog, schema=schema)
 
     dataLoader = DataLoader(
-        spark_session=sparkSession,
+        spark_session=spark_session,
         catalog=settings["catalog"],
         schema=settings["schema"],
         root_source=settings["storage_account_root_path"],
