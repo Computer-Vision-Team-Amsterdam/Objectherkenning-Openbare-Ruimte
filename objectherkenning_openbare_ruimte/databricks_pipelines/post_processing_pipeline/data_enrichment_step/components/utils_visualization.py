@@ -157,6 +157,7 @@ def generate_map(
             <strong>Detection ID:</strong> {detection_id}<br>
             <strong>Priority ID:</strong> {detection_priority_id}<br>
             <strong>Closest Permit ID:</strong> {closest_permit_id}<br>
+            <strong>On private terrain:</strong> {"yes" if on_private_terrain else "no"}<br>
             <img src="{data_uri}" alt="Detection image" style="max-width:100%; height:auto;">
         </div>
         """
