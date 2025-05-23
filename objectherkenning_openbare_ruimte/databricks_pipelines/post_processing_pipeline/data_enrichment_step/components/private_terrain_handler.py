@@ -12,6 +12,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.reference_db_c
 
 class PrivateTerrainHandler(ReferenceDatabaseConnector):
 
+    beheerkaart_table_name = "beheerkaart_basis_kaart_v1"
     detection_crs = "EPSG:4326"
     terrain_crs = "EPSG:28992"
 
@@ -42,8 +43,8 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         from WKB hex strings to Shapely geometry objects. Processed geometries are stored
         in the public_terrains attribute.
         """
-        query = "SELECT geometrie FROM beheerkaart_basis_kaart WHERE agg_indicatie_belast_recht = FALSE"
         print("Querying public terrain data from the database...")
+        query = f"SELECT geometrie FROM {self.beheerkaart_table_name} WHERE agg_indicatie_belast_recht = FALSE"  # nosec B608
         result_df = self.run(query)
         if result_df.empty:
             print("No public terrain data found.")
@@ -104,7 +105,7 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
             on_private_terrain = False
             if self.spatial_tree:
                 object_point = Point(
-                    self.transformer.transform(row.object_lon, row.object_lat)
+                    self.transformer.transform(row.gps_lon, row.gps_lat)
                 ).buffer(self.detection_buffer)
 
                 # If there are no overlapping public polygons, assume the detection is on private terrain.
