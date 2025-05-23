@@ -108,7 +108,6 @@ class SignalHandler:
             az_tenant_id=az_tenant_id,
             db_host=db_host,
             db_name=db_name,
-            db_port=5432,
         )
 
     def get_signal(self, sig_id: str) -> Any:

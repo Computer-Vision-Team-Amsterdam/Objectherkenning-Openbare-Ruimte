@@ -19,8 +19,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.reference_db_c
 class BENKAGGConnector(ReferenceDatabaseConnector):
     bankagg_table_name = "benkagg_adresseerbareobjecten_v1"
 
-    def __init__(self, az_tenant_id, db_host, db_name, db_port) -> None:
-        super().__init__(az_tenant_id, db_host, db_name, db_port)
+    def __init__(self, az_tenant_id, db_host, db_name) -> None:
+        super().__init__(az_tenant_id, db_host, db_name)
 
     def get_benkagg_adresseerbareobjecten_by_address(
         self, street, house_number, postcode
@@ -71,11 +71,10 @@ class DecosDataHandler(BENKAGGConnector):
         az_tenant_id: str,
         db_host: str,
         db_name: str,
-        db_port: int,
         object_classes: Dict[int, str],
         permit_mapping: Dict[int, List],
     ) -> None:
-        super().__init__(az_tenant_id, db_host, db_name, db_port)
+        super().__init__(az_tenant_id, db_host, db_name)
         self.spark_session = spark_session
         self.object_classes = object_classes
         self.permit_mapping = permit_mapping

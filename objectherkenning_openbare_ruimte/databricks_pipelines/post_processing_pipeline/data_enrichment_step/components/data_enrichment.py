@@ -41,7 +41,6 @@ class DataEnrichment:
         self.az_tenant_id = settings["azure_tenant_id"]
         self.db_host = settings["reference_database"]["host"]
         self.db_name = settings["reference_database"]["name"]
-        self.db_port = 5432  # TODO make a param
         self.device_id = settings["device_id"]
         self.job_process_time = get_job_process_time(
             is_first_pipeline_step=False,
@@ -201,7 +200,6 @@ class DataEnrichment:
             az_tenant_id=self.az_tenant_id,
             db_host=self.db_host,
             db_name=self.db_name,
-            db_port=self.db_port,
             object_classes=self.object_classes,
             permit_mapping=self.permit_mapping,
         )
@@ -227,7 +225,6 @@ class DataEnrichment:
             az_tenant_id=self.az_tenant_id,
             db_host=self.db_host,
             db_name=self.db_name,
-            db_port=self.db_port,
             detection_buffer=self.public_terrain_detection_buffer,
         )
         private_terrain_df = (

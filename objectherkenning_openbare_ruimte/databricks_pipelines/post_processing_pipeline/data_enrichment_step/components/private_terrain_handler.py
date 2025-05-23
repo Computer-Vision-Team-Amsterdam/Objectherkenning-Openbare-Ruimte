@@ -22,10 +22,9 @@ class PrivateTerrainHandler(ReferenceDatabaseConnector):
         az_tenant_id: str,
         db_host: str,
         db_name: str,
-        db_port: int,
         detection_buffer: float = 10,
     ) -> None:
-        super().__init__(az_tenant_id, db_host, db_name, db_port)
+        super().__init__(az_tenant_id, db_host, db_name)
         self.spark_session = spark_session
         self.detection_buffer = detection_buffer
 

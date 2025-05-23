@@ -37,7 +37,6 @@ def run_healthcheck_step(
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
-        db_port=5432,
     )
 
     result = benkAggConnector.get_benkagg_adresseerbareobjecten_by_id(
