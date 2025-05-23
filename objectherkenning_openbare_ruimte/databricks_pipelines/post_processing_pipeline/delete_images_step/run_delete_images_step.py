@@ -39,23 +39,19 @@ def run_delete_images_step(
     print(f"{len(image_files_current_run)} images found on {stlanding_image_folder}.")
 
     # Must compare candidates for deletion and images to keep, since one image may have multiple detections.
-    delete_candidate_image_names = [
+    delete_candidate_image_names: set = {
         SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
         for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_candidates_for_deletion(
             job_date=job_date
         )
-    ]
-    to_keep_image_names = [
+    }
+    to_keep_image_names: set = {
         SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
         for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_to_keep_current_run(
             job_date=job_date
         )
-    ]
-    to_delete_image_names = [
-        candidate
-        for candidate in delete_candidate_image_names
-        if candidate not in to_keep_image_names
-    ]
+    }
+    to_delete_image_names = delete_candidate_image_names - to_keep_image_names
     print(f"{len(to_delete_image_names)} images to delete.")
 
     successful_deletions = 0
