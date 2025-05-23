@@ -11,6 +11,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_m
 class SilverEnrichedDetectionMetadataManager(TableManager):
     table_name: str = "silver_enriched_detection_metadata"
     id_column: str = "detection_id"
+    score_threshold = 0.4
 
     @classmethod
     def get_top_pending_records(
@@ -49,7 +50,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
                 .filter(
                     (F.col("status") == "Pending")
                     & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
-                    & (F.col("score") >= 0.4)
+                    & (F.col("score") >= cls.score_threshold)
                 )
                 .select("object_class")
                 .distinct()
@@ -59,7 +60,10 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         else:
             pending_obj_classes = (
                 TableManager.spark_session.table(table_full_name)
-                .filter((F.col("status") == "Pending") & (F.col("score") >= 0.4))
+                .filter(
+                    (F.col("status") == "Pending")
+                    & (F.col("score") >= cls.score_threshold)
+                )
                 .select("object_class")
                 .distinct()
                 .rdd.flatMap(lambda x: x)
@@ -122,7 +126,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             TableManager.spark_session.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
-                & (F.col("score") >= 0.4)
+                & (F.col("score") >= cls.score_threshold)
                 & (F.col("object_class") == obj_class)
             )
             .orderBy(F.col("score").desc())
@@ -157,7 +161,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         return (
             cls.get_table()
             .filter(
-                (F.col("score") >= 1)
+                (F.col("score") >= cls.score_threshold)
                 & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
             )
             .select(cls.id_column)
@@ -182,7 +186,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         return (
             cls.get_table()
             .filter(
-                (F.col("score") < 1)
+                (F.col("score") < cls.score_threshold)
                 & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
             )
             .select(cls.id_column)
