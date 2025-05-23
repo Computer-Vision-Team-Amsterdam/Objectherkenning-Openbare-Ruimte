@@ -130,7 +130,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         )
         if exclude_private_terrain_detections:
             pending_candidates_df = pending_candidates_df.filter(
-                F.col("private_terrain") == True
+                F.col("private_terrain") == False
             )
         if stadsdeel:
             pending_candidates_df = pending_candidates_df.filter(

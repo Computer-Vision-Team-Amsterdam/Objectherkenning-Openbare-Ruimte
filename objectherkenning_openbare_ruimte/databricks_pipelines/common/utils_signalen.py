@@ -517,7 +517,7 @@ class SignalHandler:
                     json_content=notification_json, filename=image_upload_path
                 )
                 print(
-                    f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
+                    f"Created signal {signal_id} for detection {detection_id} on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
                 )
                 entry_dict["signal_id"] = signal_id
                 updated_entry = Row(**entry_dict)
