@@ -59,7 +59,12 @@ class DataEnrichment:
         self.active_object_classes_for_clustering = settings["job_config"][
             "clustering"
         ]["active_object_classes"]
-        self.public_terrain_detection_buffer = 10  # TODO make a param
+        self.exclude_private_terrain = settings["job_config"][
+            "exclude_private_terrain_detections"
+        ]
+        self.public_terrain_detection_buffer = settings["job_config"][
+            "private_terrain_detection_buffer"
+        ]
 
     def run_data_enrichment_step(self):
         pending_detections = (
@@ -236,11 +241,15 @@ class DataEnrichment:
         return private_terrain_df
 
     def _create_map(self, enriched_df: DataFrame) -> None:
+        map_file_name = f"{self.job_process_time}-map"
+        map_file_path = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/"
+
         utils_visualization.generate_map(
             dataframe=enriched_df,
-            annotate_detection_images=self.annotate_detection_images,
-            name=f"{self.job_process_time}-map",
-            path=f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
+            file_name=map_file_name,
+            file_path=map_file_path,
             catalog=self.catalog,
             device_id=self.device_id,
+            annotate_detection_images=self.annotate_detection_images,
+            exclude_private_terrain=self.exclude_private_terrain,
         )

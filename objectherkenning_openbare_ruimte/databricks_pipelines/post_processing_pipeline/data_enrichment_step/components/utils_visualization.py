@@ -5,6 +5,7 @@ import cv2
 import folium
 from databricks.sdk.runtime import *  # noqa: F403, F401
 from folium.plugins import BeautifyIcon
+from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, row_number
 from pyspark.sql.window import Window
 from shapely.geometry import Point
@@ -20,12 +21,13 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 
 
 def generate_map(
-    dataframe,
-    annotate_detection_images,
-    name,
-    path,
-    catalog,
-    device_id,
+    dataframe: DataFrame,
+    file_name: str,
+    file_path: str,
+    catalog: str,
+    device_id: str,
+    annotate_detection_images: bool = False,
+    exclude_private_terrain: bool = False,
 ) -> None:
     """
     Generates an interactive HTML map visualizing object detections, their closest vulnerable bridges,
@@ -39,14 +41,15 @@ def generate_map(
 
     :param dataframe: A Spark DataFrame containing detection data, GPS coordinates, associated image names,
                       closest bridge and permit information, and detection scores.
-    :param name: Optional name for the saved HTML map. If provided, it is used as the file name.
-    :param path: Directory path where the map HTML file will be saved.
+    :param file_name: Name for the saved HTML map.
+    :param file_path: Directory path where the map HTML file will be saved.
     :param catalog: Catalog name used to construct the image path (Databricks volume).
     :param device_id: Device ID used in the image path.
-    :param job_process_time: Timestamp used to resolve the image folder structure based on the job run.
+    :param annotate_detection_images: Whether to draw bounding boxes on images.
+    "param exclude_private_terrain: Whether to gray out private terrain detections.
     """
 
-    os.makedirs(path, exist_ok=True)
+    os.makedirs(file_path, exist_ok=True)
 
     # Amsterdam coordinates
     latitude = 52.377956
@@ -108,16 +111,22 @@ def generate_map(
         x_center_norm, y_center_norm = row["x_center"], row["y_center"]
         width_norm, height_norm = row["width"], row["height"]
         object_class = row["object_class"]
+        on_private_terrain = row["private_terrain"]
 
         # Create a custom DivIcon for the marker with the priority_id
-        marker_color = get_marker_color(detection_score)
         icon_type = icon_map.get(object_class, "info-sign")
+        if exclude_private_terrain and on_private_terrain:
+            marker_color = "gray"
+            background_color = "lightgray"
+        else:
+            marker_color = get_marker_color(detection_score)
+            background_color = "white"
         detection_icon = BeautifyIcon(
             icon=icon_type,
             icon_shape="marker",
             border_color=marker_color,
-            background_color="white",
-            text_color="#000000",
+            background_color=background_color,
+            text_color="black",
         )
 
         # Get image folder path
@@ -222,7 +231,7 @@ def generate_map(
     Map.get_root().html.add_child(folium.Element(object_class_legend))
 
     # create name for the map
-    print(f"Map is saved at {name}")
-    full_path = path + name + ".html"
+    print(f"Map is saved at {file_name}")
+    full_path = file_path + file_name + ".html"
     print(f"Saving at {full_path}")
     Map.save(full_path)
