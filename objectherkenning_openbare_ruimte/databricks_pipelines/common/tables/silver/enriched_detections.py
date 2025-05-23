@@ -79,10 +79,9 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
                 exclude_private_terrain_detections,
                 stadsdeel,
             )
-            if send_limit and (len(candidate_rows) < send_limit):
-                print(
-                    f"  Only {len(candidate_rows)} detections found for '{obj_class}' (send limit {send_limit})."
-                )
+            print(
+                f"  Found {len(candidate_rows)} detections for object class '{obj_class}' (send limit {send_limit if send_limit else 'not set'})."
+            )
             detection_ids = [candidate[cls.id_column] for candidate in candidate_rows]
             detection_ids_to_send.extend(detection_ids)
 
@@ -136,7 +135,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             pending_candidates_df = pending_candidates_df.filter(
                 F.lower(F.col("stadsdeel")) == stadsdeel.lower()
             )
-        if send_limit:
+        if send_limit is not None:
             return pending_candidates_df.take(send_limit)
         else:
             return pending_candidates_df.collect()
