@@ -6,12 +6,6 @@ from pyspark.sql import DataFrame, Row
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.private_terrain_handler import (  # noqa: E402
-    PrivateTerrainHandler,
-)
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.terrain_data_connector import (  # noqa: E402
-    TerrainDatabaseConnector,
-)
 
 
 class SilverEnrichedDetectionMetadataManager(TableManager):
@@ -21,10 +15,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
     @classmethod
     def get_top_pending_records(
         cls,
-        exclude_private_terrain_detections: bool,
-        az_tenant_id: str,
-        db_host: str,
-        db_name: str,
+        exclude_private_terrain_detections: bool = False,
         stadsdeel: Optional[str] = None,
         active_object_classes: List[int] = [],
         send_limits: Dict[int, int] = {},
@@ -48,14 +39,6 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
         )
         detection_ids_to_send = []
-
-        # Get the handler for detections on private terrain if needed.
-        privateTerrainHandler = cls.get_private_terrain_handler(
-            exclude_private_terrain_detections,
-            az_tenant_id,
-            db_host,
-            db_name,
-        )
 
         print(f"Loading top pending detections to send from {table_full_name} ...")
 
@@ -89,13 +72,19 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
 
         for obj_class in pending_obj_classes:
             send_limit = send_limits.get(obj_class, None)
-            candidates = cls.get_pending_candidates(
-                table_full_name, obj_class, stadsdeel
+            candidate_rows = cls.get_pending_candidates(
+                table_full_name,
+                obj_class,
+                send_limit,
+                exclude_private_terrain_detections,
+                stadsdeel,
             )
-            valid_detection_ids = cls.get_valid_detection_ids(
-                candidates, privateTerrainHandler, send_limit, obj_class
-            )
-            detection_ids_to_send.extend(valid_detection_ids)
+            if send_limit and (len(candidate_rows) < send_limit):
+                print(
+                    f"  Only {len(candidate_rows)} detections found for '{obj_class}' (send limit {send_limit})."
+                )
+            detection_ids = [candidate[cls.id_column] for candidate in candidate_rows]
+            detection_ids_to_send.extend(detection_ids)
 
         if detection_ids_to_send:
             detections_to_send_df = TableManager.spark_session.table(
@@ -110,43 +99,13 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             return None
 
     @classmethod
-    def get_private_terrain_handler(
-        cls,
-        exclude_private_terrain_detections: bool,
-        az_tenant_id: str,
-        db_host: str,
-        db_name: str,
-    ) -> Optional[PrivateTerrainHandler]:
-        """
-        Instantiate and return a PrivateTerrainHandler if private terrain detections should be excluded.
-
-        Parameters:
-            exclude_private_terrain_detections (bool): Flag indicating whether to exclude detections on private terrain.
-            az_tenant_id (str): Azure tenant ID required for database access.
-            db_host (str): Host address of the database.
-            db_name (str): Name of the database.
-
-        Returns:
-            Optional[PrivateTerrainHandler]: An instance of PrivateTerrainHandler if exclusion is enabled. None
-            if exclusion is disabled or no public terrain polgyons were retrieved by terrainDatabaseConnector.
-        """
-        if exclude_private_terrain_detections:
-            terrainDatabaseConnector = TerrainDatabaseConnector(
-                az_tenant_id=az_tenant_id,
-                db_host=db_host,
-                db_name=db_name,
-                db_port=5432,
-            )
-            public_terrains = (
-                terrainDatabaseConnector.query_and_process_public_terrains()
-            )
-            if public_terrains:
-                return PrivateTerrainHandler(public_terrains=public_terrains)
-        return None
-
-    @classmethod
     def get_pending_candidates(
-        cls, table_full_name: str, obj_class: int, stadsdeel: Optional[str] = None
+        cls,
+        table_full_name: str,
+        obj_class: int,
+        send_limit: Optional[int] = None,
+        exclude_private_terrain_detections: bool = False,
+        stadsdeel: Optional[str] = None,
     ) -> List[Row]:
         """
         Fetches candidate detections for a given object class that are pending and meet the score criteria.
@@ -154,12 +113,13 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         Parameters:
             table_full_name: The fully-qualified table name.
             obj_class: The object class for which pending detections should be fetched.
+            exclude_private_terrain_detections: Whether to exclude detections on private terrain.
             stadsdeel (str | None): Name of stadsdeel or None to get all results
 
         Returns:
             A list of Rows representing candidate detections.
         """
-        pending_candidates_df = (
+        pending_candidates_df: DataFrame = (
             TableManager.spark_session.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
@@ -168,61 +128,18 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             )
             .orderBy(F.col("score").desc())
         )
+        if exclude_private_terrain_detections:
+            pending_candidates_df = pending_candidates_df.filter(
+                F.col("private_terrain") == True
+            )
         if stadsdeel:
             pending_candidates_df = pending_candidates_df.filter(
                 F.lower(F.col("stadsdeel")) == stadsdeel.lower()
             )
-        return pending_candidates_df.collect()
-
-    @classmethod
-    def get_valid_detection_ids(
-        cls,
-        candidates: List[Row],
-        privateTerrainHandler: Optional[PrivateTerrainHandler],
-        send_limit: Optional[int],
-        obj_class: int,
-    ) -> List[Any]:
-        """
-        Processes candidate records, filtering out those on private terrain if applicable,
-        and returns valid detection IDs.
-
-        Parameters:
-            candidates: List of candidate Rows to evaluate.
-            privateTerrainHandler: An object to determine if a candidate is on private terrain.
-            send_limit: Maximum number of detections to return.
-            obj_class: The object class for which candidates are evaluated.
-
-        Returns:
-            A list of valid detection IDs from the candidate records.
-        """
-        valid_ids = []
-        filtered_private_count = 0
-
-        for candidate in candidates:
-            # Check if the candidate is not on private terrain or if no terrain handler is provided.
-            if (
-                privateTerrainHandler is None
-                or not privateTerrainHandler.on_private_terrain(candidate)
-            ):
-                valid_ids.append(candidate[cls.id_column])
-                # If a send limit is specified, break once it is reached.
-                if send_limit is not None and len(valid_ids) >= send_limit:
-                    break
-            else:
-                filtered_private_count += 1
-                print(
-                    f"  Skipping detection {candidate[cls.id_column]} because it is on private terrain."
-                )
-                continue
-
-        if valid_ids:
-            if send_limit is not None and len(valid_ids) < send_limit:
-                print(
-                    f"  Only {len(valid_ids)} detections found for '{obj_class}' (send limit {send_limit})."
-                )
+        if send_limit:
+            return pending_candidates_df.take(send_limit)
         else:
-            print(f"  No candidates present for object_class: '{obj_class}'.")
-        return valid_ids
+            return pending_candidates_df.collect()
 
     @classmethod
     def get_detection_ids_to_keep_current_run(cls, job_date: str) -> List[Any]:

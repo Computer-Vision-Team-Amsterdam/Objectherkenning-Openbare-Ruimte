@@ -91,10 +91,7 @@ class SubmitToSignalenStep:
         send_limits = config.get("send_limit", {})
 
         top_scores_df = SilverEnrichedDetectionMetadataManager.get_top_pending_records(
-            self.exclude_private_terrain_detections,
-            self.az_tenant_id,
-            self.db_host,
-            self.db_name,
+            exclude_private_terrain_detections=self.exclude_private_terrain_detections,
             stadsdeel=stadsdeel,
             active_object_classes=config.get("active_object_classes", []),
             send_limits=send_limits,
