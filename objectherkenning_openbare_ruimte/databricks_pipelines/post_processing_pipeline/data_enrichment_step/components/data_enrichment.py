@@ -241,7 +241,7 @@ class DataEnrichment:
         return private_terrain_df
 
     def _create_map(self, enriched_df: DataFrame) -> None:
-        map_file_name = f"{self.job_process_time}-map"
+        map_file_name = f"{self.job_process_time.strftime('%Y-%m-%d %Hh%Mm%Ss')}-map"
         map_file_path = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/"
 
         utils_visualization.generate_map(
