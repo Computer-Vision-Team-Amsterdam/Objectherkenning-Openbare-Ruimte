@@ -503,6 +503,7 @@ class SignalHandler:
 
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)
+            status = entry_dict.pop("status", None)
 
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405
@@ -520,6 +521,7 @@ class SignalHandler:
                     f"Created signal {signal_id} for detection {detection_id} on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
                 )
                 entry_dict["signal_id"] = signal_id
+                entry_dict["status"] = status
                 updated_entry = Row(**entry_dict)
                 successful_notifications.append(updated_entry)
             except Exception as e:
