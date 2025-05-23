@@ -20,18 +20,19 @@ databricks_pipelines:
     job_config:
       annotate_detection_images: False
       exclude_private_terrain_detections: False
+      private_terrain_detection_buffer: 10
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
         Centrum:
           active_object_classes: [2, 3, 4]
           send_limit:
-            2: 4
-            3: 3
-            4: 3
+            2: 2
+            3: 1
+            4: 1
         Zuid:
           active_object_classes: [2]
           send_limit:
-            2: 10
+            2: 1
       clustering:
         active_object_classes: [2, 3, 4]
       object_classes:
@@ -72,6 +73,7 @@ databricks_pipelines:
     job_config:
       annotate_detection_images: False
       exclude_private_terrain_detections: False
+      private_terrain_detection_buffer: 10
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
         Centrum:
