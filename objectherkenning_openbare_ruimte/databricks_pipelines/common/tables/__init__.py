@@ -6,12 +6,12 @@ from .silver.detections import (
     SilverDetectionMetadataManager,
     SilverDetectionMetadataQuarantineManager,
 )
+from .silver.enriched_detections import (
+    SilverEnrichedDetectionMetadataManager,
+    SilverEnrichedDetectionMetadataQuarantineManager,
+)
 from .silver.frames import (
     SilverFrameMetadataManager,
     SilverFrameMetadataQuarantineManager,
-)
-from .silver.objects import (
-    SilverObjectsPerDayManager,
-    SilverObjectsPerDayQuarantineManager,
 )
 from .table_manager import TableManager

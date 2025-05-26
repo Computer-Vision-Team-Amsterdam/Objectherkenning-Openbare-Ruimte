@@ -35,13 +35,13 @@ class SignalConnectionConfigurer:
 
     def __init__(
         self,
-        sparkSession: SparkSession,
+        spark_session: SparkSession,
         client_id,
         client_secret_name,
         access_token_url,
         base_url,
     ):
-        self.sparkSession = sparkSession
+        self.spark_session = spark_session
         self._client_id = client_id
         self._client_secret_name = client_secret_name
         self.access_token_url = access_token_url
@@ -75,7 +75,7 @@ class SignalConnectionConfigurer:
 class SignalHandler:
     def __init__(
         self,
-        sparkSession,
+        spark_session,
         catalog,
         schema,
         device_id,
@@ -85,7 +85,7 @@ class SignalHandler:
         db_name,
         object_classes,
     ):
-        self.sparkSession = sparkSession
+        self.spark_session = spark_session
         self.device_id = device_id
         self.catalog_name = catalog
         self.schema = schema
@@ -97,7 +97,7 @@ class SignalHandler:
         access_token_url = signalen_settings["access_token_url"]
         base_url = signalen_settings["base_url"]
         signalConnectionConfigurer = SignalConnectionConfigurer(
-            sparkSession, client_id, client_secret_name, access_token_url, base_url
+            spark_session, client_id, client_secret_name, access_token_url, base_url
         )
         self.base_url: str = signalConnectionConfigurer.get_base_url()  # type: ignore
         access_token = signalConnectionConfigurer.get_access_token()
@@ -165,9 +165,6 @@ class SignalHandler:
             If the server responds with a status code other than 201 (Created),
             an HTTPError will be raised with the response status and message.
         """
-        print(
-            f"requests.post({self.base_url}, json={json_content}, headers={self.headers}, verify={self.verify_ssl}, timeout=60)"
-        )
         response = requests.post(
             self.base_url,
             json=json_content,
@@ -175,7 +172,6 @@ class SignalHandler:
             verify=self.verify_ssl,
             timeout=60,
         )
-        print(response)
 
         if response.status_code == 201:
             print(
@@ -483,7 +479,9 @@ class SignalHandler:
             "notification_date", F.to_date(F.lit(date_of_notification))
         )
         silverFrameAndDetectionMetadata = SilverMetadataAggregator(
-            spark=self.sparkSession, catalog=self.catalog_name, schema=self.schema
+            spark_session=self.spark_session,
+            catalog=self.catalog_name,
+            schema=self.schema,
         )
         successful_notifications = []
         unsuccessful_notifications = []
@@ -506,7 +504,6 @@ class SignalHandler:
 
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)
-            entry_dict.pop("id", None)
 
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405

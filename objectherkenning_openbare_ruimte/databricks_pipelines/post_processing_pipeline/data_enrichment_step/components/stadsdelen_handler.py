@@ -77,6 +77,7 @@ class StadsdelenHandler:
     def lookup_stadsdeel_for_detections(
         self,
         objects_coordinates_df: DataFrame,
+        id_column: str = "detection_id",
     ) -> DataFrame:
         """
         Look up the stadsdeel for each detection location. Returns a DataFrame
@@ -91,14 +92,16 @@ class StadsdelenHandler:
             if result:
                 results.append(
                     Row(
-                        detection_id=row.detection_id,  # retain the detection id for joining
+                        detection_id=row[
+                            id_column
+                        ],  # retain the detection id for joining
                         stadsdeel=result[0],
                         stadsdeel_code=result[1],
                     )
                 )
             else:
                 print(
-                    f"Object with detection_id {row.detection_id} at location {lat_lon} not within a known Stadsdeel."
+                    f"Object with detection_id {row[id_column]} at location {lat_lon} not within a known Stadsdeel."
                 )
 
         if results:

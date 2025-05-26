@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, date_format  # noqa: E402
+from pyspark.sql.functions import col, date_format
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
@@ -9,6 +9,7 @@ MAX_GPS_DELAY = 5  # in seconds
 
 class BronzeFrameMetadataManager(TableManager):
     table_name: str = "bronze_frame_metadata"
+    id_column: str = "frame_id"
 
     @classmethod
     def filter_valid_metadata(cls):
@@ -32,10 +33,7 @@ class BronzeFrameMetadataManager(TableManager):
 
         valid_metadata = valid_metadata.withColumn(
             "gps_delay",
-            (
-                col("pylon0_frame_timestamp").cast("long")
-                - col("gps_internal_timestamp").cast("long")
-            ),
+            (col("image_timestamp").cast("long") - col("gps_timestamp").cast("long")),
         )
 
         valid_metadata = valid_metadata.filter(col("gps_delay") <= MAX_GPS_DELAY)
@@ -62,10 +60,7 @@ class BronzeFrameMetadataManager(TableManager):
         )
         invalid_metadata = invalid_metadata.withColumn(
             "gps_delay",
-            (
-                col("pylon0_frame_timestamp").cast("long")
-                - col("gps_internal_timestamp").cast("long")
-            ),
+            (col("image_timestamp").cast("long") - col("gps_timestamp").cast("long")),
         )
 
         invalid_metadata = invalid_metadata.filter(col("gps_delay") > MAX_GPS_DELAY)
@@ -75,7 +70,7 @@ class BronzeFrameMetadataManager(TableManager):
         return invalid_metadata
 
     @classmethod
-    def get_all_image_names_current_run(cls, job_date: str):
+    def get_all_image_names_at_date(cls, job_date: str):
         return (
             cls.get_table()
             .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
@@ -85,10 +80,10 @@ class BronzeFrameMetadataManager(TableManager):
         )
 
     @classmethod
-    def get_gps_internal_timestamp_of_current_run(cls, job_date: str):
+    def get_gps_timestamp_at_date(cls, job_date: str):
         return (
             cls.get_table()
             .filter((date_format(col("processed_at"), "yyyy-MM-dd") == job_date))
-            .select("gps_internal_timestamp")
+            .select("gps_timestamp")
             .first()[0]
         )

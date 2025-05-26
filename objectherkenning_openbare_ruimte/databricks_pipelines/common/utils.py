@@ -24,6 +24,12 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
         default="",
         help='"[{2: x, 3: y, 4: z}, {2: x2, 3: y2, 4: z2}, ...]"',
     )
+    parser.add_argument(
+        "-f",
+        type=str,
+        default="",
+        help="Dummy argument to prevent errors when running pipeline step interactively.",
+    )
     return parser
 
 
@@ -57,6 +63,11 @@ def parse_task_args_to_settings(
             _send_limits = [_send_limits]
         return _send_limits
 
+    if args.send_limits and not args.stadsdelen:
+        raise ValueError(
+            "Must provide parameter `--stadsdelen` if `--send_limits` are given."
+        )
+
     if args.stadsdelen:
         stadsdelen = _parse_stadsdelen_arg(args.stadsdelen)
     else:
@@ -69,10 +80,6 @@ def parse_task_args_to_settings(
         print("Using default send limits.")
         send_limits = None
 
-    if send_limits and not stadsdelen:
-        raise ValueError(
-            "Must provide parameter `stadsdelen` if `send_limits` are given."
-        )
     if (stadsdelen and send_limits) and not (len(stadsdelen) == len(send_limits)):
         raise ValueError(
             f"Argument number mismatch: {len(stadsdelen)} stadsdelen with {len(send_limits)} send limits."
@@ -150,12 +157,11 @@ def compare_dataframes(df1, df2, df1_name, df2_name):
     print(50 * "-")
 
 
-def unix_to_yyyy_mm_dd(unix_timestamp) -> str:
-    date_time = datetime.fromtimestamp(unix_timestamp)
-    return date_time.strftime("%Y-%m-%d")
+def get_landingzone_folder_for_timestamp(timestamp: datetime) -> str:
+    return timestamp.strftime("%Y-%m-%d")
 
 
-def setup_tables(spark, catalog, schema):
-    TableManager.spark = spark
+def setup_tables(spark_session, catalog, schema):
+    TableManager.spark_session = spark_session
     TableManager.catalog = catalog
     TableManager.schema = schema

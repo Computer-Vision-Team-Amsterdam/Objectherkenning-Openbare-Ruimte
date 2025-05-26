@@ -23,9 +23,9 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 )
 
 
-def run_metadata_healthcheck_step(sparkSession, catalog, schema, job_process_time):
+def run_metadata_healthcheck_step(spark_session, catalog, schema, job_process_time):
 
-    setup_tables(spark=sparkSession, catalog=catalog, schema=schema)
+    setup_tables(spark_session=spark_session, catalog=catalog, schema=schema)
     valid_frame_metadata = BronzeFrameMetadataManager.filter_valid_metadata()
     invalid_frame_metadata = BronzeFrameMetadataManager.filter_invalid_metadata()
 
@@ -55,18 +55,18 @@ def run_metadata_healthcheck_step(sparkSession, catalog, schema, job_process_tim
 
 
 if __name__ == "__main__":
-    sparkSession = SparkSession.builder.appName("MetadataHealthChecker").getOrCreate()
+    spark_session = SparkSession.builder.appName("MetadataHealthChecker").getOrCreate()
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )
     config_file_path = os.path.join(project_root, "config_databricks.yml")
-    databricks_environment = get_databricks_environment(sparkSession)
+    databricks_environment = get_databricks_environment(spark_session)
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
 
     run_metadata_healthcheck_step(
-        sparkSession=sparkSession,
+        spark_session=spark_session,
         catalog=settings["catalog"],
         schema=settings["schema"],
         job_process_time=get_job_process_time(

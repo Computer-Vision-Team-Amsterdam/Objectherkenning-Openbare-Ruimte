@@ -3,8 +3,11 @@ import tempfile
 from datetime import datetime
 from typing import List
 
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
+    BronzeFrameMetadataManager,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.ingest_metadata_step.components.json_frame_detection_adapter import (
     JsonFrameDetectionAdapter,
 )
@@ -79,7 +82,7 @@ class DataLoader:
 
         # 2) Read JSON data twice, each with its own schemaLocation
         adapter = JsonFrameDetectionAdapter(
-            spark=self.spark_session,
+            spark_session=self.spark_session,
             json_source=json_source,
             frame_schema_loc=frame_schema_loc,
             detection_schema_loc=detection_schema_loc,
@@ -97,11 +100,24 @@ class DataLoader:
             checkpoint_path=self.checkpoint_frames,
             target=self.frame_metadata_table,
         )
+
+        detections_df_with_frame_id = self._match_frame_ids_to_detections(detections_df)
         self._store_new_data(
-            detections_df,
+            detections_df_with_frame_id,
             checkpoint_path=self.checkpoint_detections,
             target=self.detection_metadata_table,
         )
+
+    def _match_frame_ids_to_detections(self, detections_df: DataFrame) -> DataFrame:
+        pending_frames_df = BronzeFrameMetadataManager.load_pending_rows_from_table()
+
+        detections_df_with_frame_id = detections_df.drop("frame_id").join(
+            pending_frames_df.select("image_name", "frame_id"),
+            on="image_name",
+            how="left",
+        )
+
+        return detections_df_with_frame_id
 
     def _store_new_data(self, df, checkpoint_path: str, target: str):
         # availableNow = process all files that have been added before the time when this query ran. Used with batch processing
