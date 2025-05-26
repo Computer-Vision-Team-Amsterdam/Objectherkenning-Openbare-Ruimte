@@ -9,12 +9,11 @@ from databricks.sdk.runtime import *  # noqa: F403
 
 class ReferenceDatabaseConnector(ABC):
 
-    def __init__(self, az_tenant_id, db_host, db_name, db_port):
+    def __init__(self, az_tenant_id, db_host, db_name):
         self.az_tenant_id = az_tenant_id
         self.db_scope = "keyvault"
         self.db_host = db_host
         self.db_name = db_name
-        self.db_port = db_port
 
         self.az_login_username = dbutils.secrets.get(  # noqa: F405
             scope=self.db_scope, key="app-reg-refdb-id"

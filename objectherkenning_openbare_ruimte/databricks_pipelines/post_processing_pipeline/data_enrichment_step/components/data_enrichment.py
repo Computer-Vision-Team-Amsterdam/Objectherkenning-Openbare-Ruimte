@@ -15,6 +15,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import 
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
     Clustering,
     DecosDataHandler,
+    PrivateTerrainHandler,
     StadsdelenHandler,
     VulnerableBridgesHandler,
     utils_scoring,
@@ -58,6 +59,12 @@ class DataEnrichment:
         self.active_object_classes_for_clustering = settings["job_config"][
             "clustering"
         ]["active_object_classes"]
+        self.exclude_private_terrain = settings["job_config"][
+            "exclude_private_terrain_detections"
+        ]
+        self.public_terrain_detection_buffer = settings["job_config"][
+            "private_terrain_detection_buffer"
+        ]
 
     def run_data_enrichment_step(self):
         pending_detections = (
@@ -103,6 +110,7 @@ class DataEnrichment:
                     F.col("stadsdeel"),
                     F.col("stadsdeel_code"),
                     F.col("score").cast("float"),
+                    F.col("private_terrain").cast("boolean"),
                     F.lit("Pending").alias("status"),
                 )
 
@@ -121,42 +129,41 @@ class DataEnrichment:
         closest_bridges_df = self._get_bridges_df(
             objects_coordinates_df=objects_coordinates_df
         )
-        objects_coordinates_with_closest_bridge_df = objects_coordinates_df.join(
+        objects_coordinates_enriched_df = objects_coordinates_df.join(
             closest_bridges_df, self.id_column
         )
 
         closest_permits_df = self._get_decos_df(
             objects_coordinates_df=objects_coordinates_df
         )
-        objects_coordinates_with_closest_bridge_permit_df = (
-            objects_coordinates_with_closest_bridge_df.join(
-                closest_permits_df, self.id_column
-            )
+        objects_coordinates_enriched_df = objects_coordinates_enriched_df.join(
+            closest_permits_df, self.id_column
         )
 
         stadsdelen_df = self._get_stadsdelen_df(
             objects_coordinates_df=objects_coordinates_df
         )
-        objects_coordinates_with_closest_bridge_permit_stadsdeel_df = (
-            objects_coordinates_with_closest_bridge_permit_df.join(
-                stadsdelen_df, self.id_column
-            )
+        objects_coordinates_enriched_df = objects_coordinates_enriched_df.join(
+            stadsdelen_df, self.id_column
+        )
+
+        private_terrain_df = self._get_private_terrain_df(
+            objects_coordinates_df=objects_coordinates_df
+        )
+        objects_coordinates_enriched_df = objects_coordinates_enriched_df.join(
+            private_terrain_df, self.id_column
         )
 
         score_expr = utils_scoring.get_score_expr()
-        objects_coordinates_with_closest_bridge_permit_stadsdeel_score_df = (
-            objects_coordinates_with_closest_bridge_permit_stadsdeel_df.withColumn(
-                "score", score_expr
-            )
+        objects_coordinates_enriched_df = objects_coordinates_enriched_df.withColumn(
+            "score", score_expr
         )
 
-        joined_metadata_with_details_df = (
-            objects_coordinates_with_closest_bridge_permit_stadsdeel_score_df.alias(
-                "a"
-            ).join(
-                self.clustering.joined_metadata.alias("b"),
-                on=F.col(f"a.{self.id_column}") == F.col(f"b.{self.id_column}"),
-            )
+        joined_metadata_with_details_df = objects_coordinates_enriched_df.alias(
+            "a"
+        ).join(
+            self.clustering.joined_metadata.alias("b"),
+            on=F.col(f"a.{self.id_column}") == F.col(f"b.{self.id_column}"),
         )
         return joined_metadata_with_details_df
 
@@ -174,54 +181,75 @@ class DataEnrichment:
         return self.clustering.get_objects_coordinates_with_detection_id()
 
     def _get_bridges_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        bridgesHandler = VulnerableBridgesHandler(
+        bridges_handler = VulnerableBridgesHandler(
             spark_session=self.spark_session,
             root_source=self.root_source,
             vuln_bridges_relative_path=self.vuln_bridges_relative_path,
         )
-        bridges_coordinates_geometry = bridgesHandler.get_bridges_coordinates_geometry()
+        bridges_coordinates_geometry = (
+            bridges_handler.get_bridges_coordinates_geometry()
+        )
         closest_bridges_df = (
-            bridgesHandler.calculate_distances_to_closest_vulnerable_bridges(
+            bridges_handler.calculate_distances_to_closest_vulnerable_bridges(
                 bridges_locations_as_linestrings=bridges_coordinates_geometry,
                 objects_coordinates_df=objects_coordinates_df,
-                bridges_ids=bridgesHandler.get_bridges_ids(),
-                bridges_coordinates=bridgesHandler.get_bridges_coordinates(),
+                bridges_ids=bridges_handler.get_bridges_ids(),
+                bridges_coordinates=bridges_handler.get_bridges_coordinates(),
             )
         )
         return closest_bridges_df
 
     def _get_decos_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        decosDataHandler = DecosDataHandler(
+        decos_data_handler = DecosDataHandler(
             spark_session=self.spark_session,
             az_tenant_id=self.az_tenant_id,
             db_host=self.db_host,
             db_name=self.db_name,
-            db_port=5432,
             object_classes=self.object_classes,
             permit_mapping=self.permit_mapping,
         )
-        decosDataHandler.query_and_process_object_permits(
+        decos_data_handler.query_and_process_object_permits(
             date_to_query=datetime.today().strftime("%Y-%m-%d")
         )
-        closest_permits_df = decosDataHandler.calculate_distances_to_closest_permits(
+        closest_permits_df = decos_data_handler.calculate_distances_to_closest_permits(
             objects_coordinates_df=objects_coordinates_df,
         )
         return closest_permits_df
 
     def _get_stadsdelen_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        stadsdelenHandler = StadsdelenHandler(spark_session=self.spark_session)
-        stadsdelen_df = stadsdelenHandler.lookup_stadsdeel_for_detections(
+        stadsdelen_handler = StadsdelenHandler(spark_session=self.spark_session)
+        stadsdelen_df = stadsdelen_handler.lookup_stadsdeel_for_detections(
             objects_coordinates_df=objects_coordinates_df,
             id_column=self.id_column,
         )
         return stadsdelen_df
 
+    def _get_private_terrain_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
+        private_terrain_handler = PrivateTerrainHandler(
+            spark_session=self.spark_session,
+            az_tenant_id=self.az_tenant_id,
+            db_host=self.db_host,
+            db_name=self.db_name,
+            detection_buffer=self.public_terrain_detection_buffer,
+        )
+        private_terrain_df = (
+            private_terrain_handler.lookup_private_terrain_for_detections(
+                objects_coordinates_df=objects_coordinates_df,
+                id_column=self.id_column,
+            )
+        )
+        return private_terrain_df
+
     def _create_map(self, enriched_df: DataFrame) -> None:
+        map_file_name = f"{self.job_process_time.strftime('%Y-%m-%d %Hh%Mm%Ss')}-map"
+        map_file_path = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/"
+
         utils_visualization.generate_map(
             dataframe=enriched_df,
-            annotate_detection_images=self.annotate_detection_images,
-            name=f"{self.job_process_time}-map",
-            path=f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/",
+            file_name=map_file_name,
+            file_path=map_file_path,
             catalog=self.catalog,
             device_id=self.device_id,
+            annotate_detection_images=self.annotate_detection_images,
+            exclude_private_terrain=self.exclude_private_terrain,
         )

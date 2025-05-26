@@ -108,7 +108,6 @@ class SignalHandler:
             az_tenant_id=az_tenant_id,
             db_host=db_host,
             db_name=db_name,
-            db_port=5432,
         )
 
     def get_signal(self, sig_id: str) -> Any:
@@ -503,7 +502,10 @@ class SignalHandler:
                 image_upload_path = f"{base}_annotated_{object_class}{ext}"
 
             entry_dict = entry.asDict()
-            entry_dict.pop("processed_at", None)
+            entry_dict.pop("processed_at", None)  # Remove column
+            status = entry_dict.pop(
+                "status", None
+            )  # Pop and later push back to fix column order
 
             try:
                 dbutils.fs.head(image_upload_path)  # noqa: F405
@@ -518,9 +520,10 @@ class SignalHandler:
                     json_content=notification_json, filename=image_upload_path
                 )
                 print(
-                    f"Created signal {signal_id} with image on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
+                    f"Created signal {signal_id} for detection {detection_id} on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
                 )
                 entry_dict["signal_id"] = signal_id
+                entry_dict["status"] = status  # Should be last column, so add it last
                 updated_entry = Row(**entry_dict)
                 successful_notifications.append(updated_entry)
             except Exception as e:
