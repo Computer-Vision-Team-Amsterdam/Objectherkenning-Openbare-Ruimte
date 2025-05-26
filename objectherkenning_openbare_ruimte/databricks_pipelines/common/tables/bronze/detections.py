@@ -27,11 +27,12 @@ class BronzeDetectionMetadataManager(TableManager):
         bronze_detection_metadata = cls.load_pending_rows_from_table()
         bronze_detection_metadata = bronze_detection_metadata.alias("bronze_detection")
         silver_frame_metadata_quarantine_df = silver_frame_metadata_quarantine_df.alias(
-            "quarantine_frame"
+            "silver_frame_quarantine"
         )
         invalid_metadata = bronze_detection_metadata.join(
             silver_frame_metadata_quarantine_df,
-            F.col("bronze_detection.frame_id") == F.col("quarantine_frame.frame_id"),
+            F.col("bronze_detection.frame_id")
+            == F.col("silver_frame_quarantine.frame_id"),
         ).select("bronze_detection.*")
 
         print("Filtered invalid detection metadata.")
