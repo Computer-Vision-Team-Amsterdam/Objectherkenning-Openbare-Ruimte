@@ -38,8 +38,8 @@ databricks_pipelines:
           3: 0.03
           4: 0.03
         send_limit:
-          2: 4
-          3: 3
+          2: 3
+          3: 4
           4: 3
     Productie: 
       catalog: "dpcv_prd"
