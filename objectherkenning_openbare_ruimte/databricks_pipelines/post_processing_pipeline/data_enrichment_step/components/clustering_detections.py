@@ -162,7 +162,7 @@ class Clustering:
                 cluster_distances[detected_class] / MS_PER_RAD
             )  # radius of the neighborhood
             df_clustered, cluster_id_counter = self._cluster_points_for_class(
-                df_class, epsilon, cluster_id_counter
+                df_class, epsilon, cluster_id_counter, detected_class
             )
             if df_clustered is not None:
                 dfs_clustered.append(df_clustered)
@@ -180,6 +180,7 @@ class Clustering:
         df_metadata_by_class: DataFrame,
         eps: float,
         cluster_id_counter: int,
+        object_class: int,
         min_samples: int = MIN_SAMPLES,
     ) -> Tuple[DataFrame, int]:
         """
@@ -214,6 +215,7 @@ class Clustering:
 
         if eps >= 0:
             # Apply DBSCAN clustering.
+            print(f"Clustering detections for object class {object_class}...")
             db = DBSCAN(
                 eps=eps,
                 min_samples=min_samples,
@@ -225,6 +227,7 @@ class Clustering:
             raw_labels = [int(v) for v in db.labels_]
             unique_labels = sorted(set(raw_labels))
         else:
+            print(f"Clustering disabled for object class {object_class}, skipping.")
             unique_labels = list(range(coordinates.size))
 
         local_mapping = {
