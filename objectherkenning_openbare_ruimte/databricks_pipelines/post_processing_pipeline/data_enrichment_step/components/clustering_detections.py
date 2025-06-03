@@ -228,7 +228,8 @@ class Clustering:
             unique_labels = sorted(set(raw_labels))
         else:
             print(f"Clustering disabled for object class {object_class}, skipping.")
-            unique_labels = list(range(coordinates.size))
+            raw_labels = list(range(coordinates.size))
+            unique_labels = raw_labels
 
         local_mapping = {
             label: cluster_id_counter + i for i, label in enumerate(unique_labels)
