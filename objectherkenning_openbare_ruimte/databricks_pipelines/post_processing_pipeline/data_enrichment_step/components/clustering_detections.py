@@ -154,7 +154,7 @@ class Clustering:
         cluster_id_counter = 0
 
         # Apply clustering per object class
-        for detected_class in detected_classes:
+        for detected_class in sorted(detected_classes):
             df_class = self.joined_metadata.filter(
                 col("object_class") == detected_class
             )
@@ -228,7 +228,7 @@ class Clustering:
             unique_labels = sorted(set(raw_labels))
         else:
             print(f"Clustering disabled for object class {object_class}, skipping.")
-            raw_labels = list(range(coordinates.size))
+            raw_labels = list(range(coordinates.shape[0]))
             unique_labels = raw_labels
 
         local_mapping = {
