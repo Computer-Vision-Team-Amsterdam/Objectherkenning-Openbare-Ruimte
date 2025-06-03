@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
@@ -45,24 +45,23 @@ class DataEnrichment:
         self.job_process_time = get_job_process_time(
             is_first_pipeline_step=False,
         )
-        self.object_classes = settings["job_config"]["object_classes"]["names"]
-        self.permit_mapping = settings["job_config"]["object_classes"]["permit_mapping"]
-        self.confidence_thresholds = settings["job_config"]["object_classes"][
-            "confidence_threshold"
+
+        object_class_settings: Dict[str, Dict[int, Any]] = settings["job_config"][
+            "object_classes"
         ]
-        self.bbox_size_thresholds = settings["job_config"]["object_classes"][
-            "bbox_size_threshold"
-        ]
-        self.annotate_detection_images = settings["job_config"][
-            "annotate_detection_images"
-        ]
-        self.active_object_classes_for_clustering = settings["job_config"][
-            "clustering"
-        ]["active_object_classes"]
-        self.exclude_private_terrain = settings["job_config"][
+        self.object_classes = object_class_settings["names"]
+        self.permit_mapping = object_class_settings["permit_mapping"]
+        self.confidence_thresholds = object_class_settings["confidence_threshold"]
+        self.bbox_size_thresholds = object_class_settings["bbox_size_threshold"]
+        self.cluster_distances = object_class_settings["cluster_distances"]
+        self.active_object_classes_for_clustering = list(self.cluster_distances.keys())
+
+        job_settings = settings["job_config"]
+        self.annotate_detection_images = job_settings["annotate_detection_images"]
+        self.exclude_private_terrain = job_settings[
             "exclude_private_terrain_detections"
         ]
-        self.public_terrain_detection_buffer = settings["job_config"][
+        self.public_terrain_detection_buffer = job_settings[
             "private_terrain_detection_buffer"
         ]
 
@@ -177,6 +176,7 @@ class DataEnrichment:
             active_object_classes=self.active_object_classes_for_clustering,
             confidence_thresholds=self.confidence_thresholds,
             bbox_size_thresholds=self.bbox_size_thresholds,
+            cluster_distances=self.cluster_distances,
         )
         return self.clustering.get_objects_coordinates_with_detection_id()
 

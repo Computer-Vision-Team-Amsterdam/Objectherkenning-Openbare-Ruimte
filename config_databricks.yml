@@ -33,8 +33,6 @@ databricks_pipelines:
           active_object_classes: [2]
           send_limit:
             2: 1
-      clustering:
-        active_object_classes: [2, 3, 4]
       object_classes:
         names:
           2: "container of bouwkeet"
@@ -52,6 +50,11 @@ databricks_pipelines:
           2: 0.003
           3: 0.001
           4: 0.01
+        cluster_radius:
+          #  set to -1 to disable clustering for that class
+          2: 10
+          3: 10
+          4: 10
 
   Productie: 
     catalog: "dpcv_prd"
@@ -86,8 +89,6 @@ databricks_pipelines:
           active_object_classes: [2]
           send_limit:
             2: 10
-      clustering:
-        active_object_classes: [2, 3, 4]
       object_classes:
         names:
           2: "container of bouwkeet"
@@ -105,3 +106,8 @@ databricks_pipelines:
           2: 0.003
           3: 0.001
           4: 0.01
+        cluster_radius:
+          #  set to -1 to disable clustering for that class
+          2: 10
+          3: 10
+          4: 10
