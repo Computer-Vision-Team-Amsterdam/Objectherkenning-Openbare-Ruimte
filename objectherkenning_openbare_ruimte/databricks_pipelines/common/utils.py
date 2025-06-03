@@ -1,7 +1,7 @@
 import argparse
 import ast
 from datetime import datetime
-from typing import Any, List
+from typing import Any, Dict, List
 
 from databricks.sdk.runtime import *  # noqa: F403
 
@@ -15,6 +15,12 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
     Setup an ArgumentParser for the command line parameters / job parameters.
     """
     parser = argparse.ArgumentParser(prog=prog)
+    parser.add_argument(
+        "--manual_inspection",
+        type=ast.literal_eval,
+        default=False,
+        help='"True" | "False" (default)',
+    )
     parser.add_argument(
         "--stadsdelen", type=str, default="", help="\"['name1', 'name2', ...]\""
     )
@@ -31,6 +37,38 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
         help="Dummy argument to prevent errors when running pipeline step interactively.",
     )
     return parser
+
+
+def parse_manual_run_arg_to_settings(
+    settings: dict[str, Any], args: argparse.Namespace
+) -> dict[str, Any]:
+    """
+    Parse the command line arguments and update the cluster_distances setting to
+    disable clustering for a manual run.
+
+    Parameters
+    ----------
+    settings: dict[str, Any]
+        Full databricks config settings.
+    args: argparse.Namespace
+        Command line arguments
+
+    Returns
+    -------
+    Updated settings dict
+    """
+    if args.manual_inspection is True:
+        print("Manual inspection set, clustering will be disabled.")
+        cluster_distances: Dict[int, float] = settings["job_config"]["object_classes"][
+            "cluster_distances"
+        ]
+        for key in cluster_distances.keys():
+            cluster_distances[key] = -1  # disable clustering
+        settings["job_config"]["object_classes"][
+            "cluster_distances"
+        ] = cluster_distances
+
+    return settings
 
 
 def parse_task_args_to_settings(
