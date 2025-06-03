@@ -50,7 +50,7 @@ databricks_pipelines:
           2: 0.003
           3: 0.001
           4: 0.01
-        cluster_radius:
+        cluster_distances:
           #  set to -1 to disable clustering for that class
           2: 10
           3: 10
@@ -106,7 +106,7 @@ databricks_pipelines:
           2: 0.003
           3: 0.001
           4: 0.01
-        cluster_radius:
+        cluster_distances:
           #  set to -1 to disable clustering for that class
           2: 10
           3: 10
