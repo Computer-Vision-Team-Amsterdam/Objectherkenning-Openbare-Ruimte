@@ -74,6 +74,7 @@ class DataEnrichment:
         if pending_detections.count() == 0 or pending_frames.count() == 0:
             print("No pending detections. Exiting.")
         else:
+            print("Clustering detections...")
             objects_coordinates_df = self._run_clustering()
 
             if objects_coordinates_df and (objects_coordinates_df.count() > 0):
