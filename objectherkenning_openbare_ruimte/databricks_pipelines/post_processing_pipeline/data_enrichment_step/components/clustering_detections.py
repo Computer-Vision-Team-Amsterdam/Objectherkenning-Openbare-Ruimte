@@ -1,6 +1,6 @@
 from functools import reduce
 from operator import or_
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 from databricks.sdk.runtime import sqlContext
@@ -24,6 +24,7 @@ class Clustering:
         active_object_classes: List[int],
         confidence_thresholds: Dict[int, float],
         bbox_size_thresholds: Dict[int, float],
+        cluster_distances: Dict[int, float],
     ) -> None:
         self.spark_session = spark_session
         self.catalog = catalog
@@ -50,11 +51,11 @@ class Clustering:
             print("No data left to cluster after join and filter. Stopping execution.")
             return
 
-        self.cluster_and_select_images()
+        self.cluster_and_select_images(cluster_distances=cluster_distances)
 
     def filter_by_threshold(
-        self, thresholds: dict, column_name: str, column_computation=None
-    ):
+        self, thresholds: Dict[int, float], column_name: str, column_computation=None
+    ) -> None:
         """
         Filter the joined metadata such that for each object class, only rows with a value above
         the given threshold for the specified column are kept.
@@ -79,14 +80,14 @@ class Clustering:
             combined_condition = reduce(or_, conditions)
             self.joined_metadata = self.joined_metadata.where(combined_condition)
 
-    def get_objects_coordinates_with_detection_id(self):
+    def get_objects_coordinates_with_detection_id(self) -> DataFrame:
         if not self._objects_coordinates_with_detection_id:
             self._objects_coordinates_with_detection_id = (
                 self._extract_objects_coordinates_with_detection_id()
             )
         return self._objects_coordinates_with_detection_id
 
-    def _join_frame_and_detection_metadata(self):
+    def _join_frame_and_detection_metadata(self) -> DataFrame:
         """
         Join frame and detection metadata, keeping only active objects.
 
@@ -125,7 +126,7 @@ class Clustering:
 
         return joined_df
 
-    def _extract_objects_coordinates_with_detection_id(self):
+    def _extract_objects_coordinates_with_detection_id(self) -> DataFrame:
 
         objects_df = self.joined_metadata.select(
             "detection_id", "gps_lat", "gps_lon", "object_class"
@@ -133,12 +134,15 @@ class Clustering:
 
         return objects_df
 
-    def _cluster_points(self, eps):
+    def _cluster_points(self, cluster_distances: Dict[int, float]):
         """
-        Cluster points in a DataFrame using DBSCAN across different object classes.
+        Cluster points in a DataFrame using DBSCAN across different object
+        classes.
 
         Parameters:
-            eps (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+            cluster_distances (Dict[int, float]): The maximum distance between
+            two samples for one to be considered as in the neighborhood of the
+            other, for each object class.
         """
         # Get distinct object classes
         detected_classes = [
@@ -150,12 +154,15 @@ class Clustering:
         cluster_id_counter = 0
 
         # Apply clustering per object class
-        for detected_class in detected_classes:
+        for detected_class in sorted(detected_classes):
             df_class = self.joined_metadata.filter(
                 col("object_class") == detected_class
             )
+            epsilon = (
+                cluster_distances[detected_class] / MS_PER_RAD
+            )  # radius of the neighborhood
             df_clustered, cluster_id_counter = self._cluster_points_for_class(
-                df_class, eps, cluster_id_counter
+                df_class, epsilon, cluster_id_counter, detected_class
             )
             if df_clustered is not None:
                 dfs_clustered.append(df_clustered)
@@ -169,19 +176,31 @@ class Clustering:
             print("No data to cluster after filtering.")
 
     def _cluster_points_for_class(
-        self, df_metadata_by_class, eps, cluster_id_counter, min_samples=MIN_SAMPLES
-    ):
+        self,
+        df_metadata_by_class: DataFrame,
+        eps: float,
+        cluster_id_counter: int,
+        object_class: int,
+        min_samples: int = MIN_SAMPLES,
+    ) -> Tuple[DataFrame, int]:
         """
         Perform DBSCAN clustering on a single class DataFrame.
 
         Parameters:
-            df_metadata_by_class (DataFrame): DataFrame filtered for one object class.
-            eps (float): Maximum distance between two samples for them to be considered neighbors.
-            min_samples (int): Minimum number of samples for a point to be considered a core point.
-            cluster_id_counter (int): Current counter to assign unique tracking IDs.
+            df_metadata_by_class (DataFrame):
+                DataFrame filtered for one object class.
+            eps (float):
+                Maximum distance between two samples for them to be considered
+                neighbors. If negative, clustering is disabled for that class.
+            min_samples (int):
+                Minimum number of samples for a point to be considered a core
+                point.
+            cluster_id_counter (int):
+                Current counter to assign unique tracking IDs.
 
         Returns:
-            tuple: (clustered DataFrame with new 'tracking_id' column, updated cluster_id_counter)
+            tuple: (clustered DataFrame with new 'tracking_id' column, updated
+            cluster_id_counter)
         """
         # Extract coordinates as a numpy array.
         coordinates = np.array(
@@ -194,14 +213,24 @@ class Clustering:
         if coordinates.size == 0 or coordinates.ndim != 2 or coordinates.shape[1] != 2:
             return None, cluster_id_counter
 
-        # Apply DBSCAN clustering.
-        db = DBSCAN(
-            eps=eps, min_samples=min_samples, algorithm="ball_tree", metric="haversine"
-        ).fit(np.radians(coordinates))
+        if eps >= 0:
+            # Apply DBSCAN clustering.
+            print(f"Clustering detections for object class {object_class}...")
+            db = DBSCAN(
+                eps=eps,
+                min_samples=min_samples,
+                algorithm="ball_tree",
+                metric="haversine",
+            ).fit(np.radians(coordinates))
 
-        # Remap raw labels to new unique tracking IDs using dictionary comprehension.
-        raw_labels = [int(v) for v in db.labels_]
-        unique_labels = sorted(set(raw_labels))
+            # Remap raw labels to new unique tracking IDs using dictionary comprehension.
+            raw_labels = [int(v) for v in db.labels_]
+            unique_labels = sorted(set(raw_labels))
+        else:
+            print(f"Clustering disabled for object class {object_class}, skipping.")
+            raw_labels = list(range(coordinates.shape[0]))
+            unique_labels = raw_labels
+
         local_mapping = {
             label: cluster_id_counter + i for i, label in enumerate(unique_labels)
         }
@@ -215,10 +244,9 @@ class Clustering:
         )
         return df_clustered, cluster_id_counter
 
-    def cluster_and_select_images(self, distance=10):
+    def cluster_and_select_images(self, cluster_distances: Dict[int, float]):
         # Cluster the points based on distance
-        epsilon = distance / MS_PER_RAD  # radius of the neighborhood
-        self._cluster_points(eps=epsilon)
+        self._cluster_points(cluster_distances=cluster_distances)
 
         # Calculate the mean confidence for each cluster
         window_spec = Window.partitionBy("tracking_id")
@@ -245,7 +273,7 @@ class Clustering:
             self._extract_objects_coordinates_with_detection_id()
         )
 
-    def add_column_to_df(self, df, column_name, values):
+    def add_column_to_df(self, df: DataFrame, column_name: str, values: List):
         # Ensure the length of the values matches the number of rows in the dataframe
         if len(values) != df.count():
             raise ValueError(
