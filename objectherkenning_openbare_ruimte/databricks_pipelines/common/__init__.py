@@ -8,4 +8,5 @@ from .utils import (
     setup_arg_parser,
     setup_tables,
 )
+from .utils_images import OutputImage
 from .utils_signalen import SignalConnectionConfigurer, SignalHandler
