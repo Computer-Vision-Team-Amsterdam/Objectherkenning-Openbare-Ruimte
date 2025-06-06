@@ -5,11 +5,17 @@ from typing import Any, Dict, List, Union
 
 import requests
 from databricks.sdk.runtime import *  # noqa: F403
-from pyspark.sql import Row, SparkSession
+from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql import functions as F
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators.silver_metadata_aggregator import (
     SilverMetadataAggregator,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
+    SilverDetectionMetadataManager,
+)
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.utils_images import (
+    OutputImage,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
     BENKAGGConnector,
@@ -36,10 +42,10 @@ class SignalConnectionConfigurer:
     def __init__(
         self,
         spark_session: SparkSession,
-        client_id,
-        client_secret_name,
-        access_token_url,
-        base_url,
+        client_id: str,
+        client_secret_name: str,
+        access_token_url: str,
+        base_url: str,
     ):
         self.spark_session = spark_session
         self._client_id = client_id
@@ -75,21 +81,23 @@ class SignalConnectionConfigurer:
 class SignalHandler:
     def __init__(
         self,
-        spark_session,
-        catalog,
-        schema,
-        device_id,
-        signalen_settings,
-        az_tenant_id,
-        db_host,
-        db_name,
-        object_classes,
+        spark_session: SparkSession,
+        catalog: str,
+        schema: str,
+        device_id: str,
+        signalen_settings: Dict[str, str],
+        az_tenant_id: str,
+        db_host: str,
+        db_name: str,
+        object_classes: Dict[int, str],
+        annotate_images: bool = False,
     ):
         self.spark_session = spark_session
         self.device_id = device_id
         self.catalog_name = catalog
         self.schema = schema
         self.object_classes = object_classes
+        self.annotate_images = annotate_images
         self.api_max_upload_size = 20 * 1024 * 1024  # 20MB = 20*1024*1024
 
         client_id = signalen_settings["client_id"]
@@ -223,7 +231,7 @@ class SignalHandler:
         else:
             return response.raise_for_status()
 
-    def image_upload(self, filename: str, sig_id: str) -> Any:
+    def image_upload(self, image: OutputImage, sig_id: str) -> Any:
         """
         Uploads an image file as an attachment to an existing signal.
 
@@ -232,8 +240,8 @@ class SignalHandler:
 
         Parameters
         ----------
-        filename : str
-            The path to the image file to be uploaded.
+        image : OutputImage
+            The image to be uploaded.
         sig_id : str
             The ID of the signal to which the image file will be attached.
 
@@ -250,11 +258,13 @@ class SignalHandler:
             If the server responds with a status code other than 201 (Created),
             an HTTPError will be raised with the response status and message.
         """
+        filename = image.get_image_path()
+
         if os.path.getsize(filename) > self.api_max_upload_size:
             msg = f"File can be a maximum of {self.api_max_upload_size} bytes in size."
             raise Exception(msg)
 
-        files = {"file": (filename, open(filename, "rb"))}
+        files = {"file": (filename, image.to_bytes())}
 
         response = requests.post(
             self.base_url + f"/{sig_id}/attachments/",
@@ -272,9 +282,9 @@ class SignalHandler:
         else:
             return response.raise_for_status()
 
-    def post_signal_with_image_attachment(self, json_content: Any, filename: str):
+    def post_signal_with_image_attachment(self, json_content: Any, image: OutputImage):
         signal_id = self.post_signal(json_content=json_content)
-        self.image_upload(filename=filename, sig_id=signal_id)
+        self.image_upload(image=image, sig_id=signal_id)
         return signal_id
 
     @staticmethod
@@ -470,8 +480,7 @@ class SignalHandler:
 
     def process_notifications(
         self,
-        top_scores_df,
-        annotate_detection_images,
+        top_scores_df: DataFrame,
     ):
         date_of_notification = datetime.today().strftime("%Y-%m-%d")
         top_scores_df_with_date = top_scores_df.withColumn(
@@ -497,9 +506,6 @@ class SignalHandler:
                     device_id=self.device_id,
                 )
             )
-            if annotate_detection_images:
-                base, ext = os.path.splitext(image_upload_path)
-                image_upload_path = f"{base}_annotated_{object_class}{ext}"
 
             entry_dict = entry.asDict()
             entry_dict.pop("processed_at", None)  # Remove column
@@ -508,7 +514,14 @@ class SignalHandler:
             )  # Pop and later push back to fix column order
 
             try:
-                dbutils.fs.head(image_upload_path)  # noqa: F405
+                dbutils.fs.head(image_upload_path)  # type: ignore # noqa: F405
+
+                image = OutputImage(image_upload_path)
+                if self.annotate_images:
+                    bounding_box = SilverDetectionMetadataManager.get_bounding_box_from_detection_id(
+                        detection_id
+                    )
+                    image.draw_bounding_box(*bounding_box)
 
                 notification_json = self.fill_incident_details(
                     incident_date=date_of_notification,
@@ -517,7 +530,7 @@ class SignalHandler:
                     object_class_str=object_class_str,
                 )
                 signal_id = self.post_signal_with_image_attachment(
-                    json_content=notification_json, filename=image_upload_path
+                    json_content=notification_json, image=image
                 )
                 print(
                     f"Created signal {signal_id} for detection {detection_id} on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"

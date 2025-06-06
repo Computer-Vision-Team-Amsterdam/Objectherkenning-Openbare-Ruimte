@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
 )
@@ -56,6 +58,37 @@ class SilverDetectionMetadataManager(TableManager):
 
         frame_id = frame_id_result_df.collect()[0]["frame_id"]
         return frame_id
+
+    @classmethod
+    def get_bounding_box_from_detection_id(
+        cls, detection_id: int
+    ) -> Tuple[float, float, float, float]:
+        """
+        Fetches the bounding box corresponding to a specific detection ID from the
+        silver_detection_metadata table.
+
+        Parameters:
+        ----------
+        detection_id: int
+            The ID of the detection for which to retrieve the image name.
+
+        Returns:
+        -------
+        Tuple: The bounding box as (x_center, y_center, width, height)
+        """
+        fetch_bounding_box_query = f"""
+            SELECT x_center, y_center, width, height
+            FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
+            WHERE {cls.id_column} = {detection_id}
+        """  # nosec
+        result_df = TableManager.spark_session.sql(fetch_bounding_box_query)
+
+        bounding_box = (
+            result_df[["x_center", "y_center", "width", "height"]]
+            .rdd.map(tuple)
+            .collect()[0]
+        )
+        return bounding_box
 
 
 class SilverDetectionMetadataQuarantineManager(TableManager):

@@ -11,7 +11,8 @@ class OutputImage:
         """
         Initialize with the original image.
         """
-        self.image = cv2.imread(image_path)
+        self.image_path = image_path
+        self.image = cv2.imread(self.image_path)
 
     def get_image(self) -> npt.NDArray:
         """
@@ -19,9 +20,19 @@ class OutputImage:
         """
         return self.image
 
+    def get_image_path(self) -> str:
+        """
+        Returns the image file path.
+        """
+        return self.image_path
+
     def b64encode(
         self, shrink_to_size: Union[int, Tuple[int, int]] = (1280, 720)
     ) -> str:
+        """
+        Optionally shrink the image to specified max dimension and return a b64
+        encoded str.
+        """
         self.shrink(shrink_to_size)
 
         # Convert image to JPG
@@ -31,6 +42,14 @@ class OutputImage:
         b64str = base64.b64encode(buffer).decode("utf-8")
 
         return b64str
+
+    def to_bytes(self) -> bytes:
+        """
+        Return image as bytes.
+        """
+        # Convert image to JPG
+        _, buffer = cv2.imencode(".jpg", self.image)
+        return buffer.tobytes()
 
     def shrink(self, size: Union[int, Tuple[int, int]] = (1280, 720)):
         """
