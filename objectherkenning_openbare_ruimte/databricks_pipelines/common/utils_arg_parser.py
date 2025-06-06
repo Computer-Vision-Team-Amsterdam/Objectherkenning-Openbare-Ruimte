@@ -37,7 +37,7 @@ def parse_manual_run_arg_to_settings(
 ) -> dict[str, Any]:
     """
     Parse the command line arguments and update the cluster_distances setting to
-    disable clustering for a manual run.
+    disable clustering for a manual run. Also disable annotate_detection_images.
 
     Parameters
     ----------
@@ -51,7 +51,11 @@ def parse_manual_run_arg_to_settings(
     Updated settings dict
     """
     if args.manual_inspection is True:
-        print("Manual inspection set, clustering will be disabled.")
+        print(
+            "Manual inspection set, image annotation and clustering will be disabled."
+        )
+        settings["job_config"]["annotate_detection_images"] = False
+
         cluster_distances: Dict[int, float] = settings["job_config"]["object_classes"][
             "cluster_distances"
         ]
