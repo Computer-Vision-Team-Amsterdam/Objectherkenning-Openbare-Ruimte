@@ -541,6 +541,7 @@ class SignalHandler:
                 successful_notifications.append(updated_entry)
             except Exception as e:
                 entry_dict.pop("notification_date", None)
+                entry_dict["status"] = status  # Should be last column, so add it last
                 updated_failed_entry = Row(**entry_dict)
                 if "java.io.FileNotFoundException" in str(e):
                     print(
