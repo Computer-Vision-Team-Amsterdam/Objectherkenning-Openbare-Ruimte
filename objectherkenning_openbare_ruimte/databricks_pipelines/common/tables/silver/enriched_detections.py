@@ -20,6 +20,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         stadsdeel: Optional[str] = None,
         active_object_classes: List[int] = [],
         send_limits: Dict[int, int] = {},
+        score_threshold: float = score_threshold,
     ) -> Optional[DataFrame]:
         """
         Collects and returns top pending records for each active object class within send limits.
@@ -32,6 +33,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             stadsdeel (str): Name of stadsdeel or None to get all results
             active_object_classes (List[int]): list of object classes to filter by
             send_limits: A dictionary mapping each object class to its maximum number of records to send.
+            score_threshold: the minimum score required for records to be returned
 
         Returns:
             A DataFrame containing valid pending detections if available, otherwise None.
@@ -50,7 +52,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
                 .filter(
                     (F.col("status") == "Pending")
                     & (F.lower(F.col("stadsdeel")) == stadsdeel.lower())
-                    & (F.col("score") >= cls.score_threshold)
+                    & (F.col("score") >= score_threshold)
                 )
                 .select("object_class")
                 .distinct()
@@ -61,8 +63,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             pending_obj_classes = (
                 TableManager.spark_session.table(table_full_name)
                 .filter(
-                    (F.col("status") == "Pending")
-                    & (F.col("score") >= cls.score_threshold)
+                    (F.col("status") == "Pending") & (F.col("score") >= score_threshold)
                 )
                 .select("object_class")
                 .distinct()
@@ -82,6 +83,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
                 send_limit,
                 exclude_private_terrain_detections,
                 stadsdeel,
+                score_threshold,
             )
             print(
                 f"  Found {len(candidate_rows)} detections for object class '{obj_class}' (send limit {send_limit if send_limit else 'not set'})."
@@ -109,6 +111,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         send_limit: Optional[int] = None,
         exclude_private_terrain_detections: bool = False,
         stadsdeel: Optional[str] = None,
+        score_threshold: float = score_threshold,
     ) -> List[Row]:
         """
         Fetches candidate detections for a given object class that are pending and meet the score criteria.
@@ -118,6 +121,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             obj_class: The object class for which pending detections should be fetched.
             exclude_private_terrain_detections: Whether to exclude detections on private terrain.
             stadsdeel (str | None): Name of stadsdeel or None to get all results
+            score_threshold: the minimum score required for records to be returned
 
         Returns:
             A list of Rows representing candidate detections.
@@ -126,7 +130,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             TableManager.spark_session.table(table_full_name)
             .filter(
                 (F.col("status") == "Pending")
-                & (F.col("score") >= cls.score_threshold)
+                & (F.col("score") >= score_threshold)
                 & (F.col("object_class") == obj_class)
             )
             .orderBy(F.col("score").desc())
@@ -145,7 +149,9 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             return pending_candidates_df.collect()
 
     @classmethod
-    def get_detection_ids_to_keep_current_run(cls, job_date: str) -> List[Any]:
+    def get_detection_ids_to_keep_current_run(
+        cls, job_date: str, score_threshold: float = score_threshold
+    ) -> List[Any]:
         """
         Retrieves detection IDs to keep for the current run by filtering records
         processed on the given job_date and with a score above a certain
@@ -154,6 +160,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         Parameters:
             job_date: The date (in "yyyy-MM-dd" format) to filter the
             processed_at field.
+            score_threshold: the minimum score required for records to be returned
 
         Returns:
             A list of detection IDs that match the filtering criteria.
@@ -161,7 +168,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         return (
             cls.get_table()
             .filter(
-                (F.col("score") >= cls.score_threshold)
+                (F.col("score") >= score_threshold)
                 & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
             )
             .select(cls.id_column)
@@ -170,7 +177,9 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         )
 
     @classmethod
-    def get_detection_ids_candidates_for_deletion(cls, job_date: str) -> List[Any]:
+    def get_detection_ids_candidates_for_deletion(
+        cls, job_date: str, score_threshold: float = score_threshold
+    ) -> List[Any]:
         """
         Retrieves detection IDs that are candidates for deletion for the current
         run by filtering records processed on the given job_date and with a
@@ -179,6 +188,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         Parameters:
             job_date: The date (in "yyyy-MM-dd" format) to filter the
             processed_at field.
+            score_threshold: the minimum score required for records to be returned
 
         Returns:
             A list of detection IDs that match the filtering criteria.
@@ -186,7 +196,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         return (
             cls.get_table()
             .filter(
-                (F.col("score") < cls.score_threshold)
+                (F.col("score") < score_threshold)
                 & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
             )
             .select(cls.id_column)

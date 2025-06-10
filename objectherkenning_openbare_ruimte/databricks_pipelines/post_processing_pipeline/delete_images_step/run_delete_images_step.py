@@ -2,6 +2,7 @@
 dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import os  # noqa: E402
+from datetime import datetime  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
 
@@ -23,12 +24,13 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 
 
 def run_delete_images_step(
-    spark_session,
-    catalog,
-    schema,
-    device_id,
-    job_process_time,
-):
+    spark_session: SparkSession,
+    catalog: str,
+    schema: str,
+    device_id: str,
+    job_process_time: datetime,
+    min_score: float = 0.4,
+) -> None:
     setup_tables(spark_session=spark_session, catalog=catalog, schema=schema)
     job_date = job_process_time.strftime("%Y-%m-%d")
 
@@ -42,13 +44,13 @@ def run_delete_images_step(
     delete_candidate_image_names: set = {
         SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
         for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_candidates_for_deletion(
-            job_date=job_date
+            job_date=job_date, score_threshold=min_score
         )
     }
     to_keep_image_names: set = {
         SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
         for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_to_keep_current_run(
-            job_date=job_date
+            job_date=job_date, score_threshold=min_score
         )
     }
     to_delete_image_names = delete_candidate_image_names - to_keep_image_names
@@ -65,7 +67,7 @@ def run_delete_images_step(
     print(f"{successful_deletions} images successfully deleted.")
 
 
-if __name__ == "__main__":
+def main() -> None:
     spark_session = SparkSession.builder.appName("ImageDeletion").getOrCreate()
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
@@ -83,4 +85,9 @@ if __name__ == "__main__":
         job_process_time=get_job_process_time(
             is_first_pipeline_step=False,
         ),
+        min_score=settings["job_config"]["min_score"],
     )
+
+
+if __name__ == "__main__":
+    main()

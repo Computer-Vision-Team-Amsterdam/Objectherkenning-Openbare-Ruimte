@@ -21,6 +21,7 @@ databricks_pipelines:
       annotate_detection_images: True
       exclude_private_terrain_detections: False
       private_terrain_detection_buffer: 10
+      min_score: 0.4
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
         Centrum:
@@ -77,6 +78,7 @@ databricks_pipelines:
       annotate_detection_images: False
       exclude_private_terrain_detections: False
       private_terrain_detection_buffer: 10
+      min_score: 0.4
       active_task:
         # Stadsdelen: [Centrum, Nieuw-West, Noord, Oost, Weesp, West, Westpoort, Zuid, Zuidoost]
         Centrum:
