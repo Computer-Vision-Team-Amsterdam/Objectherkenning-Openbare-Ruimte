@@ -64,6 +64,7 @@ class DataEnrichment:
         self.public_terrain_detection_buffer = job_settings[
             "private_terrain_detection_buffer"
         ]
+        self.min_score = job_settings["min_score"]
 
     def run_data_enrichment_step(self):
         pending_detections = (
@@ -244,8 +245,10 @@ class DataEnrichment:
         map_file_name = f"{self.job_process_time.strftime('%Y-%m-%d %Hh%Mm%Ss')}-map"
         map_file_path = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/"
 
+        map_df = enriched_df.filter(F.col("score") >= self.min_score)
+
         utils_visualization.generate_map(
-            dataframe=enriched_df,
+            dataframe=map_df,
             file_name=map_file_name,
             file_path=map_file_path,
             catalog=self.catalog,

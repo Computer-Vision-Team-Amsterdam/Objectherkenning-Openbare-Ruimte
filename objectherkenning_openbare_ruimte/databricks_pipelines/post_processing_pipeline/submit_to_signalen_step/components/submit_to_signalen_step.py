@@ -37,9 +37,7 @@ class SubmitToSignalenStep:
         self.exclude_private_terrain_detections = settings["job_config"][
             "exclude_private_terrain_detections"
         ]
-        self.annotate_detection_images = settings["job_config"][
-            "annotate_detection_images"
-        ]
+        self.min_score = settings["job_config"]["min_score"]
         self.active_task_config = settings["job_config"]["active_task"]
 
         self.signalHandler = SignalHandler(
@@ -52,6 +50,7 @@ class SubmitToSignalenStep:
             db_host=self.db_host,
             db_name=self.db_name,
             object_classes=settings["job_config"]["object_classes"]["names"],
+            annotate_images=settings["job_config"]["annotate_detection_images"],
         )
 
     def run_submit_to_signalen_step(self):
@@ -95,15 +94,14 @@ class SubmitToSignalenStep:
             stadsdeel=stadsdeel,
             active_object_classes=config.get("active_object_classes", []),
             send_limits=send_limits,
+            score_threshold=self.min_score,
         )
 
         if (not top_scores_df) or top_scores_df.count() == 0:
             print("No data found for creating notifications. Stopping execution.")
         else:
             successful_notifications, unsuccessful_notifications = (
-                self.signalHandler.process_notifications(
-                    top_scores_df, self.annotate_detection_images
-                )
+                self.signalHandler.process_notifications(top_scores_df)
             )
 
             if successful_notifications:

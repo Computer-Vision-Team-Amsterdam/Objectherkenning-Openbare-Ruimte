@@ -8,6 +8,7 @@ from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
+    parse_manual_run_arg_to_settings,
     parse_task_args_to_settings,
     setup_arg_parser,
     setup_tables,
@@ -36,6 +37,8 @@ def main(args: argparse.Namespace) -> None:
 
     print("Parsing job parameters...")
     settings = parse_task_args_to_settings(settings, args)
+    settings = parse_manual_run_arg_to_settings(settings, args)
+
     print("Will run the following active tasks:")
     for stadsdeel in settings["job_config"]["active_task"].keys():
         stadsdeel_str = str(settings["job_config"]["active_task"][stadsdeel])
