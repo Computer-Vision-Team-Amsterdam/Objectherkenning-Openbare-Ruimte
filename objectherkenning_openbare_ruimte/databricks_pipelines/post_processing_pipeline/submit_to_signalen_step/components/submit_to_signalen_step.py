@@ -104,7 +104,7 @@ class SubmitToSignalenStep:
             ids = []
             for entry in top_scores_df.collect():
                 ids.append(entry["detection_id"])
-            id_str = ", ".join(ids)
+            id_str = ", ".join(map(str, ids))
             print(f"[{id_str}]")
 
         #     successful_notifications, unsuccessful_notifications = (
