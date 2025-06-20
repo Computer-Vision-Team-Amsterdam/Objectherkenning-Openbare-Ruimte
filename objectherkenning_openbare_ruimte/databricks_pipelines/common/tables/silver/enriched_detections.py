@@ -86,7 +86,8 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
                 skip_ids,
             )
             print(
-                f"  Found {len(candidate_rows)} detections for object class '{obj_class}' (send limit {send_limit if send_limit else 'not set'})."
+                f"  Found {len(candidate_rows)} detections for object class '{obj_class}' "
+                f"(send limit {send_limit if send_limit is not None else 'not set'})."
             )
             detection_ids = [candidate[cls.id_column] for candidate in candidate_rows]
             detection_ids_to_send.extend(detection_ids)
