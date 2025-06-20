@@ -6,8 +6,10 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
     SignalHandler,
     get_job_process_time,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (  # GoldSignalNotificationsManager,; SilverEnrichedDetectionMetadataQuarantineManager,
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
+    GoldSignalNotificationsManager,
     SilverEnrichedDetectionMetadataManager,
+    SilverEnrichedDetectionMetadataQuarantineManager,
 )
 
 
@@ -100,53 +102,46 @@ class SubmitToSignalenStep:
         if (not top_scores_df) or top_scores_df.count() == 0:
             print("No data found for creating notifications. Stopping execution.")
         else:
-            print("Would send IDs:")
-            ids = []
-            for entry in top_scores_df.collect():
-                ids.append(entry["detection_id"])
-            id_str = ", ".join(map(str, ids))
-            print(f"[{id_str}]")
+            successful_notifications, unsuccessful_notifications = (
+                self.signalHandler.process_notifications(top_scores_df)
+            )
 
-        #     successful_notifications, unsuccessful_notifications = (
-        #         self.signalHandler.process_notifications(top_scores_df)
-        #     )
+            if successful_notifications:
+                modified_schema = (
+                    GoldSignalNotificationsManager.remove_fields_from_table_schema(
+                        fields_to_remove={
+                            GoldSignalNotificationsManager.id_column,
+                            "processed_at",
+                        },
+                    )
+                )
+                successful_df = self.spark_session.createDataFrame(
+                    successful_notifications, schema=modified_schema
+                )
+                GoldSignalNotificationsManager.insert_data(df=successful_df)
 
-        #     if successful_notifications:
-        #         modified_schema = (
-        #             GoldSignalNotificationsManager.remove_fields_from_table_schema(
-        #                 fields_to_remove={
-        #                     GoldSignalNotificationsManager.id_column,
-        #                     "processed_at",
-        #                 },
-        #             )
-        #         )
-        #         successful_df = self.spark_session.createDataFrame(
-        #             successful_notifications, schema=modified_schema
-        #         )
-        #         GoldSignalNotificationsManager.insert_data(df=successful_df)
+            if unsuccessful_notifications:
+                modified_schema = SilverEnrichedDetectionMetadataQuarantineManager.remove_fields_from_table_schema(
+                    fields_to_remove={
+                        GoldSignalNotificationsManager.id_column,
+                        "processed_at",
+                    },
+                )
+                unsuccessful_df = self.spark_session.createDataFrame(
+                    unsuccessful_notifications, schema=modified_schema
+                )
+                SilverEnrichedDetectionMetadataQuarantineManager.insert_data(
+                    df=unsuccessful_df
+                )
 
-        #     if unsuccessful_notifications:
-        #         modified_schema = SilverEnrichedDetectionMetadataQuarantineManager.remove_fields_from_table_schema(
-        #             fields_to_remove={
-        #                 GoldSignalNotificationsManager.id_column,
-        #                 "processed_at",
-        #             },
-        #         )
-        #         unsuccessful_df = self.spark_session.createDataFrame(
-        #             unsuccessful_notifications, schema=modified_schema
-        #         )
-        #         SilverEnrichedDetectionMetadataQuarantineManager.insert_data(
-        #             df=unsuccessful_df
-        #         )
-
-        # # We only want to set to "processed" the rows belonging to this stadsdeel
-        # processed_ids = (
-        #     SilverEnrichedDetectionMetadataManager.get_pending_ids_for_stadsdeel(
-        #         stadsdeel
-        #     )
-        # )
-        # SilverEnrichedDetectionMetadataManager.update_status(
-        #     job_process_time=self.job_process_time,
-        #     id_column="detection_id",
-        #     only_ids=processed_ids,
-        # )
+        # We only want to set to "processed" the rows belonging to this stadsdeel
+        processed_ids = (
+            SilverEnrichedDetectionMetadataManager.get_pending_ids_for_stadsdeel(
+                stadsdeel
+            )
+        )
+        SilverEnrichedDetectionMetadataManager.update_status(
+            job_process_time=self.job_process_time,
+            id_column="detection_id",
+            only_ids=processed_ids,
+        )
