@@ -23,6 +23,7 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
         default="",
         help='"[{2: x, 3: y, 4: z}, {2: x2, 3: y2, 4: z2}, ...]"',
     )
+    parser.add_argument("--skip_ids", type=str, default="", help='"[id1, id2, ...]"')
     parser.add_argument(
         "-f",
         type=str,
@@ -98,6 +99,12 @@ def parse_task_args_to_settings(
             _send_limits = [_send_limits]
         return _send_limits
 
+    def _parse_skip_ids_arg(arg_str: str) -> List[int]:
+        _skip_ids = ast.literal_eval(arg_str)
+        if isinstance(_skip_ids, int):
+            _skip_ids = [_skip_ids]
+        return _skip_ids
+
     if args.send_limits and not args.stadsdelen:
         raise ValueError(
             "Must provide parameter `--stadsdelen` if `--send_limits` are given."
@@ -114,6 +121,12 @@ def parse_task_args_to_settings(
     else:
         print("Using default send limits.")
         send_limits = None
+
+    if args.skip_ids:
+        skip_ids = _parse_skip_ids_arg(args.skip_ids)
+        settings["job_config"]["skip_ids"] = skip_ids
+    else:
+        settings["job_config"]["skip_ids"] = []
 
     if (stadsdelen and send_limits) and not (len(stadsdelen) == len(send_limits)):
         raise ValueError(

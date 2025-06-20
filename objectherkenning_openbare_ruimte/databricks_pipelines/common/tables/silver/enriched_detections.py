@@ -21,19 +21,18 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         active_object_classes: List[int] = [],
         send_limits: Dict[int, int] = {},
         score_threshold: float = score_threshold,
+        skip_ids: list[int] = [],
     ) -> Optional[DataFrame]:
         """
         Collects and returns top pending records for each active object class within send limits.
 
         Parameters:
             exclude_private_terrain_detections (bool): Flag indicating whether to exclude detections on private terrain.
-            az_tenant_id (str): Azure tenant ID required for database access.
-            db_host (str): Host address of the database.
-            db_name (str): Name of the database.
             stadsdeel (str): Name of stadsdeel or None to get all results
             active_object_classes (List[int]): list of object classes to filter by
             send_limits: A dictionary mapping each object class to its maximum number of records to send.
             score_threshold: the minimum score required for records to be returned
+            skip_ids (optional): list of detection_ids to skip
 
         Returns:
             A DataFrame containing valid pending detections if available, otherwise None.
@@ -84,6 +83,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
                 exclude_private_terrain_detections,
                 stadsdeel,
                 score_threshold,
+                skip_ids,
             )
             print(
                 f"  Found {len(candidate_rows)} detections for object class '{obj_class}' (send limit {send_limit if send_limit else 'not set'})."
@@ -112,6 +112,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         exclude_private_terrain_detections: bool = False,
         stadsdeel: Optional[str] = None,
         score_threshold: float = score_threshold,
+        skip_ids: list[int] = [],
     ) -> List[Row]:
         """
         Fetches candidate detections for a given object class that are pending and meet the score criteria.
@@ -122,6 +123,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             exclude_private_terrain_detections: Whether to exclude detections on private terrain.
             stadsdeel (str | None): Name of stadsdeel or None to get all results
             score_threshold: the minimum score required for records to be returned
+            skip_ids (optional): list of detection_ids to skip
 
         Returns:
             A list of Rows representing candidate detections.
@@ -142,6 +144,10 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
         if stadsdeel:
             pending_candidates_df = pending_candidates_df.filter(
                 F.lower(F.col("stadsdeel")) == stadsdeel.lower()
+            )
+        if len(skip_ids) > 0:
+            pending_candidates_df = pending_candidates_df.filter(
+                ~F.col("detection_id").isin(skip_ids)
             )
         if send_limit is not None:
             return pending_candidates_df.take(send_limit)

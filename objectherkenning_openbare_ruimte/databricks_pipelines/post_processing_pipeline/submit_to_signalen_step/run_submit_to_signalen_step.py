@@ -43,6 +43,9 @@ def main(args: argparse.Namespace) -> None:
     for stadsdeel in settings["job_config"]["active_task"].keys():
         stadsdeel_str = str(settings["job_config"]["active_task"][stadsdeel])
         print(f"{stadsdeel}: {stadsdeel_str}")
+    if len(settings["job_config"]["skip_ids"]) > 0:
+        id_str = ", ".join(settings["job_config"]["skip_ids"])
+        print(f"Will skip detection IDs: {id_str}")
     print("\n")
 
     catalog = settings["catalog"]
