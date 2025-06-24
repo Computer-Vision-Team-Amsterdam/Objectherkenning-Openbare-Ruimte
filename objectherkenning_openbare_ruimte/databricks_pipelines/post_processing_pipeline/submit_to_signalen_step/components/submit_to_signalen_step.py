@@ -38,6 +38,7 @@ class SubmitToSignalenStep:
             "exclude_private_terrain_detections"
         ]
         self.min_score = settings["job_config"]["min_score"]
+        self.skip_ids = settings["job_config"]["skip_ids"]
         self.active_task_config = settings["job_config"]["active_task"]
 
         self.signalHandler = SignalHandler(
@@ -95,6 +96,7 @@ class SubmitToSignalenStep:
             active_object_classes=config.get("active_object_classes", []),
             send_limits=send_limits,
             score_threshold=self.min_score,
+            skip_ids=self.skip_ids,
         )
 
         if (not top_scores_df) or top_scores_df.count() == 0:
