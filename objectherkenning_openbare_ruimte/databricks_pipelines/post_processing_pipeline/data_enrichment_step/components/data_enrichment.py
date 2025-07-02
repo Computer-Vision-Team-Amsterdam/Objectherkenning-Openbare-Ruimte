@@ -108,6 +108,9 @@ class DataEnrichment:
                     )
 
                     if enriched_df is not None:
+                        enriched_df = enriched_df.withColumn(
+                            "detection_date", F.to_date(F.lit(date), self.date_format)
+                        )
                         self._create_map(enriched_df=enriched_df, date=date)
                         enriched_dfs.append(enriched_df)
                     else:
@@ -120,7 +123,7 @@ class DataEnrichment:
             if merged_enriched_df.count() > 0:
                 selected_casted_df = merged_enriched_df.select(
                     F.col("a.detection_id"),
-                    F.to_date(F.lit(date), self.date_format).alias("detection_date"),
+                    F.col("detection_date"),
                     F.col("a.object_class"),
                     F.col("b.gps_lat").alias("object_lat"),
                     F.col("b.gps_lon").alias("object_lon"),
