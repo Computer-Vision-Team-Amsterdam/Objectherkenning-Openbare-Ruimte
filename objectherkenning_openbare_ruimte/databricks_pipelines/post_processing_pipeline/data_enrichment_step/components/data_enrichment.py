@@ -118,35 +118,38 @@ class DataEnrichment:
                 else:
                     print("Nothing to do after clustering and filtering.")
 
-            merged_enriched_df = reduce(DataFrame.unionAll, enriched_dfs)
+            if len(enriched_dfs) > 0:
+                merged_enriched_df = reduce(DataFrame.unionAll, enriched_dfs)
 
-            if merged_enriched_df.count() > 0:
-                selected_casted_df = merged_enriched_df.select(
-                    F.col("a.detection_id"),
-                    F.col("detection_date"),
-                    F.col("a.object_class"),
-                    F.col("b.gps_lat").alias("object_lat"),
-                    F.col("b.gps_lon").alias("object_lon"),
-                    F.col("closest_bridge_distance")
-                    .alias("distance_closest_bridge")
-                    .cast("float"),
-                    F.col("closest_bridge_id").cast("string"),
-                    F.col("closest_permit_distance")
-                    .alias("distance_closest_permit")
-                    .cast("float"),
-                    F.col("closest_permit_id").cast("string"),
-                    F.col("closest_permit_lat").cast("double"),
-                    F.col("closest_permit_lon").cast("double"),
-                    F.col("stadsdeel"),
-                    F.col("stadsdeel_code"),
-                    F.col("score").cast("float"),
-                    F.col("private_terrain").cast("boolean"),
-                    F.lit("Pending").alias("status"),
-                )
+                if merged_enriched_df.count() > 0:
+                    selected_casted_df = merged_enriched_df.select(
+                        F.col("a.detection_id"),
+                        F.col("detection_date"),
+                        F.col("a.object_class"),
+                        F.col("b.gps_lat").alias("object_lat"),
+                        F.col("b.gps_lon").alias("object_lon"),
+                        F.col("closest_bridge_distance")
+                        .alias("distance_closest_bridge")
+                        .cast("float"),
+                        F.col("closest_bridge_id").cast("string"),
+                        F.col("closest_permit_distance")
+                        .alias("distance_closest_permit")
+                        .cast("float"),
+                        F.col("closest_permit_id").cast("string"),
+                        F.col("closest_permit_lat").cast("double"),
+                        F.col("closest_permit_lon").cast("double"),
+                        F.col("stadsdeel"),
+                        F.col("stadsdeel_code"),
+                        F.col("score").cast("float"),
+                        F.col("private_terrain").cast("boolean"),
+                        F.lit("Pending").alias("status"),
+                    )
 
-                SilverEnrichedDetectionMetadataManager.insert_data(
-                    df=selected_casted_df
-                )
+                    SilverEnrichedDetectionMetadataManager.insert_data(
+                        df=selected_casted_df
+                    )
+            else:
+                print("No new enriched metadata to add to table.")
 
         SilverFrameMetadataManager.update_status(job_process_time=self.job_process_time)
         SilverDetectionMetadataManager.update_status(
