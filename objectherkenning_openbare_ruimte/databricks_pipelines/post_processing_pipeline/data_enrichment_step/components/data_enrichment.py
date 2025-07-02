@@ -78,6 +78,8 @@ class DataEnrichment:
         if pending_detections.count() == 0 or pending_frames.count() == 0:
             print("\n=== No pending detections. Exiting. ===")
         else:
+            self._setup_handlers()
+
             enriched_dfs = []
             pending_dates = self._get_pending_dates(pending_frames)
 
@@ -105,7 +107,11 @@ class DataEnrichment:
                         objects_coordinates_df=objects_coordinates_df
                     )
 
-                    self._create_map(enriched_df=enriched_df, date=date)
+                    if enriched_df is not None:
+                        self._create_map(enriched_df=enriched_df, date=date)
+                        enriched_dfs.append(enriched_df)
+                    else:
+                        print("No detections left after enrichment.")
                 else:
                     print("Nothing to do after clustering and filtering.")
 
@@ -151,12 +157,12 @@ class DataEnrichment:
             .rdd.flatMap(lambda x: x)
             .collect()
         )
-        return dates
+        return sorted(dates)
 
     def _filter_by_date(
         self, pending_frames: DataFrame, pending_detections: DataFrame, date: str
     ) -> Tuple[DataFrame, DataFrame]:
-        filtered_frames = pending_frames.select(
+        filtered_frames = pending_frames.filter(
             F.date_format(self.date_column, self.date_format) == date
         )
         filtered_detections = pending_detections.join(
@@ -166,7 +172,38 @@ class DataEnrichment:
         )
         return filtered_frames, filtered_detections
 
-    def _get_enriched_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
+    def _setup_handlers(self) -> None:
+        self.bridges_handler = VulnerableBridgesHandler(
+            spark_session=self.spark_session,
+            root_source=self.root_source,
+            vuln_bridges_relative_path=self.vuln_bridges_relative_path,
+        )
+
+        self.decos_data_handler = DecosDataHandler(
+            spark_session=self.spark_session,
+            az_tenant_id=self.az_tenant_id,
+            db_host=self.db_host,
+            db_name=self.db_name,
+            object_classes=self.object_classes,
+            permit_mapping=self.permit_mapping,
+        )
+        self.decos_data_handler.query_and_process_object_permits(
+            date_to_query=datetime.today().strftime("%Y-%m-%d")
+        )
+
+        self.stadsdelen_handler = StadsdelenHandler(spark_session=self.spark_session)
+
+        self.private_terrain_handler = PrivateTerrainHandler(
+            spark_session=self.spark_session,
+            az_tenant_id=self.az_tenant_id,
+            db_host=self.db_host,
+            db_name=self.db_name,
+            detection_buffer=self.public_terrain_detection_buffer,
+        )
+
+    def _get_enriched_df(
+        self, objects_coordinates_df: DataFrame
+    ) -> Optional[DataFrame]:
         closest_bridges_df = self._get_bridges_df(
             objects_coordinates_df=objects_coordinates_df
         )
@@ -195,18 +232,21 @@ class DataEnrichment:
             private_terrain_df, self.id_column
         )
 
-        score_expr = utils_scoring.get_score_expr()
-        objects_coordinates_enriched_df = objects_coordinates_enriched_df.withColumn(
-            "score", score_expr
-        )
+        if objects_coordinates_enriched_df.count() > 0:
+            score_expr = utils_scoring.get_score_expr()
+            objects_coordinates_enriched_df = (
+                objects_coordinates_enriched_df.withColumn("score", score_expr)
+            )
 
-        joined_metadata_with_details_df = objects_coordinates_enriched_df.alias(
-            "a"
-        ).join(
-            self.clustering.joined_metadata.alias("b"),
-            on=F.col(f"a.{self.id_column}") == F.col(f"b.{self.id_column}"),
-        )
-        return joined_metadata_with_details_df
+            joined_metadata_with_details_df = objects_coordinates_enriched_df.alias(
+                "a"
+            ).join(
+                self.clustering.joined_metadata.alias("b"),
+                on=F.col(f"a.{self.id_column}") == F.col(f"b.{self.id_column}"),
+            )
+            return joined_metadata_with_details_df
+        else:
+            return None
 
     def _run_clustering(
         self, pending_detections: DataFrame, pending_frames: DataFrame
@@ -225,59 +265,32 @@ class DataEnrichment:
         return self.clustering.get_objects_coordinates_with_detection_id()
 
     def _get_bridges_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        bridges_handler = VulnerableBridgesHandler(
-            spark_session=self.spark_session,
-            root_source=self.root_source,
-            vuln_bridges_relative_path=self.vuln_bridges_relative_path,
-        )
-        bridges_coordinates_geometry = (
-            bridges_handler.get_bridges_coordinates_geometry()
-        )
-        closest_bridges_df = (
-            bridges_handler.calculate_distances_to_closest_vulnerable_bridges(
-                bridges_locations_as_linestrings=bridges_coordinates_geometry,
-                objects_coordinates_df=objects_coordinates_df,
-                bridges_ids=bridges_handler.get_bridges_ids(),
-                bridges_coordinates=bridges_handler.get_bridges_coordinates(),
-            )
+        closest_bridges_df = self.bridges_handler.calculate_distances_to_closest_vulnerable_bridges(
+            bridges_locations_as_linestrings=self.bridges_handler.get_bridges_coordinates_geometry(),
+            objects_coordinates_df=objects_coordinates_df,
+            bridges_ids=self.bridges_handler.get_bridges_ids(),
+            bridges_coordinates=self.bridges_handler.get_bridges_coordinates(),
         )
         return closest_bridges_df
 
     def _get_decos_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        decos_data_handler = DecosDataHandler(
-            spark_session=self.spark_session,
-            az_tenant_id=self.az_tenant_id,
-            db_host=self.db_host,
-            db_name=self.db_name,
-            object_classes=self.object_classes,
-            permit_mapping=self.permit_mapping,
-        )
-        decos_data_handler.query_and_process_object_permits(
-            date_to_query=datetime.today().strftime("%Y-%m-%d")
-        )
-        closest_permits_df = decos_data_handler.calculate_distances_to_closest_permits(
-            objects_coordinates_df=objects_coordinates_df,
+        closest_permits_df = (
+            self.decos_data_handler.calculate_distances_to_closest_permits(
+                objects_coordinates_df=objects_coordinates_df,
+            )
         )
         return closest_permits_df
 
     def _get_stadsdelen_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        stadsdelen_handler = StadsdelenHandler(spark_session=self.spark_session)
-        stadsdelen_df = stadsdelen_handler.lookup_stadsdeel_for_detections(
+        stadsdelen_df = self.stadsdelen_handler.lookup_stadsdeel_for_detections(
             objects_coordinates_df=objects_coordinates_df,
             id_column=self.id_column,
         )
         return stadsdelen_df
 
     def _get_private_terrain_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        private_terrain_handler = PrivateTerrainHandler(
-            spark_session=self.spark_session,
-            az_tenant_id=self.az_tenant_id,
-            db_host=self.db_host,
-            db_name=self.db_name,
-            detection_buffer=self.public_terrain_detection_buffer,
-        )
         private_terrain_df = (
-            private_terrain_handler.lookup_private_terrain_for_detections(
+            self.private_terrain_handler.lookup_private_terrain_for_detections(
                 objects_coordinates_df=objects_coordinates_df,
                 id_column=self.id_column,
             )
