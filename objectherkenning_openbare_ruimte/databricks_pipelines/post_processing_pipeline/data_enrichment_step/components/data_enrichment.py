@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Any, Dict, Optional
+from functools import reduce
+from typing import Any, Dict, List, Optional, Tuple
 
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
@@ -25,6 +26,8 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 
 class DataEnrichment:
     id_column = "detection_id"
+    date_column = "gps_timestamp"
+    date_format = "yyyy-MM-dd"
 
     def __init__(
         self,
@@ -73,26 +76,43 @@ class DataEnrichment:
         pending_frames = SilverFrameMetadataManager.load_pending_rows_from_table()
 
         if pending_detections.count() == 0 or pending_frames.count() == 0:
-            print("No pending detections. Exiting.")
+            print("\n=== No pending detections. Exiting. ===")
         else:
-            objects_coordinates_df = self._run_clustering()
+            enriched_dfs = []
+            pending_dates = self._get_pending_dates(pending_frames)
 
-            if objects_coordinates_df and (objects_coordinates_df.count() > 0):
-                category_counts = sorted(
-                    objects_coordinates_df.groupBy("object_class").count().collect()
+            for date in pending_dates:
+                print(f"\n=== Processing data for date: {date} ===")
+
+                frames_for_date, detections_for_date = self._filter_by_date(
+                    pending_frames, pending_detections, date
                 )
-                for row in category_counts:
-                    print(
-                        f"Detected '{self.object_classes[row['object_class']]}': {row['count']}"
+                objects_coordinates_df = self._run_clustering(
+                    pending_detections=detections_for_date,
+                    pending_frames=frames_for_date,
+                )
+
+                if objects_coordinates_df and (objects_coordinates_df.count() > 0):
+                    category_counts = sorted(
+                        objects_coordinates_df.groupBy("object_class").count().collect()
+                    )
+                    for row in category_counts:
+                        print(
+                            f"Detected '{self.object_classes[row['object_class']]}': {row['count']}"
+                        )
+
+                    enriched_df = self._get_enriched_df(
+                        objects_coordinates_df=objects_coordinates_df
                     )
 
-                enriched_df = self._get_enriched_df(
-                    objects_coordinates_df=objects_coordinates_df
-                )
+                    self._create_map(enriched_df=enriched_df, date=date)
+                else:
+                    print("Nothing to do after clustering and filtering.")
 
-                self._create_map(enriched_df=enriched_df)
+            merged_enriched_df = reduce(DataFrame.unionAll, enriched_dfs)
 
-                selected_casted_df = enriched_df.select(
+            if merged_enriched_df.count() > 0:
+                selected_casted_df = merged_enriched_df.select(
                     F.col("a.detection_id"),
                     F.col("a.object_class"),
                     F.col("b.gps_lat").alias("object_lat"),
@@ -117,13 +137,33 @@ class DataEnrichment:
                 SilverEnrichedDetectionMetadataManager.insert_data(
                     df=selected_casted_df
                 )
-            else:
-                print("Nothing to do after clustering and filtering. Exiting.")
 
         SilverFrameMetadataManager.update_status(job_process_time=self.job_process_time)
         SilverDetectionMetadataManager.update_status(
             job_process_time=self.job_process_time
         )
+
+    def _get_pending_dates(self, pending_frames: DataFrame) -> List[str]:
+        dates = (
+            pending_frames.select(F.date_format(self.date_column, self.date_format))
+            .distinct()
+            .rdd.flatMap(lambda x: x)
+            .collect()
+        )
+        return dates
+
+    def _filter_by_date(
+        self, pending_frames: DataFrame, pending_detections: DataFrame, date: str
+    ) -> Tuple[DataFrame, DataFrame]:
+        filtered_frames = pending_frames.select(
+            F.date_format(self.date_column, self.date_format) == date
+        )
+        filtered_detections = pending_detections.join(
+            other=filtered_frames,
+            on="frame_id",
+            how="left_semi",
+        )
+        return filtered_frames, filtered_detections
 
     def _get_enriched_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
         closest_bridges_df = self._get_bridges_df(
@@ -167,13 +207,15 @@ class DataEnrichment:
         )
         return joined_metadata_with_details_df
 
-    def _run_clustering(self) -> Optional[DataFrame]:
+    def _run_clustering(
+        self, pending_detections: DataFrame, pending_frames: DataFrame
+    ) -> Optional[DataFrame]:
         self.clustering = Clustering(
             spark_session=self.spark_session,
             catalog=self.catalog,
             schema=self.schema,
-            detections=SilverDetectionMetadataManager.load_pending_rows_from_table(),
-            frames=SilverFrameMetadataManager.load_pending_rows_from_table(),
+            detections=pending_detections,
+            frames=pending_frames,
             active_object_classes=self.active_object_classes_for_clustering,
             confidence_thresholds=self.confidence_thresholds,
             bbox_size_thresholds=self.bbox_size_thresholds,
@@ -241,8 +283,8 @@ class DataEnrichment:
         )
         return private_terrain_df
 
-    def _create_map(self, enriched_df: DataFrame) -> None:
-        map_file_name = f"{self.job_process_time.strftime('%Y-%m-%d %Hh%Mm%Ss')}-map"
+    def _create_map(self, enriched_df: DataFrame, date: str) -> None:
+        map_file_name = f"map-{date}-created-at-{self.job_process_time.strftime('%Y-%m-%d %Hh%Mm%Ss')}"
         map_file_path = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/"
 
         map_df = enriched_df.filter(F.col("score") >= self.min_score)
