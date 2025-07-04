@@ -39,13 +39,17 @@ def main(args: argparse.Namespace) -> None:
     settings = parse_task_args_to_settings(settings, args)
     settings = parse_manual_run_arg_to_settings(settings, args)
 
-    print("Will run the following active tasks:")
+    print("Running the following task configuration:")
     for stadsdeel in settings["job_config"]["active_task"].keys():
         stadsdeel_str = str(settings["job_config"]["active_task"][stadsdeel])
-        print(f"{stadsdeel}: {stadsdeel_str}")
+        print(f"  - {stadsdeel}: {stadsdeel_str}")
+    if settings["job_config"]["date"] is not None:
+        print(
+            f"  - will only process pending detections for date {settings["job_config"]["date"]}"
+        )
     if len(settings["job_config"]["skip_ids"]) > 0:
         id_str = ", ".join(map(str, settings["job_config"]["skip_ids"]))
-        print(f"Will skip detection IDs: [{id_str}]")
+        print(f"  - will skip detection IDs: [{id_str}]")
     print("\n")
 
     catalog = settings["catalog"]
