@@ -9,7 +9,7 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
     Setup an ArgumentParser for the command line parameters / job parameters.
     """
     parser = argparse.ArgumentParser(prog=prog)
-    parser.add_argument("--date", type=str, default="", help="yyyy-mm-dd")
+    parser.add_argument("--detection_date", type=str, default="", help="yyyy-mm-dd")
     parser.add_argument(
         "--manual_inspection",
         type=ast.literal_eval,
@@ -136,8 +136,10 @@ def parse_task_args_to_settings(
             f"Argument number mismatch: {len(stadsdelen)} stadsdelen with {len(send_limits)} send limits."
         )
 
-    if args.date:
-        settings["job_config"]["detection_date"] = _parse_detection_date(args.date)
+    if args.detection_date:
+        settings["job_config"]["detection_date"] = _parse_detection_date(
+            args.detection_date
+        )
     else:
         settings["job_config"]["detection_date"] = None
 
