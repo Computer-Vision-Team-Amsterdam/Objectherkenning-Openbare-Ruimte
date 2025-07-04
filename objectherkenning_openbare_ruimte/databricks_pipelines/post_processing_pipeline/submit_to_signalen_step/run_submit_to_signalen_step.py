@@ -43,9 +43,9 @@ def main(args: argparse.Namespace) -> None:
     for stadsdeel in settings["job_config"]["active_task"].keys():
         stadsdeel_str = str(settings["job_config"]["active_task"][stadsdeel])
         print(f"  - {stadsdeel}: {stadsdeel_str}")
-    if settings["job_config"]["date"] is not None:
+    if settings["job_config"]["detection_date"] is not None:
         print(
-            f"  - will only process pending detections for date {settings["job_config"]["date"]}"
+            f"  - will only process pending detections for date {settings['job_config']['detection_date']}"
         )
     if len(settings["job_config"]["skip_ids"]) > 0:
         id_str = ", ".join(map(str, settings["job_config"]["skip_ids"]))
