@@ -29,9 +29,11 @@ class TableManager(ABC):
         if not id_column:
             id_column = cls.id_column
 
+        table_full_name = cls.get_table_full_name()
+
         count_pending_query = f"""
         SELECT COUNT(*) as pending_count
-        FROM {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
+        FROM {table_full_name}
         WHERE status = 'Pending'
         """  # nosec
         total_pending_before = TableManager.spark_session.sql(count_pending_query).collect()[0][  # type: ignore
@@ -39,7 +41,7 @@ class TableManager(ABC):
         ]
 
         update_query = f"""
-        UPDATE {TableManager.catalog}.{TableManager.schema}.{cls.table_name}
+        UPDATE {table_full_name}
         SET status = 'Processed', processed_at = '{job_process_time}'
         WHERE status = 'Pending'
         """  # nosec
@@ -61,27 +63,24 @@ class TableManager(ABC):
 
         updated_rows = total_pending_before - total_pending_after
         print(
-            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {TableManager.catalog}.{TableManager.schema}.{cls.table_name}, {total_pending_after} rows remained 'Pending'."
+            f"Updated {updated_rows} 'Pending' rows to 'Processed' in {table_full_name}, {total_pending_after} rows remained 'Pending'."
         )
+
+    @classmethod
+    def get_table_full_name(cls) -> str:
+        return f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
 
     @classmethod
     def get_table(cls) -> DataFrame:
         """
-        Loads a table from the catalog and schema.
-
-        Parameters:
-        ----------
-        table_name : str
-            The name of the table to load.
+        Loads the table from the catalog and schema.
 
         Returns:
         -------
         DataFrame
             A DataFrame containing the rows from the specified table.
         """
-        full_table_name = (
-            f"{TableManager.catalog}.{TableManager.schema}.{cls.table_name}"
-        )
+        full_table_name = cls.get_table_full_name()
         table_rows = TableManager.spark_session.table(full_table_name)  # type: ignore
         print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
@@ -89,12 +88,7 @@ class TableManager(ABC):
     @classmethod
     def load_pending_rows_from_table(cls) -> DataFrame:
         """
-        Loads all rows with a 'Pending' status from the specified table in the catalog and schema.
-
-        Parameters:
-        ----------
-        table_name : str
-            The name of the table from which to load 'Pending' rows.
+        Loads all rows with a 'Pending' status from the table.
 
         Returns:
         -------
@@ -111,18 +105,16 @@ class TableManager(ABC):
     @classmethod
     def remove_fields_from_table_schema(cls, fields_to_remove: set) -> StructType:
         """
-        This method loads the schema of the specified table, removes the fields
+        This method loads the schema of the table, removes the fields
         listed in `fields_to_remove`, and returns the modified schema.
 
         Parameters:
         ----------
-        table_name: The name of the table whose schema will be modified.
         fields_to_remove: A set of field names to be removed from the schema.
 
         Returns:
         -------
         StructType: The modified schema with the specified fields removed.
-
         """
         table_schema = cls.get_table().schema
 
