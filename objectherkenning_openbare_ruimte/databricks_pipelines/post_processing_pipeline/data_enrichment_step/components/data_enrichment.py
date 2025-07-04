@@ -85,38 +85,11 @@ class DataEnrichment:
 
             for date in pending_dates:
                 print(f"\n=== Processing data for date: {date} ===")
-
-                frames_for_date, detections_for_date = self._filter_by_date(
+                enriched_df = self._process_pending_detections_for_date(
                     pending_frames, pending_detections, date
                 )
-                objects_coordinates_df = self._run_clustering(
-                    pending_detections=detections_for_date,
-                    pending_frames=frames_for_date,
-                )
-
-                if objects_coordinates_df and (objects_coordinates_df.count() > 0):
-                    category_counts = sorted(
-                        objects_coordinates_df.groupBy("object_class").count().collect()
-                    )
-                    for row in category_counts:
-                        print(
-                            f"Detected '{self.object_classes[row['object_class']]}': {row['count']}"
-                        )
-
-                    enriched_df = self._get_enriched_df(
-                        objects_coordinates_df=objects_coordinates_df
-                    )
-
-                    if enriched_df is not None:
-                        enriched_df = enriched_df.withColumn(
-                            "detection_date", F.to_date(F.lit(date), self.date_format)
-                        )
-                        self._create_map(enriched_df=enriched_df, date=date)
-                        enriched_dfs.append(enriched_df)
-                    else:
-                        print("No detections left after enrichment.")
-                else:
-                    print("Nothing to do after clustering and filtering.")
+                if enriched_df is not None:
+                    enriched_dfs.append(enriched_df)
 
             if len(enriched_dfs) > 0:
                 merged_enriched_df = reduce(DataFrame.unionAll, enriched_dfs)
@@ -155,6 +128,43 @@ class DataEnrichment:
         SilverDetectionMetadataManager.update_status(
             job_process_time=self.job_process_time
         )
+
+    def _process_pending_detections_for_date(
+        self, pending_frames: DataFrame, pending_detections: DataFrame, date: str
+    ) -> Optional[DataFrame]:
+        frames_for_date, detections_for_date = self._filter_by_date(
+            pending_frames, pending_detections, date
+        )
+        objects_coordinates_df = self._run_clustering(
+            pending_detections=detections_for_date,
+            pending_frames=frames_for_date,
+        )
+
+        if objects_coordinates_df and (objects_coordinates_df.count() > 0):
+            category_counts = sorted(
+                objects_coordinates_df.groupBy("object_class").count().collect()
+            )
+            for row in category_counts:
+                print(
+                    f"Detected '{self.object_classes[row['object_class']]}': {row['count']}"
+                )
+
+            enriched_df = self._get_enriched_df(
+                objects_coordinates_df=objects_coordinates_df
+            )
+
+            if enriched_df is not None:
+                enriched_df = enriched_df.withColumn(
+                    "detection_date", F.to_date(F.lit(date), self.date_format)
+                )
+                self._create_map(enriched_df=enriched_df, date=date)
+            else:
+                print("No detections left after enrichment.")
+
+            return enriched_df
+        else:
+            print("Nothing to do after clustering and filtering.")
+            return None
 
     def _get_pending_dates(self, pending_frames: DataFrame) -> List[str]:
         dates = (
