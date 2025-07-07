@@ -68,6 +68,7 @@ class DataEnrichment:
             "private_terrain_detection_buffer"
         ]
         self.min_score = job_settings["min_score"]
+        self.detection_date = job_settings.get("detection_date", None)
 
     def run_data_enrichment_step(self):
         pending_detections = (
@@ -78,55 +79,65 @@ class DataEnrichment:
         if pending_detections.count() == 0 or pending_frames.count() == 0:
             print("\n=== No pending detections. Exiting. ===")
         else:
-            self._setup_handlers()
-
-            enriched_dfs = []
             pending_dates = self._get_pending_dates(pending_frames)
 
-            for date in pending_dates:
-                print(f"\n=== Processing data for date: {date} ===")
-                enriched_df = self._process_pending_detections_for_date(
-                    pending_frames, pending_detections, date
+            if len(pending_dates) == 0:
+                print(
+                    f"\n=== No pending detections that match date {self.detection_date}. Exiting. ==="
                 )
-                if enriched_df is not None:
-                    enriched_dfs.append(enriched_df)
-
-            if len(enriched_dfs) > 0:
-                merged_enriched_df = reduce(DataFrame.unionAll, enriched_dfs)
-
-                if merged_enriched_df.count() > 0:
-                    selected_casted_df = merged_enriched_df.select(
-                        F.col("a.detection_id"),
-                        F.col("detection_date"),
-                        F.col("a.object_class"),
-                        F.col("b.gps_lat").alias("object_lat"),
-                        F.col("b.gps_lon").alias("object_lon"),
-                        F.col("closest_bridge_distance")
-                        .alias("distance_closest_bridge")
-                        .cast("float"),
-                        F.col("closest_bridge_id").cast("string"),
-                        F.col("closest_permit_distance")
-                        .alias("distance_closest_permit")
-                        .cast("float"),
-                        F.col("closest_permit_id").cast("string"),
-                        F.col("closest_permit_lat").cast("double"),
-                        F.col("closest_permit_lon").cast("double"),
-                        F.col("stadsdeel"),
-                        F.col("stadsdeel_code"),
-                        F.col("score").cast("float"),
-                        F.col("private_terrain").cast("boolean"),
-                        F.lit("Pending").alias("status"),
-                    )
-
-                    SilverEnrichedDetectionMetadataManager.insert_data(
-                        df=selected_casted_df
-                    )
             else:
-                print("No new enriched metadata to add to table.")
+                self._setup_handlers()
 
-        SilverFrameMetadataManager.update_status(job_process_time=self.job_process_time)
+                enriched_dfs = []
+
+                for date in pending_dates:
+                    print(f"\n=== Processing data for date: {date} ===")
+                    enriched_df = self._process_pending_detections_for_date(
+                        pending_frames, pending_detections, date
+                    )
+                    if enriched_df is not None:
+                        enriched_dfs.append(enriched_df)
+
+                if len(enriched_dfs) > 0:
+                    merged_enriched_df = reduce(DataFrame.unionAll, enriched_dfs)
+
+                    if merged_enriched_df.count() > 0:
+                        selected_casted_df = merged_enriched_df.select(
+                            F.col("a.detection_id"),
+                            F.col("detection_date"),
+                            F.col("a.object_class"),
+                            F.col("b.gps_lat").alias("object_lat"),
+                            F.col("b.gps_lon").alias("object_lon"),
+                            F.col("closest_bridge_distance")
+                            .alias("distance_closest_bridge")
+                            .cast("float"),
+                            F.col("closest_bridge_id").cast("string"),
+                            F.col("closest_permit_distance")
+                            .alias("distance_closest_permit")
+                            .cast("float"),
+                            F.col("closest_permit_id").cast("string"),
+                            F.col("closest_permit_lat").cast("double"),
+                            F.col("closest_permit_lon").cast("double"),
+                            F.col("stadsdeel"),
+                            F.col("stadsdeel_code"),
+                            F.col("score").cast("float"),
+                            F.col("private_terrain").cast("boolean"),
+                            F.lit("Pending").alias("status"),
+                        )
+
+                        SilverEnrichedDetectionMetadataManager.insert_data(
+                            df=selected_casted_df
+                        )
+                else:
+                    print("No new enriched metadata to add to table.")
+
+        SilverFrameMetadataManager.update_status(
+            job_process_time=self.job_process_time,
+            only_detection_date=self.detection_date,
+        )
         SilverDetectionMetadataManager.update_status(
-            job_process_time=self.job_process_time
+            job_process_time=self.job_process_time,
+            only_detection_date=self.detection_date,
         )
 
     def _process_pending_detections_for_date(
@@ -173,6 +184,8 @@ class DataEnrichment:
             .rdd.flatMap(lambda x: x)
             .collect()
         )
+        if self.detection_date is not None:
+            dates = list(set([self.detection_date]).intersection(dates))
         return sorted(dates)
 
     def _filter_by_date(
