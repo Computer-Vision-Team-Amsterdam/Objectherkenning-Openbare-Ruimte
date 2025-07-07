@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from functools import reduce
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -59,7 +59,7 @@ class DataEnrichment:
         self.cluster_distances = object_class_settings["cluster_distances"]
         self.active_object_classes_for_clustering = list(self.cluster_distances.keys())
 
-        job_settings = settings["job_config"]
+        job_settings: Dict[str, Any] = settings["job_config"]
         self.annotate_detection_images = job_settings["annotate_detection_images"]
         self.exclude_private_terrain = job_settings[
             "exclude_private_terrain_detections"
@@ -68,7 +68,7 @@ class DataEnrichment:
             "private_terrain_detection_buffer"
         ]
         self.min_score = job_settings["min_score"]
-        self.detection_date = job_settings.get("detection_date", None)
+        self.detection_date: datetime.date = job_settings.get("detection_date", None)
 
     def run_data_enrichment_step(self):
         pending_detections = (
@@ -131,13 +131,20 @@ class DataEnrichment:
                 else:
                     print("No new enriched metadata to add to table.")
 
+        filtered_frame_ids, filtered_detection_ids = None, None
+        if self.detection_date is not None:
+            filtered_frame_ids, filtered_detection_ids = self._get_ids_for_date(
+                pending_frames,
+                pending_detections,
+                self.detection_date.strftime("%Y-%m-%d"),
+            )
+
         SilverFrameMetadataManager.update_status(
             job_process_time=self.job_process_time,
-            only_detection_date=self.detection_date,
+            only_ids=filtered_frame_ids,
         )
         SilverDetectionMetadataManager.update_status(
-            job_process_time=self.job_process_time,
-            only_detection_date=self.detection_date,
+            job_process_time=self.job_process_time, only_ids=filtered_detection_ids
         )
 
     def _process_pending_detections_for_date(
@@ -185,7 +192,8 @@ class DataEnrichment:
             .collect()
         )
         if self.detection_date is not None:
-            dates = list(set([self.detection_date]).intersection(dates))
+            _detection_date = self.detection_date.strftime("%Y-%m-%d")
+            dates = list(set([_detection_date]).intersection(dates))
         return sorted(dates)
 
     def _filter_by_date(
@@ -200,6 +208,22 @@ class DataEnrichment:
             how="left_semi",
         )
         return filtered_frames, filtered_detections
+
+    def _get_ids_for_date(
+        self, pending_frames: DataFrame, pending_detections: DataFrame, date: str
+    ) -> Tuple[List[int], List[int]]:
+        filtered_frames, filtered_detections = self._filter_by_date(
+            pending_frames, pending_detections, date
+        )
+        filtered_frame_ids = (
+            filtered_frames.select("frame_id").rdd.flatMap(lambda x: x).collect()
+        )
+        filtered_detection_ids = (
+            filtered_detections.select("detection_id")
+            .rdd.flatMap(lambda x: x)
+            .collect()
+        )
+        return filtered_frame_ids, filtered_detection_ids
 
     def _setup_handlers(self) -> None:
         self.bridges_handler = VulnerableBridgesHandler(
@@ -217,7 +241,7 @@ class DataEnrichment:
             permit_mapping=self.permit_mapping,
         )
         self.decos_data_handler.query_and_process_object_permits(
-            date_to_query=datetime.today().strftime("%Y-%m-%d")
+            date_to_query=datetime.datetime.today().strftime("%Y-%m-%d")
         )
 
         self.stadsdelen_handler = StadsdelenHandler(spark_session=self.spark_session)
@@ -328,7 +352,7 @@ class DataEnrichment:
 
     def _create_map(self, enriched_df: DataFrame, date: str) -> None:
         map_file_name = f"map-{date}-created-at-{self.job_process_time.strftime('%Y-%m-%d %Hh%Mm%Ss')}"
-        map_file_path = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.today().strftime('%Y-%m-%d')}/"
+        map_file_path = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/{datetime.datetime.today().strftime('%Y-%m-%d')}/"
 
         map_df = enriched_df.filter(F.col("score") >= self.min_score)
 

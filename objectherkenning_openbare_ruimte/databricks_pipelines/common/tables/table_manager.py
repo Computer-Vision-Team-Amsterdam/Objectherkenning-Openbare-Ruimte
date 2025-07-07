@@ -1,5 +1,5 @@
 from abc import ABC
-from datetime import date, datetime
+from datetime import datetime
 from typing import List, Optional
 
 from pyspark.sql import DataFrame
@@ -20,7 +20,6 @@ class TableManager(ABC):
         id_column: Optional[str] = None,
         exclude_ids: List[int] = [],
         only_ids: Optional[List[int]] = None,
-        only_detection_date: Optional[date] = None,
     ):
         """
         Update `status` of "pending" rows to "processed". IDs included in
@@ -52,8 +51,6 @@ class TableManager(ABC):
         if (only_ids is not None) and (len(only_ids) > 0):
             only_ids_str = ", ".join(map(str, only_ids))
             update_query += f" AND {id_column} IN ({only_ids_str})"
-        if only_detection_date is not None:
-            update_query += f" AND detection_date == {only_detection_date}"
 
         # If only_ids is an empty list, it means NO ids should be updated.
         if (only_ids is not None) and (len(only_ids) == 0):
