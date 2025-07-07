@@ -3,12 +3,15 @@ dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
 
 import argparse  # noqa: E402
 import os  # noqa: E402
+from typing import Any, Dict  # noqa: E402
 
 from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
+    parse_detection_date_arg_to_settings,
     parse_manual_run_arg_to_settings,
+    parse_skip_ids_arg_to_settings,
     parse_task_args_to_settings,
     setup_arg_parser,
     setup_tables,
@@ -19,6 +22,16 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
+
+
+def parse_args_to_settings(
+    settings: Dict[str, Any], args: argparse.Namespace
+) -> Dict[str, Any]:
+    settings = parse_task_args_to_settings(settings, args)
+    settings = parse_detection_date_arg_to_settings(settings, args)
+    settings = parse_skip_ids_arg_to_settings(settings, args)
+    settings = parse_manual_run_arg_to_settings(settings, args)
+    return settings
 
 
 def main(args: argparse.Namespace) -> None:
@@ -36,8 +49,7 @@ def main(args: argparse.Namespace) -> None:
     ]
 
     print("Parsing job parameters...")
-    settings = parse_task_args_to_settings(settings, args)
-    settings = parse_manual_run_arg_to_settings(settings, args)
+    settings = parse_args_to_settings(settings, args)
 
     print("Running the following task configuration:")
     for stadsdeel in settings["job_config"]["active_task"].keys():

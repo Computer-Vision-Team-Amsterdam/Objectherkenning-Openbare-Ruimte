@@ -8,8 +8,8 @@ from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
+    parse_detection_date_arg_to_settings,
     parse_manual_run_arg_to_settings,
-    parse_task_args_to_settings,
     setup_arg_parser,
     setup_tables,
 )
@@ -34,7 +34,7 @@ def main(args: argparse.Namespace) -> None:
     ]
 
     print("Parsing job parameters...")
-    settings = parse_task_args_to_settings(settings, args)
+    settings = parse_detection_date_arg_to_settings(settings, args)
     settings = parse_manual_run_arg_to_settings(settings, args)
 
     if settings["job_config"]["detection_date"] is not None:

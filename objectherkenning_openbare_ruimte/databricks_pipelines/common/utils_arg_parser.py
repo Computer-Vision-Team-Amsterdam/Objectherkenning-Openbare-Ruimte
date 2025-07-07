@@ -75,7 +75,7 @@ def parse_task_args_to_settings(
     settings: dict[str, Any], args: argparse.Namespace
 ) -> dict[str, Any]:
     """
-    Parse the command line arguments and update the active_task settings.
+    Parse the command line arguments related to the active task and update settings.
 
     Parameters
     ----------
@@ -101,19 +101,6 @@ def parse_task_args_to_settings(
             _send_limits = [_send_limits]
         return _send_limits
 
-    def _parse_detection_date(arg_str: str) -> Optional[datetime.date]:
-        try:
-            return datetime.date.fromisoformat(arg_str)
-        except ValueError as e:
-            print(f"Incorrect date format, expected yyyy-mm-dd, got {arg_str}")
-            raise e
-
-    def _parse_skip_ids_arg(arg_str: str) -> List[int]:
-        _skip_ids = ast.literal_eval(arg_str)
-        if isinstance(_skip_ids, int):
-            _skip_ids = [_skip_ids]
-        return _skip_ids
-
     if args.send_limits and not args.stadsdelen:
         raise ValueError(
             "Must provide parameter `--stadsdelen` if `--send_limits` are given."
@@ -136,19 +123,6 @@ def parse_task_args_to_settings(
             f"Argument number mismatch: {len(stadsdelen)} stadsdelen with {len(send_limits)} send limits."
         )
 
-    if args.detection_date:
-        settings["job_config"]["detection_date"] = _parse_detection_date(
-            args.detection_date
-        )
-    else:
-        settings["job_config"]["detection_date"] = None
-
-    if args.skip_ids:
-        skip_ids = _parse_skip_ids_arg(args.skip_ids)
-        settings["job_config"]["skip_ids"] = skip_ids
-    else:
-        settings["job_config"]["skip_ids"] = []
-
     active_tasks = {}
 
     for i, stadsdeel in enumerate(stadsdelen):
@@ -166,5 +140,75 @@ def parse_task_args_to_settings(
             active_tasks[stadsdeel] = settings["job_config"]["active_task"][stadsdeel]
 
     settings["job_config"]["active_task"] = active_tasks
+
+    return settings
+
+
+def parse_skip_ids_arg_to_settings(
+    settings: dict[str, Any], args: argparse.Namespace
+) -> dict[str, Any]:
+    """
+    Parse the skip_ids command line argument and update settings.
+
+    Parameters
+    ----------
+    settings: dict[str, Any]
+        Full databricks config settings.
+    args: argparse.Namespace
+        Command line arguments
+
+    Returns
+    -------
+    Updated settings dict
+    """
+
+    if args.skip_ids:
+        skip_ids = ast.literal_eval(args.skip_ids)
+        if isinstance(skip_ids, int):
+            skip_ids = [skip_ids]
+        settings["job_config"]["skip_ids"] = skip_ids
+    else:
+        settings["job_config"]["skip_ids"] = []
+
+    return settings
+
+
+def parse_detection_date_arg_to_settings(
+    settings: dict[str, Any], args: argparse.Namespace
+) -> dict[str, Any]:
+    """
+    Parse the datection_date command line argument and update settings.
+
+    Parameters
+    ----------
+    settings: dict[str, Any]
+        Full databricks config settings.
+    args: argparse.Namespace
+        Command line arguments
+
+    Returns
+    -------
+    Updated settings dict
+    """
+
+    def _parse_detection_date(arg_str: str) -> Optional[datetime.date]:
+        try:
+            return datetime.date.fromisoformat(arg_str)
+        except ValueError as e:
+            print(f"Incorrect date format, expected yyyy-mm-dd, got {arg_str}")
+            raise e
+
+    if args.detection_date:
+        try:
+            settings["job_config"]["detection_date"] = datetime.date.fromisoformat(
+                args.detection_date
+            )
+        except ValueError as e:
+            print(
+                f"Incorrect date format, expected yyyy-mm-dd, got {args.detection_date}"
+            )
+            raise e
+    else:
+        settings["job_config"]["detection_date"] = None
 
     return settings
