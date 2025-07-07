@@ -1,7 +1,7 @@
 import argparse
 import ast
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
@@ -190,13 +190,6 @@ def parse_detection_date_arg_to_settings(
     -------
     Updated settings dict
     """
-
-    def _parse_detection_date(arg_str: str) -> Optional[datetime.date]:
-        try:
-            return datetime.date.fromisoformat(arg_str)
-        except ValueError as e:
-            print(f"Incorrect date format, expected yyyy-mm-dd, got {arg_str}")
-            raise e
 
     if args.detection_date:
         try:
