@@ -71,6 +71,16 @@ class DataEnrichment:
         self.detection_date: datetime.date = job_settings.get("detection_date", None)
 
     def run_data_enrichment_step(self):
+        """
+        Load pending detections, group them by date, and then run data enrichment steps:
+        - Clustering of detections
+        - Add distance to nearest vulnerable bridge
+        - Find closest matching permit
+        - Add name of Stadsdeel within which the detection is located
+        - Check whether the detection is located on private terrain
+
+        A map visualization will be created for each date separately.
+        """
         pending_detections = (
             SilverDetectionMetadataManager.load_pending_rows_from_table()
         )
@@ -90,6 +100,7 @@ class DataEnrichment:
 
                 enriched_dfs = []
 
+                # Loop over dates and enrich corresponding detections
                 for date in pending_dates:
                     print(f"\n=== Processing data for date: {date} ===")
                     enriched_df = self._process_pending_detections_for_date(
@@ -131,6 +142,9 @@ class DataEnrichment:
                 else:
                     print("No new enriched metadata to add to table.")
 
+        # If a specific date was set, we need to keep track of the pending
+        # detection ids that were actually processed, and leave the rest on
+        # "pending"
         filtered_frame_ids, filtered_detection_ids = None, None
         if self.detection_date is not None:
             filtered_frame_ids, filtered_detection_ids = self._get_ids_for_date(
@@ -150,6 +164,9 @@ class DataEnrichment:
     def _process_pending_detections_for_date(
         self, pending_frames: DataFrame, pending_detections: DataFrame, date: str
     ) -> Optional[DataFrame]:
+        """
+        Process pending detections corresponding to a specific date (format: "yyyy-mm-dd").
+        """
         frames_for_date, detections_for_date = self._filter_by_date(
             pending_frames, pending_detections, date
         )
@@ -185,6 +202,11 @@ class DataEnrichment:
             return None
 
     def _get_pending_dates(self, pending_frames: DataFrame) -> List[str]:
+        """
+        Returns a list of unique pending dates (format: "yyyy-mm-dd"). If a
+        detection date was specified as a parameter, the chosen date is
+        returned, only if it is included in the pending dates.
+        """
         dates = (
             pending_frames.select(F.date_format(self.date_column, self.date_format))
             .distinct()
@@ -199,6 +221,7 @@ class DataEnrichment:
     def _filter_by_date(
         self, pending_frames: DataFrame, pending_detections: DataFrame, date: str
     ) -> Tuple[DataFrame, DataFrame]:
+        """Filter pending frames and detections by date."""
         filtered_frames = pending_frames.filter(
             F.date_format(self.date_column, self.date_format) == date
         )
@@ -212,6 +235,10 @@ class DataEnrichment:
     def _get_ids_for_date(
         self, pending_frames: DataFrame, pending_detections: DataFrame, date: str
     ) -> Tuple[List[int], List[int]]:
+        """
+        Returns two lists [frame_id] and [detection_id] of pending frames and
+        detections corresponding to a specified date.
+        """
         filtered_frames, filtered_detections = self._filter_by_date(
             pending_frames, pending_detections, date
         )
@@ -226,6 +253,10 @@ class DataEnrichment:
         return filtered_frame_ids, filtered_detection_ids
 
     def _setup_handlers(self) -> None:
+        """
+        Setup data handlers. We do this only once for each run for efficiency,
+        since each handler collects and pre-processes potentially a lot a data.
+        """
         self.bridges_handler = VulnerableBridgesHandler(
             spark_session=self.spark_session,
             root_source=self.root_source,
@@ -257,6 +288,10 @@ class DataEnrichment:
     def _get_enriched_df(
         self, objects_coordinates_df: DataFrame
     ) -> Optional[DataFrame]:
+        """
+        Enrich the detections with bridges, permits, stadsdelen, and private
+        terrain information.
+        """
         closest_bridges_df = self._get_bridges_df(
             objects_coordinates_df=objects_coordinates_df
         )
