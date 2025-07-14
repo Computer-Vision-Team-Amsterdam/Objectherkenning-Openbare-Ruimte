@@ -225,7 +225,6 @@ def generate_map(
     Map.get_root().html.add_child(folium.Element(object_class_legend))
 
     # create name for the map
-    print(f"Map is saved at {file_name}")
     full_path = file_path + file_name + ".html"
-    print(f"Saving at {full_path}")
+    print(f"Map is saved at {full_path}")
     Map.save(full_path)
