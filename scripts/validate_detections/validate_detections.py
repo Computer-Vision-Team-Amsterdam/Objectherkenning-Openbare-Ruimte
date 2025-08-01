@@ -20,23 +20,32 @@ class_to_name = {
 def validate_detections(
     detections_folder: str, images_folder: str, resume: bool = False
 ):
+    print(
+        "\n======\n"
+        "Validate OOR detections. Inspect each detection visually, "
+        "and press {[1], [SPACE], [ENTER]} to accept, or {[2], [F]} to reject. "
+        "Rejected detections will be moved to the new subfolder 'fp'."
+        "\n======\n"
+    )
+
     cv2.namedWindow("Validate detections OOR")
 
     progress_file = os.path.join(detections_folder, "validated_detections.txt")
 
     print(f"Scanning metadata in {detections_folder}")
     detection_metadata_files = get_detection_metadata_file_paths(detections_folder)
+    print(f" - Found {len(detection_metadata_files)} detection metadata files.")
 
     if resume:
         with open(progress_file) as f:
             done_files = f.read().splitlines()
-            print(f"Found {len(done_files)} detection files marked as done.")
+            print(f" - Found {len(done_files)} detection files marked as done.")
             detection_metadata_files = [
                 df for df in detection_metadata_files if df not in done_files
             ]
+            print(f"{len(detection_metadata_files)} still to do.")
 
     n_det = len(detection_metadata_files)
-    print(f"Found {n_det} detection metadata files.")
 
     fp_det_dir = os.path.join(detections_folder, "fp")
     fp_img_dir = os.path.join(images_folder, "fp")
