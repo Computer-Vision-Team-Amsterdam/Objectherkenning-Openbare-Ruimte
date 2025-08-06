@@ -37,13 +37,19 @@ def validate_detections(
     print(f" - Found {len(detection_metadata_files)} detection metadata files.")
 
     if resume:
-        with open(progress_file) as f:
-            done_files = f.read().splitlines()
-            print(f" - Found {len(done_files)} detection files marked as done.")
-            detection_metadata_files = [
-                df for df in detection_metadata_files if df not in done_files
-            ]
-            print(f"{len(detection_metadata_files)} still to do.")
+        done_files = []
+        if os.path.exists(progress_file):
+            with open(progress_file, "r") as f:
+                done_files = f.read().splitlines()
+        done_files = [f for f in done_files if f in detection_metadata_files]
+        print(f" - Found {len(done_files)} detection files marked as done.")
+        detection_metadata_files = [
+            df for df in detection_metadata_files if df not in done_files
+        ]
+        print(f"{len(detection_metadata_files)} still to do.")
+    else:
+        with open(progress_file, "w") as f:
+            pass
 
     n_det = len(detection_metadata_files)
 
