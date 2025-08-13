@@ -24,7 +24,8 @@ def validate_detections(
         "\n======\n"
         "Validate OOR detections. Inspect each detection visually, "
         "and press {[1], [SPACE], [ENTER]} to accept, or {[2], [F]} to reject. "
-        "Rejected detections will be moved to the new subfolder 'fp'."
+        "Rejected detections will be moved to the new subfolder 'fp'. "
+        "Press [ESC] to quit."
         "\n======\n"
     )
 
