@@ -44,13 +44,13 @@ databricks_pipelines:
           3: ["toilet", "dixi"]
           4: ["steiger"]
         confidence_threshold:
-          2: 0.8
-          3: 0.8
-          4: 0.8
+          2: 0.82
+          3: 0.83
+          4: 0.82
         bbox_size_threshold:
-          2: 0.003
-          3: 0.001
-          4: 0.01
+          2: 0.008
+          3: 0.004
+          4: 0.1
         cluster_distances:
           #  set to -1 to disable clustering for that class
           2: 10
@@ -101,13 +101,13 @@ databricks_pipelines:
           3: ["toilet", "dixi"]
           4: ["steiger"]
         confidence_threshold:
-          2: 0.8
-          3: 0.8
-          4: 0.8
+          2: 0.82
+          3: 0.83
+          4: 0.82
         bbox_size_threshold:
-          2: 0.003
-          3: 0.001
-          4: 0.01
+          2: 0.008
+          3: 0.004
+          4: 0.1
         cluster_distances:
           #  set to -1 to disable clustering for that class
           2: 10
