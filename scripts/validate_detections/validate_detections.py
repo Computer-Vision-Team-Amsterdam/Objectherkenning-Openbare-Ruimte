@@ -23,7 +23,8 @@ def validate_detections(
     print(
         "\n======\n"
         "Validate OOR detections. Inspect each detection visually, "
-        "and press {[1], [SPACE], [ENTER]} to accept, or {[2], [F]} to reject. "
+        "and press {[RIGHT], [SPACE], [ENTER]} to accept, "
+        "or {[DOWN], [F], [DEL]} to reject. "
         "Rejected detections will be moved to the new subfolder 'fp'. "
         "Press [ESC] to quit."
         "\n======\n"
@@ -34,7 +35,9 @@ def validate_detections(
     progress_file = os.path.join(detections_folder, "validated_detections.txt")
 
     print(f"Scanning metadata in {detections_folder}")
-    detection_metadata_files = get_detection_metadata_file_paths(detections_folder)
+    detection_metadata_files = get_detection_metadata_file_paths(
+        detections_folder, ignore_folders=["fp", "quarantine"]
+    )
     print(f" - Found {len(detection_metadata_files)} detection metadata files.")
 
     if resume:
@@ -59,6 +62,9 @@ def validate_detections(
     os.makedirs(fp_det_dir, exist_ok=True)
     os.makedirs(fp_img_dir, exist_ok=True)
 
+    quarantine_det_dir = os.path.join(detections_folder, "quarantine")
+    os.makedirs(quarantine_det_dir, exist_ok=True)
+
     i = 0
 
     for detection_file in detection_metadata_files:
@@ -73,9 +79,14 @@ def validate_detections(
             img_name = json_content["image_file_name"]
             img_file = os.path.join(images_folder, img_name)
             if not os.path.isfile(img_file):
-                raise FileNotFoundError(f"Image file {img_file} not found.")
+                print(
+                    f"Image file {img_file} not found, moving detection to quarantine."
+                )
+                shutil.move(detection_file, quarantine_det_dir)
+                continue
 
             raw_image = cv2.imread(img_file)
+
             img_width, img_height = raw_image.shape[1], raw_image.shape[0]
 
             for detection in json_content["detections"]:
@@ -117,21 +128,23 @@ def validate_detections(
 
                 # The function waitKey waits for a key event infinitely (when delay<=0)
                 k = None
-                pos_values = [13, 32, 3, 83, 49, 102, 50, 27]
+                pos_values = [13, 32, 83, 84, 102, 255, 27]
                 while k not in pos_values:
                     k = cv2.waitKey(0)
-                    if k in [13, 32, 3, 83, 49]:
-                        # [enter] or [space] or [>] or [1]: true positive
+                    if k in [13, 32, 83]:
+                        # [enter] or [space] or [right]: true positive
                         continue
-                    elif k in [102, 50]:  # [f] or [2]: false positive
+                    elif k in [84, 102, 255]:
+                        # [down] or [f] or [del]: false positive
                         is_fp = True
                         json_content["detections"].remove(detection)
                         fp_json_content["detections"].append(detection)
                         continue
-                    elif k == 27:  # [esc] to exit the program
+                    elif k == 27:
+                        # [esc] to exit the program
                         print("Exiting")
                         cv2.destroyAllWindows()
-                        return 0
+                        return
                     else:
                         print("Key not valid...")
 
@@ -150,6 +163,9 @@ def validate_detections(
                 f.write(detection_file + "\n")
 
     print("All detections validated.")
+    print("Exiting")
+    cv2.destroyAllWindows()
+    return
 
 
 def get_detection_metadata_file_paths(
