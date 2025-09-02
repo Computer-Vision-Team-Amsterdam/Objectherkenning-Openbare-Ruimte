@@ -17,24 +17,39 @@ class JsonFrameDetectionAdapter:
         detection_schema_loc: str,
     ):
         # Read JSON data twice, each with its own schemaLocation
-        self.raw_frames = (
-            spark_session.readStream.format("cloudFiles")
-            .option("multiline", "true")
-            .option("cloudFiles.format", "json")
-            .option("pathGlobFilter", "*.json")
-            .option("cloudFiles.schemaLocation", frame_schema_loc)
-            .option("cloudFiles.inferColumnTypes", "true")
-            .load(json_source)
-        )
-        self.raw_dets = (
-            spark_session.readStream.format("cloudFiles")
-            .option("multiline", "true")
-            .option("cloudFiles.format", "json")
-            .option("pathGlobFilter", "*.json")
-            .option("cloudFiles.schemaLocation", detection_schema_loc)
-            .option("cloudFiles.inferColumnTypes", "true")
-            .load(json_source)
-        )
+        while True:
+            try:
+                self.raw_frames = (
+                    spark_session.readStream.format("cloudFiles")
+                    .option("multiline", "true")
+                    .option("cloudFiles.format", "json")
+                    .option("pathGlobFilter", "*.json")
+                    .option("cloudFiles.schemaLocation", frame_schema_loc)
+                    .option("cloudFiles.inferColumnTypes", "true")
+                    .load(json_source)
+                )
+                self.raw_dets = (
+                    spark_session.readStream.format("cloudFiles")
+                    .option("multiline", "true")
+                    .option("cloudFiles.format", "json")
+                    .option("pathGlobFilter", "*.json")
+                    .option("cloudFiles.schemaLocation", detection_schema_loc)
+                    .option("cloudFiles.inferColumnTypes", "true")
+                    .load(json_source)
+                )
+                # If the query terminated without raising an error, exit the loop
+                break
+            except Exception as e:
+                error_msg = str(e)
+                if (
+                    "UNKNOWN_FIELD_EXCEPTION" in error_msg
+                    and "automatic retry: true" in error_msg
+                ):
+                    print("Schema evolution detected. Retrying with updated schema...")
+                else:
+                    # Log and raise other exceptions
+                    print(f"Streaming query exception: {error_msg}")
+                    raise e
 
     def to_frame_df(self) -> DataFrame:
         """
