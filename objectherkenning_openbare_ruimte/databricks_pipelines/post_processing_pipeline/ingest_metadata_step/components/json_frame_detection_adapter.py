@@ -26,6 +26,7 @@ class JsonFrameDetectionAdapter:
                     .option("pathGlobFilter", "*.json")
                     .option("cloudFiles.schemaLocation", frame_schema_loc)
                     .option("cloudFiles.inferColumnTypes", "true")
+                    .option("ignoreMissingFiles", "true")
                     .load(json_source)
                 )
                 self.raw_dets = (
@@ -35,6 +36,7 @@ class JsonFrameDetectionAdapter:
                     .option("pathGlobFilter", "*.json")
                     .option("cloudFiles.schemaLocation", detection_schema_loc)
                     .option("cloudFiles.inferColumnTypes", "true")
+                    .option("ignoreMissingFiles", "true")
                     .load(json_source)
                 )
                 # If the query terminated without raising an error, exit the loop
