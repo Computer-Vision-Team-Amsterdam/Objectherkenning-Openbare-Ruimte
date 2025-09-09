@@ -107,7 +107,6 @@ def run_tracking(
         for bbox, tid, cid, aid in zip(
             tracked.xyxy, tracked.tracker_id, tracked.class_id, ann_ids
         ):
-            x1, y1, x2, y2 = map(int, bbox)
             outputs.append(
                 {
                     "image_name": fn,

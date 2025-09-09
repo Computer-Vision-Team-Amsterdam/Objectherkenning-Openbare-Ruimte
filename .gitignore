@@ -4,6 +4,7 @@
 *.mp4
 *.csv
 *.html
+*.json
 
 local/
 results/
