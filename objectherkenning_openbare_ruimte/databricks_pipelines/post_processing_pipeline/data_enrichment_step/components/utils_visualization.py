@@ -1,7 +1,5 @@
-import base64
 import os
 
-import cv2
 import folium
 from databricks.sdk.runtime import *  # noqa: F403, F401
 from folium.plugins import BeautifyIcon
@@ -12,12 +10,12 @@ from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import OutputImage
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
     SilverFrameMetadataManager,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.utils_images import (  # noqa: E402
-    OutputImage,
-)
+
+MAP_MAX_IMG_SIZE = 960
 
 
 def generate_map(
@@ -137,19 +135,14 @@ def generate_map(
         image_path = os.path.join(image_folder, detection_image_name)
 
         # Add bounding boxes to image and save
+        image = OutputImage(image_path)
         if annotate_detection_images:
-            image = cv2.imread(image_path)
-            annotated_image = OutputImage(image)
-            annotated_image.draw_bounding_box(
+            image.draw_bounding_box(
                 x_center_norm, y_center_norm, width_norm, height_norm
             )
-            base, ext = os.path.splitext(image_path)
-            image_path = f"{base}_annotated_{object_class}{ext}"
-            cv2.imwrite(image_path, annotated_image.get_image())
+        encoded_image = image.b64encode(shrink_to_size=MAP_MAX_IMG_SIZE)
 
         # Add image to map
-        with open(image_path, "rb") as image_file:
-            encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
         data_uri = f"data:image/jpeg;base64,{encoded_image}"
 
         popup_html = f"""
@@ -232,7 +225,6 @@ def generate_map(
     Map.get_root().html.add_child(folium.Element(object_class_legend))
 
     # create name for the map
-    print(f"Map is saved at {file_name}")
     full_path = file_path + file_name + ".html"
-    print(f"Saving at {full_path}")
+    print(f"Map is saved at {full_path}")
     Map.save(full_path)

@@ -34,12 +34,12 @@ class SubmitToSignalenStep:
         self.az_tenant_id = settings["azure_tenant_id"]
         self.db_host = settings["reference_database"]["host"]
         self.db_name = settings["reference_database"]["name"]
+        self.detection_date = settings["job_config"].get("detection_date", None)
         self.exclude_private_terrain_detections = settings["job_config"][
             "exclude_private_terrain_detections"
         ]
-        self.annotate_detection_images = settings["job_config"][
-            "annotate_detection_images"
-        ]
+        self.min_score = settings["job_config"]["min_score"]
+        self.skip_ids = settings["job_config"].get("skip_ids", [])
         self.active_task_config = settings["job_config"]["active_task"]
 
         self.signalHandler = SignalHandler(
@@ -52,6 +52,7 @@ class SubmitToSignalenStep:
             db_host=self.db_host,
             db_name=self.db_name,
             object_classes=settings["job_config"]["object_classes"]["names"],
+            annotate_images=settings["job_config"]["annotate_detection_images"],
         )
 
     def run_submit_to_signalen_step(self):
@@ -90,20 +91,21 @@ class SubmitToSignalenStep:
         """
         send_limits = config.get("send_limit", {})
 
-        top_scores_df = SilverEnrichedDetectionMetadataManager.get_top_pending_records(
-            exclude_private_terrain_detections=self.exclude_private_terrain_detections,
+        top_scores_df = SilverEnrichedDetectionMetadataManager.get_top_pending_records_for_stadsdeel(
             stadsdeel=stadsdeel,
+            exclude_private_terrain_detections=self.exclude_private_terrain_detections,
             active_object_classes=config.get("active_object_classes", []),
             send_limits=send_limits,
+            score_threshold=self.min_score,
+            skip_ids=self.skip_ids,
+            detection_date=self.detection_date,
         )
 
         if (not top_scores_df) or top_scores_df.count() == 0:
             print("No data found for creating notifications. Stopping execution.")
         else:
             successful_notifications, unsuccessful_notifications = (
-                self.signalHandler.process_notifications(
-                    top_scores_df, self.annotate_detection_images
-                )
+                self.signalHandler.process_notifications(top_scores_df)
             )
 
             if successful_notifications:
@@ -137,7 +139,7 @@ class SubmitToSignalenStep:
         # We only want to set to "processed" the rows belonging to this stadsdeel
         processed_ids = (
             SilverEnrichedDetectionMetadataManager.get_pending_ids_for_stadsdeel(
-                stadsdeel
+                stadsdeel=stadsdeel, detection_date=self.detection_date
             )
         )
         SilverEnrichedDetectionMetadataManager.update_status(

@@ -1,10 +1,10 @@
 [project]
 name = "objectherkenning_openbare_ruimte"
-version = "2.2.1"
+version = "2.2.4"
 
 [tool.poetry]
 name = "objectherkenning_openbare_ruimte"
-version = "2.2.1"
+version = "2.2.4"
 description = "Objectherkenning Openbare Ruimte is a project about recognising objects from public space images."
 authors = [
     "Sebastian Davrieux <s.davrieux@amsterdam.nl>",
