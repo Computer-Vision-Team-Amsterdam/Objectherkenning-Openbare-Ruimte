@@ -27,6 +27,9 @@ class JsonFrameDetectionAdapter:
     def _read_stream(
         self, spark_session: SparkSession, json_source: str, schema_location: str
     ) -> DataFrame:
+        # `.option("cloudFiles.schemaEvolutionMode", "none")` ignores any new columns in the input data
+        # See https://learn.microsoft.com/en-us/azure/databricks/ingestion/cloud-object-storage/auto-loader/schema#evolution
+
         data = (
             spark_session.readStream.format("cloudFiles")
             .option("multiline", "true")
