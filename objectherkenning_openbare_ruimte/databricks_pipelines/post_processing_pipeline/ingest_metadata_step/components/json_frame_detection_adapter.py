@@ -27,33 +27,17 @@ class JsonFrameDetectionAdapter:
     def _read_stream(
         self, spark_session: SparkSession, json_source: str, schema_location: str
     ) -> DataFrame:
-        # Read JSON data twice, each with its own schemaLocation
-        while True:
-            try:
-                data = (
-                    spark_session.readStream.format("cloudFiles")
-                    .option("multiline", "true")
-                    .option("cloudFiles.format", "json")
-                    .option("pathGlobFilter", "*.json")
-                    .option("cloudFiles.schemaLocation", schema_location)
-                    .option("cloudFiles.inferColumnTypes", "true")
-                    .option("ignoreMissingFiles", "true")
-                    .load(json_source)
-                )
-                # If the query terminated without raising an error, exit the loop
-                return data
-            except Exception as e:
-                error_msg = str(e)
-                print(error_msg)
-                if (
-                    "UNKNOWN_FIELD_EXCEPTION" in error_msg
-                    and "automatic retry: true" in error_msg
-                ):
-                    print("Schema evolution detected. Retrying with updated schema...")
-                else:
-                    # Log and raise other exceptions
-                    print(f"Streaming query exception: {error_msg}")
-                    raise e
+        data = (
+            spark_session.readStream.format("cloudFiles")
+            .option("multiline", "true")
+            .option("cloudFiles.format", "json")
+            .option("pathGlobFilter", "*.json")
+            .option("cloudFiles.schemaLocation", schema_location)
+            .option("cloudFiles.inferColumnTypes", "true")
+            .option("ignoreMissingFiles", "true")
+            .load(json_source)
+        )
+        return data
 
     def to_frame_df(self) -> DataFrame:
         """

@@ -76,17 +76,36 @@ class DataLoader:
 
         json_source = f"{self.root_source}/{self.device_id}/detection_metadata"
 
-        # 1) Generate two schema-tracking locations
-        frame_schema_loc = self._get_schema_path(self.frame_metadata_table)
-        detection_schema_loc = self._get_schema_path(self.detection_metadata_table)
+        while True:
+            try:
+                # 1) Generate two schema-tracking locations
+                frame_schema_loc = self._get_schema_path(self.frame_metadata_table)
+                detection_schema_loc = self._get_schema_path(
+                    self.detection_metadata_table
+                )
 
-        # 2) Read JSON data twice, each with its own schemaLocation
-        adapter = JsonFrameDetectionAdapter(
-            spark_session=self.spark_session,
-            json_source=json_source,
-            frame_schema_loc=frame_schema_loc,
-            detection_schema_loc=detection_schema_loc,
-        )
+                # 2) Read JSON data twice, each with its own schemaLocation
+                adapter = JsonFrameDetectionAdapter(
+                    spark_session=self.spark_session,
+                    json_source=json_source,
+                    frame_schema_loc=frame_schema_loc,
+                    detection_schema_loc=detection_schema_loc,
+                )
+
+                # If all went well, exit the loop
+                break
+            except Exception as e:
+                error_msg = str(e)
+                print(error_msg)
+                if (
+                    "UNKNOWN_FIELD_EXCEPTION" in error_msg
+                    and "automatic retry: true" in error_msg
+                ):
+                    print("Schema evolution detected. Retrying with updated schema...")
+                else:
+                    # Log and raise other exceptions
+                    print(f"Streaming query exception: {error_msg}")
+                    raise e
 
         # 3) Transform data
         frames_df = adapter.to_frame_df()
