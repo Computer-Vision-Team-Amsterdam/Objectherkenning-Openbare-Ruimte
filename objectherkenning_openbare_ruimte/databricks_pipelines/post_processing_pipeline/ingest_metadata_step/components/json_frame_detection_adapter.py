@@ -35,6 +35,7 @@ class JsonFrameDetectionAdapter:
             .option("cloudFiles.schemaLocation", schema_location)
             .option("cloudFiles.inferColumnTypes", "true")
             .option("ignoreMissingFiles", "true")
+            .option("cloudFiles.schemaEvolutionMode", "none")
             .load(json_source)
         )
         return data
