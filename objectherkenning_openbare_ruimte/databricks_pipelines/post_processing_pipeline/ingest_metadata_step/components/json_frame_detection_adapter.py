@@ -17,24 +17,31 @@ class JsonFrameDetectionAdapter:
         detection_schema_loc: str,
     ):
         # Read JSON data twice, each with its own schemaLocation
-        self.raw_frames = (
+        self.raw_frames = self._read_stream(
+            spark_session, json_source, frame_schema_loc
+        )
+        self.raw_dets = self._read_stream(
+            spark_session, json_source, detection_schema_loc
+        )
+
+    def _read_stream(
+        self, spark_session: SparkSession, json_source: str, schema_location: str
+    ) -> DataFrame:
+        # `.option("cloudFiles.schemaEvolutionMode", "none")` ignores any new columns in the input data
+        # See https://learn.microsoft.com/en-us/azure/databricks/ingestion/cloud-object-storage/auto-loader/schema#evolution
+
+        data = (
             spark_session.readStream.format("cloudFiles")
             .option("multiline", "true")
             .option("cloudFiles.format", "json")
             .option("pathGlobFilter", "*.json")
-            .option("cloudFiles.schemaLocation", frame_schema_loc)
+            .option("cloudFiles.schemaLocation", schema_location)
             .option("cloudFiles.inferColumnTypes", "true")
+            .option("ignoreMissingFiles", "true")
+            .option("cloudFiles.schemaEvolutionMode", "none")
             .load(json_source)
         )
-        self.raw_dets = (
-            spark_session.readStream.format("cloudFiles")
-            .option("multiline", "true")
-            .option("cloudFiles.format", "json")
-            .option("pathGlobFilter", "*.json")
-            .option("cloudFiles.schemaLocation", detection_schema_loc)
-            .option("cloudFiles.inferColumnTypes", "true")
-            .load(json_source)
-        )
+        return data
 
     def to_frame_df(self) -> DataFrame:
         """
