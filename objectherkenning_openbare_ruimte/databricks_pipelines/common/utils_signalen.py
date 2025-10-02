@@ -8,7 +8,7 @@ from databricks.sdk.runtime import *  # noqa: F403
 from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql import functions as F
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators.silver_metadata_aggregator import (
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators import (
     SilverMetadataAggregator,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
