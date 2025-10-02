@@ -1,17 +1,14 @@
-from typing import Any
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import col
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
-    delete_file,
-    get_job_process_time,
-    get_landingzone_folder_for_timestamp,
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators import (
+    SilverMetadataAggregator,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
-    BronzeFrameMetadataManager,
-    SilverDetectionMetadataManager,
-    SilverEnrichedDetectionMetadataManager,
-)
+
+IMAGE_FORMATS = (".jpg", ".jpeg", ".png")
 
 
 class DeleteImagesStep:
@@ -31,57 +28,126 @@ class DeleteImagesStep:
         self.schema = schema
         self.device_id = settings["device_id"]
         self.min_score = settings["job_config"]["min_score"]
+        self.retention_weeks = settings["job_config"]["retention_weeks"]
+        self.detection_date = settings["job_config"].get("detection_date", None)
 
     def run(self):
-        # TODO
-        # Refactor
-
-        job_process_time = (
-            get_job_process_time(
-                is_first_pipeline_step=False,
-            ),
+        """
+        Run the delete images step:
+        - Scan input folder for image files (A);
+        - Get all processed images from silver tables (B);
+        - Select images to keep based on retention policy (C);
+        - Delete images from A that are in B but not in C.
+        """
+        root_image_folder = (
+            f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/images/"
+        )
+        folders_and_images = self.get_folders_and_images(
+            root_image_folder, self.detection_date
         )
 
-        job_date = job_process_time.strftime("%Y-%m-%d")
-
-        # TODO
-        # - List all image files in all subfolders (date agnostic)
-        # - Get all detection_ids that have a score > 0.4
-        #   (or some other retention rule, make this a function that can easily be modified later)
-        # - Get image names for those detection_ids
-        # - Check which images are older than the last processed time in bronze, and are not on the list of images to keep
-        # - Delete those
-
-        stlanding_image_folder = get_landingzone_folder_for_timestamp(
-            BronzeFrameMetadataManager.get_gps_timestamp_at_date(job_date=job_date)
+        silverMetadataAggregator = SilverMetadataAggregator(
+            spark_session=self.spark_session,
+            catalog=self.catalog,
+            schema=self.schema,
         )
-        image_files_current_run = dbutils.fs.ls(f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/images/{stlanding_image_folder}/")  # type: ignore[name-defined] # noqa: F821, F405
+
+        processed_detections = silverMetadataAggregator.get_joined_processed_metadata(
+            self.detection_date
+        )
+        detections_to_keep = self.filter_detections_to_keep(processed_detections)
+
+        for date in folders_and_images.keys():
+            print(f"Checking images for date {date}")
+
+            delete_candidate_image_names = set(
+                self.get_image_names_at_date(processed_detections, date)
+            )
+            to_keep_image_names = set(
+                self.get_image_names_at_date(detections_to_keep, date)
+            )
+            to_delete_image_names = delete_candidate_image_names - to_keep_image_names
+
+            image_files_to_keep = [
+                file
+                for file in folders_and_images[date]
+                if file.name in to_keep_image_names
+            ]
+            image_files_to_delete = [
+                file
+                for file in folders_and_images[date]
+                if file.name in to_delete_image_names
+            ]
+
+            print(f" - {len(folders_and_images[date])} images found")
+            print(f" - {len(image_files_to_keep)} images to keep")
+            print(f" - {len(image_files_to_delete)} images to delete")
+
+            successful_deletions = 0
+            for file in image_files_to_delete:
+                print(f"   Deleting {file.path}...")
+                # if delete_file(databricks_volume_full_path=file.path):
+                #     successful_deletions += 1
+            print(f" - {successful_deletions} images successfully deleted.")
+
+    def filter_detections_to_keep(self, detections: DataFrame) -> DataFrame:
+        """
+        Filter detections following the data retention policy for images:
+        - Delete all images that are more than retention_weeks old;
+        - Keep images that are less than retention_weeks old and have a score above the score_threshold.
+        """
+        date_cutoff = (datetime.now() - timedelta(weeks=self.retention_weeks)).date()
         print(
-            f"{len(image_files_current_run)} images found on {stlanding_image_folder}."
+            f"Filtering detections using cutoff date {date_cutoff} and score threshold {self.min_score}..."
+        )
+        return detections.filter(
+            (col("detection_date") >= date_cutoff) & (col("score") >= self.min_score)
         )
 
-        # Must compare candidates for deletion and images to keep, since one image may have multiple detections.
-        delete_candidate_image_names: set = {
-            SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
-            for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_candidates_for_deletion(
-                job_date=job_date, score_threshold=self.min_score
-            )
-        }
-        to_keep_image_names: set = {
-            SilverDetectionMetadataManager.get_image_name_from_detection_id(d)
-            for d in SilverEnrichedDetectionMetadataManager.get_detection_ids_to_keep_current_run(
-                job_date=job_date, score_threshold=self.min_score
-            )
-        }
-        to_delete_image_names = delete_candidate_image_names - to_keep_image_names
-        print(f"{len(to_delete_image_names)} images to delete.")
+    @classmethod
+    def get_image_names_at_date(
+        cls, detections: DataFrame, detection_date: str
+    ) -> List[str]:
+        """
+        Returns the set of unique images names at the given detection date.
+        """
+        return (
+            detections.filter(col(detection_date) == detection_date)
+            .select("image_name")
+            .rdd.flatMap(lambda x: x)
+            .collect()
+        )
 
-        successful_deletions = 0
-        for file in image_files_current_run:
-            image_name = file.name
+    @classmethod
+    def get_folders_and_images(
+        cls, root_folder: str, detection_date: Optional[str] = None
+    ) -> Dict[str, List[Any]]:
+        folders_and_images: Dict[str, List[Any]] = dict()
 
-            if image_name in to_delete_image_names:
-                print(f"Deleting {image_name}...")
-                if delete_file(databricks_volume_full_path=file.path):
-                    successful_deletions += 1
-        print(f"{successful_deletions} images successfully deleted.")
+        if detection_date is not None:
+            print(f"Scanning {root_folder} for date {detection_date}...")
+        else:
+            print(f"Scanning {root_folder}...")
+
+        subfolders = [file.name for file in dbutils.fs.ls(root_folder)]  # type: ignore[name-defined] # noqa: F821, F405
+
+        if detection_date is not None:
+            subfolders = list(set(subfolders).intersection(set(detection_date)))
+            if len(subfolders) == 0:
+                print(f"No subfolder found for {detection_date}")
+                return folders_and_images
+
+        for subfolder in subfolders:
+            folders_and_images[subfolder] = [
+                file
+                for file in dbutils.fs.ls(f"{root_folder}/{subfolder}")  # type: ignore[name-defined] # noqa: F821, F405
+                if file.name.lower().endswith(IMAGE_FORMATS)
+            ]
+
+        n_folders = len(folders_and_images.keys())
+        n_images = sum(
+            len(folders_and_images[folder]) for folder in folders_and_images.keys()
+        )
+        print(f"Found {n_images} images in {n_folders} subfolders")
+
+        return folders_and_images
