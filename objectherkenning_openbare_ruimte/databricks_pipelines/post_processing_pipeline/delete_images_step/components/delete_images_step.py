@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
+from databricks.sdk.runtime import dbutils
+
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col
 
@@ -45,6 +47,7 @@ class DeleteImagesStep:
         folders_and_images = self.get_folders_and_images(
             root_image_folder, self.detection_date
         )
+        print("")
 
         silverMetadataAggregator = SilverMetadataAggregator(
             spark_session=self.spark_session,
@@ -57,8 +60,8 @@ class DeleteImagesStep:
         )
         detections_to_keep = self.filter_detections_to_keep(processed_detections)
 
-        for date in folders_and_images.keys():
-            print(f"Checking images for date {date}")
+        for date in sorted(folders_and_images.keys()):
+            print(f"\nChecking images for date {date}")
 
             delete_candidate_image_names = set(
                 self.get_image_names_at_date(processed_detections, date)
@@ -85,7 +88,8 @@ class DeleteImagesStep:
 
             successful_deletions = 0
             for file in image_files_to_delete:
-                print(f"   Deleting {file.path}...")
+                pass
+                # print(f"   Deleting {file.path}...")
                 # if delete_file(databricks_volume_full_path=file.path):
                 #     successful_deletions += 1
             print(f" - {successful_deletions} images successfully deleted.")
@@ -112,7 +116,7 @@ class DeleteImagesStep:
         Returns the set of unique images names at the given detection date.
         """
         return (
-            detections.filter(col(detection_date) == detection_date)
+            detections.filter(col("detection_date") == detection_date)
             .select("image_name")
             .rdd.flatMap(lambda x: x)
             .collect()
@@ -129,7 +133,7 @@ class DeleteImagesStep:
         else:
             print(f"Scanning {root_folder}...")
 
-        subfolders = [file.name for file in dbutils.fs.ls(root_folder)]  # type: ignore[name-defined] # noqa: F821, F405
+        subfolders = [folder.name.strip("/") for folder in dbutils.fs.ls(root_folder) if folder.isDir()]
 
         if detection_date is not None:
             subfolders = list(set(subfolders).intersection(set(detection_date)))
@@ -140,7 +144,7 @@ class DeleteImagesStep:
         for subfolder in subfolders:
             folders_and_images[subfolder] = [
                 file
-                for file in dbutils.fs.ls(f"{root_folder}/{subfolder}")  # type: ignore[name-defined] # noqa: F821, F405
+                for file in dbutils.fs.ls(f"{root_folder}/{subfolder}/")
                 if file.name.lower().endswith(IMAGE_FORMATS)
             ]
 

@@ -56,21 +56,18 @@ class SilverMetadataAggregator:
             after enrichment.
         """
 
-        query = """
+        query = f"""
             SELECT sd.detection_id, sed.score, sed.status, sf.frame_id, sf.image_name, DATE(sf.gps_timestamp) AS detection_date
-            FROM :catalog.:schema.silver_frame_metadata AS sf
-            LEFT JOIN :catalog.:schema.silver_detection_metadata AS sd ON sf.frame_id = sd.frame_id
-            LEFT JOIN :catalog.:schema.silver_enriched_detection_metadata AS sed ON sd.detection_id = sed.detection_id
+            FROM {self.catalog}.{self.schema}.silver_frame_metadata AS sf
+            LEFT JOIN {self.catalog}.{self.schema}.silver_detection_metadata AS sd ON sf.frame_id = sd.frame_id
+            LEFT JOIN {self.catalog}.{self.schema}.silver_enriched_detection_metadata AS sed ON sd.detection_id = sed.detection_id
             WHERE sf.status == "Processed"
             AND (sed.status == "Processed" OR sed.status IS NULL)
         """
 
-        params = {"catalog": self.catalog, "schema": self.schema}
-
         if detection_date is not None:
-            query += """
-            AND DATE(sf.gps_timestamp) == :detection_date
+            query += f"""
+            AND DATE(sf.gps_timestamp) == {detection_date}
             """
-            params["detection_date"] = detection_date
 
-        return self.spark_session.sql(query, params)
+        return self.spark_session.sql(query)
