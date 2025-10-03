@@ -140,13 +140,13 @@ class DeleteImagesStep:
     def delete_visualizations(self, root_folder: str) -> None:
         date_cutoff = (datetime.now() - timedelta(weeks=self.retention_weeks)).date()
         print(f"Scanning {root_folder} with cutoff date {date_cutoff}...")
-        subfolder_list = [
+        subfolder_deletion_list = [
             folder
             for folder in dbutils.fs.ls(root_folder)
             if folder.isDir()
-            and (date.fromisoformat(folder.name.strip("/")) >= date_cutoff)
+            and (date.fromisoformat(folder.name.strip("/")) < date_cutoff)
         ]
-        for subfolder in subfolder_list:
+        for subfolder in subfolder_deletion_list:
             print(
                 f"Deleting visualizations folder (including contents): {subfolder.path}"
             )
