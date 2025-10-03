@@ -32,10 +32,10 @@ class DeleteImagesStep:
         self.spark_session = spark_session
         self.catalog = catalog
         self.schema = schema
-        self.device_id = settings["device_id"]
-        self.min_score = settings["job_config"]["min_score"]
-        self.retention_weeks = settings["job_config"]["retention_weeks"]
-        self.detection_date = settings["job_config"].get("detection_date", None)
+        self.device_id: str = settings["device_id"]
+        self.min_score: float = settings["job_config"]["min_score"]
+        self.retention_weeks: int = settings["job_config"]["retention_weeks"]
+        self.detection_date: date = settings["job_config"].get("detection_date", None)
 
     def run(self) -> None:
         """
@@ -172,7 +172,7 @@ class DeleteImagesStep:
 
     @classmethod
     def get_folders_and_images(
-        cls, root_folder: str, detection_date: Optional[str] = None
+        cls, root_folder: str, detection_date: Optional[date] = None
     ) -> Dict[str, List[Any]]:
         """
         Scan the root_folder and return a dict with each subfolder as key, and
@@ -193,7 +193,9 @@ class DeleteImagesStep:
         ]
 
         if detection_date is not None:
-            subfolder_list = list(set(subfolder_list).intersection(set(detection_date)))
+            subfolder_list = [
+                folder for folder in subfolder_list if folder == str(detection_date)
+            ]
             if len(subfolder_list) == 0:
                 print(f"No subfolder found for {detection_date}")
                 return folders_and_images

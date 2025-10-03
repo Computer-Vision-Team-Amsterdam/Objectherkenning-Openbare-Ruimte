@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 
 from pyspark.sql import DataFrame, SparkSession
@@ -41,14 +42,15 @@ class SilverMetadataAggregator:
 
         return image_upload_path
 
-    def get_joined_processed_metadata(self, detection_date: Optional[str]) -> DataFrame:
+    def get_joined_processed_metadata(
+        self, detection_date: Optional[date] = None
+    ) -> DataFrame:
         """
         Retrieves a join of frames, detections, and enriched detections that are
         not "Pending", optionally limited to a specified date.
 
         Parameters:
-            detection_date (optional): The date (in "yyyy-MM-dd" format) to
-            filter the join by.
+            detection_date (optional): The date to filter the join by.
 
         Returns:
             A DataFrame with columns [detection_id, score, frame_id, image_name,
@@ -63,7 +65,7 @@ class SilverMetadataAggregator:
             LEFT JOIN {self.catalog}.{self.schema}.silver_enriched_detection_metadata AS sed ON sd.detection_id = sed.detection_id
             WHERE sf.status == "Processed"
             AND (sed.status == "Processed" OR sed.status IS NULL)
-        """
+        """  # nosec: B608
 
         if detection_date is not None:
             query += f"""
