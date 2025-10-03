@@ -5,6 +5,9 @@ from databricks.sdk.runtime import dbutils
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col
 
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
+    delete_file_or_folder,
+)
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.aggregators import (
     SilverMetadataAggregator,
 )
@@ -16,6 +19,8 @@ class DeleteImagesStep:
     """
     Delete image files from the landing zone following the data retention policy.
     """
+
+    dry_run = True
 
     def __init__(
         self,
@@ -39,7 +44,10 @@ class DeleteImagesStep:
         - Get all processed images from silver tables (B);
         - Select images to keep based on retention policy (C);
         - Delete images from A that are in B but not in C.
+
+        Will also delete visualizations that are older than the retention policy.
         """
+        print("\n** Deleting images **")
         root_image_folder = (
             f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/images/"
         )
@@ -87,15 +95,21 @@ class DeleteImagesStep:
 
             successful_deletions = 0
             for file in image_files_to_delete:
-                pass
-                # print(f"   Deleting {file.path}...")
-                # if delete_file(databricks_volume_full_path=file.path):
-                #     successful_deletions += 1
+                if self.dry_run:
+                    print(f"   Deleting {file.path}...")
+                else:
+                    if delete_file_or_folder(databricks_volume_full_path=file.path):
+                        successful_deletions += 1
             print(f" - {successful_deletions} images successfully deleted.")
-        print("")
 
+        print("\n** Deleting empty subfolders **")
         self.delete_empty_subfolders(root_image_folder)
-        print("\nAll done!")
+
+        print("\n** Deleting Visualizations **")
+        root_visualizations_folder = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/"
+        self.delete_visualizations(root_visualizations_folder)
+
+        print("\n** All done! **")
 
     def filter_detections_to_keep(self, detections: DataFrame) -> DataFrame:
         """
@@ -110,6 +124,30 @@ class DeleteImagesStep:
         return detections.filter(
             (col("detection_date") >= date_cutoff) & (col("score") >= self.min_score)
         )
+
+    def delete_empty_subfolders(self, root_folder: str) -> None:
+        print(f"Scanning {root_folder} for empty subfolders...")
+        subfolder_list = [
+            folder for folder in dbutils.fs.ls(root_folder) if folder.isDir()
+        ]
+        for subfolder in subfolder_list:
+            contents = dbutils.fs.ls(subfolder.path)
+            if len(contents) == 0:
+                print(f"Deleting empty folder: {subfolder.path}")
+                if not self.dry_run:
+                    delete_file_or_folder(subfolder.path)
+
+    def delete_visualizations(self, root_folder: str) -> None:
+        print(f"Scanning {root_folder}...")
+        subfolder_list = [
+            folder for folder in dbutils.fs.ls(root_folder) if folder.isDir()
+        ]
+        for subfolder in subfolder_list:
+            print(
+                f"Deleting visualizations folder (including contents): {subfolder.path}"
+            )
+            if not self.dry_run:
+                delete_file_or_folder(subfolder.path, recurse=True)
 
     @classmethod
     def get_image_names_at_date(
@@ -162,17 +200,3 @@ class DeleteImagesStep:
         print(f"Found {n_images} images in {n_folders} subfolders")
 
         return folders_and_images
-
-    @classmethod
-    def delete_empty_subfolders(cls, root_folder: str) -> None:
-        print(f"Scanning {root_folder} for empty subfolders...")
-        subfolder_list = [
-            folder.name.strip("/")
-            for folder in dbutils.fs.ls(root_folder)
-            if folder.isDir()
-        ]
-        for subfolder in subfolder_list:
-            contents = dbutils.fs.ls(subfolder.path)
-            if len(contents) == 0:
-                print(f"Deleting empty folder {subfolder.name}")
-                # dbutils.fs.rm(subfolder.path)
