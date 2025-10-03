@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from databricks.sdk.runtime import dbutils
-
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col
 
@@ -93,6 +92,10 @@ class DeleteImagesStep:
                 # if delete_file(databricks_volume_full_path=file.path):
                 #     successful_deletions += 1
             print(f" - {successful_deletions} images successfully deleted.")
+        print("")
+
+        self.delete_empty_subfolders(root_image_folder)
+        print("\nAll done!")
 
     def filter_detections_to_keep(self, detections: DataFrame) -> DataFrame:
         """
@@ -133,15 +136,19 @@ class DeleteImagesStep:
         else:
             print(f"Scanning {root_folder}...")
 
-        subfolders = [folder.name.strip("/") for folder in dbutils.fs.ls(root_folder) if folder.isDir()]
+        subfolder_list = [
+            folder.name.strip("/")
+            for folder in dbutils.fs.ls(root_folder)
+            if folder.isDir()
+        ]
 
         if detection_date is not None:
-            subfolders = list(set(subfolders).intersection(set(detection_date)))
-            if len(subfolders) == 0:
+            subfolder_list = list(set(subfolder_list).intersection(set(detection_date)))
+            if len(subfolder_list) == 0:
                 print(f"No subfolder found for {detection_date}")
                 return folders_and_images
 
-        for subfolder in subfolders:
+        for subfolder in subfolder_list:
             folders_and_images[subfolder] = [
                 file
                 for file in dbutils.fs.ls(f"{root_folder}/{subfolder}/")
@@ -155,3 +162,17 @@ class DeleteImagesStep:
         print(f"Found {n_images} images in {n_folders} subfolders")
 
         return folders_and_images
+
+    @classmethod
+    def delete_empty_subfolders(cls, root_folder: str) -> None:
+        print(f"Scanning {root_folder} for empty subfolders...")
+        subfolder_list = [
+            folder.name.strip("/")
+            for folder in dbutils.fs.ls(root_folder)
+            if folder.isDir()
+        ]
+        for subfolder in subfolder_list:
+            contents = dbutils.fs.ls(subfolder.path)
+            if len(contents) == 0:
+                print(f"Deleting empty folder {subfolder.name}")
+                dbutils.fs.rm(subfolder.path)
