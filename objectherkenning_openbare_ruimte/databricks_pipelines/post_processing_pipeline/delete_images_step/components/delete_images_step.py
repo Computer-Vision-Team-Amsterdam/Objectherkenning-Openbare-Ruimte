@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from databricks.sdk.runtime import dbutils
@@ -67,29 +67,29 @@ class DeleteImagesStep:
         )
         detections_to_keep = self.filter_detections_to_keep(processed_detections)
 
-        for date in sorted(folders_and_images.keys()):
-            print(f"\nChecking images for date {date}")
+        for date_folder in sorted(folders_and_images.keys()):
+            print(f"\nChecking images for date {date_folder}")
 
             delete_candidate_image_names = set(
-                self.get_image_names_at_date(processed_detections, date)
+                self.get_image_names_at_date(processed_detections, date_folder)
             )
             to_keep_image_names = set(
-                self.get_image_names_at_date(detections_to_keep, date)
+                self.get_image_names_at_date(detections_to_keep, date_folder)
             )
             to_delete_image_names = delete_candidate_image_names - to_keep_image_names
 
             image_files_to_keep = [
                 file
-                for file in folders_and_images[date]
+                for file in folders_and_images[date_folder]
                 if file.name in to_keep_image_names
             ]
             image_files_to_delete = [
                 file
-                for file in folders_and_images[date]
+                for file in folders_and_images[date_folder]
                 if file.name in to_delete_image_names
             ]
 
-            print(f" - {len(folders_and_images[date])} images found")
+            print(f" - {len(folders_and_images[date_folder])} images found")
             print(f" - {len(image_files_to_keep)} images to keep")
             print(f" - {len(image_files_to_delete)} images to delete")
 
@@ -138,9 +138,13 @@ class DeleteImagesStep:
                     delete_file_or_folder(subfolder.path)
 
     def delete_visualizations(self, root_folder: str) -> None:
-        print(f"Scanning {root_folder}...")
+        date_cutoff = (datetime.now() - timedelta(weeks=self.retention_weeks)).date()
+        print(f"Scanning {root_folder} with cutoff date {date_cutoff}...")
         subfolder_list = [
-            folder for folder in dbutils.fs.ls(root_folder) if folder.isDir()
+            folder
+            for folder in dbutils.fs.ls(root_folder)
+            if folder.isDir()
+            and (date.fromisoformat(folder.name.strip("/")) >= date_cutoff)
         ]
         for subfolder in subfolder_list:
             print(
