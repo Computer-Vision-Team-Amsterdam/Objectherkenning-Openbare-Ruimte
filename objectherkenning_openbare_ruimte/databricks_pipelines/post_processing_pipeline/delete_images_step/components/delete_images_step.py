@@ -175,4 +175,4 @@ class DeleteImagesStep:
             contents = dbutils.fs.ls(subfolder.path)
             if len(contents) == 0:
                 print(f"Deleting empty folder {subfolder.name}")
-                dbutils.fs.rm(subfolder.path)
+                # dbutils.fs.rm(subfolder.path)
