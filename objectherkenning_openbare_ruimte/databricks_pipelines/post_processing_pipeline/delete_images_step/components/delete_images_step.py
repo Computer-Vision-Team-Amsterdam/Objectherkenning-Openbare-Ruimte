@@ -95,9 +95,7 @@ class DeleteImagesStep:
 
             successful_deletions = 0
             for file in image_files_to_delete:
-                if self.dry_run:
-                    print(f"   Deleting {file.path}...")
-                else:
+                if not self.dry_run:
                     if delete_file_or_folder(databricks_volume_full_path=file.path):
                         successful_deletions += 1
             print(f" - {successful_deletions} images successfully deleted.")
