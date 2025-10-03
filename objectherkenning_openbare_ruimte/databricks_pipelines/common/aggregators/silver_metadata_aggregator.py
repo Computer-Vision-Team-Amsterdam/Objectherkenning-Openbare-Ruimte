@@ -1,4 +1,7 @@
-from pyspark.sql import SparkSession
+from datetime import date
+from typing import Optional
+
+from pyspark.sql import DataFrame, SparkSession
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.detections import (
     SilverDetectionMetadataManager,
@@ -38,3 +41,35 @@ class SilverMetadataAggregator:
         )
 
         return image_upload_path
+
+    def get_joined_processed_metadata(
+        self, detection_date: Optional[date] = None
+    ) -> DataFrame:
+        """
+        Retrieves a join of frames, detections, and enriched detections that are
+        not "Pending", optionally limited to a specified date.
+
+        Parameters:
+            detection_date (optional): The date to filter the join by.
+
+        Returns:
+            A DataFrame with columns [detection_id, score, frame_id, image_name,
+            detection_date]. Score is NULL if that detections was not selected
+            after enrichment.
+        """
+
+        query = f"""
+            SELECT sd.detection_id, sed.score, sed.status, sf.frame_id, sf.image_name, DATE(sf.gps_timestamp) AS detection_date
+            FROM {self.catalog}.{self.schema}.silver_frame_metadata AS sf
+            LEFT JOIN {self.catalog}.{self.schema}.silver_detection_metadata AS sd ON sf.frame_id = sd.frame_id
+            LEFT JOIN {self.catalog}.{self.schema}.silver_enriched_detection_metadata AS sed ON sd.detection_id = sed.detection_id
+            WHERE sf.status == "Processed"
+            AND (sed.status == "Processed" OR sed.status IS NULL)
+        """  # nosec: B608
+
+        if detection_date is not None:
+            query += f"""
+            AND DATE(sf.gps_timestamp) == "{str(detection_date)}"
+            """
+
+        return self.spark_session.sql(query)

@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import pyspark.sql.functions as F
 from pyspark.sql import DataFrame, Row
@@ -146,62 +146,6 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             return pending_candidates_df.take(send_limit)
         else:
             return pending_candidates_df.collect()
-
-    @classmethod
-    def get_detection_ids_to_keep_current_run(
-        cls, job_date: str, score_threshold: float = score_threshold
-    ) -> List[Any]:
-        """
-        Retrieves detection IDs to keep for the current run by filtering records
-        processed on the given job_date and with a score above a certain
-        threshold.
-
-        Parameters:
-            job_date: The date (in "yyyy-MM-dd" format) to filter the
-            processed_at field.
-            score_threshold: the minimum score required for records to be returned
-
-        Returns:
-            A list of detection IDs that match the filtering criteria.
-        """
-        return (
-            cls.get_table()
-            .filter(
-                (F.col("score") >= score_threshold)
-                & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
-            )
-            .select(cls.id_column)
-            .rdd.flatMap(lambda x: x)
-            .collect()
-        )
-
-    @classmethod
-    def get_detection_ids_candidates_for_deletion(
-        cls, job_date: str, score_threshold: float = score_threshold
-    ) -> List[Any]:
-        """
-        Retrieves detection IDs that are candidates for deletion for the current
-        run by filtering records processed on the given job_date and with a
-        score below a certain threshold.
-
-        Parameters:
-            job_date: The date (in "yyyy-MM-dd" format) to filter the
-            processed_at field.
-            score_threshold: the minimum score required for records to be returned
-
-        Returns:
-            A list of detection IDs that match the filtering criteria.
-        """
-        return (
-            cls.get_table()
-            .filter(
-                (F.col("score") < score_threshold)
-                & (F.date_format(F.col("processed_at"), "yyyy-MM-dd") == job_date)
-            )
-            .select(cls.id_column)
-            .rdd.flatMap(lambda x: x)
-            .collect()
-        )
 
     @classmethod
     def get_pending_ids_for_stadsdeel(

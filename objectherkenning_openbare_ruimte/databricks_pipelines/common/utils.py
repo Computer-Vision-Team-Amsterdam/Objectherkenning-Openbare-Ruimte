@@ -1,34 +1,42 @@
 from datetime import datetime
 
-from databricks.sdk.runtime import *  # noqa: F403
+from databricks.sdk.runtime import dbutils
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.table_manager import (
     TableManager,
 )
 
 
-def delete_file(databricks_volume_full_path):
+def delete_file_or_folder(databricks_volume_full_path: str, recurse: bool = False):
     """
-    Delete file from storage account.
+    Delete a file or folder and, optionally, all of its contents. If a file is
+    specified, the recurse parameter is ignored. If a directory is specified, an
+    error occurs when recurse is False and the directory is not empty.
 
-    Parameters:
-    databricks_volume_full_path (str): The full path of the file using the volumes. The path should be within the /Volumes/ directory in Databricks.
+    Parameters
+    ----------
+        databricks_volume_full_path (str)
+            The full path of the file. The path should be within the /Volumes/ directory in Databricks.
+        recurse (bool, default: False)
+            Whether or not to delete all contents.
 
+    Returns
+    -------
+    (bool): Whether or not the operation was successful.
     """
+    result = False
     try:
         # if the file exists, remove it
-        dbutils.fs.rm(databricks_volume_full_path)  # type: ignore[name-defined] # noqa: F821, F405
-        return True
+        result = dbutils.fs.rm(databricks_volume_full_path, recurse=recurse)
     except Exception as e:
-        # Check if the error is due to the file not being found
-        if "FileNotFoundException" in str(e):
+        if "DirectoryNotEmpty" in str(e):
             print(
-                f"File {databricks_volume_full_path} does not exist, so it cannot be removed."
+                f"The folder {databricks_volume_full_path} is not empty while recurse is set to False."
             )
-            return False
         else:
             # If there’s another type of error, raise it
             raise RuntimeError(f"An unexpected error occurred: {e}")
+    return result
 
 
 def compare_dataframes(df1, df2, df1_name, df2_name):

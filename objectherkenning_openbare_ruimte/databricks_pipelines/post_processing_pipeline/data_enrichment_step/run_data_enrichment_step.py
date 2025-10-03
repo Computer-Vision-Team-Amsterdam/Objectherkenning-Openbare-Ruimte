@@ -1,22 +1,19 @@
-# this fixes the caching issues, reimports all modules
-dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
+import argparse
+import os
 
-import argparse  # noqa: E402
-import os  # noqa: E402
+from pyspark.sql import SparkSession
 
-from pyspark.sql import SparkSession  # noqa: E402
-
-from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
     get_databricks_environment,
     parse_detection_date_arg_to_settings,
     parse_manual_run_arg_to_settings,
     setup_arg_parser,
     setup_tables,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.data_enrichment import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step.components.data_enrichment import (
     DataEnrichment,
 )
-from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
+from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
     load_settings,
 )
 
