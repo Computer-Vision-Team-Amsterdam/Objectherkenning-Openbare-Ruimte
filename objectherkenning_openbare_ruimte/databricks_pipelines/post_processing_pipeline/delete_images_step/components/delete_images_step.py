@@ -20,7 +20,7 @@ class DeleteImagesStep:
     Delete image files from the landing zone following the data retention policy.
     """
 
-    dry_run = True
+    dry_run = False  # Set to True for testing purposes, nothing will be deleted.
 
     def __init__(
         self,
