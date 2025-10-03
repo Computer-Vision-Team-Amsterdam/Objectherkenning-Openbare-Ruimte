@@ -69,7 +69,7 @@ class SilverMetadataAggregator:
 
         if detection_date is not None:
             query += f"""
-            AND DATE(sf.gps_timestamp) == {detection_date}
+            AND DATE(sf.gps_timestamp) == "{str(detection_date)}"
             """
 
         return self.spark_session.sql(query)

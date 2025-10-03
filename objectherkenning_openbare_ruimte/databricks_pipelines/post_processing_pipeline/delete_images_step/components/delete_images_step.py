@@ -106,8 +106,13 @@ class DeleteImagesStep:
         self.delete_empty_subfolders(root_image_folder)
 
         print("\n** Deleting Visualizations **")
-        root_visualizations_folder = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/"
-        self.delete_visualizations(root_visualizations_folder)
+        if self.detection_date is None:
+            root_visualizations_folder = f"/Volumes/{self.catalog}/default/landingzone/{self.device_id}/visualizations/"
+            self.delete_visualizations(root_visualizations_folder)
+        else:
+            print(
+                "Skipping because `detection_date` parameter is set, no logic in place for this scenario."
+            )
 
         print("\n** All done! **")
 
