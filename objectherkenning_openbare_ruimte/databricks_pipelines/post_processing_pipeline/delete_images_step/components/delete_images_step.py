@@ -37,7 +37,7 @@ class DeleteImagesStep:
         self.retention_weeks = settings["job_config"]["retention_weeks"]
         self.detection_date = settings["job_config"].get("detection_date", None)
 
-    def run(self):
+    def run(self) -> None:
         """
         Run the delete images step:
         - Scan input folder for image files (A);
@@ -126,6 +126,7 @@ class DeleteImagesStep:
         )
 
     def delete_empty_subfolders(self, root_folder: str) -> None:
+        """Delete empty subfolders."""
         print(f"Scanning {root_folder} for empty subfolders...")
         subfolder_list = [
             folder for folder in dbutils.fs.ls(root_folder) if folder.isDir()
@@ -138,6 +139,10 @@ class DeleteImagesStep:
                     delete_file_or_folder(subfolder.path)
 
     def delete_visualizations(self, root_folder: str) -> None:
+        """
+        Delete visualization folders following the retention policy for visualizations:
+        - Delete all subfolders that are more than retention_weeks old.
+        """
         date_cutoff = (datetime.now() - timedelta(weeks=self.retention_weeks)).date()
         print(f"Scanning {root_folder} with cutoff date {date_cutoff}...")
         subfolder_deletion_list = [
@@ -157,9 +162,7 @@ class DeleteImagesStep:
     def get_image_names_at_date(
         cls, detections: DataFrame, detection_date: str
     ) -> List[str]:
-        """
-        Returns the set of unique images names at the given detection date.
-        """
+        """Returns the set of unique images names at the given detection date."""
         return (
             detections.filter(col("detection_date") == detection_date)
             .select("image_name")
@@ -171,6 +174,11 @@ class DeleteImagesStep:
     def get_folders_and_images(
         cls, root_folder: str, detection_date: Optional[str] = None
     ) -> Dict[str, List[Any]]:
+        """
+        Scan the root_folder and return a dict with each subfolder as key, and
+        all image files within that subfolder as values. Optionally limits the
+        result to a given detection_date.
+        """
         folders_and_images: Dict[str, List[Any]] = dict()
 
         if detection_date is not None:
