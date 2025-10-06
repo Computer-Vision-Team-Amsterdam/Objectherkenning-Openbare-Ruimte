@@ -41,13 +41,11 @@ class SignalConnectionConfigurer:
 
     def __init__(
         self,
-        spark_session: SparkSession,
         client_id: str,
         client_secret_name: str,
         access_token_url: str,
         base_url: str,
     ):
-        self.spark_session = spark_session
         self._client_id = client_id
         self._client_secret_name = client_secret_name
         self.access_token_url = access_token_url
@@ -105,7 +103,7 @@ class SignalHandler:
         access_token_url = signalen_settings["access_token_url"]
         base_url = signalen_settings["base_url"]
         signalConnectionConfigurer = SignalConnectionConfigurer(
-            spark_session, client_id, client_secret_name, access_token_url, base_url
+            client_id, client_secret_name, access_token_url, base_url
         )
         self.base_url: str = signalConnectionConfigurer.get_base_url()  # type: ignore
         access_token = signalConnectionConfigurer.get_access_token()

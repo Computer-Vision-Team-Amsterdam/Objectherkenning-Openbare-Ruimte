@@ -3,7 +3,8 @@ import os
 import requests
 from pyspark.sql import SparkSession
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
+    SignalConnectionConfigurer,
     get_databricks_environment,
 )
 from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
@@ -55,6 +56,18 @@ def run_healthcheck_step(
         print("BAG API is up and running")
     except requests.RequestException as e:
         raise ValueError("BAG API is down") from e
+
+    signalConnectionConfigurer = SignalConnectionConfigurer(
+        client_id=settings["signalen"]["client_id"],
+        client_secret_name=settings["signalen"]["client_secret_name"],
+        access_token_url=settings["signalen"]["access_token_url"],
+        base_url=settings["signalen"]["base_url"],
+    )
+    try:
+        _ = signalConnectionConfigurer.get_access_token()
+        print("SIA token successful")
+    except requests.RequestException as e:
+        raise ValueError("SIA token issue") from e
 
 
 def main():
