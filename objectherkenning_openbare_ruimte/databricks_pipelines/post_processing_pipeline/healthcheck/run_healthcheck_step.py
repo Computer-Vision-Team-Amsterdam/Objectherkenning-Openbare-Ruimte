@@ -1,44 +1,26 @@
-# this fixes the caching issues, reimports all modules
-dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
+import os
 
-import os  # noqa: E402
+import requests
+from pyspark.sql import SparkSession
 
-import requests  # noqa: E402
-from pyspark.sql import SparkSession  # noqa: E402
-
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.databricks_workspace import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
+    SignalConnectionConfigurer,
     get_databricks_environment,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (  # noqa: E402
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
     BENKAGGConnector,
 )
-from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
+from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
     load_settings,
 )
 
 
-def run_healthcheck_step(
-    settings: dict,
-) -> None:
-    """
-    Run the health check step.
-
-    Parameters
-    ----------
-    settings : dict
-        The settings dictionary containing configuration parameters.
-
-    Raises
-    ------
-    ValueError
-        If the benk_agg data handler or BAG API is down.
-    """
+def run_healthcheck_refdb(settings: dict) -> None:
     benkAggConnector = BENKAGGConnector(
         az_tenant_id=settings["azure_tenant_id"],
         db_host=settings["reference_database"]["host"],
         db_name=settings["reference_database"]["name"],
     )
-
     result = benkAggConnector.get_benkagg_adresseerbareobjecten_by_id(
         "0363200000006110"
     )
@@ -47,17 +29,32 @@ def run_healthcheck_step(
     else:
         raise ValueError("RefDB benk_agg data handler is down")
 
+
+def run_healthcheck_api() -> None:
     bag_url = (
         "https://api.data.amsterdam.nl/geosearch/?datasets=benkagg/adresseerbareobjecten"
         "&lat=52.3782197&lon=4.8834705&radius=25"
     )
-
     try:
         response = requests.get(bag_url, timeout=60)
         response.raise_for_status()
         print("BAG API is up and running")
     except requests.RequestException as e:
         raise ValueError("BAG API is down") from e
+
+
+def run_healthcheck_sia(settings: dict) -> None:
+    signalConnectionConfigurer = SignalConnectionConfigurer(
+        client_id=settings["signalen"]["client_id"],
+        client_secret_name=settings["signalen"]["client_secret_name"],
+        access_token_url=settings["signalen"]["access_token_url"],
+        base_url=settings["signalen"]["base_url"],
+    )
+    try:
+        _ = signalConnectionConfigurer.get_access_token()
+        print("SIA token successful")
+    except requests.RequestException as e:
+        raise ValueError("SIA token unsuccessful") from e
 
 
 def main():
@@ -71,9 +68,14 @@ def main():
         f"{databricks_environment}"
     ]
 
-    run_healthcheck_step(
-        settings=settings,
-    )
+    print("\n*** Running RefDB healthcheck ***")
+    run_healthcheck_refdb(settings=settings)
+
+    print("\n*** Running API healthcheck ***")
+    run_healthcheck_api()
+
+    print("\n*** Running SIA healthcheck ***")
+    run_healthcheck_sia(settings=settings)
 
 
 if __name__ == "__main__":

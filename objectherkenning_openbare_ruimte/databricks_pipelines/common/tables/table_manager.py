@@ -82,7 +82,6 @@ class TableManager(ABC):
         """
         full_table_name = cls.get_table_full_name()
         table_rows = TableManager.spark_session.table(full_table_name)  # type: ignore
-        print(f"Loaded {table_rows.count()} rows from {full_table_name}.")
         return table_rows
 
     @classmethod
@@ -98,7 +97,7 @@ class TableManager(ABC):
         table_rows = cls.get_table()
         pending_table_rows = table_rows.filter("status = 'Pending'")
         print(
-            f"Filtered to {pending_table_rows.count()} 'Pending' rows from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
+            f"Filtered {pending_table_rows.count()}/{table_rows.count()} 'Pending' rows from {TableManager.catalog}.{TableManager.schema}.{cls.table_name}."
         )
         return pending_table_rows
 
