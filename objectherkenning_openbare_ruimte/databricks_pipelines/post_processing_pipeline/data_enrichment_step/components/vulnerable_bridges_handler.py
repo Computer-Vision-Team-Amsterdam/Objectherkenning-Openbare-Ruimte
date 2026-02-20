@@ -1,7 +1,9 @@
 import os
+import tempfile
 
 import geopandas as gpd
 import pandas as pd
+from databricks.sdk.runtime import dbutils
 from pyspark.sql import SparkSession
 from shapely.geometry import Point
 from shapely.ops import nearest_points
@@ -16,11 +18,19 @@ class VulnerableBridgesHandler:
         self, spark_session: SparkSession, root_source, vuln_bridges_relative_path
     ):
         self.spark_session = spark_session
-        self.filepath = os.path.join(root_source, vuln_bridges_relative_path)
+        self.file_path = os.path.join(root_source, vuln_bridges_relative_path)
         self._load_bridges_gdf()
 
     def _load_bridges_gdf(self):
-        self.bridges_gdf = gpd.read_file(self.filepath)
+        print(f"Loading vulnerable bridges file: {self.file_path}")
+        # Copy the file to local storage, otherwise GeoPandas cannot read it
+        _, tmp_path = tempfile.mkstemp()
+        try:
+            dbutils.fs.cp(self.file_path, f"file://{tmp_path}")
+            self.bridges_gdf = gpd.read_file(tmp_path)
+        finally:
+            os.remove(tmp_path)
+
         if self.bridges_gdf.crs.to_epsg() == WGS84_EPSG:
             self.bridges_gdf.to_crs(epsg=RD_EPSG, inplace=True)
         if "objectnummer" not in self.bridges_gdf.columns:
