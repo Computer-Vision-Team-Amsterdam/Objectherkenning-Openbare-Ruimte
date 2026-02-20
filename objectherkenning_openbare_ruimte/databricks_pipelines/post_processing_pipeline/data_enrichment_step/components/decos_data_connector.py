@@ -90,7 +90,11 @@ class DecosDataHandler(BENKAGGConnector):
         def _safe_json_load(x):
             try:
                 return json.loads(x)
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                print(e)
+                return []
+            except TypeError as e:
+                print(e)
                 return []
 
         result_df["objecten"] = result_df["objecten"].apply(
