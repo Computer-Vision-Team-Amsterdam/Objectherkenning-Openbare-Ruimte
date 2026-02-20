@@ -23,6 +23,7 @@ class VulnerableBridgesHandler:
 
     def _load_bridges_gdf(self):
         print(f"Loading vulnerable bridges file: {self.file_path}")
+
         # Copy the file to local storage, otherwise GeoPandas cannot read it
         _, tmp_path = tempfile.mkstemp()
         try:
@@ -30,6 +31,8 @@ class VulnerableBridgesHandler:
             self.bridges_gdf = gpd.read_file(tmp_path)
         finally:
             os.remove(tmp_path)
+
+        print(f"Loaded {len(self.bridges_gdf)} bridge and quay wall objects")
 
         if self.bridges_gdf.crs.to_epsg() == WGS84_EPSG:
             self.bridges_gdf.to_crs(epsg=RD_EPSG, inplace=True)
@@ -69,17 +72,19 @@ class VulnerableBridgesHandler:
                 "closest_bridge_distance": results_gdf["distance"],
                 "closest_bridge_id": results_gdf["objectnummer"],
                 "closest_bridge_coordinates": [
-                    list(*nearest_points(location, geom)[1].coords)
+                    list(reversed(*nearest_points(location, geom)[1].coords))
                     for location, geom in zip(
-                        objects_gdf.geometry,
-                        self.bridges_gdf.loc[results_gdf["index_right"], :]["geometry"],
+                        objects_gdf.to_crs(WGS84_EPSG).geometry,
+                        self.bridges_gdf.to_crs(WGS84_EPSG).loc[
+                            results_gdf["index_right"], :
+                        ]["geometry"],
                     )
                 ],
                 "closest_bridge_geom_wkt": [
                     wkt_dumps(geom)
-                    for geom in self.bridges_gdf.loc[results_gdf["index_right"], :][
-                        "geometry"
-                    ]
+                    for geom in self.bridges_gdf.to_crs(WGS84_EPSG).loc[
+                        results_gdf["index_right"], :
+                    ]["geometry"]
                 ],
             }
         )
