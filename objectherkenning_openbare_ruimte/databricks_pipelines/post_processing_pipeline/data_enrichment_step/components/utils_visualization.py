@@ -6,6 +6,7 @@ from folium.plugins import BeautifyIcon
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, row_number
 from pyspark.sql.window import Window
+from shapely import to_geojson
 from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
@@ -102,7 +103,7 @@ def generate_map(
         detection_image_name = row["image_name"]
         detection_priority_id = row["priority_id"]
         detection_score = row["score"] if row["score"] else 0
-        vulnerable_bridge = wkt_loads(row["closest_bridge_linestring_wkt"])
+        vulnerable_bridge = wkt_loads(row["closest_bridge_geom_wkt"])
         closest_bridge_id = row["closest_bridge_id"]
         permit_location = Point(row["closest_permit_lat"], row["closest_permit_lon"])
         closest_permit_id = row["closest_permit_id"]
@@ -163,12 +164,14 @@ def generate_map(
         ).add_to(Map)
 
         # Add closest vulnerable bridge
-        coordinates = [(point[0], point[1]) for point in vulnerable_bridge.coords]
-        folium.PolyLine(
-            coordinates,
-            color="yellow",
-            weight=5,
-            opacity=0.8,
+        bridge_geojson = to_geojson(vulnerable_bridge)
+        folium.GeoJson(
+            data=bridge_geojson,
+            style_function=lambda _: {
+                "fillColor": "yellow",
+                "color": "yellow",
+                "weight": 5,
+            },
             tooltip=f"Bridge ID: {closest_bridge_id}",
         ).add_to(vulnerable_bridges_group)
 
