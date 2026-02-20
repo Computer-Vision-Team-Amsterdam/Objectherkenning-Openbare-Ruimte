@@ -34,8 +34,11 @@ class VulnerableBridgesHandler:
 
         print(f"Loaded {len(self.bridges_gdf)} bridge and quay wall objects")
 
+        # Convert to projected CRS for accurate distance measurement
         if self.bridges_gdf.crs.to_epsg() == WGS84_EPSG:
             self.bridges_gdf.to_crs(epsg=RD_EPSG, inplace=True)
+
+        # Old file had "rakcode", new file uses "objectnummer", this works with both
         if "objectnummer" not in self.bridges_gdf.columns:
             if "rakcode" in self.bridges_gdf.columns:
                 self.bridges_gdf.loc[:, "objectnummer"] = self.bridges_gdf["rakcode"]
@@ -49,8 +52,11 @@ class VulnerableBridgesHandler:
         self,
         objects_coordinates_df,
     ):
+        """
+        Find closest bridge for each object, and compute the distance and closest point.
+        """
+        # Convert objects_df to gdf for easy computations
         objects_df = objects_coordinates_df.toPandas()
-
         objects_gdf = gpd.GeoDataFrame(
             index=objects_df.detection_id,
             geometry=[
@@ -59,6 +65,7 @@ class VulnerableBridgesHandler:
             crs=WGS84_EPSG,
         ).to_crs(RD_EPSG)
 
+        # Compute nearest bridge for each object
         results_gdf = gpd.sjoin_nearest(
             left_df=objects_gdf,
             right_df=self.bridges_gdf,
@@ -66,6 +73,7 @@ class VulnerableBridgesHandler:
             distance_col="distance",
         )
 
+        # Create results dataframe and convert coordinates back to WGS84
         results_df = pd.DataFrame(
             data={
                 "detection_id": results_gdf.index,

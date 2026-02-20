@@ -257,7 +257,7 @@ class DataEnrichment:
         Setup data handlers. We do this only once for each run for efficiency,
         since each handler collects and pre-processes potentially a lot a data.
         """
-        print("-- Initializing VulnerableBridgesHandler --")
+        print("\n-- Initializing VulnerableBridgesHandler --")
         self.bridges_handler = VulnerableBridgesHandler(
             spark_session=self.spark_session,
             root_source=self.root_source,
