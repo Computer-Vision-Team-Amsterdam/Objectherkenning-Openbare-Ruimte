@@ -22,6 +22,9 @@ def main(args: argparse.Namespace) -> None:
     spark_session = SparkSession.builder.appName("DataEnrichment").getOrCreate()
     databricks_environment = get_databricks_environment(spark_session)
 
+    # Prevent user warnings in vulnerable bridge handler when converting between spark and pandas
+    spark_session.conf.set("spark.sql.execution.arrow.pyspark.enabled", "false")
+
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
     )

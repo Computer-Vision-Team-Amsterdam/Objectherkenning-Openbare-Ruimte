@@ -1,11 +1,16 @@
-from typing import List
+import os
+import tempfile
 
-import geopy.distance
-from osgeo import osr  # pylint: disable-all
-from pyspark.sql import Row, SparkSession
-from shapely.geometry import LineString, Point
+import geopandas as gpd
+import pandas as pd
+from databricks.sdk.runtime import dbutils
+from pyspark.sql import SparkSession
+from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import dumps as wkt_dumps
+
+RD_EPSG = 28992
+WGS84_EPSG = 4326
 
 
 class VulnerableBridgesHandler:
@@ -13,143 +18,83 @@ class VulnerableBridgesHandler:
         self, spark_session: SparkSession, root_source, vuln_bridges_relative_path
     ):
         self.spark_session = spark_session
-        self.file_path = f"{root_source}/{vuln_bridges_relative_path}"
-        self._bridges_coordinates: List[List[List[float]]] = []
-        self._bridges_ids: List[int] = []
-        self._parse_bridges_coordinates()
-        self._bridges_coordinates_geometry = self._convert_coordinates_to_linestring()
+        self.file_path = os.path.join(root_source, vuln_bridges_relative_path)
+        self._load_bridges_gdf()
 
-    def get_bridges_coordinates(self):
-        return self._bridges_coordinates
+    def _load_bridges_gdf(self):
+        print(f"Loading vulnerable bridges file: {self.file_path}")
 
-    def get_bridges_coordinates_geometry(self):
-        return self._bridges_coordinates_geometry
+        # Copy the file to local storage, otherwise GeoPandas cannot read it
+        _, tmp_path = tempfile.mkstemp()
+        try:
+            dbutils.fs.cp(self.file_path, f"file://{tmp_path}")
+            self.bridges_gdf = gpd.read_file(tmp_path)
+        finally:
+            os.remove(tmp_path)
 
-    def get_bridges_ids(self):
-        return self._bridges_ids
+        print(f"Loaded {len(self.bridges_gdf)} bridge and quay wall objects")
 
-    def _rd_to_wgs(self, coordinates: List[float]) -> List[float]:
-        """
-        Convert rijksdriehoekcoordinates into WGS84 cooridnates. Input parameters: x (float), y (float).
-        """
-        epsg28992 = osr.SpatialReference()
-        epsg28992.ImportFromEPSG(28992)
+        # Convert to projected CRS for accurate distance measurement
+        if self.bridges_gdf.crs.to_epsg() == WGS84_EPSG:
+            self.bridges_gdf.to_crs(epsg=RD_EPSG, inplace=True)
 
-        epsg4326 = osr.SpatialReference()
-        epsg4326.ImportFromEPSG(4326)
-
-        rd2latlon = osr.CoordinateTransformation(epsg28992, epsg4326)
-        lonlatz = rd2latlon.TransformPoint(coordinates[0], coordinates[1])
-        return [float(value) for value in lonlatz[:2]]
-
-    def _parse_bridges_coordinates(self):
-        """
-        Creates a list of coordinates where to find vulnerable bridges and canal walls
-        Coordinates of one bridge is a list of coordinates.
-
-        [[[52.370292666750956, 4.868173855056686],
-         [52.36974277094149, 4.868559544639536],
-         [52.369742761981286, 4.868559550924023]
-         ],
-         [
-             list of coordinates for second bridges
-         ],
-         ...
-        ]
-        """
-        # Load the GeoJSON file into a Spark DataFrame
-        sparkDataFrame = (
-            self.spark_session.read.format("json")
-            .option("driverName", "GeoJSON")
-            .load(self.file_path)
-        )
-
-        # Filter out rows where the "geometry" column is not null
-        filtered_df = sparkDataFrame.filter(sparkDataFrame.geometry.isNotNull())
-
-        # Iterate through each feature in the DataFrame
-        for feature_id, feature in enumerate(filtered_df.collect()):
-            bridge_coords = []
-            if feature["geometry"]["coordinates"]:
-                for _, coords in enumerate(feature["geometry"]["coordinates"][0]):
-                    bridge_coords.append(self._rd_to_wgs(coords))
-                self._bridges_coordinates.append(bridge_coords)
-                self._bridges_ids.append(feature_id)
-
-    def _convert_coordinates_to_linestring(self):
-        """
-        We need the bridges coordinates as LineString to perform distance calculations
-        """
-        bridges_coordinates_geom = [
-            LineString(bridge_coordinates)
-            for bridge_coordinates in self._bridges_coordinates
-            if bridge_coordinates
-        ]
-        return bridges_coordinates_geom
-
-    @staticmethod
-    def _line_to_point_in_meters(line: LineString, point: Point) -> float:
-        """
-        Calculates the shortest distance between a line and point, returns a float in meters
-        """
-        closest_point = nearest_points(line, point)[0]
-        closest_point_in_meters = float(
-            geopy.distance.distance(closest_point.coords, point.coords).meters
-        )
-        return closest_point_in_meters
+        # Old file had "rakcode", new file uses "objectnummer", this works with both
+        if "objectnummer" not in self.bridges_gdf.columns:
+            if "rakcode" in self.bridges_gdf.columns:
+                self.bridges_gdf.loc[:, "objectnummer"] = self.bridges_gdf["rakcode"]
+            else:
+                print(
+                    "WARNING: No `objectcode` or `rakcode` found in bridges file. Using index instead."
+                )
+                self.bridges_gdf.loc[:, "objectnummer"] = self.bridges_gdf.index
 
     def calculate_distances_to_closest_vulnerable_bridges(
         self,
-        bridges_locations_as_linestrings: List[LineString],
         objects_coordinates_df,
-        bridges_ids: List[int],
-        bridges_coordinates: List[List[List[float]]],
     ):
-        results = []
+        """
+        Find closest bridge for each object, and compute the distance and closest point.
+        """
+        # Convert objects_df to gdf for easy computations
+        objects_df = objects_coordinates_df.toPandas()
+        objects_gdf = gpd.GeoDataFrame(
+            index=objects_df.detection_id,
+            geometry=[
+                Point(row.gps_lon, row.gps_lat) for _, row in objects_df.iterrows()
+            ],
+            crs=WGS84_EPSG,
+        ).to_crs(RD_EPSG)
 
-        for row in objects_coordinates_df.collect():
-            object_lat = row.gps_lat
-            object_lon = row.gps_lon
+        # Compute nearest bridge for each object
+        results_gdf = gpd.sjoin_nearest(
+            left_df=objects_gdf,
+            right_df=self.bridges_gdf,
+            how="left",
+            distance_col="distance",
+        )
 
-            object_location = Point(object_lat, object_lon)
-            bridge_object_distances = []
-            for idx, bridge_location in enumerate(bridges_locations_as_linestrings):
-                try:
-                    # calculate distance between object point and bridge linestring
-                    bridge_dist = VulnerableBridgesHandler._line_to_point_in_meters(
-                        bridge_location, object_location
+        # Create results dataframe and convert coordinates back to WGS84
+        results_df = pd.DataFrame(
+            data={
+                "detection_id": results_gdf.index,
+                "closest_bridge_distance": results_gdf["distance"],
+                "closest_bridge_id": results_gdf["objectnummer"],
+                "closest_bridge_coordinates": [
+                    list(reversed(*nearest_points(location, geom)[1].coords))
+                    for location, geom in zip(
+                        objects_gdf.to_crs(WGS84_EPSG).geometry,
+                        self.bridges_gdf.to_crs(WGS84_EPSG).loc[
+                            results_gdf["index_right"], :
+                        ]["geometry"],
                     )
-                except Exception:
-                    bridge_dist = 10000
-                    print("Error occurred:")
-                    print(
-                        f"Container location: {object_location}, {object_location.coords}"
-                    )
-                    print(f"Bridge location: {bridge_location}")
-                bridge_object_distances.append(
-                    (
-                        bridge_dist,
-                        bridges_ids[idx],  # ID of the bridge
-                        bridges_coordinates[idx][0],  # Coordinates of the bridge
-                        bridge_location,  # Bridge linestring (in WKT format)
-                    )
-                )
-            (
-                closest_bridge_distance,
-                closest_bridge_id,
-                closest_bridge_coord,
-                closest_bridge_linestring,
-            ) = min(bridge_object_distances, key=lambda x: x[0])
-            results.append(
-                Row(
-                    detection_id=row.detection_id,  # retain the detection id for joining
-                    closest_bridge_distance=round(closest_bridge_distance, 2),
-                    closest_bridge_id=closest_bridge_id,
-                    closest_bridge_coordinates=closest_bridge_coord,
-                    closest_bridge_linestring_wkt=wkt_dumps(closest_bridge_linestring),
-                )
-            )
+                ],
+                "closest_bridge_geom_wkt": [
+                    wkt_dumps(geom)
+                    for geom in self.bridges_gdf.to_crs(WGS84_EPSG).loc[
+                        results_gdf["index_right"], :
+                    ]["geometry"]
+                ],
+            }
+        )
 
-        results_df = self.spark_session.createDataFrame(results)
-
-        return results_df
+        return self.spark_session.createDataFrame(results_df)

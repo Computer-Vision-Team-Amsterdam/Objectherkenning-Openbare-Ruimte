@@ -257,12 +257,13 @@ class DataEnrichment:
         Setup data handlers. We do this only once for each run for efficiency,
         since each handler collects and pre-processes potentially a lot a data.
         """
+        print("\n-- Initializing VulnerableBridgesHandler --")
         self.bridges_handler = VulnerableBridgesHandler(
             spark_session=self.spark_session,
             root_source=self.root_source,
             vuln_bridges_relative_path=self.vuln_bridges_relative_path,
         )
-
+        print("\n-- Initializing DecosDataHandler --")
         self.decos_data_handler = DecosDataHandler(
             spark_session=self.spark_session,
             az_tenant_id=self.az_tenant_id,
@@ -275,8 +276,10 @@ class DataEnrichment:
             date_to_query=datetime.datetime.today().strftime("%Y-%m-%d")
         )
 
+        print("\n-- Initializing StadsdelenHandler --")
         self.stadsdelen_handler = StadsdelenHandler(spark_session=self.spark_session)
 
+        print("\n-- Initializing PrivateTerrainHandler --")
         self.private_terrain_handler = PrivateTerrainHandler(
             spark_session=self.spark_session,
             az_tenant_id=self.az_tenant_id,
@@ -353,11 +356,10 @@ class DataEnrichment:
         return self.clustering.get_objects_coordinates_with_detection_id()
 
     def _get_bridges_df(self, objects_coordinates_df: DataFrame) -> DataFrame:
-        closest_bridges_df = self.bridges_handler.calculate_distances_to_closest_vulnerable_bridges(
-            bridges_locations_as_linestrings=self.bridges_handler.get_bridges_coordinates_geometry(),
-            objects_coordinates_df=objects_coordinates_df,
-            bridges_ids=self.bridges_handler.get_bridges_ids(),
-            bridges_coordinates=self.bridges_handler.get_bridges_coordinates(),
+        closest_bridges_df = (
+            self.bridges_handler.calculate_distances_to_closest_vulnerable_bridges(
+                objects_coordinates_df=objects_coordinates_df,
+            )
         )
         return closest_bridges_df
 
