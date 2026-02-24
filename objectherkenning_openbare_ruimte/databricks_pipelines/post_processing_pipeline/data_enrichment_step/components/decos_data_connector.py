@@ -388,7 +388,7 @@ class DecosDataHandler(BENKAGGConnector):
         filtered_points = [
             self._permits_coordinates_geometry[i] for i in filtered_indices
         ]
-        filtered_ids = self._healthy_df.loc[filtered_indices, "id"].tolist()
+        filtered_kenmerk = self._healthy_df.loc[filtered_indices, "kenmerk"].tolist()
         filtered_coords = [self._permits_coordinates[i] for i in filtered_indices]
 
         results = []
@@ -422,7 +422,7 @@ class DecosDataHandler(BENKAGGConnector):
                     closest_permit_distance=float(
                         closest_permit_distances[min_distance_idx]
                     ),
-                    closest_permit_id=filtered_ids[min_distance_idx],
+                    closest_permit_id=filtered_kenmerk[min_distance_idx],
                     closest_permit_lat=filtered_coords[min_distance_idx][0],
                     closest_permit_lon=filtered_coords[min_distance_idx][1],
                 )
