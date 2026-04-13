@@ -10,6 +10,7 @@ from shapely import to_geojson
 from shapely.geometry import Point
 from shapely.ops import nearest_points
 from shapely.wkt import loads as wkt_loads
+from xyzservices import TileProvider
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import OutputImage
 from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables.silver.frames import (
@@ -54,8 +55,17 @@ def generate_map(
     latitude = 52.377956
     longitude = 4.897070
 
+    # data.amsterdam.nl tile provider
+    ams_tile_provider = TileProvider(
+        name="Topografie, standaard visualisatie (WM)",
+        url="https://t1.data.amsterdam.nl/topo_wm/{z}/{x}/{y}.png",
+        attribution="data.amsterdam.nl",
+    )
+
     # create empty map zoomed on Amsterdam
-    Map = folium.Map(location=[latitude, longitude], zoom_start=12)
+    Map = folium.Map(
+        location=[latitude, longitude], zoom_start=12, tiles=ams_tile_provider
+    )
 
     vulnerable_bridges_group = folium.FeatureGroup(name="Vulnerable bridges").add_to(
         Map
