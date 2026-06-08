@@ -7,7 +7,7 @@ databricks_pipelines:
     device_id: "Luna"
     ckpt_frames_relative_path: checkpoints/_checkpoint_frames
     ckpt_detections_relative_path: checkpoints/_checkpoint_detections
-    vuln_bridges_relative_path: "vuln_bridges_2026-02-16.geojson"
+    vuln_bridges_relative_path: "vuln_bridges_2026-06-08.geojson"
     reference_database:
       host: "dev-bbn1-01-dbhost.postgres.database.azure.com"
       name: "mdbdataservices"
@@ -65,7 +65,7 @@ databricks_pipelines:
     device_id: "Luna"
     ckpt_frames_relative_path: checkpoints/_checkpoint_frames
     ckpt_detections_relative_path: checkpoints/_checkpoint_detections
-    vuln_bridges_relative_path: "vuln_bridges_2026-02-16.geojson"
+    vuln_bridges_relative_path: "vuln_bridges_2026-06-08.geojson"
     reference_database:
       host: "prd-bbn1-01-dbhost.postgres.database.azure.com"
       name: "mdbdataservices"
