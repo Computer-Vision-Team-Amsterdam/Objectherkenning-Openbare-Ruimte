@@ -109,13 +109,13 @@ def parse_task_args_to_settings(
     if args.stadsdelen:
         stadsdelen = _parse_stadsdelen_arg(args.stadsdelen)
     else:
-        print("Using default stadsdelen.")
+        print("Using default stadsdelen from config.yml")
         stadsdelen = settings["job_config"]["active_task"].keys()
 
     if args.send_limits:
         send_limits = _parse_send_limits_arg(args.send_limits)
     else:
-        print("Using default send limits.")
+        print("Using default send limits from config.yml")
         send_limits = None
 
     if (stadsdelen and send_limits) and not (len(stadsdelen) == len(send_limits)):
