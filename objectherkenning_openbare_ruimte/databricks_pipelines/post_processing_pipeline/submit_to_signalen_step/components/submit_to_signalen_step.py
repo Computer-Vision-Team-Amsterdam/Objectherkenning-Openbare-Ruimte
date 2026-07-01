@@ -55,7 +55,7 @@ class SubmitToSignalenStep:
             annotate_images=settings["job_config"]["annotate_detection_images"],
         )
 
-    def run_submit_to_signalen_step(self):
+    def run_submit_to_signalen_step(self, test_only: bool = False):
         """
         Check which stadsdelen are active for this run, and process them one by
         one.
@@ -65,10 +65,14 @@ class SubmitToSignalenStep:
         for stadsdeel in active_stadsdelen:
             print(f"\n=== Processing detections for stadsdeel {stadsdeel} ===\n")
             self._process_stadsdeel(
-                stadsdeel=stadsdeel, config=self.active_task_config[stadsdeel]
+                stadsdeel=stadsdeel,
+                config=self.active_task_config[stadsdeel],
+                test_only=test_only,
             )
 
-    def _process_stadsdeel(self, stadsdeel: str, config: dict[str, Any]):
+    def _process_stadsdeel(
+        self, stadsdeel: str, config: dict[str, Any], test_only: bool = False
+    ):
         """
         Process pending detections for the specified stadsdeel and create
         signals following the configured send limits.
@@ -89,13 +93,11 @@ class SubmitToSignalenStep:
                 }
             }
         """
-        send_limits = config.get("send_limit", {})
-
         top_scores_df = SilverEnrichedDetectionMetadataManager.get_top_pending_records_for_stadsdeel(
             stadsdeel=stadsdeel,
             exclude_private_terrain_detections=self.exclude_private_terrain_detections,
             active_object_classes=config.get("active_object_classes", []),
-            send_limits=send_limits,
+            send_limits=config.get("send_limit", {}),
             score_threshold=self.min_score,
             skip_ids=self.skip_ids,
             detection_date=self.detection_date,
@@ -105,7 +107,7 @@ class SubmitToSignalenStep:
             print("No data found for creating notifications. Stopping execution.")
         else:
             successful_notifications, unsuccessful_notifications = (
-                self.signalHandler.process_notifications(top_scores_df)
+                self.signalHandler.process_notifications(top_scores_df, test_only)
             )
 
             if successful_notifications:
