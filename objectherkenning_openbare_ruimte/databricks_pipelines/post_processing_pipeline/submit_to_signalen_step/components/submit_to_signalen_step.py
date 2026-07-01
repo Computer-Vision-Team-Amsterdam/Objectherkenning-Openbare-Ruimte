@@ -58,7 +58,8 @@ class SubmitToSignalenStep:
     def run_submit_to_signalen_step(self, test_only: bool = False):
         """
         Check which stadsdelen are active for this run, and process them one by
-        one.
+        one. Set test_only to True to skip actually sending signals, for testing
+        purposes.
         """
         active_stadsdelen = self.active_task_config.keys()
 
