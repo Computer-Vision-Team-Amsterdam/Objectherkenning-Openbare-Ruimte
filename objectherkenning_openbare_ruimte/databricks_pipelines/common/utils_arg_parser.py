@@ -1,7 +1,7 @@
 import argparse
 import ast
 import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
@@ -95,10 +95,15 @@ def parse_task_args_to_settings(
             _stadsdelen = [_stadsdelen]
         return [_s.strip().capitalize() for _s in _stadsdelen]
 
-    def _parse_send_limits_arg(arg_str: str) -> List[dict[int, int]]:
+    def _parse_send_limits_arg(arg_str: str) -> List[dict[int, Optional[int]]]:
         _send_limits = ast.literal_eval(arg_str)
         if isinstance(_send_limits, dict):
             _send_limits = [_send_limits]
+        for _limits_dict in _send_limits:
+            for key, value in _limits_dict.items():
+                if value == -1:
+                    # Setting a category's send_limit to -1 should be treated as None to ignore that limit
+                    _limits_dict[key] = None
         return _send_limits
 
     if args.send_limits and not args.stadsdelen:

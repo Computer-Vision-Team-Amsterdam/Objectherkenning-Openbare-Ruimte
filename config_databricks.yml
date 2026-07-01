@@ -28,6 +28,7 @@ databricks_pipelines:
         Centrum:
           active_object_classes: [2, 3, 4]
           send_limit:
+            # Set to -1 to disable send limit for that category
             2: 2
             3: 1
             4: 1
@@ -86,6 +87,7 @@ databricks_pipelines:
         Centrum:
           active_object_classes: [2, 3, 4]
           send_limit:
+            # Set to -1 to disable send limit for that category
             2: 4
             3: 3
             4: 3
