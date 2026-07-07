@@ -476,10 +476,7 @@ class SignalHandler:
 
         return json_to_send
 
-    def process_notifications(
-        self,
-        top_scores_df: DataFrame,
-    ):
+    def process_notifications(self, top_scores_df: DataFrame, test_only: bool = False):
         date_of_notification = datetime.today().strftime("%Y-%m-%d")
         top_scores_df_with_date = top_scores_df.withColumn(
             "notification_date", F.to_date(F.lit(date_of_notification))
@@ -527,9 +524,12 @@ class SignalHandler:
                     lat=LAT,
                     object_class_str=object_class_str,
                 )
-                signal_id = self.post_signal_with_image_attachment(
-                    json_content=notification_json, image=image
-                )
+                if test_only:
+                    signal_id = "DUMMY"
+                else:
+                    signal_id = self.post_signal_with_image_attachment(
+                        json_content=notification_json, image=image
+                    )
                 print(
                     f"Created signal {signal_id} for detection {detection_id} on {date_of_notification} with lat {LAT} and lon {LON}.\n\n"
                 )

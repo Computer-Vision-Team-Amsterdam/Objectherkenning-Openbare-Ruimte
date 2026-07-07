@@ -28,6 +28,7 @@ def generate_map(
     device_id: str,
     annotate_detection_images: bool = False,
     exclude_private_terrain: bool = False,
+    show_vulnerable_bridges: bool = False,
 ) -> None:
     """
     Generates an interactive HTML map visualizing object detections, their closest vulnerable bridges,
@@ -67,12 +68,13 @@ def generate_map(
         location=[latitude, longitude], zoom_start=12, tiles=ams_tile_provider
     )
 
-    vulnerable_bridges_group = folium.FeatureGroup(name="Vulnerable bridges").add_to(
-        Map
-    )
-    closest_bridges_group = folium.FeatureGroup(
-        name="Distances to closest bridge"
-    ).add_to(Map)
+    if show_vulnerable_bridges:
+        vulnerable_bridges_group = folium.FeatureGroup(
+            name="Vulnerable bridges"
+        ).add_to(Map)
+        closest_bridges_group = folium.FeatureGroup(
+            name="Distances to closest bridge"
+        ).add_to(Map)
     closest_permit_group = folium.FeatureGroup(
         name="Distances to closest permit"
     ).add_to(Map)
@@ -176,17 +178,18 @@ def generate_map(
             icon=detection_icon,
         ).add_to(Map)
 
-        # Add closest vulnerable bridge
-        bridge_geojson = to_geojson(vulnerable_bridge)
-        folium.GeoJson(
-            data=bridge_geojson,
-            style_function=lambda _: {
-                "fillColor": "yellow",
-                "color": "yellow",
-                "weight": 5,
-            },
-            tooltip=f"Bridge ID: {closest_bridge_id}",
-        ).add_to(vulnerable_bridges_group)
+        if show_vulnerable_bridges:
+            # Add closest vulnerable bridge
+            bridge_geojson = to_geojson(vulnerable_bridge)
+            folium.GeoJson(
+                data=bridge_geojson,
+                style_function=lambda _: {
+                    "fillColor": "yellow",
+                    "color": "yellow",
+                    "weight": 5,
+                },
+                tooltip=f"Bridge ID: {closest_bridge_id}",
+            ).add_to(vulnerable_bridges_group)
 
         # Add closest object permit
         folium.CircleMarker(
@@ -197,18 +200,19 @@ def generate_map(
             tooltip=f"Permit ID: {closest_permit_id}",
         ).add_to(Map)
 
-        # Add distances between object and closest vulnerable bridge
-        polyline_coords = [
-            (detection.x, detection.y),
-            (closest_point_on_bridge.x, closest_point_on_bridge.y),
-        ]
-        folium.PolyLine(
-            polyline_coords,
-            color="blue",
-            weight=5,
-            opacity=0.8,
-            tooltip=f"{closest_bridge_distance:.1f}m",
-        ).add_to(closest_bridges_group)
+        if show_vulnerable_bridges:
+            # Add distances between object and closest vulnerable bridge
+            polyline_coords = [
+                (detection.x, detection.y),
+                (closest_point_on_bridge.x, closest_point_on_bridge.y),
+            ]
+            folium.PolyLine(
+                polyline_coords,
+                color="blue",
+                weight=5,
+                opacity=0.8,
+                tooltip=f"{closest_bridge_distance:.1f}m",
+            ).add_to(closest_bridges_group)
 
         # Add distances between object and closest permit
         polyline_coords = [

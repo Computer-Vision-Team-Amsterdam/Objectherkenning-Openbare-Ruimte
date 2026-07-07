@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "objectherkenning_openbare_ruimte"
-version = "2.2.8"
+version = "2.2.9"
 description = "Objectherkenning Openbare Ruimte is a project about recognising objects from public space images."
 authors = [
     {name = "Sebastian Davrieux", email = "s.davrieux@amsterdam.nl"},
@@ -17,7 +17,7 @@ maintainers = [
     { name = "Computer Vision Team, Gemeente Amsterdam", email = "cvt@amsterdam.nl" },
 ]
 readme = "README.md"
-requires-python = ">=3.8, <=3.12"
+requires-python = ">=3.10, <=3.12"
 dependencies = [
     "yolo_model_development_kit",
     "pathvalidate>=3.2.0",
@@ -26,7 +26,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "ipykernel>=6.29.4",
+    "ipykernel==6.*",
+    "ipywidgets",
     "folium>=0.17.0",
     "geopandas>=0.13.2",
     "matplotlib>=3.9.0",

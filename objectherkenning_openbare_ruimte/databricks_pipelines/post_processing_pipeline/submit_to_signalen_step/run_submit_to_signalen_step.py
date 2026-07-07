@@ -68,7 +68,7 @@ def main(args: argparse.Namespace) -> None:
     submitToSignalenStep = SubmitToSignalenStep(
         spark_session=spark_session, catalog=catalog, schema=schema, settings=settings
     )
-    submitToSignalenStep.run_submit_to_signalen_step()
+    submitToSignalenStep.run_submit_to_signalen_step(test_only=False)
 
 
 if __name__ == "__main__":

@@ -59,7 +59,7 @@ class SilverEnrichedDetectionMetadataManager(TableManager):
             .rdd.flatMap(lambda x: x)
             .collect()
         )
-        if active_object_classes:
+        if len(active_object_classes) > 0:
             pending_obj_classes = set(pending_obj_classes).intersection(
                 active_object_classes
             )

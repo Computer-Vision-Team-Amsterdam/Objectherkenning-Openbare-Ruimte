@@ -1,7 +1,7 @@
 import argparse
 import ast
 import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
@@ -95,10 +95,15 @@ def parse_task_args_to_settings(
             _stadsdelen = [_stadsdelen]
         return [_s.strip().capitalize() for _s in _stadsdelen]
 
-    def _parse_send_limits_arg(arg_str: str) -> List[dict[int, int]]:
+    def _parse_send_limits_arg(arg_str: str) -> List[dict[int, Optional[int]]]:
         _send_limits = ast.literal_eval(arg_str)
         if isinstance(_send_limits, dict):
             _send_limits = [_send_limits]
+        for _limits_dict in _send_limits:
+            for key, value in _limits_dict.items():
+                if value == -1:
+                    # Setting a category's send_limit to -1 should be treated as None to ignore that limit
+                    _limits_dict[key] = None
         return _send_limits
 
     if args.send_limits and not args.stadsdelen:
@@ -109,13 +114,13 @@ def parse_task_args_to_settings(
     if args.stadsdelen:
         stadsdelen = _parse_stadsdelen_arg(args.stadsdelen)
     else:
-        print("Using default stadsdelen.")
+        print("Using default stadsdelen from config.yml")
         stadsdelen = settings["job_config"]["active_task"].keys()
 
     if args.send_limits:
         send_limits = _parse_send_limits_arg(args.send_limits)
     else:
-        print("Using default send limits.")
+        print("Using default send limits from config.yml")
         send_limits = None
 
     if (stadsdelen and send_limits) and not (len(stadsdelen) == len(send_limits)):
