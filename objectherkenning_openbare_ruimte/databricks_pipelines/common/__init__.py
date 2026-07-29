@@ -10,6 +10,7 @@ from .utils_arg_parser import (
     parse_manual_run_arg_to_settings,
     parse_skip_ids_arg_to_settings,
     parse_task_args_to_settings,
+    parse_time_arg_to_settings,
     setup_arg_parser,
 )
 from .utils_images import OutputImage

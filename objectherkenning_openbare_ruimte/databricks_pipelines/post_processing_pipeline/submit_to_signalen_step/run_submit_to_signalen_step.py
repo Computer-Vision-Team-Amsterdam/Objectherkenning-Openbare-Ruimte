@@ -10,6 +10,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
     parse_manual_run_arg_to_settings,
     parse_skip_ids_arg_to_settings,
     parse_task_args_to_settings,
+    parse_time_arg_to_settings,
     setup_arg_parser,
     setup_tables,
 )
@@ -25,6 +26,7 @@ def parse_args_to_settings(
     settings: Dict[str, Any], args: argparse.Namespace
 ) -> Dict[str, Any]:
     settings = parse_task_args_to_settings(settings, args)
+    settings = parse_time_arg_to_settings(settings, args)
     settings = parse_detection_date_arg_to_settings(settings, args)
     settings = parse_skip_ids_arg_to_settings(settings, args)
     settings = parse_manual_run_arg_to_settings(settings, args)
@@ -53,12 +55,14 @@ def main(args: argparse.Namespace) -> None:
         stadsdeel_str = str(settings["job_config"]["active_task"][stadsdeel])
         print(f"  - {stadsdeel}: {stadsdeel_str}")
     if settings["job_config"]["detection_date"] is not None:
-        print(
-            f"  - will only process pending detections for date {settings['job_config']['detection_date']}"
-        )
+        datestr = settings["job_config"]["detection_date"].strftime(format="%Y-%m-%d")
+        print(f"  - will only process pending detections for date {datestr}")
     if len(settings["job_config"]["skip_ids"]) > 0:
         id_str = ", ".join(map(str, settings["job_config"]["skip_ids"]))
         print(f"  - will skip detection IDs: [{id_str}]")
+    if settings["job_config"]["send_after_time"] is not None:
+        timestr = settings["job_config"]["detection_date"].strftime(format="%H:%M")
+        print(f"  - will send signals after {timestr}")
     print("\n")
 
     catalog = settings["catalog"]

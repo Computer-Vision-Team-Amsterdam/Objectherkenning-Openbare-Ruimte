@@ -10,6 +10,7 @@ def setup_arg_parser(prog: str = __name__) -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(prog=prog)
     parser.add_argument("--detection_date", type=str, default="", help="yyyy-mm-dd")
+    parser.add_argument("--send_after_time", type=str, default="", help="HH:MM")
     parser.add_argument(
         "--manual_inspection",
         type=ast.literal_eval,
@@ -208,5 +209,37 @@ def parse_detection_date_arg_to_settings(
             raise e
     else:
         settings["job_config"]["detection_date"] = None
+
+    return settings
+
+
+def parse_time_arg_to_settings(
+    settings: dict[str, Any], args: argparse.Namespace
+) -> dict[str, Any]:
+    """
+    Parse the send_after_time command line argument and update settings.
+
+    Parameters
+    ----------
+    settings: dict[str, Any]
+        Full databricks config settings.
+    args: argparse.Namespace
+        Command line arguments
+
+    Returns
+    -------
+    Updated settings dict
+    """
+
+    if args.send_after_time:
+        try:
+            settings["job_config"]["send_after_time"] = datetime.datetime.strptime(
+                args.send_after_time, "%H:%M"
+            ).time()
+        except ValueError as e:
+            print(f"Incorrect time format, expected HH:MM, got {args.detection_date}")
+            raise e
+    else:
+        settings["job_config"]["send_after_time"] = None
 
     return settings

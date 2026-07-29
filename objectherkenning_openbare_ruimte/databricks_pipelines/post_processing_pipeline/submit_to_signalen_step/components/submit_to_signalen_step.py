@@ -1,4 +1,6 @@
-from typing import Any
+import time
+from datetime import _Date, _Time, datetime, timezone
+from typing import Any, Optional
 
 from pyspark.sql import SparkSession
 
@@ -34,7 +36,12 @@ class SubmitToSignalenStep:
         self.az_tenant_id = settings["azure_tenant_id"]
         self.db_host = settings["reference_database"]["host"]
         self.db_name = settings["reference_database"]["name"]
-        self.detection_date = settings["job_config"].get("detection_date", None)
+        self.send_after_time: Optional[_Time] = settings["job_config"].get(
+            "send_after_time", None
+        )
+        self.detection_date: Optional[_Date] = settings["job_config"].get(
+            "detection_date", None
+        )
         self.exclude_private_terrain_detections = settings["job_config"][
             "exclude_private_terrain_detections"
         ]
@@ -61,6 +68,18 @@ class SubmitToSignalenStep:
         one. Set test_only to True to skip actually sending signals, for testing
         purposes.
         """
+
+        if self.send_after_time is not None:
+            start_time_str = self.send_after_time.strftime("%H:%M")
+            cur_time_str = datetime.now(timezone.utc).strftime("%H:%M")
+            print(
+                f"Waiting for starting time: {start_time_str}\n"
+                f"Current time: {cur_time_str}"
+            )
+
+            while datetime.now(timezone.utc).time() < self.send_after_time:
+                time.sleep(60)
+
         active_stadsdelen = self.active_task_config.keys()
 
         for stadsdeel in active_stadsdelen:
