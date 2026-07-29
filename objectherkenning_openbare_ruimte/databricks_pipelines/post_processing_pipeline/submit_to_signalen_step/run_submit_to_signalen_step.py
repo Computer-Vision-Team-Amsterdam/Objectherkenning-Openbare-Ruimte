@@ -61,7 +61,7 @@ def main(args: argparse.Namespace) -> None:
         id_str = ", ".join(map(str, settings["job_config"]["skip_ids"]))
         print(f"  - will skip detection IDs: [{id_str}]")
     if settings["job_config"]["send_after_time"] is not None:
-        timestr = settings["job_config"]["detection_date"].strftime(format="%H:%M")
+        timestr = settings["job_config"]["send_after_time"].strftime(format="%H:%M")
         print(f"  - will send signals after {timestr}")
     print("\n")
 
