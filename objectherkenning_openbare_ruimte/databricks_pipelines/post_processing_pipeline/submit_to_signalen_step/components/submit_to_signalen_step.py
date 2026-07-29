@@ -73,8 +73,8 @@ class SubmitToSignalenStep:
             start_time_str = self.send_after_time.strftime("%H:%M")
             cur_time_str = datetime.datetime.now(datetime.UTC).strftime("%H:%M")
             print(
-                f"Waiting for starting time: {start_time_str}\n"
-                f"Current time: {cur_time_str}"
+                f"\nWaiting for starting time: {start_time_str}"
+                f"\nCurrent time: {cur_time_str}"
             )
 
             while datetime.datetime.now(datetime.UTC).time() < self.send_after_time:
