@@ -60,6 +60,7 @@ class SubmitToSignalenStep:
             db_name=self.db_name,
             object_classes=settings["job_config"]["object_classes"]["names"],
             annotate_images=settings["job_config"]["annotate_detection_images"],
+            connect_immediately=False,
         )
 
     def run_submit_to_signalen_step(self, test_only: bool = False):
@@ -79,6 +80,8 @@ class SubmitToSignalenStep:
 
             while datetime.datetime.now(datetime.UTC).time() < self.send_after_time:
                 time.sleep(60)
+
+        self.signalHandler.connect_to_signalen()
 
         active_stadsdelen = self.active_task_config.keys()
 
