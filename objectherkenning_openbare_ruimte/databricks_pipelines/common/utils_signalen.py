@@ -89,6 +89,7 @@ class SignalHandler:
         db_name: str,
         object_classes: Dict[int, str],
         annotate_images: bool = False,
+        connect_immediately: bool = True,
     ):
         self.spark_session = spark_session
         self.device_id = device_id
@@ -102,19 +103,24 @@ class SignalHandler:
         client_secret_name = signalen_settings["client_secret_name"]
         access_token_url = signalen_settings["access_token_url"]
         base_url = signalen_settings["base_url"]
-        signalConnectionConfigurer = SignalConnectionConfigurer(
+        self.signalConnectionConfigurer = SignalConnectionConfigurer(
             client_id, client_secret_name, access_token_url, base_url
         )
-        self.base_url: str = signalConnectionConfigurer.get_base_url()  # type: ignore
-        access_token = signalConnectionConfigurer.get_access_token()
-        self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}  # type: ignore
-        self.verify_ssl = True
+        self.base_url: str = self.signalConnectionConfigurer.get_base_url()  # type: ignore
+
+        if connect_immediately:
+            self.connect_to_signalen()
 
         self.bankAggConnector = BENKAGGConnector(
             az_tenant_id=az_tenant_id,
             db_host=db_host,
             db_name=db_name,
         )
+
+    def connect_to_signalen(self) -> None:
+        access_token = self.signalConnectionConfigurer.get_access_token()
+        self.headers: Dict[str, str] = {"Authorization": f"Bearer {access_token}"}  # type: ignore
+        self.verify_ssl = True
 
     def get_signal(self, sig_id: str) -> Any:
         """
