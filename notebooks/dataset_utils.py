@@ -55,21 +55,62 @@ def yolo_file_to_dicts(annotation_file_path: str) -> List[Dict[str, Any]]:
     return data
 
 
+def oor_json_to_dicts(annotation_file_path: str) -> List[Dict[str, Any]]:
+    """
+    Read an OOR annotations file and return the annotations as a list of dicts.
+    """
+    data = []
+
+    with open(annotation_file_path, "r") as f:
+        json_content = json.load(f)
+        image_file_name = json_content["image_file_name"]
+        for detection in json_content["detections"]:
+            yolo_bbox = detection["boundingBox"]
+            bbox = sg.box(
+                minx=yolo_bbox["x_center"] - yolo_bbox["width"] / 2,
+                miny=yolo_bbox["y_center"] - yolo_bbox["height"] / 2,
+                maxx=yolo_bbox["x_center"] + yolo_bbox["width"] / 2,
+                maxy=yolo_bbox["y_center"] + yolo_bbox["height"] / 2,
+            )
+
+            line_data = {
+                "category": detection["object_class"],
+                "confidence": detection["confidence"],
+                "bbox": bbox,
+                "image_name": image_file_name,
+            }
+            data.append(line_data)
+
+    return data
+
+
 def read_annotations_folder(
-    folder_path: str, categories: Optional[Iterable[int]], agnostic: bool = False
+    folder_path: str,
+    file_type: str = ".txt",
+    categories: Optional[Iterable[int]] = None,
+    agnostic: bool = False,
 ) -> gpd.GeoDataFrame:
     """
     Convert all YOLO annotation files in a folder to GeoDataFrame with one annotation per row.
 
     The GeoDataFrame has columns `"image_name", "category", "confidence", "bbox"`.
     """
+    if file_type not in (".txt", ".json"):
+        print(f"Incorrect file_type, got {file_type}, expected .txt or .json.")
+        return None
+
     data = []
     annotation_files = [
-        file for file in os.listdir(folder_path) if os.path.splitext(file)[1] == ".txt"
+        file
+        for file in os.listdir(folder_path)
+        if os.path.splitext(file)[1] == file_type
     ]
 
     for file in annotation_files:
-        data.extend(yolo_file_to_dicts(os.path.join(folder_path, file)))
+        if file_type == ".txt":
+            data.extend(yolo_file_to_dicts(os.path.join(folder_path, file)))
+        elif file_type == ".json":
+            data.extend(oor_json_to_dicts(os.path.join(folder_path, file)))
 
     gdf = gpd.GeoDataFrame(
         data=data,
@@ -104,3 +145,41 @@ def read_coco_annotations(
         annotations_df = annotations_df[annotations_df["category_id"].isin(categories)]
 
     return annotations_df.join(images_df, on="image_id", how="left")
+
+
+def generate_oor_json(detections: gpd.GeoDataFrame, output_folder: str):
+    os.makedirs(output_folder, exist_ok=True)
+    for image_file_name, idxs in detections.groupby("image_file_name").groups.items():
+        json_file_name = os.path.join(
+            output_folder, os.path.splitext(image_file_name)[0] + ".json"
+        )
+        coordinates: sg.Point = detections.loc[idxs[0], "geometry"]
+        json_content = {
+            "gps_data": {
+                "latitude": coordinates.y,
+                "longitude": coordinates.x,
+            },
+            "image_file_name": image_file_name,
+            "detections": [],
+        }
+        for idx in idxs:
+            minx, miny, maxx, maxy = detections.loc[idx, "bbox"].bounds
+            json_content["detections"].append(
+                {
+                    "object_class": int(detections.loc[idx, "category_id"]),
+                    "confidence": float(detections.loc[idx, "confidence"]),
+                    "tracking_id": -1,
+                    "boundingBox": {
+                        "x_center": (minx + maxx) / 2,
+                        "y_center": (miny + maxy) / 2,
+                        "width": maxx - minx,
+                        "height": maxy - miny,
+                    },
+                }
+            )
+        with open(json_file_name, "w") as f:
+            json.dump(
+                json_content,
+                fp=f,
+                indent=4,
+            )
