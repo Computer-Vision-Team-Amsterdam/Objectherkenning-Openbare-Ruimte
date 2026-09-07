@@ -1,3 +1,8 @@
+# ==========================================
+# DISABLED SCRIPT: Weging Kademuren&Bruggen voorlopig uitgezet 2026-09-07
+# ==========================================
+
+"""
 import os
 import tempfile
 
@@ -98,3 +103,5 @@ class VulnerableBridgesHandler:
         )
 
         return self.spark_session.createDataFrame(results_df)
+
+"""
