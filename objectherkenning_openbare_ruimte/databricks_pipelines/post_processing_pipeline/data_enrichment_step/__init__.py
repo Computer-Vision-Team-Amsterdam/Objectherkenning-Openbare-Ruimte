@@ -3,4 +3,4 @@ from .components.clustering_detections import Clustering
 from .components.decos_data_connector import BENKAGGConnector, DecosDataHandler
 from .components.private_terrain_handler import PrivateTerrainHandler
 from .components.stadsdelen_handler import StadsdelenHandler
-from .components.vulnerable_bridges_handler import VulnerableBridgesHandler
+#from .components.vulnerable_bridges_handler import VulnerableBridgesHandler
