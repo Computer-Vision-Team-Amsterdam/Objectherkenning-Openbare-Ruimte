@@ -57,9 +57,9 @@ class VulnerableBridgesHandler:
         self,
         objects_coordinates_df,
     ):
-        """
-        Find closest bridge for each object, and compute the distance and closest point.
-        """
+        
+        #Find closest bridge for each object, and compute the distance and closest point.
+        
         # Convert objects_df to gdf for easy computations
         objects_df = objects_coordinates_df.toPandas()
         objects_gdf = gpd.GeoDataFrame(
