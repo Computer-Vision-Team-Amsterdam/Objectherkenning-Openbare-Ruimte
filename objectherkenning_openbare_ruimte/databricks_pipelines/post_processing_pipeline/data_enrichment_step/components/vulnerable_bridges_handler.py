@@ -1,8 +1,3 @@
-# ==========================================
-# DISABLED SCRIPT: Weging Kademuren&Bruggen voorlopig uitgezet 2026-09-07
-# ==========================================
-
-"""
 import os
 import tempfile
 
@@ -57,9 +52,9 @@ class VulnerableBridgesHandler:
         self,
         objects_coordinates_df,
     ):
-        
-        #Find closest bridge for each object, and compute the distance and closest point.
-        
+        """
+        Find closest bridge for each object, and compute the distance and closest point.
+        """
         # Convert objects_df to gdf for easy computations
         objects_df = objects_coordinates_df.toPandas()
         objects_gdf = gpd.GeoDataFrame(
@@ -103,5 +98,3 @@ class VulnerableBridgesHandler:
         )
 
         return self.spark_session.createDataFrame(results_df)
-
-"""
