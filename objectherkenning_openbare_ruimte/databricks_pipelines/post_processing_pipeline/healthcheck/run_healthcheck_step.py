@@ -1,3 +1,5 @@
+dbutils.library.restartPython()  # type: ignore[name-defined] # noqa: F821
+
 import os
 
 import requests
