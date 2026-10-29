@@ -60,3 +60,7 @@ pre-commit autoupdate
 # Run pre-commit hooks using
 bash .git/hooks/pre-commit
 ```
+
+## Databricks
+
+The databricks pipeline is tested on a compute running **Databricks Runtime version 17.3 LTS** with the extra python libraries defined in [requirements_databricks.txt](./requirements_databricks.txt).
