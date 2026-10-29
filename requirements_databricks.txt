@@ -1,0 +1,11 @@
+azure-cli==2.91.0
+folium==0.20.0
+geojson==3.3.0
+geopandas==1.2.0
+geopy==2.5.0
+opencv-python-headless==5.0.0.93
+pyarrow==19.0.1
+pyproj==3.8.0
+PyYAML==6.0.2
+scikit-learn==1.6.1
+shapely==2.2.0

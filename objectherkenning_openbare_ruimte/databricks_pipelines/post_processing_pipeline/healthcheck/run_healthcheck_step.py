@@ -1,16 +1,20 @@
 import os
 
-import requests
-from pyspark.sql import SparkSession
+os.environ.pop(
+    "OPENSSL_FORCE_FIPS_MODE", None
+)  # TEMPORARY FIX, see https://github.com/opencv/opencv-python/issues/1184
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
+import requests  # noqa: E402
+from pyspark.sql import SparkSession  # noqa: E402
+
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     SignalConnectionConfigurer,
     get_databricks_environment,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.data_enrichment_step import (  # noqa: E402
     BENKAGGConnector,
 )
-from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
+from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
 

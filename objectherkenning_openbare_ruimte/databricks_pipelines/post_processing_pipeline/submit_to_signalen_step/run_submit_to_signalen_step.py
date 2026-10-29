@@ -2,9 +2,13 @@ import argparse
 import os
 from typing import Any, Dict
 
-from pyspark.sql import SparkSession
+os.environ.pop(
+    "OPENSSL_FORCE_FIPS_MODE", None
+)  # TEMPORARY FIX, see https://github.com/opencv/opencv-python/issues/1184
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
+from pyspark.sql import SparkSession  # noqa: E402
+
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
     parse_detection_date_arg_to_settings,
     parse_manual_run_arg_to_settings,
@@ -14,10 +18,10 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
     setup_arg_parser,
     setup_tables,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.submit_to_signalen_step import (
+from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipeline.submit_to_signalen_step.components.submit_to_signalen_step import (  # noqa: E402
     SubmitToSignalenStep,
 )
-from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
+from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
 
