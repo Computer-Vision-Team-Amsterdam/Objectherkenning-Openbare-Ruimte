@@ -1,13 +1,17 @@
 import os
 
-from pyspark.sql import SparkSession
+os.environ.pop(
+    "OPENSSL_FORCE_FIPS_MODE", None
+)  # TEMPORARY FIX, see https://github.com/opencv/opencv-python/issues/1184
 
-from objectherkenning_openbare_ruimte.databricks_pipelines.common import (
+from pyspark.sql import SparkSession  # noqa: E402
+
+from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
     get_databricks_environment,
     get_job_process_time,
     setup_tables,
 )
-from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (
+from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import (  # noqa: E402
     BronzeDetectionMetadataManager,
     BronzeFrameMetadataManager,
     SilverDetectionMetadataManager,
@@ -15,7 +19,7 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.common.tables import 
     SilverFrameMetadataManager,
     SilverFrameMetadataQuarantineManager,
 )
-from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
+from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
 

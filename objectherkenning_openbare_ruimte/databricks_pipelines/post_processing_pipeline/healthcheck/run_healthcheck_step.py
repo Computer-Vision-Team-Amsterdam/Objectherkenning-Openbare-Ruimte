@@ -1,6 +1,8 @@
 import os
 
-os.environ.pop("OPENSSL_FORCE_FIPS_MODE", None)
+os.environ.pop(
+    "OPENSSL_FORCE_FIPS_MODE", None
+)  # TEMPORARY FIX, see https://github.com/opencv/opencv-python/issues/1184
 
 import requests  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
