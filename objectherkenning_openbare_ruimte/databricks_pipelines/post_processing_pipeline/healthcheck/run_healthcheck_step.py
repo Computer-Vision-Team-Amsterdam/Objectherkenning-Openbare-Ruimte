@@ -1,4 +1,5 @@
 import os
+import socket
 
 os.environ.pop(
     "OPENSSL_FORCE_FIPS_MODE", None
@@ -57,6 +58,9 @@ def run_healthcheck_sia(settings: dict) -> None:
     try:
         _ = signalConnectionConfigurer.get_access_token()
         print("SIA token successful")
+
+        ip_addr = socket.gethostbyname(settings["signalen"]["base_url"])
+        print(f"SIA API address: {ip_addr}")
     except requests.RequestException as e:
         raise ValueError("SIA token unsuccessful") from e
 
