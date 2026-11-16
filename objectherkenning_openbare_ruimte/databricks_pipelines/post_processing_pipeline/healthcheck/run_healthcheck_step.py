@@ -8,7 +8,8 @@ import socket  # noqa: E402
 from typing import Tuple  # noqa: E402
 
 import requests  # noqa: E402
-from pyspark import SparkContext  # noqa: E402
+
+# from pyspark import SparkContext  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
@@ -27,7 +28,7 @@ N_WORKERS = 1
 
 def get_hostname_and_ip() -> Tuple[str, str]:
     hostname = socket.gethostname()
-    ip_address = socket.gethostbyname(hostname)
+    ip_address = os.getenv("SPARK_LOCAL_IP", "UNKNOWN")
     return (hostname, ip_address)
 
 
@@ -36,12 +37,12 @@ def run_healthcheck_networking() -> None:
     hostname, ip_address = get_hostname_and_ip()
     print(f"Host {hostname} with IP {ip_address}")
 
-    print("WORKERS:")
-    rdd2 = SparkContext.parallelize(range(1, N_WORKERS + 1)).map(get_hostname_and_ip)
-    datacoll2 = rdd2.collect()
-    for row in datacoll2:
-        hostname, ip_address = row
-        print(f"Host {hostname} with IP {ip_address}")
+    # print("WORKERS:")
+    # rdd2 = SparkContext.parallelize(range(1, N_WORKERS + 1)).map(get_hostname_and_ip)
+    # datacoll2 = rdd2.collect()
+    # for row in datacoll2:
+    #     hostname, ip_address = row
+    #     print(f"Host {hostname} with IP {ip_address}")
 
 
 def run_healthcheck_refdb(settings: dict) -> None:
