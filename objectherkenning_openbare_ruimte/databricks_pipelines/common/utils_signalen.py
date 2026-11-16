@@ -176,6 +176,13 @@ class SignalHandler:
             If the server responds with a status code other than 201 (Created),
             an HTTPError will be raised with the response status and message.
         """
+
+        print("Creating request..")
+        print(f"url: {self.base_url}")
+        print(f"json: {json_content}")
+        print(f"headers: {self.headers}")
+        print(f"verify: {self.verify_ssl}")
+
         response = requests.post(
             self.base_url,
             json=json_content,
