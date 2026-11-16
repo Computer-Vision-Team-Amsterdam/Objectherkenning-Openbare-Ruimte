@@ -5,7 +5,6 @@ os.environ.pop(
 )  # TEMPORARY FIX, see https://github.com/opencv/opencv-python/issues/1184
 
 import socket  # noqa: E402
-from typing import Tuple  # noqa: E402
 from urllib.parse import urlsplit  # noqa: E402
 
 import requests  # noqa: E402
@@ -23,16 +22,10 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 )
 
 
-def get_hostname_and_ip() -> Tuple[str, str]:
+def run_healthcheck_networking() -> None:
     hostname = socket.gethostname()
     ip_address = os.getenv("SPARK_LOCAL_IP", "UNKNOWN")
-    return (hostname, ip_address)
-
-
-def run_healthcheck_networking() -> None:
-    print("DRIVER:")
-    hostname, ip_address = get_hostname_and_ip()
-    print(f"Host {hostname} with IP {ip_address}")
+    print(f"DRIVER: {hostname} with IP address {ip_address}")
 
 
 def run_healthcheck_refdb(settings: dict) -> None:
