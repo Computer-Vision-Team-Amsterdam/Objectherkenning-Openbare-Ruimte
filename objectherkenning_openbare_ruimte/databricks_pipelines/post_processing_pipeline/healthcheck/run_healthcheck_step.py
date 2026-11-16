@@ -6,10 +6,9 @@ os.environ.pop(
 
 import socket  # noqa: E402
 from typing import Tuple  # noqa: E402
+from urllib.parse import urlsplit  # noqa: E402
 
 import requests  # noqa: E402
-
-# from pyspark import SparkContext  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
@@ -23,8 +22,6 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
     load_settings,
 )
 
-N_WORKERS = 1
-
 
 def get_hostname_and_ip() -> Tuple[str, str]:
     hostname = socket.gethostname()
@@ -36,13 +33,6 @@ def run_healthcheck_networking() -> None:
     print("DRIVER:")
     hostname, ip_address = get_hostname_and_ip()
     print(f"Host {hostname} with IP {ip_address}")
-
-    # print("WORKERS:")
-    # rdd2 = SparkContext.parallelize(range(1, N_WORKERS + 1)).map(get_hostname_and_ip)
-    # datacoll2 = rdd2.collect()
-    # for row in datacoll2:
-    #     hostname, ip_address = row
-    #     print(f"Host {hostname} with IP {ip_address}")
 
 
 def run_healthcheck_refdb(settings: dict) -> None:
@@ -84,8 +74,9 @@ def run_healthcheck_sia(settings: dict) -> None:
         _ = signalConnectionConfigurer.get_access_token()
         print("SIA token successful")
 
-        ip_addr = socket.gethostbyname("api.acc.meldingen.amsterdam.nl")
-        print(f"SIA API address: {ip_addr}")
+        api_netloc = urlsplit(settings["signalen"]["base_url"]).netloc
+        ip_addr = socket.gethostbyname(api_netloc)
+        print(f"IP address for {api_netloc}: {ip_addr}")
     except requests.RequestException as e:
         raise ValueError("SIA token unsuccessful") from e
 
