@@ -1,11 +1,14 @@
 import os
-import socket
 
 os.environ.pop(
     "OPENSSL_FORCE_FIPS_MODE", None
 )  # TEMPORARY FIX, see https://github.com/opencv/opencv-python/issues/1184
 
+import socket  # noqa: E402
+from typing import Tuple  # noqa: E402
+
 import requests  # noqa: E402
+from pyspark import SparkContext  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 
 from objectherkenning_openbare_ruimte.databricks_pipelines.common import (  # noqa: E402
@@ -18,6 +21,31 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
+
+N_WORKERS = 1
+
+
+def get_hostname_and_external_ip() -> Tuple[str, str]:
+    # https://stackoverflow.com/a/76003068
+    hostname = socket.gethostname()
+    r = requests.get("https://api.ipify.org/", timeout=10)
+    external_ip = r.content.decode("utf-8")
+    return (hostname, external_ip)
+
+
+def run_healthcheck_networking() -> None:
+    print("DRIVER:")
+    hostname, external_ip = get_hostname_and_external_ip()
+    print(f"Host {hostname} with public IP {external_ip}")
+
+    print("WORKERS:")
+    rdd2 = SparkContext.parallelize(range(1, N_WORKERS + 1)).map(
+        get_hostname_and_external_ip
+    )
+    datacoll2 = rdd2.collect()
+    for row in datacoll2:
+        hostname, external_ip = row
+        print(f"Host {hostname} with public IP {external_ip}")
 
 
 def run_healthcheck_refdb(settings: dict) -> None:
@@ -75,6 +103,9 @@ def main():
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
+
+    print("\n*** Networking ***")
+    run_healthcheck_networking()
 
     print("\n*** Running RefDB healthcheck ***")
     run_healthcheck_refdb(settings=settings)
