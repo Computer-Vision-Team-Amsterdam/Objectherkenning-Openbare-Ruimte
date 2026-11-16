@@ -25,27 +25,23 @@ from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (
 N_WORKERS = 1
 
 
-def get_hostname_and_external_ip() -> Tuple[str, str]:
-    # https://stackoverflow.com/a/76003068
+def get_hostname_and_ip() -> Tuple[str, str]:
     hostname = socket.gethostname()
-    r = requests.get("https://api.ipify.org/", timeout=10)
-    external_ip = r.content.decode("utf-8")
-    return (hostname, external_ip)
+    ip_address = socket.gethostbyname(hostname)
+    return (hostname, ip_address)
 
 
 def run_healthcheck_networking() -> None:
     print("DRIVER:")
-    hostname, external_ip = get_hostname_and_external_ip()
-    print(f"Host {hostname} with public IP {external_ip}")
+    hostname, ip_address = get_hostname_and_ip()
+    print(f"Host {hostname} with IP {ip_address}")
 
     print("WORKERS:")
-    rdd2 = SparkContext.parallelize(range(1, N_WORKERS + 1)).map(
-        get_hostname_and_external_ip
-    )
+    rdd2 = SparkContext.parallelize(range(1, N_WORKERS + 1)).map(get_hostname_and_ip)
     datacoll2 = rdd2.collect()
     for row in datacoll2:
-        hostname, external_ip = row
-        print(f"Host {hostname} with public IP {external_ip}")
+        hostname, ip_address = row
+        print(f"Host {hostname} with IP {ip_address}")
 
 
 def run_healthcheck_refdb(settings: dict) -> None:
