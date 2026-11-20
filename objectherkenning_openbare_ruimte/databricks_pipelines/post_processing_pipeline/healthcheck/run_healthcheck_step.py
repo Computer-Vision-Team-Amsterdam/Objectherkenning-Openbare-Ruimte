@@ -4,6 +4,9 @@ os.environ.pop(
     "OPENSSL_FORCE_FIPS_MODE", None
 )  # TEMPORARY FIX, see https://github.com/opencv/opencv-python/issues/1184
 
+import socket  # noqa: E402
+from urllib.parse import urlsplit  # noqa: E402
+
 import requests  # noqa: E402
 from pyspark.sql import SparkSession  # noqa: E402
 
@@ -17,6 +20,12 @@ from objectherkenning_openbare_ruimte.databricks_pipelines.post_processing_pipel
 from objectherkenning_openbare_ruimte.settings.databricks_jobs_settings import (  # noqa: E402
     load_settings,
 )
+
+
+def run_healthcheck_networking() -> None:
+    hostname = socket.gethostname()
+    ip_address = os.getenv("SPARK_LOCAL_IP", "UNKNOWN")
+    print(f"DRIVER: {hostname} with IP address {ip_address}")
 
 
 def run_healthcheck_refdb(settings: dict) -> None:
@@ -57,6 +66,10 @@ def run_healthcheck_sia(settings: dict) -> None:
     try:
         _ = signalConnectionConfigurer.get_access_token()
         print("SIA token successful")
+
+        api_netloc = urlsplit(settings["signalen"]["base_url"]).netloc
+        ip_addr = socket.gethostbyname(api_netloc)
+        print(f"IP address for {api_netloc}: {ip_addr}")
     except requests.RequestException as e:
         raise ValueError("SIA token unsuccessful") from e
 
@@ -71,6 +84,9 @@ def main():
     settings = load_settings(config_file_path)["databricks_pipelines"][
         f"{databricks_environment}"
     ]
+
+    print("\n*** Networking ***")
+    run_healthcheck_networking()
 
     print("\n*** Running RefDB healthcheck ***")
     run_healthcheck_refdb(settings=settings)
