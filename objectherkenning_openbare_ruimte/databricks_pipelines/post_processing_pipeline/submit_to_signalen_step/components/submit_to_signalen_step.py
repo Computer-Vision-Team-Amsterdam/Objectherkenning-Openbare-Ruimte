@@ -162,6 +162,7 @@ class SubmitToSignalenStep:
                 )
 
         # We only want to set to "processed" the rows belonging to this stadsdeel
+        # TODO do we want to keep rows that failed as "pending"?
         processed_ids = (
             SilverEnrichedDetectionMetadataManager.get_pending_ids_for_stadsdeel(
                 stadsdeel=stadsdeel, detection_date=self.detection_date
